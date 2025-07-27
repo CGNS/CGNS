@@ -91,6 +91,7 @@ typedef struct {
     int type;
     int mode;
     double rootid;
+    int access_mode;
 } cgns_io;
 
 static int num_open = 0;
@@ -835,6 +836,15 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
     iolist[n].rootid = rootid;
+/* keep track of file parallel/native opening mode */
+    iolist[n].access_mode = CGIO_NATIVE_MODE;
+#if CG_BUILD_HDF5
+    if (file_type == CGIO_FILE_HDF5) {
+        if (strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0){
+          iolist[n].access_mode = CGIO_PARALLEL_MODE;
+        }
+    }
+#endif
     *cgio_num = n + 1;
     num_open++;
 

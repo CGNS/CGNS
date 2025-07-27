@@ -376,7 +376,7 @@ EXTERN	void	ADFH_Put_Name(
 
 EXTERN	void	ADFH_Read_All_Data(
 			const double ID,
-                        const char *m_data_type,
+			const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 
@@ -384,7 +384,7 @@ EXTERN	void	ADFH_Read_Block_Data(
 			const double ID,
 			const cgsize_t b_start,
 			const cgsize_t b_end,
-                        const char *m_data_type,
+			const char *m_data_type,
 			void *data,
 			int *error_return ) ;
 
@@ -398,7 +398,7 @@ EXTERN	void	ADFH_Read_Data(
 			const cgsize_t m_start[],
 			const cgsize_t m_end[],
 			const cgsize_t m_stride[],
-                        const char *m_data_type,
+			const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 
