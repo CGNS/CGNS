@@ -3091,8 +3091,10 @@ void ADFH_Get_Link_Path(const double  id,
 {
   hid_t hid, did;
   hid_t xfer_prp = H5P_DEFAULT;
+#if CG_BUILD_PARALLEL
   int access_mode = CGIO_NATIVE_MODE;
-
+#endif
+	
   ADFH_DEBUG(("ADFH_Get_Link_Path"));
   to_HDF_ID(id,hid);
   ADFH_CHECK_HID(hid);
@@ -3673,7 +3675,9 @@ void ADFH_Read_All_Data(const double  id,
 {
   hid_t hid, did, mid;
   hid_t xfer_prp = H5P_DEFAULT;
+#if CG_BUILD_PARALLEL
   int access_mode = CGIO_NATIVE_MODE;
+#endif
 
   ADFH_DEBUG(("ADFH_Read_All_Data"));
 
@@ -4024,8 +4028,9 @@ void ADFH_Write_All_Data(const double  id,
   hid_t hid;
   hid_t did, tid, mid;
   hid_t xfer_prp = H5P_DEFAULT;
+#if CG_BUILD_PARALLEL
   int access_mode = CGIO_NATIVE_MODE;
-
+#endif
   to_HDF_ID(id, hid);
 
   ADFH_DEBUG(("ADFH_Write_All_Data"));
