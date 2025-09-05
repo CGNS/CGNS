@@ -788,7 +788,7 @@ static int set_int_att(hid_t id, char *name, int value, int *err)
 /* ----------------------------------------------------------------- */
 
 static int new_str_data(hid_t id, const char *name, const char *value,
-                       int size, int *err)
+                       int size, int access_mode, int *err)
 {
   hid_t sid, did;
   hsize_t dim;
@@ -823,7 +823,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   }
 
 #if CG_BUILD_PARALLEL
-  if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
+  if (ctx_cgio.pcg_mpi_initialized && (access_mode == CGIO_PARALLEL_MODE)) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
@@ -832,7 +832,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   status = H5Dwrite(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, value);
 
 #if CG_BUILD_PARALLEL
-  if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
+  if (ctx_cgio.pcg_mpi_initialized && (access_mode == CGIO_PARALLEL_MODE)) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -2203,7 +2203,7 @@ void ADFH_Database_Open(const char   *name,
   char *format, buff[ADF_VERSION_LENGTH+1];
   static const char root_name[ADF_NAME_LENGTH+1] = "HDF5 MotherNode";
   static const char root_label[ADF_NAME_LENGTH+1] = "Root Node of HDF5 File";
-  int i, pos, mode;
+  int i, pos, mode, access_mode;
   hid_t g_propfileopen;
 
   /* to be thread safe, should have critical section here */
@@ -2353,7 +2353,7 @@ void ADFH_Database_Open(const char   *name,
 #endif
 
   /* open the file */
-
+  access_mode = CGIO_NATIVE_MODE;
 #if CG_BUILD_PARALLEL
 
   int flag = 0;
@@ -2380,6 +2380,9 @@ void ADFH_Database_Open(const char   *name,
 #if HDF5_HAVE_COLL_METADATA
       H5Pset_coll_metadata_write(g_propfileopen, 1);
 #endif /*HDF5_HAVE_COLL_METADATA*/
+
+      H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
+      access_mode = CGIO_PARALLEL_MODE;
     }
   }
 #endif
@@ -2478,8 +2481,8 @@ void ADFH_Database_Open(const char   *name,
     if (new_str_att(gid, A_NAME, root_name, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, root_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
-        new_str_data(gid, D_FORMAT, format, (int)strlen(format), err) ||
-        new_str_data(gid, D_VERSION, buff, ADF_VERSION_LENGTH, err)) {
+        new_str_data(gid, D_FORMAT, format, (int)strlen(format), access_mode, err) ||
+        new_str_data(gid, D_VERSION, buff, ADF_VERSION_LENGTH, access_mode, err)) {
       H5Gclose(gid);
       return;
     }
@@ -2593,9 +2596,15 @@ void ADFH_Database_Valid(const char   *name,
         *err = NULL_STRING_POINTER;
     else
 #if ADFH_HDF5_HAVE_112_API
-        *err = H5Fis_accessible(name, H5P_DEFAULT);
+	if (H5Fis_accessible(name, H5P_DEFAULT) <=0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #else
-        *err = H5Fis_hdf5(name);
+        if (H5Fis_hdf5(name) <= 0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #endif
 }
 
@@ -3256,7 +3265,10 @@ void ADFH_Get_Link_Path(const double  id,
 {
   hid_t hid, did;
   hid_t xfer_prp = H5P_DEFAULT;
-
+#if CG_BUILD_PARALLEL
+  int access_mode = CGIO_NATIVE_MODE;
+#endif
+	
   ADFH_DEBUG(("ADFH_Get_Link_Path"));
   to_HDF_ID(id,hid);
   ADFH_CHECK_HID(hid);
@@ -3266,10 +3278,17 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #if CG_BUILD_PARALLEL
-  if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
-    xfer_prp = H5Pcreate(H5P_DATASET_XFER);
-    ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
+    access_mode = CGIO_PARALLEL_MODE;
+    if (ctx_cgio.pcg_mpi_initialized) {
+      xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+      ADFH_CHECK_HID(xfer_prp);
+      H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+    }
   }
 #endif
 
@@ -3290,7 +3309,7 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #if CG_BUILD_PARALLEL
-  if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
+  if (ctx_cgio.pcg_mpi_initialized && (access_mode == CGIO_PARALLEL_MODE)) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3310,6 +3329,7 @@ void ADFH_Link(const double  pid,
   char *target;
   herr_t status;
   hid_t lid, hid;
+  int  access_mode = CGIO_NATIVE_MODE;
   (void)hid;  /* avoid unused variable warning */
 
   ADFH_DEBUG(("ADFH_Link [%s][%s][%s]",name,file,name_in_file));
@@ -3361,9 +3381,19 @@ void ADFH_Link(const double  pid,
     }
   }
 
+#if CG_BUILD_PARALLEL
+  hid_t fid = get_file_id(lid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
+    access_mode = CGIO_PARALLEL_MODE;
+  }
+#endif
+
   /* save link path and file */
-  if (new_str_data(lid,D_PATH,name_in_file,(int)strlen(name_in_file),err)) return;
-  if (*file && new_str_data(lid,D_FILE,file,(int)strlen(file),err))        return;
+  if (new_str_data(lid,D_PATH,name_in_file,(int)strlen(name_in_file),access_mode, err)) return;
+  if (*file && new_str_data(lid,D_FILE,file,(int)strlen(file),access_mode,err))         return;
 #ifndef ADFH_FORCE_ID_CLOSE
   hid_t hid;
   to_HDF_ID(pid,hid);
@@ -3819,6 +3849,9 @@ void ADFH_Read_All_Data(const double  id,
 {
   hid_t hid, did, mid;
   hid_t xfer_prp = H5P_DEFAULT;
+#if CG_BUILD_PARALLEL
+  int access_mode = CGIO_NATIVE_MODE;
+#endif
 
   ADFH_DEBUG(("ADFH_Read_All_Data"));
 
@@ -3836,10 +3869,17 @@ void ADFH_Read_All_Data(const double  id,
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
-    if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
-      xfer_prp = H5Pcreate(H5P_DATASET_XFER);
-      ADFH_CHECK_HID(xfer_prp);
-      H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+    hid_t fid = get_file_id(hid);
+    hid_t fapl = H5Fget_access_plist(fid);
+    hid_t driver_id = H5Pget_driver(fapl);
+    H5Pclose(fapl); /* close the property list */
+    if (driver_id == H5FD_MPIO) {
+      access_mode = CGIO_PARALLEL_MODE;
+      if (ctx_cgio.pcg_mpi_initialized) {
+        xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+        ADFH_CHECK_HID(xfer_prp);
+        H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+      }
     }
 #endif
     if (H5Dread(did, mid, H5S_ALL, H5S_ALL, xfer_prp, data) < 0)
@@ -3848,7 +3888,7 @@ void ADFH_Read_All_Data(const double  id,
       set_error(NO_ERROR, err);
 
 #if CG_BUILD_PARALLEL
-    if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
+    if (ctx_cgio.pcg_mpi_initialized && (access_mode == CGIO_PARALLEL_MODE)) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -4162,7 +4202,9 @@ void ADFH_Write_All_Data(const double  id,
   hid_t hid;
   hid_t did, tid, mid;
   hid_t xfer_prp = H5P_DEFAULT;
-
+#if CG_BUILD_PARALLEL
+  int access_mode = CGIO_NATIVE_MODE;
+#endif
   to_HDF_ID(id, hid);
 
   ADFH_DEBUG(("ADFH_Write_All_Data"));
@@ -4189,11 +4231,18 @@ void ADFH_Write_All_Data(const double  id,
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
-    if (ctx_cgio.pcg_mpi_initialized && strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
-      xfer_prp = H5Pcreate(H5P_DATASET_XFER);
-      ADFH_CHECK_HID(xfer_prp);
-      if (H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE) < 0)
-        set_error(ADFH_ERR_DWRITE, err);
+    hid_t fid = get_file_id(hid);
+    hid_t fapl=H5Fget_access_plist(fid);
+    hid_t driver_id = H5Pget_driver(fapl);
+    H5Pclose(fapl); /* close the property list */
+    if (driver_id == H5FD_MPIO) {
+      access_mode = CGIO_PARALLEL_MODE;
+      if (ctx_cgio.pcg_mpi_initialized) {
+        xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+        ADFH_CHECK_HID(xfer_prp);
+        if (H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE) < 0)
+          set_error(ADFH_ERR_DWRITE, err);
+      }
     }
 #endif
 
@@ -4203,7 +4252,7 @@ void ADFH_Write_All_Data(const double  id,
       set_error(NO_ERROR, err);
 #if CG_BUILD_PARALLEL
     if (ctx_cgio.pcg_mpi_initialized &&
-        strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0) {
+        (access_mode == CGIO_PARALLEL_MODE)) {
       H5Pclose(xfer_prp);
     }
 #endif

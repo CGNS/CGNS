@@ -12,3 +12,8 @@ typedef struct _cgns_io_ctx_t {
     hid_t default_pio_mode;
 #endif
 } cgns_io_ctx_t;
+
+typedef enum {
+  CGIO_NATIVE_MODE = 0,
+  CGIO_PARALLEL_MODE = 1
+} access_mode_t;
