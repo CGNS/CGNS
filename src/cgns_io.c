@@ -46,6 +46,7 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 #include "cgnslib.h"
 #include "adf/ADF.h"
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
 #if CG_BUILD_PARALLEL
 #include <mpi.h>
 #endif
@@ -54,7 +55,6 @@ freely, subject to the following restrictions:
 #if CG_BUILD_PARALLEL
 #include "hdf5.h"
 #endif
-#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
 #endif
 
 #ifdef MEM_DEBUG
