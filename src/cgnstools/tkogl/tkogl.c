@@ -23,9 +23,24 @@
 #include "feedback.h"
 
 #if ! defined(__WIN32__) && ! defined(_WIN32)
-/* For TkWmAddToColormapWindows. */
-#define _TKPORT /* Typical installations cannot find tkPort.h. */
-#include <tk-private/generic/tkInt.h>
+/*
+ * TkWmAddToColormapWindows is an internal Tk function for managing
+ * colormap windows in Tk's widget hierarchy. Rather than including
+ * the private tkInt.h header (which has portability issues across
+ * distributions), we forward-declare the function here.
+ *
+ * This is safe because:
+ * 1. The function exists in all Tk versions
+ * 2. The signature has been stable for 20+ years
+ * 3. It's only called for X11 OpenGL colormap management
+ *
+ * TkWindow is Tk's internal window structure, defined in tkInt.h.
+ * We forward-declare it as an incomplete type here.
+ *
+ * See: https://github.com/CGNS/CGNS/issues/689
+ */
+typedef struct TkWindow TkWindow;
+extern void TkWmAddToColormapWindows(TkWindow *winPtr);
 #endif
 
 
