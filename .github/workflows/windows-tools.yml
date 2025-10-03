@@ -32,8 +32,13 @@ jobs:
         Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
         Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract
 
+        Write-Host "=== Extracted archive contents ==="
+        Get-ChildItem hdf5_extract -Recurse -Depth 2 | Select-Object FullName | Format-Table -AutoSize
+
         # Find the actual HDF5 directory (may be nested)
         $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
+        Write-Host "Found directory in extract: $($hdf5_dir.FullName)"
+
         if ($hdf5_dir) {
           Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
         } else {
@@ -41,43 +46,43 @@ jobs:
           Move-Item hdf5_extract $env:USERPROFILE\hdf5
         }
 
-        Write-Host "Searching for HDF5 CMake config files:"
-        $cmakeConfigs = Get-ChildItem $env:USERPROFILE\hdf5 -Recurse -Filter "*hdf5*.cmake" -ErrorAction SilentlyContinue
+        Write-Host "=== HDF5 final installation directory ==="
+        Get-ChildItem $env:USERPROFILE\hdf5 -Recurse -Depth 3 | Where-Object { $_.PSIsContainer -or $_.Extension -eq ".cmake" -or $_.Extension -eq ".lib" -or $_.Extension -eq ".h" } | Select-Object FullName | Format-Table -AutoSize
+
+        Write-Host "=== Searching for CMake config files ==="
+        $cmakeConfigs = Get-ChildItem $env:USERPROFILE\hdf5 -Recurse -Filter "*.cmake" -ErrorAction SilentlyContinue
         if ($cmakeConfigs) {
           $cmakeConfigs | ForEach-Object { Write-Host $_.FullName }
+
+          # Find the cmake directory containing hdf5-config.cmake
+          $hdf5ConfigFile = $cmakeConfigs | Where-Object { $_.Name -like "*hdf5*config.cmake" } | Select-Object -First 1
+          if ($hdf5ConfigFile) {
+            $hdf5CmakeDir = $hdf5ConfigFile.DirectoryName
+            Write-Host "Found HDF5 CMake config at: $hdf5CmakeDir"
+            echo "HDF5_DIR=$hdf5CmakeDir" >> $env:GITHUB_ENV
+          }
         } else {
-          Write-Host "No HDF5 cmake files found"
+          Write-Host "No cmake files found at all"
         }
 
-        # Find the cmake directory containing hdf5-config.cmake
-        $hdf5ConfigFile = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Filter "hdf5-config.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($hdf5ConfigFile) {
-          $hdf5CmakeDir = $hdf5ConfigFile.DirectoryName
-          Write-Host "Found HDF5 CMake config at: $hdf5CmakeDir"
-          echo "HDF5_DIR=$hdf5CmakeDir" >> $env:GITHUB_ENV
-        } else {
-          Write-Host "Warning: hdf5-config.cmake not found"
-          # Try alternative names
-          $altConfig = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Filter "HDF5Config.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($altConfig) {
-            $hdf5CmakeDir = $altConfig.DirectoryName
-            Write-Host "Found HDF5Config.cmake at: $hdf5CmakeDir"
-            echo "HDF5_DIR=$hdf5CmakeDir" >> $env:GITHUB_ENV
-          } else {
-            Write-Host "Using fallback: direct include/lib paths"
-            # Fallback: find include and lib directories
-            $hdf5IncludeDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "include" | Select-Object -First 1 -ExpandProperty FullName
-            $hdf5LibDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "lib" | Select-Object -First 1 -ExpandProperty FullName
-            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5*.lib" -Exclude "*_hl*","*_cpp*" | Select-Object -First 1 -ExpandProperty FullName
+        # Always set fallback paths
+        Write-Host "=== Setting fallback include/lib paths ==="
+        $hdf5IncludeDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "include" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        $hdf5LibDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
 
-            Write-Host "HDF5_INCLUDE_DIR: $hdf5IncludeDir"
-            Write-Host "HDF5_LIBRARY: $hdf5Lib"
-
-            echo "HDF5_INCLUDE_DIR=$hdf5IncludeDir" >> $env:GITHUB_ENV
-            echo "HDF5_LIBRARY=$hdf5Lib" >> $env:GITHUB_ENV
+        if ($hdf5LibDir) {
+          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $hdf5Lib) {
+            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
           }
         }
+
+        Write-Host "HDF5_INCLUDE_DIR: $hdf5IncludeDir"
+        Write-Host "HDF5_LIBRARY: $hdf5Lib"
+
         echo "HDF5_ROOT=$env:USERPROFILE\hdf5" >> $env:GITHUB_ENV
+        if ($hdf5IncludeDir) { echo "HDF5_INCLUDE_DIR=$hdf5IncludeDir" >> $env:GITHUB_ENV }
+        if ($hdf5Lib) { echo "HDF5_LIBRARY=$hdf5Lib" >> $env:GITHUB_ENV }
       shell: pwsh
 
     - name: Find Tcl/Tk Paths
