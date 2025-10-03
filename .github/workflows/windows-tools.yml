@@ -51,44 +51,43 @@ jobs:
         Write-Host "=== First extraction contents ==="
         Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-        # Check for nested zip file
-        $innerZip = Get-ChildItem -Path hdf5_extract -Filter "*.zip" | Select-Object -First 1
+        # Check for nested zip file (search recursively)
+        $innerZip = Get-ChildItem -Path hdf5_extract -Filter "*.zip" -Recurse | Select-Object -First 1
         if ($innerZip) {
-          Write-Host "Found nested zip file: $($innerZip.Name), extracting..."
+          Write-Host "Found nested zip file: $($innerZip.FullName), extracting..."
           try {
-            Expand-Archive -Path $innerZip.FullName -DestinationPath hdf5_extract2 -Force
+            Expand-Archive -Path $innerZip.FullName -DestinationPath hdf5_final -Force
             Write-Host "Second extraction complete"
-            Remove-Item hdf5_extract -Recurse -Force
-            Rename-Item hdf5_extract2 hdf5_extract
           } catch {
             Write-Host "ERROR: Failed to extract nested zip: $_"
             exit 1
           }
-        }
 
-        Write-Host "=== Final extracted contents ==="
-        Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+          Write-Host "=== Final extracted contents ==="
+          Get-ChildItem hdf5_final | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-        # Find the HDF5 directory
-        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
+          # Find the HDF5 directory in final extraction
+          $hdf5_dir = Get-ChildItem -Path hdf5_final -Directory | Select-Object -First 1
 
-        if ($hdf5_dir) {
-          Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
-          Write-Host "Contents of HDF5 directory:"
-          Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+          if ($hdf5_dir) {
+            Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
+            Write-Host "Contents of HDF5 directory:"
+            Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-          # Move contents directly to avoid nesting
-          if (-not (Test-Path "$env:USERPROFILE\hdf5")) {
-            New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+            # Move contents directly to avoid nesting
+            if (-not (Test-Path "$env:USERPROFILE\hdf5")) {
+              New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+            }
+            Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
+
+            Write-Host "Contents installed to $env:USERPROFILE\hdf5:"
+            Get-ChildItem "$env:USERPROFILE\hdf5" | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+          } else {
+            Write-Host "ERROR: No HDF5 directory found in inner archive!"
+            exit 1
           }
-          Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
-
-          Write-Host "Contents after move to $env:USERPROFILE\hdf5:"
-          Get-ChildItem "$env:USERPROFILE\hdf5" | Select-Object Name, PSIsContainer | Format-Table -AutoSize
         } else {
-          Write-Host "ERROR: No HDF5 directory found in archive!"
-          Write-Host "Archive contents:"
-          Get-ChildItem hdf5_extract -Recurse | Select-Object FullName
+          Write-Host "ERROR: No nested zip file found!"
           exit 1
         }
 
