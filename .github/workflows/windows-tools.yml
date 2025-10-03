@@ -152,13 +152,35 @@ jobs:
         Write-Host "Using TCL_LIBRARY: $tclLib"
         Write-Host "Using TK_LIBRARY: $tkLib"
 
-        # Build CMake command with HDF5_DIR if available, otherwise use include/lib paths
-        if ($env:HDF5_DIR) {
-          Write-Host "Using HDF5_DIR: $env:HDF5_DIR"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$env:HDF5_DIR" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+        # Manually find HDF5 paths since env vars aren't persisting
+        $hdf5Root = "$env:USERPROFILE\hdf5"
+        $hdf5CmakeDir = "$hdf5Root\cmake"
+        $hdf5IncludeDir = "$hdf5Root\include"
+        $hdf5LibDir = "$hdf5Root\lib"
+
+        Write-Host "Manually setting HDF5 paths:"
+        Write-Host "  HDF5_ROOT: $hdf5Root"
+        Write-Host "  HDF5 cmake: $hdf5CmakeDir"
+        Write-Host "  HDF5 include: $hdf5IncludeDir"
+        Write-Host "  HDF5 lib: $hdf5LibDir"
+
+        # Find the actual library file
+        $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        if (-not $hdf5Lib) {
+          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        }
+        Write-Host "  HDF5 library: $hdf5Lib"
+
+        # Try with HDF5_DIR pointing to cmake directory
+        if (Test-Path $hdf5CmakeDir) {
+          Write-Host "Using HDF5_DIR (cmake config)"
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$hdf5CmakeDir" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+        } elseif ($hdf5Lib -and (Test-Path $hdf5IncludeDir)) {
+          Write-Host "Using HDF5_INCLUDE_DIR and HDF5_LIBRARY (direct paths)"
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_INCLUDE_DIR="$hdf5IncludeDir" -DHDF5_LIBRARY="$hdf5Lib" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
         } else {
-          Write-Host "Using HDF5_INCLUDE_DIR and HDF5_LIBRARY"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_INCLUDE_DIR="$env:HDF5_INCLUDE_DIR" -DHDF5_LIBRARY="$env:HDF5_LIBRARY" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+          Write-Host "ERROR: Cannot find HDF5 installation!"
+          exit 1
         }
       shell: pwsh
 
