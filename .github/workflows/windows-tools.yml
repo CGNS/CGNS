@@ -53,8 +53,10 @@ jobs:
         Write-Host "Copying private headers..."
         $includeDir = "$installDir\include"
         Copy-Item "$buildRoot\tcl$version\generic\tclInt*.h" $includeDir -Force
+        Copy-Item "$buildRoot\tcl$version\generic\tclPort.h" $includeDir -Force
         Copy-Item "$buildRoot\tcl$version\win\tclWinInt.h" $includeDir -Force -ErrorAction SilentlyContinue
         Copy-Item "$buildRoot\tk$version\generic\tkInt*.h" $includeDir -Force
+        Copy-Item "$buildRoot\tk$version\generic\tkPort.h" $includeDir -Force
         Copy-Item "$buildRoot\tk$version\win\tkWin*.h" $includeDir -Force
 
         # Verify critical headers exist
