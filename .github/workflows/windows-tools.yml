@@ -142,9 +142,23 @@ jobs:
         cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir install"
         if ($LASTEXITCODE -ne 0) { throw "Tk install failed" }
 
-        # Install Tk private headers
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir install-private-headers"
-        Write-Host "Tk private headers install completed (exit code: $LASTEXITCODE)"
+        # Manually copy Tk private headers (install-private-headers target doesn't exist for Tk)
+        Write-Host "Manually copying Tk private headers..."
+        $tkGenericSrc = Join-Path $tkSrcDir.FullName "generic"
+        $tkWinSrc = Join-Path $tkSrcDir.FullName "win"
+        $includeDir = Join-Path $installDir "include"
+
+        # Copy tkInt.h and other important internal headers from generic/
+        Copy-Item -Path "$tkGenericSrc\tkInt.h" -Destination $includeDir -Force
+        Copy-Item -Path "$tkGenericSrc\tkIntDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$tkGenericSrc\tkIntPlatDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$tkGenericSrc\tkPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+
+        # Copy Windows-specific private headers from win/
+        Copy-Item -Path "$tkWinSrc\tkWinInt.h" -Destination $includeDir -Force
+        Copy-Item -Path "$tkWinSrc\tkWinPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+
+        Write-Host "Tk private headers copied successfully"
 
         Pop-Location
 
@@ -157,9 +171,13 @@ jobs:
         $tkIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
         $tkWinIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkWinInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
 
-        if ($tclIntPath) { Write-Host "✓ Found tclInt.h at: $($tclIntPath.FullName)" }
-        if ($tkIntPath) { Write-Host "✓ Found tkInt.h at: $($tkIntPath.FullName)" }
-        if ($tkWinIntPath) { Write-Host "✓ Found tkWinInt.h at: $($tkWinIntPath.FullName)" }
+        if ($tclIntPath) { Write-Host "✓ Found tclInt.h at: $($tclIntPath.FullName)" } else { Write-Host "✗ tclInt.h not found" }
+        if ($tkIntPath) { Write-Host "✓ Found tkInt.h at: $($tkIntPath.FullName)" } else { Write-Host "✗ tkInt.h not found" }
+        if ($tkWinIntPath) { Write-Host "✓ Found tkWinInt.h at: $($tkWinIntPath.FullName)" } else { Write-Host "✗ tkWinInt.h not found" }
+
+        if (-not ($tclIntPath -and $tkIntPath -and $tkWinIntPath)) {
+            throw "Required private headers not found"
+        }
 
         # Set environment variable for later steps
         echo "TCL_ROOT=$installDir" >> $env:GITHUB_ENV
