@@ -152,21 +152,34 @@ jobs:
         Write-Host "Using TCL_LIBRARY: $tclLib"
         Write-Host "Using TK_LIBRARY: $tkLib"
 
-        # Manually find HDF5 paths since env vars aren't persisting
+        # Manually find HDF5 paths - check for nested directory issue
         $hdf5Root = "$env:USERPROFILE\hdf5"
+
+        Write-Host "Checking HDF5 installation:"
+        if (Test-Path $hdf5Root) {
+          Write-Host "  Found: $hdf5Root"
+          Get-ChildItem $hdf5Root | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+
+          # Check if there's a nested hdf5 directory
+          if (Test-Path "$hdf5Root\hdf5") {
+            Write-Host "  Detected nested hdf5 directory, fixing..."
+            $hdf5Root = "$hdf5Root\hdf5"
+          }
+        }
+
         $hdf5CmakeDir = "$hdf5Root\cmake"
         $hdf5IncludeDir = "$hdf5Root\include"
         $hdf5LibDir = "$hdf5Root\lib"
 
-        Write-Host "Manually setting HDF5 paths:"
+        Write-Host "Using HDF5 paths:"
         Write-Host "  HDF5_ROOT: $hdf5Root"
 
         # Check if directories exist
         if (Test-Path $hdf5Root) {
-          Write-Host "  HDF5_ROOT exists: YES"
+          Write-Host "  Contents:"
           Get-ChildItem $hdf5Root | Select-Object Name, PSIsContainer | Format-Table -AutoSize
         } else {
-          Write-Host "  HDF5_ROOT exists: NO - ERROR!"
+          Write-Host "  HDF5_ROOT does not exist - ERROR!"
         }
 
         Write-Host "  HDF5 cmake: $hdf5CmakeDir (exists: $(Test-Path $hdf5CmakeDir))"
