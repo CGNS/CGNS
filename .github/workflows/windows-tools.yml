@@ -42,22 +42,39 @@ jobs:
 
         try {
           Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract -Force
-          Write-Host "Extraction complete"
+          Write-Host "First extraction complete"
         } catch {
           Write-Host "ERROR: Failed to extract HDF5: $_"
           exit 1
         }
 
-        Write-Host "=== Extracted archive contents ==="
+        Write-Host "=== First extraction contents ==="
         Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-        # Find the actual HDF5 directory (look for any directory)
+        # Check for nested zip file
+        $innerZip = Get-ChildItem -Path hdf5_extract -Filter "*.zip" | Select-Object -First 1
+        if ($innerZip) {
+          Write-Host "Found nested zip file: $($innerZip.Name), extracting..."
+          try {
+            Expand-Archive -Path $innerZip.FullName -DestinationPath hdf5_extract2 -Force
+            Write-Host "Second extraction complete"
+            Remove-Item hdf5_extract -Recurse -Force
+            Rename-Item hdf5_extract2 hdf5_extract
+          } catch {
+            Write-Host "ERROR: Failed to extract nested zip: $_"
+            exit 1
+          }
+        }
+
+        Write-Host "=== Final extracted contents ==="
+        Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+
+        # Find the HDF5 directory
         $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
-        Write-Host "First directory found: $($hdf5_dir.Name if $hdf5_dir else 'NONE')"
 
         if ($hdf5_dir) {
           Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
-          Write-Host "Contents of HDF5 directory before move:"
+          Write-Host "Contents of HDF5 directory:"
           Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
           # Move contents directly to avoid nesting
