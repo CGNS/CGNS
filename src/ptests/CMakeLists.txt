@@ -64,6 +64,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     test_mixed_par_ser
     test_unstruc_quad_f90
     test_poly_unstructured_f90
+    test_general_wrappers_f90
   )
   add_library(test_utilsf OBJECT ${CMAKE_SOURCE_DIR}/src/tests/utilsf.F90)
 
