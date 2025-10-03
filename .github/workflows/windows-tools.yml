@@ -30,9 +30,18 @@ jobs:
         $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/${{ env.hdf5_tag }}/hdf5-${{ env.hdf5_vers }}-win-vs2022_cl.zip"
         Write-Host "Downloading HDF5 from: $hdf5_url"
         Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
-        Expand-Archive -Path hdf5.zip -DestinationPath .
-        $hdf5_dir = Get-ChildItem -Directory -Filter "hdf5-*" | Select-Object -First 1
-        Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
+        Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract
+        Write-Host "Extracted contents:"
+        Get-ChildItem hdf5_extract -Recurse | Select-Object -First 20 FullName
+
+        # Find the actual HDF5 directory (may be nested)
+        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
+        if ($hdf5_dir) {
+          Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
+        } else {
+          # Files might be directly in extract folder
+          Move-Item hdf5_extract $env:USERPROFILE\hdf5
+        }
         echo "HDF5_ROOT=$env:USERPROFILE\hdf5" >> $env:GITHUB_ENV
       shell: pwsh
 
