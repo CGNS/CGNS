@@ -160,14 +160,35 @@ jobs:
 
         Write-Host "Manually setting HDF5 paths:"
         Write-Host "  HDF5_ROOT: $hdf5Root"
-        Write-Host "  HDF5 cmake: $hdf5CmakeDir"
-        Write-Host "  HDF5 include: $hdf5IncludeDir"
-        Write-Host "  HDF5 lib: $hdf5LibDir"
 
-        # Find the actual library file
-        $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-        if (-not $hdf5Lib) {
-          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        # Check if directories exist
+        if (Test-Path $hdf5Root) {
+          Write-Host "  HDF5_ROOT exists: YES"
+          Get-ChildItem $hdf5Root | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+        } else {
+          Write-Host "  HDF5_ROOT exists: NO - ERROR!"
+        }
+
+        Write-Host "  HDF5 cmake: $hdf5CmakeDir (exists: $(Test-Path $hdf5CmakeDir))"
+        Write-Host "  HDF5 include: $hdf5IncludeDir (exists: $(Test-Path $hdf5IncludeDir))"
+        Write-Host "  HDF5 lib: $hdf5LibDir (exists: $(Test-Path $hdf5LibDir))"
+
+        if (Test-Path $hdf5LibDir) {
+          Write-Host "  Contents of lib directory:"
+          Get-ChildItem $hdf5LibDir | Select-Object Name | Format-Table -AutoSize
+        }
+
+        # Find the actual library file - try multiple patterns
+        $hdf5Lib = $null
+        if (Test-Path $hdf5LibDir) {
+          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $hdf5Lib) {
+            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $hdf5Lib) {
+            # Try any .lib file with hdf5 in the name
+            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "*hdf5*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          }
         }
         Write-Host "  HDF5 library: $hdf5Lib"
 
