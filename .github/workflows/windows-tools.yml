@@ -27,16 +27,33 @@ jobs:
 
     - name: Download HDF5 Binaries
       run: |
+        $ErrorActionPreference = "Stop"
+
         $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/${{ env.hdf5_tag }}/hdf5-${{ env.hdf5_vers }}-win-vs2022_cl.zip"
         Write-Host "Downloading HDF5 from: $hdf5_url"
-        Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
-        Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract
+
+        try {
+          Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
+          Write-Host "Download complete. File size: $((Get-Item hdf5.zip).Length) bytes"
+        } catch {
+          Write-Host "ERROR: Failed to download HDF5: $_"
+          exit 1
+        }
+
+        try {
+          Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract -Force
+          Write-Host "Extraction complete"
+        } catch {
+          Write-Host "ERROR: Failed to extract HDF5: $_"
+          exit 1
+        }
 
         Write-Host "=== Extracted archive contents ==="
         Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-        # Find the actual HDF5 directory (look for HDF5-* pattern, case-insensitive)
-        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Where-Object { $_.Name -like "HDF5-*" -or $_.Name -like "hdf5-*" } | Select-Object -First 1
+        # Find the actual HDF5 directory (look for any directory)
+        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
+        Write-Host "First directory found: $($hdf5_dir.Name if $hdf5_dir else 'NONE')"
 
         if ($hdf5_dir) {
           Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
@@ -44,57 +61,33 @@ jobs:
           Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
           # Move contents directly to avoid nesting
-          New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+          if (-not (Test-Path "$env:USERPROFILE\hdf5")) {
+            New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+          }
           Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
 
           Write-Host "Contents after move to $env:USERPROFILE\hdf5:"
           Get-ChildItem "$env:USERPROFILE\hdf5" | Select-Object Name, PSIsContainer | Format-Table -AutoSize
         } else {
-          Write-Host "No HDF5 subdirectory found, using extract folder directly"
-          # Files might be directly in extract folder
-          Move-Item hdf5_extract $env:USERPROFILE\hdf5
+          Write-Host "ERROR: No HDF5 directory found in archive!"
+          Write-Host "Archive contents:"
+          Get-ChildItem hdf5_extract -Recurse | Select-Object FullName
+          exit 1
         }
 
-        Write-Host "=== HDF5 final installation directory ==="
-        Get-ChildItem $env:USERPROFILE\hdf5 -Recurse -Depth 3 | Where-Object { $_.PSIsContainer -or $_.Extension -eq ".cmake" -or $_.Extension -eq ".lib" -or $_.Extension -eq ".h" } | Select-Object FullName | Format-Table -AutoSize
-
-        Write-Host "=== Searching for CMake config files ==="
-        $cmakeConfigs = Get-ChildItem $env:USERPROFILE\hdf5 -Recurse -Filter "*.cmake" -ErrorAction SilentlyContinue
-        if ($cmakeConfigs) {
-          $cmakeConfigs | ForEach-Object { Write-Host $_.FullName }
-
-          # Find the cmake directory containing hdf5-config.cmake
-          $hdf5ConfigFile = $cmakeConfigs | Where-Object { $_.Name -like "*hdf5*config.cmake" } | Select-Object -First 1
-          if ($hdf5ConfigFile) {
-            $hdf5CmakeDir = $hdf5ConfigFile.DirectoryName
-            Write-Host "Found HDF5 CMake config at: $hdf5CmakeDir"
-            echo "HDF5_DIR=$hdf5CmakeDir" >> $env:GITHUB_ENV
-          }
-        } else {
-          Write-Host "No cmake files found at all"
+        # Verify installation
+        if (-not (Test-Path "$env:USERPROFILE\hdf5\cmake")) {
+          Write-Host "ERROR: HDF5 cmake directory not found after installation!"
+          exit 1
         }
-
-        # Always set fallback paths
-        Write-Host "=== Setting fallback include/lib paths ==="
-        $hdf5IncludeDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "include" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-        $hdf5LibDir = Get-ChildItem -Path $env:USERPROFILE\hdf5 -Recurse -Directory -Filter "lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-
-        if ($hdf5LibDir) {
-          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $hdf5Lib) {
-            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          }
+        if (-not (Test-Path "$env:USERPROFILE\hdf5\lib")) {
+          Write-Host "ERROR: HDF5 lib directory not found after installation!"
+          exit 1
         }
-
-        Write-Host "HDF5_INCLUDE_DIR: $hdf5IncludeDir"
-        Write-Host "HDF5_LIBRARY: $hdf5Lib"
-
-        echo "HDF5_ROOT=$env:USERPROFILE\hdf5" >> $env:GITHUB_ENV
-        if ($hdf5IncludeDir) { echo "HDF5_INCLUDE_DIR=$hdf5IncludeDir" >> $env:GITHUB_ENV }
-        if ($hdf5Lib) { echo "HDF5_LIBRARY=$hdf5Lib" >> $env:GITHUB_ENV }
+        Write-Host "HDF5 installation verified successfully"
       shell: pwsh
 
-    - name: Debug HDF5 Installation
+    - name: Find Tcl/Tk Paths
       run: |
         Write-Host "=== Checking HDF5 installation ==="
         Write-Host "HDF5_ROOT: $env:HDF5_ROOT"
