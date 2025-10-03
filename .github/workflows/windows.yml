@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        hdf5_version: ["1.8.23", "1.14.3"]
+        hdf5_version: ["1.8.23", "1.10.11", "1.14.3"]
         build_config:
           - opts: "-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF"
             name: "static-32bit"
@@ -26,6 +26,10 @@ jobs:
           - hdf5_version: "1.8.23"
             build_config:
               name: "shared-64bit"
+          # Only test HDF5 1.10.11 with 64-bit configs (both static and shared)
+          - hdf5_version: "1.10.11"
+            build_config:
+              name: "static-32bit"
 
     name: Windows 2022 - HDF5 ${{ matrix.hdf5_version }} - ${{ matrix.build_config.name }}
     runs-on: windows-2022
@@ -41,32 +45,54 @@ jobs:
           $hdf5_ver = "${{ matrix.hdf5_version }}"
           $shortgen = "vs17"
 
-          # Determine HDF5 minor version for URL
-          if ($hdf5_ver -like "1.8.*") {
-            $minor = "1.8"
-          } elseif ($hdf5_ver -like "1.10.*") {
-            $minor = "1.10"
-          } elseif ($hdf5_ver -like "1.14.*") {
-            $minor = "1.14"
+          # HDF5 1.10.11 doesn't have vs17 binaries, build from source
+          if ($hdf5_ver -eq "1.10.11") {
+            $hdf5_tag = "hdf5_$($hdf5_ver.Replace('.', '_'))"
+            Write-Host "Building HDF5 $hdf5_ver from source (tag: $hdf5_tag)..."
+
+            git clone --depth 1 --branch $hdf5_tag https://github.com/HDFGroup/hdf5.git hdf5-src
+            New-Item -ItemType Directory -Path "hdf5-build" -Force
+            cd hdf5-build
+
+            cmake -G "Visual Studio 17 2022" -A x64 `
+              -D CMAKE_BUILD_TYPE:STRING=Release `
+              -D BUILD_SHARED_LIBS:BOOL=OFF `
+              -D BUILD_TESTING:BOOL=OFF `
+              -D HDF5_BUILD_TOOLS:BOOL=OFF `
+              -D HDF5_BUILD_EXAMPLES:BOOL=OFF `
+              -D HDF5_BUILD_HL_LIB:BOOL=ON `
+              -D HDF5_ENABLE_Z_LIB_SUPPORT:BOOL=OFF `
+              -D HDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF `
+              -D CMAKE_INSTALL_PREFIX:PATH="C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" `
+              ..\hdf5-src
+
+            cmake --build . --config Release --parallel 4
+            cmake --install . --config Release
+            cd ..
           }
+          else {
+            # Download pre-built binary for 1.8.23 and 1.14.3
+            if ($hdf5_ver -like "1.8.*") {
+              $minor = "1.8"
+            } elseif ($hdf5_ver -like "1.14.*") {
+              $minor = "1.14"
+            }
 
-          # Download HDF5 pre-built binary
-          $url = "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${minor}/hdf5-${hdf5_ver}/bin/windows/hdf5-${hdf5_ver}-Std-win10_64-${shortgen}.zip"
-          Write-Host "Downloading from: $url"
+            $url = "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${minor}/hdf5-${hdf5_ver}/bin/windows/hdf5-${hdf5_ver}-Std-win10_64-${shortgen}.zip"
+            Write-Host "Downloading from: $url"
 
-          New-Item -ItemType Directory -Path "hdf5-download" -Force
-          Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.zip"
+            New-Item -ItemType Directory -Path "hdf5-download" -Force
+            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.zip"
 
-          # Extract and install
-          Write-Host "Extracting HDF5..."
-          Expand-Archive -Path "hdf5-download/hdf5.zip" -DestinationPath "hdf5-download"
-          $msiFile = Get-ChildItem -Path "hdf5-download" -Recurse -Filter "*.msi" | Select-Object -First 1
+            Write-Host "Extracting HDF5..."
+            Expand-Archive -Path "hdf5-download/hdf5.zip" -DestinationPath "hdf5-download"
+            $msiFile = Get-ChildItem -Path "hdf5-download" -Recurse -Filter "*.msi" | Select-Object -First 1
 
-          Write-Host "Installing: $($msiFile.FullName)"
-          Start-Process msiexec.exe -ArgumentList "/i", "$($msiFile.FullName)", "/quiet", "/qn", "/norestart", "/log", "install.log" -Wait
+            Write-Host "Installing: $($msiFile.FullName)"
+            Start-Process msiexec.exe -ArgumentList "/i", "$($msiFile.FullName)", "/quiet", "/qn", "/norestart", "/log", "install.log" -Wait
 
-          # Display install log
-          Get-Content install.log
+            Get-Content install.log
+          }
 
           # Set environment variable
           echo "HDF5_DIR=C:\Program Files\HDF_Group\HDF5\${hdf5_ver}\cmake" >> $env:GITHUB_ENV
