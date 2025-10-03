@@ -68,13 +68,19 @@ jobs:
       run: |
         mkdir cbuild
         cd cbuild
-        # Find Tcl/Tk library files dynamically
-        $tclLib = Get-ChildItem "$env:TCL_ROOT\lib" -Filter "tcl*.lib" | Select-Object -First 1 -ExpandProperty FullName
-        $tkLib = Get-ChildItem "$env:TK_ROOT\lib" -Filter "tk*.lib" | Select-Object -First 1 -ExpandProperty FullName
+        # Find Tcl/Tk library files dynamically (prefer non-stub versions)
+        $tclLib = Get-ChildItem "$env:TCL_ROOT\lib" -Filter "tcl9*.lib" -Exclude "*stub*" | Select-Object -First 1 -ExpandProperty FullName
+        if (-not $tclLib) {
+          $tclLib = Get-ChildItem "$env:TCL_ROOT\lib" -Filter "tcl*.lib" | Select-Object -First 1 -ExpandProperty FullName
+        }
+        $tkLib = Get-ChildItem "$env:TK_ROOT\lib" -Filter "tk9*.lib" -Exclude "*stub*" | Select-Object -First 1 -ExpandProperty FullName
+        if (-not $tkLib) {
+          $tkLib = Get-ChildItem "$env:TK_ROOT\lib" -Filter "tk*.lib" | Select-Object -First 1 -ExpandProperty FullName
+        }
         Write-Host "Using TCL_LIBRARY: $tclLib"
         Write-Host "Using TK_LIBRARY: $tkLib"
 
-        cmake -G "Visual Studio 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DCMAKE_PREFIX_PATH="$env:USERPROFILE\hdf5\cmake" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+        cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DCMAKE_PREFIX_PATH="$env:USERPROFILE\hdf5\cmake" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
       shell: pwsh
 
     - name: Build CGNS
