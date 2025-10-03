@@ -173,6 +173,7 @@ jobs:
         Copy-Item -Path "$tkGenericSrc\tkPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
 
         # Copy Windows-specific private headers from win/
+        Copy-Item -Path "$tkWinSrc\tkWin.h" -Destination $includeDir -Force
         Copy-Item -Path "$tkWinSrc\tkWinInt.h" -Destination $includeDir -Force
         Copy-Item -Path "$tkWinSrc\tkWinPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
 
