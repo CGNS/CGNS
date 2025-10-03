@@ -33,15 +33,16 @@ jobs:
         Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract
 
         Write-Host "=== Extracted archive contents ==="
-        Get-ChildItem hdf5_extract -Recurse -Depth 2 | Select-Object FullName | Format-Table -AutoSize
+        Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
 
-        # Find the actual HDF5 directory (may be nested)
-        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Select-Object -First 1
-        Write-Host "Found directory in extract: $($hdf5_dir.FullName)"
+        # Find the actual HDF5 directory (look for HDF5-* pattern, case-insensitive)
+        $hdf5_dir = Get-ChildItem -Path hdf5_extract -Directory | Where-Object { $_.Name -like "HDF5-*" -or $_.Name -like "hdf5-*" } | Select-Object -First 1
 
         if ($hdf5_dir) {
+          Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
           Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
         } else {
+          Write-Host "No HDF5 subdirectory found, using extract folder directly"
           # Files might be directly in extract folder
           Move-Item hdf5_extract $env:USERPROFILE\hdf5
         }
