@@ -40,7 +40,15 @@ jobs:
 
         if ($hdf5_dir) {
           Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
-          Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
+          Write-Host "Contents of HDF5 directory before move:"
+          Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+
+          # Move contents directly to avoid nesting
+          New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+          Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
+
+          Write-Host "Contents after move to $env:USERPROFILE\hdf5:"
+          Get-ChildItem "$env:USERPROFILE\hdf5" | Select-Object Name, PSIsContainer | Format-Table -AutoSize
         } else {
           Write-Host "No HDF5 subdirectory found, using extract folder directly"
           # Files might be directly in extract folder
