@@ -7,7 +7,8 @@ on:
     branches: [ develop, master ]
 
 env:
-  hdf5_vers: 1_14_6
+  hdf5_vers: 1.14.6
+  hdf5_tag: hdf5_1.14.6
 
 jobs:
   build:
@@ -26,8 +27,7 @@ jobs:
 
     - name: Download HDF5 Binaries
       run: |
-        $hdf5_version = "${{ env.hdf5_vers }}".Replace("_", ".")
-        $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_${{ env.hdf5_vers }}/hdf5-$hdf5_version-win-vs2022_cl.zip"
+        $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/${{ env.hdf5_tag }}/hdf5-${{ env.hdf5_vers }}-win-vs2022_cl.zip"
         Write-Host "Downloading HDF5 from: $hdf5_url"
         Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
         Expand-Archive -Path hdf5.zip -DestinationPath .
