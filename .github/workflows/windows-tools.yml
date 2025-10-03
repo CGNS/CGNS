@@ -1,0 +1,110 @@
+name: Windows CGNS Tools
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+
+env:
+  hdf5_vers: 1_14_4
+
+jobs:
+  build:
+    name: Windows Latest - CGNS Tools
+    runs-on: windows-latest
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    steps:
+    - name: Install Dependencies (Windows)
+      run: |
+        choco install tcl --version=8.6.14 -y
+        choco install tk --version=8.6.14 -y
+      shell: pwsh
+
+    - name: Get Sources
+      uses: actions/checkout@v4
+
+    - name: Download HDF5 Binaries
+      run: |
+        $hdf5_version = "${{ env.hdf5_vers }}".Replace("_", ".")
+        $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_${{ env.hdf5_vers }}/hdf5-$hdf5_version-win-vs2022_64.zip"
+        Write-Host "Downloading HDF5 from: $hdf5_url"
+        Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
+        Expand-Archive -Path hdf5.zip -DestinationPath .
+        $hdf5_dir = Get-ChildItem -Directory -Filter "hdf5-*" | Select-Object -First 1
+        Move-Item $hdf5_dir.FullName $env:USERPROFILE\hdf5
+        echo "HDF5_ROOT=$env:USERPROFILE\hdf5" >> $env:GITHUB_ENV
+      shell: pwsh
+
+    - name: Find Tcl/Tk Paths
+      id: tcl_tk
+      run: |
+        $tclPath = (Get-Command tclsh).Source | Split-Path | Split-Path
+        $tkPath = $tclPath
+        echo "TCL_ROOT=$tclPath" >> $env:GITHUB_ENV
+        echo "TK_ROOT=$tkPath" >> $env:GITHUB_ENV
+        echo "Found Tcl at: $tclPath"
+        echo "Found Tk at: $tkPath"
+      shell: pwsh
+
+    - name: Configure CGNS
+      run: |
+        mkdir cbuild
+        cd cbuild
+        cmake -G "Visual Studio 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCGNS_ENABLE_FORTRAN=OFF `
+          -DCGNS_ENABLE_HDF5=ON `
+          -DCMAKE_PREFIX_PATH=$env:USERPROFILE\hdf5\cmake `
+          -DHDF5_NEED_ZLIB=OFF `
+          -DHDF5_NEED_SZIP=OFF `
+          -DCGNS_BUILD_CGNSTOOLS=ON `
+          -DTCL_LIBRARY=$env:TCL_ROOT\lib\tcl86t.lib `
+          -DTK_LIBRARY=$env:TK_ROOT\lib\tk86t.lib `
+          -DTCL_INCLUDE_PATH=$env:TCL_ROOT\include `
+          -DTK_INCLUDE_PATH=$env:TK_ROOT\include `
+          -DCGNS_ENABLE_TESTS=ON `
+          -DCMAKE_INSTALL_PREFIX=install `
+          ..
+      shell: pwsh
+
+    - name: Build CGNS
+      run: |
+        cd cbuild
+        cmake --build . --config Release --parallel 4
+      shell: pwsh
+
+    - name: Test CGNS Tools Build
+      run: |
+        cd cbuild
+        if (Test-Path "src/cgnstools/cgnsview/Release/cgiowish.exe") {
+          Write-Host "✓ cgnsview built successfully"
+        } else {
+          Write-Host "✗ cgnsview build failed"
+          exit 1
+        }
+        if (Test-Path "src/cgnstools/tkogl/Release/tkogl.lib") {
+          Write-Host "✓ tkogl built successfully (library)"
+        } else {
+          Write-Host "Note: tkogl not built as separate library"
+        }
+      shell: pwsh
+
+    - name: Run Tests
+      run: |
+        cd cbuild
+        ctest -C Release -VV --output-on-failure
+      shell: pwsh
+
+    - name: Install CGNS
+      run: |
+        cd cbuild
+        cmake --install . --config Release
+      shell: pwsh
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cgns-windows-tools
+        path: cbuild/install
