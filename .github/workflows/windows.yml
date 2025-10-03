@@ -36,10 +36,10 @@ jobs:
           - hdf5_version: "1.8.23"
             build_config:
               name: "shared-64bit"
-          # Only test HDF5 1.10.11 with static configs
+          # Only test HDF5 1.10.11 with 64-bit configs (both static and shared)
           - hdf5_version: "1.10.11"
             build_config:
-              name: "shared-64bit"
+              name: "static-32bit"
 
     name: ${{ matrix.os }} - HDF5 ${{ matrix.hdf5_version }} - ${{ matrix.build_config.name }}
     runs-on: ${{ matrix.os }}
