@@ -29,7 +29,7 @@ extern int WinHtml_Init (Tcl_Interp *interp);
  */
 
 static void setargv (int *argcPtr, char ***argvPtr);
-static void WishPanic TCL_VARARGS(char *,format);
+static void WishPanic (const char *format, ...);
 static int Proc_LoadIcon (ClientData data,
     Tcl_Interp *interp, int argc, char **argv);
 
@@ -169,14 +169,14 @@ error:
  */
 
 void
-WishPanic TCL_VARARGS_DEF(char *,arg1)
+WishPanic (const char *format, ...)
 {
     va_list argList;
     char buf[1024];
-    char *format;
 
-    format = TCL_VARARGS_START(char *,arg1,argList);
+    va_start(argList, format);
     vsprintf(buf, format, argList);
+    va_end(argList);
 
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, buf, "Fatal Error in Wish",
