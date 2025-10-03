@@ -40,6 +40,9 @@ jobs:
           - hdf5_version: "1.10.7"
             build_config:
               name: "static-32bit"
+          # HDF5 1.10.7 doesn't have vs17 binaries, only test with VS2019
+          - hdf5_version: "1.10.7"
+            os: windows-2022
 
     name: ${{ matrix.os }} - HDF5 ${{ matrix.hdf5_version }} - ${{ matrix.build_config.name }}
     runs-on: ${{ matrix.os }}
