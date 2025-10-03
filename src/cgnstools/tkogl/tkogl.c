@@ -40,14 +40,8 @@
 #include "tkInt.h"
 #include "tkWinInt.h"
 #else
-/* Unix/Linux: Try tk-private path first, fall back to direct include */
-#if __has_include(<tk-private/generic/tkInt.h>)
-#include <tk-private/generic/tkInt.h>
+/* Unix/Linux: Forward declaration only - don't need full TkWindow definition */
 typedef struct TkWindow TkWindow;
-#else
-/* Forward declarations sufficient for non-private header builds */
-typedef struct TkWindow TkWindow;
-#endif
 extern void TkWmAddToColormapWindows(TkWindow *winPtr);
 #endif
 
