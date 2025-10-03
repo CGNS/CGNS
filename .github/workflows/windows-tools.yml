@@ -92,8 +92,20 @@ jobs:
         $vcvarsall = "$vsPath\VC\Auxiliary\Build\vcvarsall.bat"
 
         Write-Host "=== Building Tcl ==="
-        $tclSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tcl-*" | Select-Object -First 1
-        Push-Location "$($tclSrcDir.FullName)\win"
+        Write-Host "Looking for Tcl source directory in: $buildRoot"
+        Get-ChildItem -Path $buildRoot -Directory | ForEach-Object { Write-Host "  Found: $($_.Name)" }
+
+        $tclSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tcl*" | Select-Object -First 1
+        if (-not $tclSrcDir) {
+            throw "Could not find Tcl source directory in $buildRoot"
+        }
+        Write-Host "Using Tcl source directory: $($tclSrcDir.FullName)"
+
+        $tclWinDir = Join-Path $tclSrcDir.FullName "win"
+        if (-not (Test-Path $tclWinDir)) {
+            throw "Could not find win subdirectory at: $tclWinDir"
+        }
+        Push-Location $tclWinDir
 
         # Build Tcl
         cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir release"
@@ -110,8 +122,17 @@ jobs:
         Pop-Location
 
         Write-Host "=== Building Tk ==="
-        $tkSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tk-*" | Select-Object -First 1
-        Push-Location "$($tkSrcDir.FullName)\win"
+        $tkSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tk*" | Select-Object -First 1
+        if (-not $tkSrcDir) {
+            throw "Could not find Tk source directory in $buildRoot"
+        }
+        Write-Host "Using Tk source directory: $($tkSrcDir.FullName)"
+
+        $tkWinDir = Join-Path $tkSrcDir.FullName "win"
+        if (-not (Test-Path $tkWinDir)) {
+            throw "Could not find win subdirectory at: $tkWinDir"
+        }
+        Push-Location $tkWinDir
 
         # Build Tk
         cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir release"
