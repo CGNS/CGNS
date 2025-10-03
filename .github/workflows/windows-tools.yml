@@ -36,15 +36,23 @@ jobs:
         $installDir = "C:\tcltk"
         New-Item -Path $installDir -ItemType Directory -Force | Out-Null
 
-        Write-Host "=== Downloading Tcl source ==="
-        $tclUrl = "https://github.com/tcltk/tcl/archive/refs/tags/$tclTag.zip"
-        Invoke-WebRequest -Uri $tclUrl -OutFile "$buildRoot\tcl.zip"
-        Expand-Archive -Path "$buildRoot\tcl.zip" -DestinationPath $buildRoot -Force
+        Write-Host "=== Downloading Tcl source (release tarball) ==="
+        # Use official release tarballs instead of GitHub archive to avoid git dependency
+        $tclUrl = "https://prdownloads.sourceforge.net/tcl/tcl$tclVersion-src.tar.gz"
+        Invoke-WebRequest -Uri $tclUrl -OutFile "$buildRoot\tcl.tar.gz"
 
-        Write-Host "=== Downloading Tk source ==="
-        $tkUrl = "https://github.com/tcltk/tk/archive/refs/tags/$tkTag.zip"
-        Invoke-WebRequest -Uri $tkUrl -OutFile "$buildRoot\tk.zip"
-        Expand-Archive -Path "$buildRoot\tk.zip" -DestinationPath $buildRoot -Force
+        # Extract tar.gz on Windows using tar command (available in Windows 10+)
+        Push-Location $buildRoot
+        tar -xzf tcl.tar.gz
+        Pop-Location
+
+        Write-Host "=== Downloading Tk source (release tarball) ==="
+        $tkUrl = "https://prdownloads.sourceforge.net/tcl/tk$tkVersion-src.tar.gz"
+        Invoke-WebRequest -Uri $tkUrl -OutFile "$buildRoot\tk.tar.gz"
+
+        Push-Location $buildRoot
+        tar -xzf tk.tar.gz
+        Pop-Location
 
         # Setup MSVC environment
         $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
