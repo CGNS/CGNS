@@ -92,9 +92,6 @@ jobs:
         $vcvarsall = "$vsPath\VC\Auxiliary\Build\vcvarsall.bat"
 
         Write-Host "=== Building Tcl ==="
-        Write-Host "Looking for Tcl source directory in: $buildRoot"
-        Get-ChildItem -Path $buildRoot -Directory | ForEach-Object { Write-Host "  Found: $($_.Name)" }
-
         $tclSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tcl*" | Select-Object -First 1
         if (-not $tclSrcDir) {
             throw "Could not find Tcl source directory in $buildRoot"
@@ -181,11 +178,8 @@ jobs:
 
         Pop-Location
 
-        Write-Host "=== Verifying installation ==="
-        Write-Host "Tcl/Tk installed to: $installDir"
-        Get-ChildItem $installDir | Select-Object Name, PSIsContainer
-
-        Write-Host "`nChecking for private headers:"
+        Write-Host "=== Verifying Tcl/Tk installation ==="
+        Write-Host "Checking for private headers:"
         $tclIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tclInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
         $tkIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
         $tkWinIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkWinInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -226,9 +220,6 @@ jobs:
           exit 1
         }
 
-        Write-Host "=== First extraction contents ==="
-        Get-ChildItem hdf5_extract | Select-Object Name, PSIsContainer | Format-Table -AutoSize
-
         # Check for nested zip file (search recursively)
         $innerZip = Get-ChildItem -Path hdf5_extract -Filter "*.zip" -Recurse | Select-Object -First 1
         if ($innerZip) {
@@ -241,25 +232,18 @@ jobs:
             exit 1
           }
 
-          Write-Host "=== Final extracted contents ==="
-          Get-ChildItem hdf5_final | Select-Object Name, PSIsContainer | Format-Table -AutoSize
-
           # Find the HDF5 directory in final extraction
           $hdf5_dir = Get-ChildItem -Path hdf5_final -Directory | Select-Object -First 1
 
           if ($hdf5_dir) {
-            Write-Host "Found HDF5 directory: $($hdf5_dir.FullName)"
-            Write-Host "Contents of HDF5 directory:"
-            Get-ChildItem $hdf5_dir.FullName | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+            Write-Host "Installing HDF5 from: $($hdf5_dir.Name)"
 
             # Move contents directly to avoid nesting
             if (-not (Test-Path "$env:USERPROFILE\hdf5")) {
               New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
             }
             Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
-
-            Write-Host "Contents installed to $env:USERPROFILE\hdf5:"
-            Get-ChildItem "$env:USERPROFILE\hdf5" | Select-Object Name, PSIsContainer | Format-Table -AutoSize
+            Write-Host "HDF5 installed to: $env:USERPROFILE\hdf5"
           } else {
             Write-Host "ERROR: No HDF5 directory found in inner archive!"
             exit 1
@@ -297,46 +281,21 @@ jobs:
         Write-Host "Using TCL_LIBRARY: $tclLib"
         Write-Host "Using TK_LIBRARY: $tkLib"
 
-        # Manually find HDF5 paths - check for nested directory issue
+        # Configure HDF5 paths
         $hdf5Root = "$env:USERPROFILE\hdf5"
 
-        Write-Host "Checking HDF5 installation:"
-        if (Test-Path $hdf5Root) {
-          Write-Host "  Found: $hdf5Root"
-          Get-ChildItem $hdf5Root | Select-Object Name, PSIsContainer | Format-Table -AutoSize
-
-          # Check if there's a nested hdf5 directory
-          if (Test-Path "$hdf5Root\hdf5") {
-            Write-Host "  Detected nested hdf5 directory, fixing..."
-            $hdf5Root = "$hdf5Root\hdf5"
-          }
+        # Check for nested directory issue
+        if (Test-Path "$hdf5Root\hdf5") {
+          $hdf5Root = "$hdf5Root\hdf5"
         }
 
         $hdf5CmakeDir = "$hdf5Root\cmake"
         $hdf5IncludeDir = "$hdf5Root\include"
         $hdf5LibDir = "$hdf5Root\lib"
 
-        Write-Host "Using HDF5 paths:"
-        Write-Host "  HDF5_ROOT: $hdf5Root"
+        Write-Host "Using HDF5_ROOT: $hdf5Root"
 
-        # Check if directories exist
-        if (Test-Path $hdf5Root) {
-          Write-Host "  Contents:"
-          Get-ChildItem $hdf5Root | Select-Object Name, PSIsContainer | Format-Table -AutoSize
-        } else {
-          Write-Host "  HDF5_ROOT does not exist - ERROR!"
-        }
-
-        Write-Host "  HDF5 cmake: $hdf5CmakeDir (exists: $(Test-Path $hdf5CmakeDir))"
-        Write-Host "  HDF5 include: $hdf5IncludeDir (exists: $(Test-Path $hdf5IncludeDir))"
-        Write-Host "  HDF5 lib: $hdf5LibDir (exists: $(Test-Path $hdf5LibDir))"
-
-        if (Test-Path $hdf5LibDir) {
-          Write-Host "  Contents of lib directory:"
-          Get-ChildItem $hdf5LibDir | Select-Object Name | Format-Table -AutoSize
-        }
-
-        # Find the actual library file - try multiple patterns
+        # Find the HDF5 library file
         $hdf5Lib = $null
         if (Test-Path $hdf5LibDir) {
           $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
@@ -348,9 +307,8 @@ jobs:
             $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "*hdf5*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
           }
         }
-        Write-Host "  HDF5 library: $hdf5Lib"
 
-        # Configure with cgnstools enabled (we built Tcl/Tk from source with private headers)
+        # Configure CGNS with cgnstools enabled
         if (Test-Path $hdf5CmakeDir) {
           Write-Host "Using HDF5_DIR (cmake config)"
           cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$hdf5CmakeDir" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
