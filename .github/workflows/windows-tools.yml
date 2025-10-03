@@ -23,157 +23,48 @@ jobs:
     - name: Build Tcl/Tk from Source with Private Headers
       run: |
         $ErrorActionPreference = "Stop"
-
-        # Define versions
-        $tclVersion = "8.6.15"
-        $tkVersion = "8.6.15"
-        $tclTag = "core-8-6-15"
-        $tkTag = "core-8-6-15"
-
-        # Create build directory
+        $version = "8.6.15"
         $buildRoot = "$env:TEMP\tcltk_build"
-        New-Item -Path $buildRoot -ItemType Directory -Force | Out-Null
         $installDir = "C:\tcltk"
-        New-Item -Path $installDir -ItemType Directory -Force | Out-Null
+        $vcvarsall = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
 
-        Write-Host "=== Downloading Tcl source ==="
-        # Download official release tarballs from SourceForge
-        # Using curl which handles SourceForge redirects better than Invoke-WebRequest
-        $tclUrl = "https://sourceforge.net/projects/tcl/files/Tcl/$tclVersion/tcl$tclVersion-src.tar.gz/download"
-        Write-Host "Downloading from: $tclUrl"
-        curl -L -o "$buildRoot\tcl.tar.gz" $tclUrl
-        if ($LASTEXITCODE -ne 0) { throw "Failed to download Tcl" }
+        # Download and extract Tcl/Tk source
+        Write-Host "Downloading Tcl/Tk..."
+        curl -L -o tcl.tar.gz "https://sourceforge.net/projects/tcl/files/Tcl/$version/tcl$version-src.tar.gz/download"
+        curl -L -o tk.tar.gz "https://sourceforge.net/projects/tcl/files/Tcl/$version/tk$version-src.tar.gz/download"
 
-        # Verify download
-        $tclFile = Get-Item "$buildRoot\tcl.tar.gz"
-        Write-Host "Downloaded file size: $($tclFile.Length) bytes"
-        if ($tclFile.Length -lt 1000000) {
-            Write-Host "ERROR: Downloaded file too small (expected ~10MB), got HTML redirect page"
-            Get-Content "$buildRoot\tcl.tar.gz" -Raw | Select-Object -First 500
-            throw "Tcl download failed"
-        }
+        New-Item -Path $buildRoot -ItemType Directory -Force | Out-Null
+        tar -xzf tcl.tar.gz -C $buildRoot
+        tar -xzf tk.tar.gz -C $buildRoot
 
-        # Extract tar.gz on Windows using tar command (available in Windows 10+)
-        Write-Host "Extracting Tcl tarball..."
-        Push-Location $buildRoot
-        tar -xzf tcl.tar.gz
-        if ($LASTEXITCODE -ne 0) {
-            Pop-Location
-            throw "Failed to extract Tcl tarball"
-        }
+        # Build and install Tcl
+        Write-Host "Building Tcl..."
+        Push-Location "$buildRoot\tcl$version\win"
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir release install"
         Pop-Location
 
-        Write-Host "=== Downloading Tk source ==="
-        $tkUrl = "https://sourceforge.net/projects/tcl/files/Tcl/$tkVersion/tk$tkVersion-src.tar.gz/download"
-        Write-Host "Downloading from: $tkUrl"
-        curl -L -o "$buildRoot\tk.tar.gz" $tkUrl
-        if ($LASTEXITCODE -ne 0) { throw "Failed to download Tk" }
-
-        # Verify download
-        $tkFile = Get-Item "$buildRoot\tk.tar.gz"
-        Write-Host "Downloaded file size: $($tkFile.Length) bytes"
-        if ($tkFile.Length -lt 1000000) {
-            Write-Host "ERROR: Downloaded file too small (expected ~4MB), got HTML redirect page"
-            Get-Content "$buildRoot\tk.tar.gz" -Raw | Select-Object -First 500
-            throw "Tk download failed"
-        }
-
-        Write-Host "Extracting Tk tarball..."
-        Push-Location $buildRoot
-        tar -xzf tk.tar.gz
-        if ($LASTEXITCODE -ne 0) {
-            Pop-Location
-            throw "Failed to extract Tk tarball"
-        }
+        # Build and install Tk
+        Write-Host "Building Tk..."
+        Push-Location "$buildRoot\tk$version\win"
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$buildRoot\tcl$version INSTALLDIR=$installDir release install"
         Pop-Location
 
-        # Setup MSVC environment
-        $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-        $vcvarsall = "$vsPath\VC\Auxiliary\Build\vcvarsall.bat"
-
-        Write-Host "=== Building Tcl ==="
-        $tclSrcDir = "$buildRoot\tcl$tclVersion"
-        Push-Location "$tclSrcDir\win"
-
-        # Build Tcl
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir release"
-        if ($LASTEXITCODE -ne 0) { throw "Tcl build failed" }
-
-        # Install Tcl
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir install"
-        if ($LASTEXITCODE -ne 0) { throw "Tcl install failed" }
-
-        # Install Tcl private headers
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir install-private-headers"
-        Write-Host "Tcl private headers install target completed (exit code: $LASTEXITCODE)"
-
-        Pop-Location
-
-        # Manually copy Tcl private headers to ensure they're present
-        Write-Host "Manually copying Tcl private headers..."
-        $tclGenericSrc = "$tclSrcDir\generic"
-        $tclWinSrc = "$tclSrcDir\win"
+        # Copy private headers (install-private-headers target doesn't work reliably)
+        Write-Host "Copying private headers..."
         $includeDir = "$installDir\include"
+        Copy-Item "$buildRoot\tcl$version\generic\tclInt*.h" $includeDir -Force
+        Copy-Item "$buildRoot\tcl$version\win\tclWinInt.h" $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item "$buildRoot\tk$version\generic\tkInt*.h" $includeDir -Force
+        Copy-Item "$buildRoot\tk$version\win\tkWin*.h" $includeDir -Force
 
-        # Copy tclInt.h and other important internal headers from generic/
-        Copy-Item -Path "$tclGenericSrc\tclInt.h" -Destination $includeDir -Force
-        Copy-Item -Path "$tclGenericSrc\tclIntDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path "$tclGenericSrc\tclIntPlatDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path "$tclGenericSrc\tclPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-
-        # Copy Windows-specific private headers from win/
-        Copy-Item -Path "$tclWinSrc\tclWinInt.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path "$tclWinSrc\tclWinPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-
-        Write-Host "Tcl private headers copied successfully"
-
-        Write-Host "=== Building Tk ==="
-        $tkSrcDir = "$buildRoot\tk$tkVersion"
-        Push-Location "$tkSrcDir\win"
-
-        # Build Tk
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$tclSrcDir INSTALLDIR=$installDir release"
-        if ($LASTEXITCODE -ne 0) { throw "Tk build failed" }
-
-        # Install Tk
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$tclSrcDir INSTALLDIR=$installDir install"
-        if ($LASTEXITCODE -ne 0) { throw "Tk install failed" }
-
-        # Manually copy Tk private headers (install-private-headers target doesn't exist for Tk)
-        Write-Host "Manually copying Tk private headers..."
-        $tkGenericSrc = "$tkSrcDir\generic"
-        $tkWinSrc = "$tkSrcDir\win"
-
-        # Copy tkInt.h and other important internal headers from generic/
-        Copy-Item -Path "$tkGenericSrc\tkInt.h" -Destination $includeDir -Force
-        Copy-Item -Path "$tkGenericSrc\tkIntDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path "$tkGenericSrc\tkIntPlatDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path "$tkGenericSrc\tkPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-
-        # Copy Windows-specific private headers from win/
-        Copy-Item -Path "$tkWinSrc\tkWin.h" -Destination $includeDir -Force
-        Copy-Item -Path "$tkWinSrc\tkWinInt.h" -Destination $includeDir -Force
-        Copy-Item -Path "$tkWinSrc\tkWinPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
-
-        Write-Host "Tk private headers copied successfully"
-
-        Pop-Location
-
-        Write-Host "=== Verifying Tcl/Tk installation ==="
-        Write-Host "Checking for private headers:"
-        $tclIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tclInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-        $tkIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-        $tkWinIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkWinInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-
-        if ($tclIntPath) { Write-Host "✓ Found tclInt.h at: $($tclIntPath.FullName)" } else { Write-Host "✗ tclInt.h not found" }
-        if ($tkIntPath) { Write-Host "✓ Found tkInt.h at: $($tkIntPath.FullName)" } else { Write-Host "✗ tkInt.h not found" }
-        if ($tkWinIntPath) { Write-Host "✓ Found tkWinInt.h at: $($tkWinIntPath.FullName)" } else { Write-Host "✗ tkWinInt.h not found" }
-
-        if (-not ($tclIntPath -and $tkIntPath -and $tkWinIntPath)) {
+        # Verify critical headers exist
+        if (-not (Test-Path "$includeDir\tclInt.h") -or
+            -not (Test-Path "$includeDir\tkInt.h") -or
+            -not (Test-Path "$includeDir\tkWinInt.h")) {
             throw "Required private headers not found"
         }
 
-        # Set environment variable for later steps
+        Write-Host "✓ Tcl/Tk $version installed to $installDir"
         echo "TCL_ROOT=$installDir" >> $env:GITHUB_ENV
         echo "TK_ROOT=$installDir" >> $env:GITHUB_ENV
       shell: pwsh
