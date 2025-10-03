@@ -38,6 +38,7 @@
 #define _TKPORT
 /* Private headers should be in include path when built from source */
 #include "tkInt.h"
+#include "tkWinInt.h"
 #else
 /* Unix/Linux: Try tk-private path first, fall back to direct include */
 #if __has_include(<tk-private/generic/tkInt.h>)
