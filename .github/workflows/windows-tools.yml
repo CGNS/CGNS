@@ -18,8 +18,7 @@ jobs:
     steps:
     - name: Install Dependencies (Windows)
       run: |
-        choco install tcl --version=8.6.14 -y
-        choco install tk --version=8.6.14 -y
+        choco install magicsplat-tcl-tk -y
       shell: pwsh
 
     - name: Get Sources
@@ -40,18 +39,32 @@ jobs:
     - name: Find Tcl/Tk Paths
       id: tcl_tk
       run: |
-        $tclPath = (Get-Command tclsh).Source | Split-Path | Split-Path
-        $tkPath = $tclPath
+        # MagicSplat Tcl/Tk typically installs to C:\Program Files\Tcl
+        $tclPath = "C:\Program Files\Tcl"
+        if (-not (Test-Path $tclPath)) {
+          # Try to find via command
+          $tclsh = Get-Command tclsh -ErrorAction SilentlyContinue
+          if ($tclsh) {
+            $tclPath = $tclsh.Source | Split-Path | Split-Path
+          }
+        }
         echo "TCL_ROOT=$tclPath" >> $env:GITHUB_ENV
-        echo "TK_ROOT=$tkPath" >> $env:GITHUB_ENV
-        echo "Found Tcl at: $tclPath"
-        echo "Found Tk at: $tkPath"
+        echo "TK_ROOT=$tclPath" >> $env:GITHUB_ENV
+        echo "Found Tcl/Tk at: $tclPath"
+        Get-ChildItem "$tclPath\lib" -Filter "tcl*.lib" | Select-Object -First 1
+        Get-ChildItem "$tclPath\lib" -Filter "tk*.lib" | Select-Object -First 1
       shell: pwsh
 
     - name: Configure CGNS
       run: |
         mkdir cbuild
         cd cbuild
+        # Find Tcl/Tk library files dynamically
+        $tclLib = Get-ChildItem "$env:TCL_ROOT\lib" -Filter "tcl*.lib" | Select-Object -First 1 -ExpandProperty FullName
+        $tkLib = Get-ChildItem "$env:TK_ROOT\lib" -Filter "tk*.lib" | Select-Object -First 1 -ExpandProperty FullName
+        Write-Host "Using TCL_LIBRARY: $tclLib"
+        Write-Host "Using TK_LIBRARY: $tkLib"
+
         cmake -G "Visual Studio 2022" -A x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DCGNS_ENABLE_FORTRAN=OFF `
@@ -60,8 +73,8 @@ jobs:
           -DHDF5_NEED_ZLIB=OFF `
           -DHDF5_NEED_SZIP=OFF `
           -DCGNS_BUILD_CGNSTOOLS=ON `
-          -DTCL_LIBRARY=$env:TCL_ROOT\lib\tcl86t.lib `
-          -DTK_LIBRARY=$env:TK_ROOT\lib\tk86t.lib `
+          -DTCL_LIBRARY=$tclLib `
+          -DTK_LIBRARY=$tkLib `
           -DTCL_INCLUDE_PATH=$env:TCL_ROOT\include `
           -DTK_INCLUDE_PATH=$env:TK_ROOT\include `
           -DCGNS_ENABLE_TESTS=ON `
