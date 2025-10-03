@@ -86,6 +86,37 @@ jobs:
         if ($hdf5Lib) { echo "HDF5_LIBRARY=$hdf5Lib" >> $env:GITHUB_ENV }
       shell: pwsh
 
+    - name: Debug HDF5 Installation
+      run: |
+        Write-Host "=== Checking HDF5 installation ==="
+        Write-Host "HDF5_ROOT: $env:HDF5_ROOT"
+        Write-Host "HDF5_DIR: $env:HDF5_DIR"
+        Write-Host "HDF5_INCLUDE_DIR: $env:HDF5_INCLUDE_DIR"
+        Write-Host "HDF5_LIBRARY: $env:HDF5_LIBRARY"
+
+        if (Test-Path $env:HDF5_ROOT) {
+          Write-Host "HDF5_ROOT exists, listing contents:"
+          Get-ChildItem $env:HDF5_ROOT | Select-Object Name, PSIsContainer
+
+          Write-Host "`nChecking for cmake directory:"
+          if (Test-Path "$env:HDF5_ROOT\cmake") {
+            Get-ChildItem "$env:HDF5_ROOT\cmake" | Select-Object Name
+          }
+
+          Write-Host "`nChecking for include directory:"
+          if (Test-Path "$env:HDF5_ROOT\include") {
+            Get-ChildItem "$env:HDF5_ROOT\include" -Filter "*.h" | Select-Object -First 5 Name
+          }
+
+          Write-Host "`nChecking for lib directory:"
+          if (Test-Path "$env:HDF5_ROOT\lib") {
+            Get-ChildItem "$env:HDF5_ROOT\lib" -Filter "*.lib" | Select-Object Name
+          }
+        } else {
+          Write-Host "ERROR: HDF5_ROOT does not exist!"
+        }
+      shell: pwsh
+
     - name: Find Tcl/Tk Paths
       id: tcl_tk
       run: |
