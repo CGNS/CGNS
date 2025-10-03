@@ -117,9 +117,27 @@ jobs:
 
         # Install Tcl private headers
         cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir install-private-headers"
-        Write-Host "Tcl private headers install completed (exit code: $LASTEXITCODE)"
+        Write-Host "Tcl private headers install target completed (exit code: $LASTEXITCODE)"
 
         Pop-Location
+
+        # Manually copy Tcl private headers to ensure they're present
+        Write-Host "Manually copying Tcl private headers..."
+        $tclGenericSrc = Join-Path $tclSrcDir.FullName "generic"
+        $tclWinSrc = Join-Path $tclSrcDir.FullName "win"
+        $includeDir = Join-Path $installDir "include"
+
+        # Copy tclInt.h and other important internal headers from generic/
+        Copy-Item -Path "$tclGenericSrc\tclInt.h" -Destination $includeDir -Force
+        Copy-Item -Path "$tclGenericSrc\tclIntDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$tclGenericSrc\tclIntPlatDecls.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$tclGenericSrc\tclPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+
+        # Copy Windows-specific private headers from win/
+        Copy-Item -Path "$tclWinSrc\tclWinInt.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$tclWinSrc\tclWinPort.h" -Destination $includeDir -Force -ErrorAction SilentlyContinue
+
+        Write-Host "Tcl private headers copied successfully"
 
         Write-Host "=== Building Tk ==="
         $tkSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tk*" | Select-Object -First 1
