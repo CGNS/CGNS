@@ -34,7 +34,8 @@ FALL =	pcgns_ftest$(EXE) \
 	benchmark_hdf5_f90$(EXE) \
 	test_mixed_par_ser$(EXE) \
 	test_unstruc_quad_f90$(EXE) \
-	test_poly_unstructured_f90$(EXE)
+	test_poly_unstructured_f90$(EXE) \
+	test_general_wrappers$(EXE)
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
