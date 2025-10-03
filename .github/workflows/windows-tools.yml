@@ -92,17 +92,8 @@ jobs:
         $vcvarsall = "$vsPath\VC\Auxiliary\Build\vcvarsall.bat"
 
         Write-Host "=== Building Tcl ==="
-        $tclSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tcl*" | Select-Object -First 1
-        if (-not $tclSrcDir) {
-            throw "Could not find Tcl source directory in $buildRoot"
-        }
-        Write-Host "Using Tcl source directory: $($tclSrcDir.FullName)"
-
-        $tclWinDir = Join-Path $tclSrcDir.FullName "win"
-        if (-not (Test-Path $tclWinDir)) {
-            throw "Could not find win subdirectory at: $tclWinDir"
-        }
-        Push-Location $tclWinDir
+        $tclSrcDir = "$buildRoot\tcl$tclVersion"
+        Push-Location "$tclSrcDir\win"
 
         # Build Tcl
         cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir release"
@@ -120,9 +111,9 @@ jobs:
 
         # Manually copy Tcl private headers to ensure they're present
         Write-Host "Manually copying Tcl private headers..."
-        $tclGenericSrc = Join-Path $tclSrcDir.FullName "generic"
-        $tclWinSrc = Join-Path $tclSrcDir.FullName "win"
-        $includeDir = Join-Path $installDir "include"
+        $tclGenericSrc = "$tclSrcDir\generic"
+        $tclWinSrc = "$tclSrcDir\win"
+        $includeDir = "$installDir\include"
 
         # Copy tclInt.h and other important internal headers from generic/
         Copy-Item -Path "$tclGenericSrc\tclInt.h" -Destination $includeDir -Force
@@ -137,31 +128,21 @@ jobs:
         Write-Host "Tcl private headers copied successfully"
 
         Write-Host "=== Building Tk ==="
-        $tkSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tk*" | Select-Object -First 1
-        if (-not $tkSrcDir) {
-            throw "Could not find Tk source directory in $buildRoot"
-        }
-        Write-Host "Using Tk source directory: $($tkSrcDir.FullName)"
-
-        $tkWinDir = Join-Path $tkSrcDir.FullName "win"
-        if (-not (Test-Path $tkWinDir)) {
-            throw "Could not find win subdirectory at: $tkWinDir"
-        }
-        Push-Location $tkWinDir
+        $tkSrcDir = "$buildRoot\tk$tkVersion"
+        Push-Location "$tkSrcDir\win"
 
         # Build Tk
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir release"
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$tclSrcDir INSTALLDIR=$installDir release"
         if ($LASTEXITCODE -ne 0) { throw "Tk build failed" }
 
         # Install Tk
-        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir install"
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$tclSrcDir INSTALLDIR=$installDir install"
         if ($LASTEXITCODE -ne 0) { throw "Tk install failed" }
 
         # Manually copy Tk private headers (install-private-headers target doesn't exist for Tk)
         Write-Host "Manually copying Tk private headers..."
-        $tkGenericSrc = Join-Path $tkSrcDir.FullName "generic"
-        $tkWinSrc = Join-Path $tkSrcDir.FullName "win"
-        $includeDir = Join-Path $installDir "include"
+        $tkGenericSrc = "$tkSrcDir\generic"
+        $tkWinSrc = "$tkSrcDir\win"
 
         # Copy tkInt.h and other important internal headers from generic/
         Copy-Item -Path "$tkGenericSrc\tkInt.h" -Destination $includeDir -Force
@@ -281,43 +262,27 @@ jobs:
         Write-Host "Using TCL_LIBRARY: $tclLib"
         Write-Host "Using TK_LIBRARY: $tkLib"
 
-        # Configure HDF5 paths
-        $hdf5Root = "$env:USERPROFILE\hdf5"
+        # Configure CGNS with HDF5 and cgnstools
+        $hdf5CmakeDir = "$env:USERPROFILE\hdf5\cmake"
 
-        # Check for nested directory issue
-        if (Test-Path "$hdf5Root\hdf5") {
-          $hdf5Root = "$hdf5Root\hdf5"
-        }
+        cmake -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCGNS_ENABLE_FORTRAN=OFF `
+          -DCGNS_ENABLE_HDF5=ON `
+          -DHDF5_DIR="$hdf5CmakeDir" `
+          -DHDF5_NEED_ZLIB=OFF `
+          -DHDF5_NEED_SZIP=OFF `
+          -DCGNS_BUILD_CGNSTOOLS=ON `
+          -DTCL_LIBRARY="$tclLib" `
+          -DTK_LIBRARY="$tkLib" `
+          -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" `
+          -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" `
+          -DCGNS_ENABLE_TESTS=ON `
+          -DCMAKE_INSTALL_PREFIX=install `
+          ..
 
-        $hdf5CmakeDir = "$hdf5Root\cmake"
-        $hdf5IncludeDir = "$hdf5Root\include"
-        $hdf5LibDir = "$hdf5Root\lib"
-
-        Write-Host "Using HDF5_ROOT: $hdf5Root"
-
-        # Find the HDF5 library file
-        $hdf5Lib = $null
-        if (Test-Path $hdf5LibDir) {
-          $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "hdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $hdf5Lib) {
-            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "libhdf5.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          }
-          if (-not $hdf5Lib) {
-            # Try any .lib file with hdf5 in the name
-            $hdf5Lib = Get-ChildItem -Path $hdf5LibDir -Filter "*hdf5*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          }
-        }
-
-        # Configure CGNS with cgnstools enabled
-        if (Test-Path $hdf5CmakeDir) {
-          Write-Host "Using HDF5_DIR (cmake config)"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$hdf5CmakeDir" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
-        } elseif ($hdf5Lib -and (Test-Path $hdf5IncludeDir)) {
-          Write-Host "Using HDF5_INCLUDE_DIR and HDF5_LIBRARY (direct paths)"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_INCLUDE_DIR="$hdf5IncludeDir" -DHDF5_LIBRARY="$hdf5Lib" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
-        } else {
-          Write-Host "ERROR: Cannot find HDF5 installation!"
-          exit 1
+        if ($LASTEXITCODE -ne 0) {
+          throw "CMake configuration failed"
         }
       shell: pwsh
 
