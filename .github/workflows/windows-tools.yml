@@ -182,68 +182,24 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        # Download and extract HDF5 (double-zip format: outer zip contains inner zip)
         $hdf5_url = "https://github.com/HDFGroup/hdf5/releases/download/${{ env.hdf5_tag }}/hdf5-${{ env.hdf5_vers }}-win-vs2022_cl.zip"
-        Write-Host "Downloading HDF5 from: $hdf5_url"
+        Write-Host "Downloading HDF5..."
+        Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
 
-        try {
-          Invoke-WebRequest -Uri $hdf5_url -OutFile hdf5.zip
-          Write-Host "Download complete. File size: $((Get-Item hdf5.zip).Length) bytes"
-        } catch {
-          Write-Host "ERROR: Failed to download HDF5: $_"
-          exit 1
-        }
+        # Extract outer zip
+        Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract -Force
 
-        try {
-          Expand-Archive -Path hdf5.zip -DestinationPath hdf5_extract -Force
-          Write-Host "First extraction complete"
-        } catch {
-          Write-Host "ERROR: Failed to extract HDF5: $_"
-          exit 1
-        }
-
-        # Check for nested zip file (search recursively)
+        # Extract inner zip (HDF5-*-win64.zip)
         $innerZip = Get-ChildItem -Path hdf5_extract -Filter "*.zip" -Recurse | Select-Object -First 1
-        if ($innerZip) {
-          Write-Host "Found nested zip file: $($innerZip.FullName), extracting..."
-          try {
-            Expand-Archive -Path $innerZip.FullName -DestinationPath hdf5_final -Force
-            Write-Host "Second extraction complete"
-          } catch {
-            Write-Host "ERROR: Failed to extract nested zip: $_"
-            exit 1
-          }
+        Expand-Archive -Path $innerZip.FullName -DestinationPath hdf5_final -Force
 
-          # Find the HDF5 directory in final extraction
-          $hdf5_dir = Get-ChildItem -Path hdf5_final -Directory | Select-Object -First 1
+        # Move to final location
+        $hdf5_dir = Get-ChildItem -Path hdf5_final -Directory | Select-Object -First 1
+        New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
+        Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
 
-          if ($hdf5_dir) {
-            Write-Host "Installing HDF5 from: $($hdf5_dir.Name)"
-
-            # Move contents directly to avoid nesting
-            if (-not (Test-Path "$env:USERPROFILE\hdf5")) {
-              New-Item -Path "$env:USERPROFILE\hdf5" -ItemType Directory -Force | Out-Null
-            }
-            Get-ChildItem $hdf5_dir.FullName | Move-Item -Destination "$env:USERPROFILE\hdf5" -Force
-            Write-Host "HDF5 installed to: $env:USERPROFILE\hdf5"
-          } else {
-            Write-Host "ERROR: No HDF5 directory found in inner archive!"
-            exit 1
-          }
-        } else {
-          Write-Host "ERROR: No nested zip file found!"
-          exit 1
-        }
-
-        # Verify installation
-        if (-not (Test-Path "$env:USERPROFILE\hdf5\cmake")) {
-          Write-Host "ERROR: HDF5 cmake directory not found after installation!"
-          exit 1
-        }
-        if (-not (Test-Path "$env:USERPROFILE\hdf5\lib")) {
-          Write-Host "ERROR: HDF5 lib directory not found after installation!"
-          exit 1
-        }
-        Write-Host "HDF5 installation verified successfully"
+        Write-Host "HDF5 installed to: $env:USERPROFILE\hdf5"
       shell: pwsh
 
     - name: Configure CGNS
