@@ -36,10 +36,17 @@
 #if defined(__WIN32__) || defined(_WIN32)
 /* Windows: Need full TkWindow definition for internal member access */
 #define _TKPORT
-#include <tk-private/generic/tkInt.h>
+/* Private headers should be in include path when built from source */
+#include "tkInt.h"
 #else
-/* Unix/Linux: Forward declarations sufficient */
+/* Unix/Linux: Try tk-private path first, fall back to direct include */
+#if __has_include(<tk-private/generic/tkInt.h>)
+#include <tk-private/generic/tkInt.h>
 typedef struct TkWindow TkWindow;
+#else
+/* Forward declarations sufficient for non-private header builds */
+typedef struct TkWindow TkWindow;
+#endif
 extern void TkWmAddToColormapWindows(TkWindow *winPtr);
 #endif
 

@@ -17,13 +17,92 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip-ci')"
 
     steps:
-    - name: Install Dependencies (Windows)
-      run: |
-        choco install magicsplat-tcl-tk -y
-      shell: pwsh
-
     - name: Get Sources
       uses: actions/checkout@v4
+
+    - name: Build Tcl/Tk from Source with Private Headers
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        # Define versions
+        $tclVersion = "8.6.15"
+        $tkVersion = "8.6.15"
+        $tclTag = "core-8-6-15"
+        $tkTag = "core-8-6-15"
+
+        # Create build directory
+        $buildRoot = "$env:TEMP\tcltk_build"
+        New-Item -Path $buildRoot -ItemType Directory -Force | Out-Null
+        $installDir = "C:\tcltk"
+        New-Item -Path $installDir -ItemType Directory -Force | Out-Null
+
+        Write-Host "=== Downloading Tcl source ==="
+        $tclUrl = "https://github.com/tcltk/tcl/archive/refs/tags/$tclTag.zip"
+        Invoke-WebRequest -Uri $tclUrl -OutFile "$buildRoot\tcl.zip"
+        Expand-Archive -Path "$buildRoot\tcl.zip" -DestinationPath $buildRoot -Force
+
+        Write-Host "=== Downloading Tk source ==="
+        $tkUrl = "https://github.com/tcltk/tk/archive/refs/tags/$tkTag.zip"
+        Invoke-WebRequest -Uri $tkUrl -OutFile "$buildRoot\tk.zip"
+        Expand-Archive -Path "$buildRoot\tk.zip" -DestinationPath $buildRoot -Force
+
+        # Setup MSVC environment
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+        $vcvarsall = "$vsPath\VC\Auxiliary\Build\vcvarsall.bat"
+
+        Write-Host "=== Building Tcl ==="
+        $tclSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tcl-*" | Select-Object -First 1
+        Push-Location "$($tclSrcDir.FullName)\win"
+
+        # Build Tcl
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir release"
+        if ($LASTEXITCODE -ne 0) { throw "Tcl build failed" }
+
+        # Install Tcl
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir install"
+        if ($LASTEXITCODE -ne 0) { throw "Tcl install failed" }
+
+        # Install Tcl private headers
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc INSTALLDIR=$installDir install-private-headers"
+        Write-Host "Tcl private headers install completed (exit code: $LASTEXITCODE)"
+
+        Pop-Location
+
+        Write-Host "=== Building Tk ==="
+        $tkSrcDir = Get-ChildItem -Path $buildRoot -Directory -Filter "tk-*" | Select-Object -First 1
+        Push-Location "$($tkSrcDir.FullName)\win"
+
+        # Build Tk
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir release"
+        if ($LASTEXITCODE -ne 0) { throw "Tk build failed" }
+
+        # Install Tk
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir install"
+        if ($LASTEXITCODE -ne 0) { throw "Tk install failed" }
+
+        # Install Tk private headers
+        cmd /c "`"$vcvarsall`" x64 && nmake -f makefile.vc TCLDIR=$($tclSrcDir.FullName) INSTALLDIR=$installDir install-private-headers"
+        Write-Host "Tk private headers install completed (exit code: $LASTEXITCODE)"
+
+        Pop-Location
+
+        Write-Host "=== Verifying installation ==="
+        Write-Host "Tcl/Tk installed to: $installDir"
+        Get-ChildItem $installDir | Select-Object Name, PSIsContainer
+
+        Write-Host "`nChecking for private headers:"
+        $tclIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tclInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        $tkIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        $tkWinIntPath = Get-ChildItem -Path "$installDir\include" -Filter "tkWinInt.h" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+
+        if ($tclIntPath) { Write-Host "✓ Found tclInt.h at: $($tclIntPath.FullName)" }
+        if ($tkIntPath) { Write-Host "✓ Found tkInt.h at: $($tkIntPath.FullName)" }
+        if ($tkWinIntPath) { Write-Host "✓ Found tkWinInt.h at: $($tkWinIntPath.FullName)" }
+
+        # Set environment variable for later steps
+        echo "TCL_ROOT=$installDir" >> $env:GITHUB_ENV
+        echo "TK_ROOT=$installDir" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Download HDF5 Binaries
       run: |
@@ -103,25 +182,6 @@ jobs:
         Write-Host "HDF5 installation verified successfully"
       shell: pwsh
 
-    - name: Find Tcl/Tk Paths
-      id: tcl_tk
-      run: |
-        # MagicSplat Tcl/Tk typically installs to C:\Program Files\Tcl
-        $tclPath = "C:\Program Files\Tcl"
-        if (-not (Test-Path $tclPath)) {
-          # Try to find via command
-          $tclsh = Get-Command tclsh -ErrorAction SilentlyContinue
-          if ($tclsh) {
-            $tclPath = $tclsh.Source | Split-Path | Split-Path
-          }
-        }
-        echo "TCL_ROOT=$tclPath" >> $env:GITHUB_ENV
-        echo "TK_ROOT=$tclPath" >> $env:GITHUB_ENV
-        echo "Found Tcl/Tk at: $tclPath"
-        Get-ChildItem "$tclPath\lib" -Filter "tcl*.lib" | Select-Object -First 1
-        Get-ChildItem "$tclPath\lib" -Filter "tk*.lib" | Select-Object -First 1
-      shell: pwsh
-
     - name: Configure CGNS
       run: |
         mkdir cbuild
@@ -191,13 +251,13 @@ jobs:
         }
         Write-Host "  HDF5 library: $hdf5Lib"
 
-        # Try with HDF5_DIR pointing to cmake directory
+        # Configure with cgnstools enabled (we built Tcl/Tk from source with private headers)
         if (Test-Path $hdf5CmakeDir) {
           Write-Host "Using HDF5_DIR (cmake config)"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$hdf5CmakeDir" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_DIR="$hdf5CmakeDir" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
         } elseif ($hdf5Lib -and (Test-Path $hdf5IncludeDir)) {
           Write-Host "Using HDF5_INCLUDE_DIR and HDF5_LIBRARY (direct paths)"
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_INCLUDE_DIR="$hdf5IncludeDir" -DHDF5_LIBRARY="$hdf5Lib" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TK_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCGNS_ENABLE_FORTRAN=OFF -DCGNS_ENABLE_HDF5=ON -DHDF5_INCLUDE_DIR="$hdf5IncludeDir" -DHDF5_LIBRARY="$hdf5Lib" -DHDF5_NEED_ZLIB=OFF -DHDF5_NEED_SZIP=OFF -DCGNS_BUILD_CGNSTOOLS=ON -DTCL_LIBRARY="$tclLib" -DTK_LIBRARY="$tkLib" -DTCL_INCLUDE_PATH="$env:TCL_ROOT\include" -DTK_INCLUDE_PATH="$env:TCL_ROOT\include" -DCGNS_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install ..
         } else {
           Write-Host "ERROR: Cannot find HDF5 installation!"
           exit 1
@@ -210,19 +270,29 @@ jobs:
         cmake --build . --config Release --parallel 4
       shell: pwsh
 
-    - name: Test CGNS Tools Build
+    - name: Verify CGNS Build
       run: |
         cd cbuild
+        Write-Host "Checking CGNS library build:"
+        if (Test-Path "src/Release/cgns.lib") {
+          Write-Host "✓ CGNS static library built successfully"
+        } else {
+          Write-Host "✗ CGNS static library build failed"
+          exit 1
+        }
+        if (Test-Path "src/Release/cgnsdll.dll") {
+          Write-Host "✓ CGNS shared library built successfully"
+        } else {
+          Write-Host "✗ CGNS shared library build failed"
+          exit 1
+        }
+
+        Write-Host "`nChecking cgnstools build:"
         if (Test-Path "src/cgnstools/cgnsview/Release/cgiowish.exe") {
-          Write-Host "✓ cgnsview built successfully"
+          Write-Host "✓ cgnsview built successfully (tkogl.c compiled on Windows!)"
         } else {
           Write-Host "✗ cgnsview build failed"
           exit 1
-        }
-        if (Test-Path "src/cgnstools/tkogl/Release/tkogl.lib") {
-          Write-Host "✓ tkogl built successfully (library)"
-        } else {
-          Write-Host "Note: tkogl not built as separate library"
         }
       shell: pwsh
 
