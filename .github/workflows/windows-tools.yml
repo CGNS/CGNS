@@ -38,14 +38,20 @@ jobs:
 
         Write-Host "=== Downloading Tcl source ==="
         # Download official release tarballs from SourceForge
-        # Using direct download URLs which work with Invoke-WebRequest
+        # Using curl which handles SourceForge redirects better than Invoke-WebRequest
         $tclUrl = "https://sourceforge.net/projects/tcl/files/Tcl/$tclVersion/tcl$tclVersion-src.tar.gz/download"
         Write-Host "Downloading from: $tclUrl"
-        Invoke-WebRequest -Uri $tclUrl -OutFile "$buildRoot\tcl.tar.gz" -UserAgent "Mozilla/5.0"
+        curl -L -o "$buildRoot\tcl.tar.gz" $tclUrl
+        if ($LASTEXITCODE -ne 0) { throw "Failed to download Tcl" }
 
         # Verify download
         $tclFile = Get-Item "$buildRoot\tcl.tar.gz"
         Write-Host "Downloaded file size: $($tclFile.Length) bytes"
+        if ($tclFile.Length -lt 1000000) {
+            Write-Host "ERROR: Downloaded file too small (expected ~10MB), got HTML redirect page"
+            Get-Content "$buildRoot\tcl.tar.gz" -Raw | Select-Object -First 500
+            throw "Tcl download failed"
+        }
 
         # Extract tar.gz on Windows using tar command (available in Windows 10+)
         Write-Host "Extracting Tcl tarball..."
@@ -60,11 +66,17 @@ jobs:
         Write-Host "=== Downloading Tk source ==="
         $tkUrl = "https://sourceforge.net/projects/tcl/files/Tcl/$tkVersion/tk$tkVersion-src.tar.gz/download"
         Write-Host "Downloading from: $tkUrl"
-        Invoke-WebRequest -Uri $tkUrl -OutFile "$buildRoot\tk.tar.gz" -UserAgent "Mozilla/5.0"
+        curl -L -o "$buildRoot\tk.tar.gz" $tkUrl
+        if ($LASTEXITCODE -ne 0) { throw "Failed to download Tk" }
 
         # Verify download
         $tkFile = Get-Item "$buildRoot\tk.tar.gz"
         Write-Host "Downloaded file size: $($tkFile.Length) bytes"
+        if ($tkFile.Length -lt 1000000) {
+            Write-Host "ERROR: Downloaded file too small (expected ~4MB), got HTML redirect page"
+            Get-Content "$buildRoot\tk.tar.gz" -Raw | Select-Object -First 500
+            throw "Tk download failed"
+        }
 
         Write-Host "Extracting Tk tarball..."
         Push-Location $buildRoot
