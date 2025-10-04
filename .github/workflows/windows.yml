@@ -72,20 +72,16 @@ jobs:
           }
           elseif ($hdf5_ver -eq "1.14.6") {
             # Download pre-built binary from GitHub releases for 1.14.6
-            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-${hdf5_ver}-win-vs2022_cl.zip"
+            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-${hdf5_ver}-win-vs2022_cl.msi"
             Write-Host "Downloading from: $url"
 
             New-Item -ItemType Directory -Path "hdf5-download" -Force
-            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.zip"
+            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.msi"
 
-            Write-Host "Extracting HDF5..."
-            Expand-Archive -Path "hdf5-download/hdf5.zip" -DestinationPath "hdf5-download"
+            Write-Host "Installing HDF5 MSI..."
+            Start-Process msiexec.exe -ArgumentList "/i", "hdf5-download\hdf5.msi", "/quiet", "/qn", "/norestart", "/log", "install.log" -Wait
 
-            # For GitHub releases zip, files are in a subdirectory, copy to standard location
-            $extractedDir = Get-ChildItem -Path "hdf5-download" -Directory | Select-Object -First 1
-            Write-Host "Installing HDF5 to C:\Program Files\HDF_Group\HDF5\${hdf5_ver}..."
-            New-Item -ItemType Directory -Path "C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" -Force
-            Copy-Item -Path "$($extractedDir.FullName)\*" -Destination "C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" -Recurse -Force
+            Get-Content install.log
           }
           else {
             # Download pre-built binary from FTP for 1.8.23
