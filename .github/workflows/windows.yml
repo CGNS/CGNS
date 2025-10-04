@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        hdf5_version: ["1.8.23", "1.10.11", "1.14.3"]
+        hdf5_version: ["1.8.23", "1.10.11", "1.14.6"]
         build_config:
           - opts: "-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF"
             name: "static-32bit"
@@ -70,13 +70,26 @@ jobs:
             cmake --install . --config Release
             cd ..
           }
+          elseif ($hdf5_ver -eq "1.14.6") {
+            # Download pre-built binary from GitHub releases for 1.14.6
+            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1_14_6/hdf5-${hdf5_ver}-win-vs2022_cl.zip"
+            Write-Host "Downloading from: $url"
+
+            New-Item -ItemType Directory -Path "hdf5-download" -Force
+            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.zip"
+
+            Write-Host "Extracting HDF5..."
+            Expand-Archive -Path "hdf5-download/hdf5.zip" -DestinationPath "hdf5-download"
+
+            # For GitHub releases zip, files are in a subdirectory, copy to standard location
+            $extractedDir = Get-ChildItem -Path "hdf5-download" -Directory | Select-Object -First 1
+            Write-Host "Installing HDF5 to C:\Program Files\HDF_Group\HDF5\${hdf5_ver}..."
+            New-Item -ItemType Directory -Path "C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" -Force
+            Copy-Item -Path "$($extractedDir.FullName)\*" -Destination "C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" -Recurse -Force
+          }
           else {
-            # Download pre-built binary for 1.8.23 and 1.14.3
-            if ($hdf5_ver -like "1.8.*") {
-              $minor = "1.8"
-            } elseif ($hdf5_ver -like "1.14.*") {
-              $minor = "1.14"
-            }
+            # Download pre-built binary from FTP for 1.8.23
+            $minor = "1.8"
 
             $url = "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${minor}/hdf5-${hdf5_ver}/bin/windows/hdf5-${hdf5_ver}-Std-win10_64-${shortgen}.zip"
             Write-Host "Downloading from: $url"
