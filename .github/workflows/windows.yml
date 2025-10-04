@@ -72,7 +72,7 @@ jobs:
           }
           elseif ($hdf5_ver -eq "1.14.6") {
             # Download pre-built binary from GitHub releases for 1.14.6
-            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1_14_6/hdf5-${hdf5_ver}-win-vs2022_cl.zip"
+            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-${hdf5_ver}-win-vs2022_cl.zip"
             Write-Host "Downloading from: $url"
 
             New-Item -ItemType Directory -Path "hdf5-download" -Force
