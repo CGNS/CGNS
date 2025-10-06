@@ -24,7 +24,6 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
-	test_general_multidim$(EXE) \
         Metadata_Stressing$(EXE) \
 	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
@@ -177,13 +176,6 @@ test_zone$(EXE) : test_zone.c $(CGNSLIB)
 
 test_general_readwrite$(EXE) : test_general_readwrite.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_general_readwrite.c $(LDLIBS) $(CLIBS)
-	$(STRIP) $@
-
-
-#----------
-
-test_general_multidim$(EXE) : test_general_multidim.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ test_general_multidim.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 

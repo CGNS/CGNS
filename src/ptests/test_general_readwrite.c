@@ -29,6 +29,12 @@ const int      rind[3][2] = { {2, 2},  {2, 2},  {1, 1}};
 float *xcoord, *ycoord, *zcoord;
 float *solution, *fbuf;
 
+/* For multi-dimensional array test */
+#define MD_NI 6
+#define MD_NJ 5
+#define MD_NK 4
+typedef float coord3d_t[MD_NI][MD_NJ][MD_NK];
+
 inline static cgsize_t INDEX(cgsize_t ii, cgsize_t jj, cgsize_t kk) {
     return ii + NUM_I*(jj + NUM_J*(kk));
 }
@@ -372,12 +378,219 @@ int main (int argc, char *argv[])
         if (global_np) printf("%d differences in Field\n", global_np);
     }
 
-    global_nn = 0; 
+    global_nn = 0;
     MPI_Allreduce(&nn, &global_nn, 1, MPI_INT, MPI_MAX, comm);
     if (comm_rank == 0) {
         if (global_nn == 0) puts("no differences");
     }
+
+    cgp_close(cgfile);
+
+    /*---- Test with multi-dimensional rank arrays ----*/
+
+    if (comm_rank == 0) {
+        printf("\nTesting multi-dimensional rank arrays (%d x %d x %d)\n",
+               MD_NI, MD_NJ, MD_NK);
+        fflush(stdout);
+    }
+
+    /* Allocate 3D arrays */
+    coord3d_t *md_xcoord = malloc(sizeof(coord3d_t));
+    coord3d_t *md_ycoord = malloc(sizeof(coord3d_t));
+    coord3d_t *md_zcoord = malloc(sizeof(coord3d_t));
+    coord3d_t *md_density = malloc(sizeof(coord3d_t));
+    coord3d_t *md_xread = malloc(sizeof(coord3d_t));
+    coord3d_t *md_yread = malloc(sizeof(coord3d_t));
+    coord3d_t *md_zread = malloc(sizeof(coord3d_t));
+    coord3d_t *md_dread = malloc(sizeof(coord3d_t));
+
+    if (!md_xcoord || !md_ycoord || !md_zcoord || !md_density ||
+        !md_xread || !md_yread || !md_zread || !md_dread) {
+        fprintf(stderr, "malloc failed for 3D arrays\n");
+        MPI_Abort(comm, 1);
+    }
+
+    /* Initialize coordinate data */
+    for (k = 0; k < MD_NK; k++) {
+        for (j = 0; j < MD_NJ; j++) {
+            for (i = 0; i < MD_NI; i++) {
+                (*md_xcoord)[i][j][k] = (float)i;
+                (*md_ycoord)[i][j][k] = (float)j;
+                (*md_zcoord)[i][j][k] = (float)k;
+                (*md_density)[i][j][k] = (float)(i + j*10 + k*100);
+                (*md_xread)[i][j][k] = 0.0f;
+                (*md_yread)[i][j][k] = 0.0f;
+                (*md_zread)[i][j][k] = 0.0f;
+                (*md_dread)[i][j][k] = 0.0f;
+            }
+        }
+    }
+
+    /* Zone size */
+    cgsize_t md_zone_size[3][3];
+    md_zone_size[0][0] = MD_NI;
+    md_zone_size[0][1] = MD_NJ;
+    md_zone_size[0][2] = MD_NK;
+    md_zone_size[1][0] = MD_NI - 1;
+    md_zone_size[1][1] = MD_NJ - 1;
+    md_zone_size[1][2] = MD_NK - 1;
+    md_zone_size[2][0] = 0;
+    md_zone_size[2][1] = 0;
+    md_zone_size[2][2] = 0;
+
+    /* Memory dimensions */
+    cgsize_t md_dims[3];
+    md_dims[0] = MD_NI;
+    md_dims[1] = MD_NJ;
+    md_dims[2] = MD_NK;
+
+    /* File and memory space ranges (full domain) */
+    cgsize_t md_rmin[3], md_rmax[3], md_m_rmin[3], md_m_rmax[3];
+    md_rmin[0] = 1; md_rmin[1] = 1; md_rmin[2] = 1;
+    md_rmax[0] = MD_NI; md_rmax[1] = MD_NJ; md_rmax[2] = MD_NK;
+    md_m_rmin[0] = 1; md_m_rmin[1] = 1; md_m_rmin[2] = 1;
+    md_m_rmax[0] = MD_NI; md_m_rmax[1] = MD_NJ; md_m_rmax[2] = MD_NK;
+
+    /* Create CGNS file */
+    if (comm_rank == 0) {
+        unlink("test_multidim.cgns");
+    }
+    MPI_Barrier(comm);
+
+    if (cgp_open("test_multidim.cgns", CG_MODE_WRITE, &cgfile))
+        cgp_error_exit();
+
+    /* Write base and zone */
+    if (cg_base_write(cgfile, "Base", 3, 3, &cgbase) ||
+        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)md_zone_size,
+                      CGNS_ENUMV(Structured), &cgzone))
+        cgp_error_exit();
+
+    /* Write coordinates using multi-dimensional arrays */
+    if (cgp_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+                        "CoordinateX", &cgcoordx) ||
+        cgp_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+                        "CoordinateY", &cgcoordy) ||
+        cgp_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+                        "CoordinateZ", &cgcoordz))
+        cgp_error_exit();
+
+    /* Write using general API with 3D rank arrays */
+    if (cgp_coord_general_write_data(cgfile, cgbase, cgzone, cgcoordx,
+                                     md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                     3, md_dims, md_m_rmin, md_m_rmax, md_xcoord) ||
+        cgp_coord_general_write_data(cgfile, cgbase, cgzone, cgcoordy,
+                                     md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                     3, md_dims, md_m_rmin, md_m_rmax, md_ycoord) ||
+        cgp_coord_general_write_data(cgfile, cgbase, cgzone, cgcoordz,
+                                     md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                     3, md_dims, md_m_rmin, md_m_rmax, md_zcoord))
+        cgp_error_exit();
+
+    /* Write solution field */
+    if (cg_sol_write(cgfile, cgbase, cgzone, "Solution",
+                     CGNS_ENUMV(Vertex), &cgsol))
+        cgp_error_exit();
+
+    if (cgp_field_write(cgfile, cgbase, cgzone, cgsol,
+                        CGNS_ENUMV(RealSingle), "Density", &cgfld))
+        cgp_error_exit();
+
+    if (cgp_field_general_write_data(cgfile, cgbase, cgzone, cgsol, cgfld,
+                                     md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                     3, md_dims, md_m_rmin, md_m_rmax, md_density))
+        cgp_error_exit();
+
+    /* Close and reopen for reading */
+    MPI_Barrier(comm);
+    if (comm_rank == 0) {
+        printf("Closing and reopening for read\n");
+    }
+    cgp_close(cgfile);
+
+    if (cgp_open("test_multidim.cgns", CG_MODE_READ, &cgfile))
+        cgp_error_exit();
+
+    cgbase = cgzone = cgsol = cgfld = 1;
+
+    /* Read back using general API with 3D rank arrays */
+    if (cgp_coord_general_read_data(cgfile, cgbase, cgzone, cgcoordx,
+                                    md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                    3, md_dims, md_m_rmin, md_m_rmax, md_xread) ||
+        cgp_coord_general_read_data(cgfile, cgbase, cgzone, cgcoordy,
+                                    md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                    3, md_dims, md_m_rmin, md_m_rmax, md_yread) ||
+        cgp_coord_general_read_data(cgfile, cgbase, cgzone, cgcoordz,
+                                    md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                    3, md_dims, md_m_rmin, md_m_rmax, md_zread))
+        cgp_error_exit();
+
+    if (cgp_field_general_read_data(cgfile, cgbase, cgzone, cgsol, cgfld,
+                                    md_rmin, md_rmax, CGNS_ENUMV(RealSingle),
+                                    3, md_dims, md_m_rmin, md_m_rmax, md_dread))
+        cgp_error_exit();
+
+    /* Verify data */
+    int md_errors = 0;
+    for (k = 0; k < MD_NK; k++) {
+        for (j = 0; j < MD_NJ; j++) {
+            for (i = 0; i < MD_NI; i++) {
+                if (fabs((*md_xread)[i][j][k] - (float)i) > 1e-6) {
+                    printf("Rank %d: X mismatch at [%ld][%ld][%ld]: %f != %f\n",
+                           comm_rank, (long)i, (long)j, (long)k,
+                           (*md_xread)[i][j][k], (float)i);
+                    md_errors++;
+                }
+                if (fabs((*md_yread)[i][j][k] - (float)j) > 1e-6) {
+                    printf("Rank %d: Y mismatch at [%ld][%ld][%ld]: %f != %f\n",
+                           comm_rank, (long)i, (long)j, (long)k,
+                           (*md_yread)[i][j][k], (float)j);
+                    md_errors++;
+                }
+                if (fabs((*md_zread)[i][j][k] - (float)k) > 1e-6) {
+                    printf("Rank %d: Z mismatch at [%ld][%ld][%ld]: %f != %f\n",
+                           comm_rank, (long)i, (long)j, (long)k,
+                           (*md_zread)[i][j][k], (float)k);
+                    md_errors++;
+                }
+                float expected_density = (float)(i + j*10 + k*100);
+                if (fabs((*md_dread)[i][j][k] - expected_density) > 1e-6) {
+                    printf("Rank %d: Density mismatch at [%ld][%ld][%ld]: %f != %f\n",
+                           comm_rank, (long)i, (long)j, (long)k,
+                           (*md_dread)[i][j][k], expected_density);
+                    md_errors++;
+                }
+            }
+        }
+    }
+
+    cgp_close(cgfile);
+
+    /* Collect errors from all ranks */
+    int md_total_errors = 0;
+    MPI_Reduce(&md_errors, &md_total_errors, 1, MPI_INT, MPI_SUM, 0, comm);
+
+    if (comm_rank == 0) {
+        if (md_total_errors == 0) {
+            printf("SUCCESS: All multi-dimensional data verified correctly\n");
+        } else {
+            printf("FAILED: %d errors in multi-dimensional test\n", md_total_errors);
+        }
+    }
+
+    /* Add multidim errors to total */
+    global_nn += md_total_errors;
+
+    /* Cleanup */
     free(xcoord);
+    free(md_xcoord);
+    free(md_ycoord);
+    free(md_zcoord);
+    free(md_density);
+    free(md_xread);
+    free(md_yread);
+    free(md_zread);
+    free(md_dread);
 
     MPI_Finalize();
     /* cannot just return (global_nn) because exit code is limited to 1byte */
