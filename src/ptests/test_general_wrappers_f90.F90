@@ -277,6 +277,13 @@ PROGRAM test_general_wrappers
   CALL cgp_close_f(fn, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
+  !---------------------------------------------------------------------------
+  ! Test 7: 3D rank array test with cgp_coord_general_write_data_f
+  !---------------------------------------------------------------------------
+  IF (commrank .EQ. 0) PRINT *, 'Testing 3D rank arrays with general wrappers...'
+
+  CALL test_3d_arrays(commrank, commsize, test_passed)
+
   ! Report results
   IF (test_passed .EQ. 1) THEN
      IF (commrank .EQ. 0) THEN
@@ -297,3 +304,240 @@ PROGRAM test_general_wrappers
   CALL MPI_Finalize(ierr)
 
 END PROGRAM test_general_wrappers
+
+!---------------------------------------------------------------------------
+! Test subroutine for 3D rank arrays
+!---------------------------------------------------------------------------
+SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
+  USE mpi
+  USE ISO_C_BINDING
+  USE CGNS
+  USE testing_utils
+  IMPLICIT NONE
+
+#include "cgnstypes_f03.h"
+
+  INTEGER, INTENT(IN) :: commrank, commsize
+  INTEGER, INTENT(INOUT) :: test_passed
+
+  ! 3D array dimensions
+  INTEGER, PARAMETER :: NI = 6, NJ = 5, NK = 4
+  REAL(C_DOUBLE), TARGET :: xcoord(NI, NJ, NK), ycoord(NI, NJ, NK), zcoord(NI, NJ, NK)
+  REAL(C_DOUBLE), TARGET :: xread(NI, NJ, NK), yread(NI, NJ, NK), zread(NI, NJ, NK)
+  REAL(C_DOUBLE), TARGET :: density(NI, NJ, NK), dread(NI, NJ, NK)
+
+  INTEGER :: fn, B, Z, C, S, F
+  INTEGER :: ierr, i, j, k
+  INTEGER(cgsize_t) :: zone_size(9)
+  INTEGER(cgsize_t), TARGET :: rmin(3), rmax(3), m_rmin(3), m_rmax(3), m_dimvals(3)
+  INTEGER(cgsize_t) :: m_numdim
+  INTEGER(cgenum_t) :: m_type
+  CHARACTER(LEN=32) :: filename
+
+  ! Initialize 3D coordinate data
+  DO k = 1, NK
+     DO j = 1, NJ
+        DO i = 1, NI
+           xcoord(i, j, k) = REAL(i - 1, C_DOUBLE)
+           ycoord(i, j, k) = REAL(j - 1, C_DOUBLE)
+           zcoord(i, j, k) = REAL(k - 1, C_DOUBLE)
+           density(i, j, k) = REAL(i - 1 + (j - 1) * 10 + (k - 1) * 100, C_DOUBLE)
+           xread(i, j, k) = 0.0_C_DOUBLE
+           yread(i, j, k) = 0.0_C_DOUBLE
+           zread(i, j, k) = 0.0_C_DOUBLE
+           dread(i, j, k) = 0.0_C_DOUBLE
+        END DO
+     END DO
+  END DO
+
+  ! Zone size: [NI, NJ, NK, NI-1, NJ-1, NK-1, 0, 0, 0]
+  zone_size(1) = NI
+  zone_size(2) = NJ
+  zone_size(3) = NK
+  zone_size(4) = NI - 1
+  zone_size(5) = NJ - 1
+  zone_size(6) = NK - 1
+  zone_size(7) = 0
+  zone_size(8) = 0
+  zone_size(9) = 0
+
+  ! Memory dimensions (full 3D array)
+  m_dimvals(1) = NI
+  m_dimvals(2) = NJ
+  m_dimvals(3) = NK
+  m_numdim = 3
+  m_type = CGNS_ENUMV(RealDouble)
+
+  ! File space ranges (write full domain from all ranks)
+  rmin(1) = 1
+  rmin(2) = 1
+  rmin(3) = 1
+  rmax(1) = NI
+  rmax(2) = NJ
+  rmax(3) = NK
+
+  ! Memory space ranges (use full 3D array)
+  m_rmin(1) = 1
+  m_rmin(2) = 1
+  m_rmin(3) = 1
+  m_rmax(1) = NI
+  m_rmax(2) = NJ
+  m_rmax(3) = NK
+
+  ! Create CGNS file
+  filename = 'test_3d_arrays.cgns'
+  IF (commrank .EQ. 0) THEN
+     CALL system('rm -f ' // TRIM(filename))
+  END IF
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+  CALL cgp_open_f(filename, CG_MODE_WRITE, fn, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  ! Create base and zone
+  CALL cg_base_write_f(fn, 'Base', 3, 3, B, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cg_zone_write_f(fn, B, 'Zone', zone_size, CGNS_ENUMV(Structured), Z, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  ! Write coordinates using 3D rank arrays
+  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateX', C, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(xcoord), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D X coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateY', C, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(ycoord), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D Y coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateZ', C, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(zcoord), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D Z coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  ! Write field using 3D rank array
+  CALL cg_sol_write_f(fn, B, Z, 'Solution', CGNS_ENUMV(Vertex), S, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_field_write_f(fn, B, Z, S, CGNS_ENUMV(RealDouble), 'Density', F, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_field_general_write_data_f(fn, B, Z, S, F, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(density), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_field_general_write_data_f for 3D density field'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_close_f(fn, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+  ! Read back and verify
+  CALL cgp_open_f(filename, CG_MODE_READ, fn, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  CALL cgp_coord_general_read_data_f(fn, 1, 1, 1, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(xread), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D X coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_coord_general_read_data_f(fn, 1, 1, 2, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(yread), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D Y coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_coord_general_read_data_f(fn, 1, 1, 3, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(zread), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D Z coordinate'
+     test_passed = 0
+     RETURN
+  END IF
+
+  CALL cgp_field_general_read_data_f(fn, 1, 1, 1, 1, &
+       C_LOC(rmin), C_LOC(rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(dread), ierr)
+  IF (ierr .NE. CG_OK) THEN
+     PRINT *, 'FAILED: cgp_field_general_read_data_f for 3D density field'
+     test_passed = 0
+     RETURN
+  END IF
+
+  ! Verify data
+  DO k = 1, NK
+     DO j = 1, NJ
+        DO i = 1, NI
+           IF (.NOT. check_eq(xread(i, j, k), xcoord(i, j, k))) THEN
+              PRINT *, 'FAILED: 3D X mismatch at [', i, ',', j, ',', k, ']'
+              test_passed = 0
+              RETURN
+           END IF
+           IF (.NOT. check_eq(yread(i, j, k), ycoord(i, j, k))) THEN
+              PRINT *, 'FAILED: 3D Y mismatch at [', i, ',', j, ',', k, ']'
+              test_passed = 0
+              RETURN
+           END IF
+           IF (.NOT. check_eq(zread(i, j, k), zcoord(i, j, k))) THEN
+              PRINT *, 'FAILED: 3D Z mismatch at [', i, ',', j, ',', k, ']'
+              test_passed = 0
+              RETURN
+           END IF
+           IF (.NOT. check_eq(dread(i, j, k), density(i, j, k))) THEN
+              PRINT *, 'FAILED: 3D Density mismatch at [', i, ',', j, ',', k, ']'
+              test_passed = 0
+              RETURN
+           END IF
+        END DO
+     END DO
+  END DO
+
+  CALL cgp_close_f(fn, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
+
+  IF (commrank .EQ. 0) PRINT *, '  3D rank array test passed!'
+
+END SUBROUTINE test_3d_arrays
