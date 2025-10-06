@@ -236,6 +236,12 @@ test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 utilsf.$(O) $(
 
 #----------
 
+test_general_wrappers_f90$(EXE) : test_general_wrappers_f90.F90 utilsf.$(O) $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_general_wrappers_f90.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
 Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ Metadata_Stressing.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
