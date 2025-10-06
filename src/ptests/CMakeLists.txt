@@ -42,6 +42,7 @@ set(C_PTESTS_LIST
 	test_unstruc_quad
 	test_zone
 	test_general_readwrite
+	test_general_multidim
 	test_poly_unstructured
 	thesis_benchmark)
 

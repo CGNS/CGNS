@@ -43,9 +43,9 @@ PROGRAM test_general_wrappers
   REAL(C_DOUBLE), ALLOCATABLE, TARGET :: read_data(:)
 
   ! General API parameters
-  INTEGER(cgsize_t) :: f_rmin(1), f_rmax(1)  ! File space ranges
-  INTEGER(cgsize_t) :: m_rmin(1), m_rmax(1)  ! Memory space ranges
-  INTEGER(cgsize_t) :: m_dimvals(1)          ! Memory dimensions
+  INTEGER(cgsize_t), TARGET :: f_rmin(1), f_rmax(1)  ! File space ranges
+  INTEGER(cgsize_t), TARGET :: m_rmin(1), m_rmax(1)  ! Memory space ranges
+  INTEGER(cgsize_t), TARGET :: m_dimvals(1)          ! Memory dimensions
   INTEGER(cgsize_t) :: m_numdim
   INTEGER(cgenum_t) :: m_type
 
@@ -103,7 +103,7 @@ PROGRAM test_general_wrappers
      CALL cgp_error_exit_f()
   END IF
 
-  ! Setup general parameters (scalar version)
+  ! Setup general parameters
   f_rmin(1) = start_pos
   f_rmax(1) = end_pos
   m_rmin(1) = 1
@@ -115,37 +115,17 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(coords_data)
 
   CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       f_rmin(1), f_rmax(1), &
-       m_type, m_numdim, m_dimvals(1), m_rmin(1), m_rmax(1), &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
-     PRINT *, 'FAILED: cgp_coord_general_write_data_f (scalar)'
+     PRINT *, 'FAILED: cgp_coord_general_write_data_f'
      CALL cgp_error_exit_f()
   END IF
 
   !---------------------------------------------------------------------------
-  ! Test 2: cgp_coord_general_write_data_f with array parameters
-  !---------------------------------------------------------------------------
-  IF (commrank .EQ. 0) PRINT *, 'Testing cgp_coord_general_write_data_f (array)...'
-
-  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateY', C, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
-
-  data_ptr = C_LOC(coords_data)
-
-  CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
-       data_ptr, ierr)
-
-  IF (ierr .NE. CG_OK) THEN
-     PRINT *, 'FAILED: cgp_coord_general_write_data_f (array)'
-     CALL cgp_error_exit_f()
-  END IF
-
-  !---------------------------------------------------------------------------
-  ! Test 3: cgp_field_general_write_data_f
+  ! Test 2: cgp_field_general_write_data_f
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_field_general_write_data_f...'
 
@@ -158,8 +138,8 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(field_data)
 
   CALL cgp_field_general_write_data_f(fn, B, Z, S, F, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -168,7 +148,7 @@ PROGRAM test_general_wrappers
   END IF
 
   !---------------------------------------------------------------------------
-  ! Test 4: cgp_array_general_write_data_f
+  ! Test 3: cgp_array_general_write_data_f
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_array_general_write_data_f...'
 
@@ -188,8 +168,8 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(array_data)
 
   CALL cgp_array_general_write_data_f(A, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -204,7 +184,7 @@ PROGRAM test_general_wrappers
   CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
   !---------------------------------------------------------------------------
-  ! Test 5: cgp_coord_general_read_data_f
+  ! Test 4: cgp_coord_general_read_data_f
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_coord_general_read_data_f...'
 
@@ -215,8 +195,8 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(read_data)
 
   CALL cgp_coord_general_read_data_f(fn, 1, 1, 1, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -236,7 +216,7 @@ PROGRAM test_general_wrappers
   END DO
 
   !---------------------------------------------------------------------------
-  ! Test 6: cgp_field_general_read_data_f
+  ! Test 5: cgp_field_general_read_data_f
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_field_general_read_data_f...'
 
@@ -244,8 +224,8 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(read_data)
 
   CALL cgp_field_general_read_data_f(fn, 1, 1, 1, 1, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -264,7 +244,7 @@ PROGRAM test_general_wrappers
   END DO
 
   !---------------------------------------------------------------------------
-  ! Test 7: cgp_array_general_read_data_f
+  ! Test 6: cgp_array_general_read_data_f
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_array_general_read_data_f...'
 
@@ -275,8 +255,8 @@ PROGRAM test_general_wrappers
   data_ptr = C_LOC(read_data)
 
   CALL cgp_array_general_read_data_f(1, &
-       f_rmin, f_rmax, &
-       m_type, m_numdim, m_dimvals, m_rmin, m_rmax, &
+       C_LOC(f_rmin), C_LOC(f_rmax), &
+       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
