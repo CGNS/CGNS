@@ -660,7 +660,7 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
  * \param[in]  m_arg_dimvals \PGRID_mem_dimensions
  * \param[in]  m_rmin        \PGRID_mem_range_min
  * \param[in]  m_rmax        \PGRID_mem_range_max
- * \param[out] coords        \PGRID_coord_array
+ * \param[out] coords        \PGRID_coord_array In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  * \details The cgp_coord_general_write_data() perform data conversions if \e datatype
  *          is different from \e mem_datatype. If \e coords == NULL, meaning this processor
@@ -835,7 +835,7 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \param[in]  m_arg_dimvals \PGRID_mem_dimensions
  * \param[in]  m_rmin        \PGRID_mem_range_min
  * \param[in]  m_rmax        \PGRID_mem_range_max
- * \param[out] coords        \PGRID_coord_array
+ * \param[out] coords        \PGRID_coord_array In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  * \details The cgp_coord_general_read_data() perform data conversions if
  *          \e datatype is different from \e mem_datatype. If \e coords == NULL,
@@ -1727,7 +1727,7 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
  * \param[in]  m_arg_dimvals \PSOL_mem_dimensions
  * \param[in]  m_rmin        \PSOL_mem_range_min
  * \param[in]  m_rmax        \PSOL_mem_range_max
- * \param[in]  data          \PSOL_solution_array
+ * \param[in]  data          \PSOL_solution_array In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  * \details If \e data == NULL, meaning this processor reads no data, then
  *  only \e fn,\e  B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
@@ -1885,7 +1885,7 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
  * \param[in]  m_arg_dimvals \PSOL_mem_dimensions
  * \param[in]  m_rmin        \PSOL_mem_range_min
  * \param[in]  m_rmax        \PSOL_mem_range_max
- * \param[out] data          \PSOL_solution_array
+ * \param[out] data          \PSOL_solution_array In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
@@ -2786,7 +2786,7 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
  * \param[in]  m_arg_dimvals \PARR_mem_dimensions
  * \param[in]  m_rmin        \PARR_mem_range_min
  * \param[in]  m_rmax        \PARR_mem_range_max
- * \param[out] data          \PARR_data
+ * \param[out] data          \PARR_data In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
@@ -2926,7 +2926,7 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
  * \param[in]  m_arg_dimvals \PARR_mem_dimensions
  * \param[in]  m_rmin        \PARR_mem_range_min
  * \param[in]  m_rmax        \PARR_mem_range_max
- * \param[out] data          \PARR_data
+ * \param[out] data          \PARR_data In Fortran, the type is \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
