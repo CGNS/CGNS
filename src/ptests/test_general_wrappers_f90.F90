@@ -89,7 +89,7 @@ PROGRAM test_general_wrappers
   sizes(2) = total_size - 1  ! Cell size
   sizes(3) = 0  ! Boundary vertex size
 
-  CALL cg_zone_write_f(fn, B, 'Zone', sizes, CG_Unstructured, Z, ierr)
+  CALL cg_zone_write_f(fn, B, 'Zone', sizes, CGNS_ENUMV(Unstructured), Z, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   !---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ PROGRAM test_general_wrappers
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_coord_general_write_data_f (scalar)...'
 
-  CALL cgp_coord_write_f(fn, B, Z, CG_RealDouble, 'CoordinateX', C, ierr)
+  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateX', C, ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_write_f'
      CALL cgp_error_exit_f()
@@ -110,7 +110,7 @@ PROGRAM test_general_wrappers
   m_rmax(1) = npp
   m_dimvals(1) = npp
   m_numdim = 1
-  m_type = CG_RealDouble
+  m_type = CGNS_ENUMV(RealDouble)
 
   data_ptr = C_LOC(coords_data)
 
@@ -129,7 +129,7 @@ PROGRAM test_general_wrappers
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_coord_general_write_data_f (array)...'
 
-  CALL cgp_coord_write_f(fn, B, Z, CG_RealDouble, 'CoordinateY', C, ierr)
+  CALL cgp_coord_write_f(fn, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateY', C, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   data_ptr = C_LOC(coords_data)
@@ -149,10 +149,10 @@ PROGRAM test_general_wrappers
   !---------------------------------------------------------------------------
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_field_general_write_data_f...'
 
-  CALL cg_sol_write_f(fn, B, Z, 'Solution', CG_Vertex, S, ierr)
+  CALL cg_sol_write_f(fn, B, Z, 'Solution', CGNS_ENUMV(Vertex), S, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
-  CALL cgp_field_write_f(fn, B, Z, S, CG_RealDouble, 'Density', F, ierr)
+  CALL cgp_field_write_f(fn, B, Z, S, CGNS_ENUMV(RealDouble), 'Density', F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   data_ptr = C_LOC(field_data)
@@ -182,7 +182,7 @@ PROGRAM test_general_wrappers
   CALL cg_goto_f(fn, B, ierr, 'Zone_t', Z, 'UserDefinedData_t', 1, 'end')
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
-  CALL cgp_array_write_f('TestArray', CG_RealDouble, 1, sizes(1:1), A, ierr)
+  CALL cgp_array_write_f('TestArray', CGNS_ENUMV(RealDouble), 1, sizes(1:1), A, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   data_ptr = C_LOC(array_data)
