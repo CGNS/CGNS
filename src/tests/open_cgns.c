@@ -26,7 +26,17 @@ int main (int argc, char **argv)
 
     int maxnum_files = 99;
     if (cg_configure(CG_CONFIG_GET_MAXIMUM_FILES,  &maxnum_files)) cg_error_exit();
+#if CG_BUILD_HDF5
+    /* HDF5 backend supports 1024 files */
     if (maxnum_files != 1024) cg_error_exit();
+#else
+    /* ADF backend supports more files (4095 or 16383 depending on NEW_ID_MAPPING) */
+#ifdef NEW_ID_MAPPING
+    if (maxnum_files != 0xfff) cg_error_exit();  /* 4095 */
+#else
+    if (maxnum_files != 0x3fff) cg_error_exit(); /* 16383 */
+#endif
+#endif
 
     printf ("opening cgns file <%s> ...", filename);
     fflush (stdout);
