@@ -13,8 +13,11 @@
 #include "cgnslib.h"
 #include "hash.h"
 
-#ifndef Tcl_Size
-# define Tcl_Size int
+/* Tcl 8.6 compatibility - Tcl_Size was introduced in Tcl 9.0 */
+#if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9
+# if !defined(Tcl_Size)
+   typedef int Tcl_Size;
+# endif
 #endif
 
 #ifdef CG_BUILD_BASESCOPE
