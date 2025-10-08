@@ -13,8 +13,11 @@
 # define cgulong_t unsigned long
 #endif
 
-#ifndef Tcl_Size
-# define Tcl_Size int
+/* Tcl 8.x compatibility - Tcl_Size was introduced in Tcl 9.0 */
+#if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9
+# if !defined(Tcl_Size)
+   typedef int Tcl_Size;
+# endif
 #endif
 
 /* these are the data types as used in CGIO */
@@ -1526,8 +1529,8 @@ static int CGIOtype (ClientData data, Tcl_Interp *interp,
 static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int n, ndim;
-    Tcl_Size Tcl_ndim;
+    int n, ndim_int;
+    Tcl_Size ndim;
     cgsize_t dims[CGIO_MAX_DIMENSIONS];
     double node_id;
     const char **args;
@@ -1549,26 +1552,25 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
     if (argc > 2) {
         if (cgio_get_data_type (cgioNum, node_id, str))
             return (get_error (interp, "cgio_get_data_type"));
-        if (TCL_OK != Tcl_SplitList (interp, argv[2], &Tcl_ndim, &args))
+        if (TCL_OK != Tcl_SplitList (interp, argv[2], &ndim, &args))
             return TCL_ERROR;
-	ndim = (int) Tcl_ndim;
         if (ndim > CGIO_MAX_DIMENSIONS) {
             Tcl_Free ((char *)args);
             Tcl_AppendResult (interp, "invalid number of dimensions", NULL);
             return TCL_ERROR;
         }
         if (ndim) {
-            for (n = 0; n < ndim; n++)
+            for (n = 0; n < (int)ndim; n++)
                 dims[n] = atoi (args[n]);
             Tcl_Free ((char *)args);
         }
-        if (cgio_set_dimensions (cgioNum, node_id, str, ndim, dims))
+        if (cgio_set_dimensions (cgioNum, node_id, str, (int)ndim, dims))
             return (get_error (interp, "cgio_set_dimensions"));
     }
-    if (cgio_get_dimensions (cgioNum, node_id, &ndim, dims))
+    if (cgio_get_dimensions (cgioNum, node_id, &ndim_int, dims))
         return (get_error (interp, "cgio_get_dimensions"));
-    if (ndim > 0) {
-        for (n = 0; n < ndim; n++) {
+    if (ndim_int > 0) {
+        for (n = 0; n < ndim_int; n++) {
             sprintf (str, "%ld", (long)dims[n]);
             Tcl_AppendElement (interp, str);
         }
@@ -1745,9 +1747,8 @@ static int CGIOread (ClientData data, Tcl_Interp *interp,
 static int CGIOwrite (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int n, ns;
-    int ndim;
-    Tcl_Size nv, Tcl_ndim;
+    int n, ns, ndim;
+    Tcl_Size nv, ndim_tcl;
     cgsize_t np, dims[CGIO_MAX_DIMENSIONS];
     double node_id;
     const char **args;
@@ -1792,12 +1793,12 @@ static int CGIOwrite (ClientData data, Tcl_Interp *interp,
     /* get dimensions */
 
     ndim = 0;
-    Tcl_ndim = 0;
+    ndim_tcl = 0;
     args = NULL;
     if (argc > 3 &&
-        TCL_OK != Tcl_SplitList (interp, argv[3], &Tcl_ndim, &args))
+        TCL_OK != Tcl_SplitList (interp, argv[3], &ndim_tcl, &args))
         return TCL_ERROR;
-    if (Tcl_ndim != 0) ndim = (int) Tcl_ndim;
+    if (ndim_tcl != 0) ndim = (int) ndim_tcl;
     if (ndim == 0) {
         if (cgio_set_dimensions (cgioNum, node_id, dt->name, ndim, dims))
             return (get_error (interp, "cgio_set_dimensions"));

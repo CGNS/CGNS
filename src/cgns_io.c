@@ -51,11 +51,9 @@ freely, subject to the following restrictions:
 #endif
 #if CG_BUILD_HDF5
 #include "adfh/ADFH.h"
-#if CG_BUILD_PARALLEL
 #include "hdf5.h"
 #endif
 #include "cgio_internal_type.h" /* for cgns_io_ctx_t */
-#endif
 
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
@@ -91,6 +89,7 @@ typedef struct {
     int type;
     int mode;
     double rootid;
+    int access_mode;
 } cgns_io;
 
 static int num_open = 0;
@@ -559,6 +558,17 @@ int cgio_configure (int what, void *value)
     if (what > 200) {
 #if CG_BUILD_HDF5
         ADFH_Configure(what-200, value, &ierr);
+#else
+        /* Handle HDF5-specific options when HDF5 is not available */
+        if (what == 401) {  /* CG_CONFIG_GET_MAXIMUM_FILES */
+            /* Return ADF MAXIMUM_FILES constant */
+#ifdef NEW_ID_MAPPING
+            *(int *)value = 0xfff;   /* 4095 */
+#else
+            *(int *)value = 0x3fff;  /* 16383 */
+#endif
+            ierr = CGIO_ERR_NONE;
+        }
 #endif
     }
 /* nothing here yet
@@ -835,6 +845,15 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
     iolist[n].rootid = rootid;
+/* keep track of file parallel/native opening mode */
+    iolist[n].access_mode = CGIO_NATIVE_MODE;
+#if CG_BUILD_HDF5
+    if (file_type == CGIO_FILE_HDF5) {
+        if (strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0){
+          iolist[n].access_mode = CGIO_PARALLEL_MODE;
+        }
+    }
+#endif
     *cgio_num = n + 1;
     num_open++;
 

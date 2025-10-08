@@ -59,3 +59,7 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

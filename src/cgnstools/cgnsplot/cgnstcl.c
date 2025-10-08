@@ -13,8 +13,11 @@
 #include "cgnslib.h"
 #include "hash.h"
 
-#ifndef Tcl_Size
-# define Tcl_Size int
+/* Tcl 8.x compatibility - Tcl_Size was introduced in Tcl 9.0 */
+#if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9
+# if !defined(Tcl_Size)
+   typedef int Tcl_Size;
+# endif
 #endif
 
 #ifdef CG_BUILD_BASESCOPE
@@ -3824,10 +3827,11 @@ static int CGNSbounds (ClientData data, Tcl_Interp *interp, int argc, char **arg
     if (argc > 1) all = atoi(argv[1]);
     get_bounds (all, bbox);
     if (argc > 2) {
+        int i;
         if (TCL_OK != Tcl_SplitList (interp, argv[2], &n, &args))
             return TCL_ERROR;
-        for (n = 0; n < 16; n++)
-            matrix[n] = (float) atof (args[n]);
+        for (i = 0; i < 16; i++)
+            matrix[i] = (float) atof (args[i]);
         Tcl_Free ((char *)args);
         transform_bounds (matrix, bbox);
     }
@@ -3963,7 +3967,7 @@ static int OGLaxis (ClientData data, Tcl_Interp *interp, int argc, char **argv)
             if (TCL_OK != Tcl_SplitList (interp, argv[2], &nb, &args))
                 return TCL_ERROR;
             if (nb == 3) {
-                for (n = 0; n < nb; n++) {
+                for (n = 0; n < (int)nb; n++) {
                     if (sscanf (args[n], "%f %f", &bbox[n][0], &bbox[n][1]) != 2)
                         break;
                 }
@@ -5229,6 +5233,7 @@ static int OGLcutplane (ClientData data, Tcl_Interp *interp, int argc, char **ar
     mode = atoi(argv[1]);
 
     if (argc == 3) {
+        int i;
         Tcl_Size np;
         const char **args;
         if (TCL_OK != Tcl_SplitList (interp, argv[2], &np, &args))
@@ -5238,8 +5243,8 @@ static int OGLcutplane (ClientData data, Tcl_Interp *interp, int argc, char **ar
             Tcl_SetResult (interp, "invalid plane", TCL_STATIC);
             return TCL_ERROR;
         }
-        for (np = 0; np < 4; np++)
-            plane[np] = (float) atof (args[np]);
+        for (i = 0; i < 4; i++)
+            plane[i] = (float) atof (args[i]);
         Tcl_Free ((char *)args);
         init_cutplane(plane);
         find_elements();
@@ -5387,7 +5392,7 @@ static int OGLcutconfig (ClientData data, Tcl_Interp *interp, int argc, char **a
         Tcl_SetResult (interp, "invalid color", TCL_STATIC);
         return TCL_ERROR;
     }
-    for (n = 0; n < np; n++)
+    for (n = 0; n < (int)np; n++)
         cutcolor[n] = (float) atof (args[n]);
     Tcl_Free ((char *)args);
 

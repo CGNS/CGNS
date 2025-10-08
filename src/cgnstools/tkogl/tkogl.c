@@ -22,10 +22,27 @@
 #include "printstr.h"
 #include "feedback.h"
 
-#if ! defined(__WIN32__) && ! defined(_WIN32)
-/* For TkWmAddToColormapWindows. */
-#define _TKPORT /* Typical installations cannot find tkPort.h. */
-#include <tk-private/generic/tkInt.h>
+/*
+ * Platform-specific handling of Tk internal structures:
+ *
+ * Windows code (WinMakeWindowExist) requires access to TkWindow struct members
+ * (dispPtr, dirtyAtts, dirtyChanges), so we must include the full header.
+ *
+ * Unix/Linux code only needs TkWmAddToColormapWindows function, which can be
+ * forward-declared without including the private header.
+ *
+ * See: https://github.com/CGNS/CGNS/issues/689
+ */
+#if defined(__WIN32__) || defined(_WIN32)
+/* Windows: Need full TkWindow definition for internal member access */
+#define _TKPORT
+/* Private headers should be in include path when built from source */
+#include "tkInt.h"
+#include "tkWinInt.h"
+#else
+/* Unix/Linux: Forward declaration only - don't need full TkWindow definition */
+typedef struct TkWindow TkWindow;
+extern void TkWmAddToColormapWindows(TkWindow *winPtr);
 #endif
 
 
@@ -327,30 +344,33 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
 {
    static char* TkOGLClassName = "TkOGL Class";
    static int TkOGLClassInitted = 0;
-   TkWindow *winPtr = (TkWindow *) oglWinPtr->tkwin;
-   Display *dpy = Tk_Display (oglWinPtr->tkwin);
+   Tk_Window tkwin = oglWinPtr->tkwin;
+   TkWindow *winPtr = (TkWindow *) tkwin;
+   Display *dpy = Tk_Display(tkwin);
    Window parent;
    HWND hwnd, parentWin;
    HANDLE hInstance;
    WNDCLASS TkOGLClass;
    Tcl_HashEntry *hPtr;
    int new_flag;
+   Window win;
 
    /* Destroy window if already exists */
-   if (winPtr->window != None) {
-      XDestroyWindow(dpy, winPtr->window);
+   win = Tk_WindowId(tkwin);
+   if (win != None) {
+      XDestroyWindow(dpy, win);
    }
 
    /* Find parent of window */
    /* Necessary for creation */
-   if ((winPtr->parentPtr == NULL) || (winPtr->flags & TK_TOP_LEVEL)) {
-      parent = XRootWindow(winPtr->display, winPtr->screenNum);
+   if (Tk_Parent(tkwin) == NULL || Tk_IsTopLevel(tkwin)) {
+      parent = RootWindowOfScreen(Tk_Screen(tkwin));
    }
    else {
-      if (winPtr->parentPtr->window == None) {
-         Tk_MakeWindowExist((Tk_Window) winPtr->parentPtr);
+      if (Tk_WindowId(Tk_Parent(tkwin)) == None) {
+         Tk_MakeWindowExist(Tk_Parent(tkwin));
       }
-      parent = winPtr->parentPtr->window;
+      parent = Tk_WindowId(Tk_Parent(tkwin));
    }
 
    /* Create a window class for TkOGL windows if not done this yet */
