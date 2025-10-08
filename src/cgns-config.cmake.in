@@ -65,59 +65,45 @@ foreach (comp IN LISTS ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS)
   endif ()
 endforeach ()
 
-# Propagate HDF5 dependency
-set (HAVE_LK_HDF5_SHARED 0)
-if ((${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT) AND (${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE STREQUAL "shared"))
-  set (HAVE_LK_HDF5_SHARED 1)
-endif()
-if (HAVE_LK_HDF5_SHARED)
-  find_dependency(HDF5)
-  if (HDF5_FOUND)
-    # Handle case of partial hdf5 cmake config
-    if (NOT TARGET hdf5-shared)
-      message (STATUS " HDF5 was found but not hdf5-shared target, trying a fall back")
+#-----------------------------------------------------------------------------
+# Resolve HDF5 dependency BEFORE including cgns-targets.cmake
+# This ensures hdf5-static/hdf5-shared targets exist when cgns targets are loaded
+#-----------------------------------------------------------------------------
+if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT)
+  # Determine which HDF5 link type to find
+  if (${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE STREQUAL "shared")
+    set (HDF5_USE_STATIC_LIBRARIES OFF)
+    find_dependency(HDF5)
+    if (HDF5_FOUND AND NOT TARGET hdf5-shared)
+      message (STATUS " HDF5 was found but not hdf5-shared target, creating fallback target")
       add_library(hdf5-shared INTERFACE IMPORTED)
       string(REPLACE "-D" "" _hdf5_definitions "${HDF5_DEFINITIONS}")
       set_target_properties(hdf5-shared PROPERTIES
                           INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES}"
                           INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
-                          INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions}")
-      set_target_properties(hdf5-shared PROPERTIES INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_DYNAMIC_LIB)
+                          INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions};H5_BUILT_AS_DYNAMIC_LIB")
     endif()
-  endif()
-endif()
-# In case of static CGNS with static HDF5
-# How to propagate the dependency as it will be build environment dependent ?
-# Try to help the user.
-if ((${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT) AND (${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE STREQUAL "static"))
-  if ("static" IN_LIST ${CGNS_PACKAGE_NAME}_LIB_TYPE)
+  elseif (${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE STREQUAL "static")
     set (HDF5_USE_STATIC_LIBRARIES ON)
     find_dependency(HDF5)
-    if (HDF5_FOUND)
-      if (NOT TARGET hdf5-static)
-        message (STATUS " HDF5 was found but not hdf5-static target, trying a fall back")
-        add_library(hdf5-static STATIC IMPORTED)
-        string(REPLACE "-D" "" _hdf5_definitions "${HDF5_DEFINITIONS}")
-        set_target_properties(hdf5-static PROPERTIES
+    if (HDF5_FOUND AND NOT TARGET hdf5-static)
+      message (STATUS " HDF5 was found but not hdf5-static target, creating fallback target")
+      add_library(hdf5-static INTERFACE IMPORTED)
+      string(REPLACE "-D" "" _hdf5_definitions "${HDF5_DEFINITIONS}")
+      set_target_properties(hdf5-static PROPERTIES
                           INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES}"
                           INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
-                          INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions}")
-        set_target_properties(hdf5-static PROPERTIES INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_STATIC_LIB)
-      endif()
+                          INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions};H5_BUILT_AS_STATIC_LIB")
       # If HDF5 needs ZLIB, but ZLIB is an external package not provided by hdf5
       # a ZLIB dependency should be added.
-      if (TARGET hdf5-static)
-        if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
-          message(STATUS "hdf5-static target needs ZLIB through an external library")
-          find_package(ZLIB)
-        endif ()
-        if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
-          message(STATUS "hdf5-static target needs SZIP through external libraries")
-          find_package(libaec)
-        endif()
+      if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+        message(STATUS "hdf5-static target needs ZLIB through an external library")
+        find_package(ZLIB)
+      endif ()
+      if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+        message(STATUS "hdf5-static target needs SZIP through external libraries")
+        find_package(libaec)
       endif()
-    else ()
-      message (FATAL_ERROR " HDF5 with hdf5-static target is required but was not found")
     endif()
   endif()
 endif()

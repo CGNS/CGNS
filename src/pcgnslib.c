@@ -653,14 +653,14 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
  * \param[in]  B             \B_Base
  * \param[in]  Z             \Z_Zone
  * \param[in]  C             \PGRID_Coordinate
- * \param[in]  rmin          \PGRID_range_min
- * \param[in]  rmax          \PGRID_range_max
+ * \param[in]  rmin          \PGRID_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PGRID_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PGRID_mem_datatype
  * \param[in]  m_numdim      \PGRID_mem_rank
- * \param[in]  m_arg_dimvals \PGRID_mem_dimensions
- * \param[in]  m_rmin        \PGRID_mem_range_min
- * \param[in]  m_rmax        \PGRID_mem_range_max
- * \param[out] coords        \PGRID_coord_array
+ * \param[in]  m_arg_dimvals \PGRID_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PGRID_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PGRID_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] coords        \PGRID_coord_array In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  * \details The cgp_coord_general_write_data() perform data conversions if \e datatype
  *          is different from \e mem_datatype. If \e coords == NULL, meaning this processor
@@ -828,14 +828,14 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \param[in]  B             \B_Base
  * \param[in]  Z             \Z_Zone
  * \param[in]  C             \C_Coordinate
- * \param[in]  rmin          \PGRID_range_min
- * \param[in]  rmax          \PGRID_range_max
+ * \param[in]  rmin          \PGRID_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PGRID_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PGRID_mem_datatype
  * \param[in]  m_numdim      \PGRID_mem_rank
- * \param[in]  m_arg_dimvals \PGRID_mem_dimensions
- * \param[in]  m_rmin        \PGRID_mem_range_min
- * \param[in]  m_rmax        \PGRID_mem_range_max
- * \param[out] coords        \PGRID_coord_array
+ * \param[in]  m_arg_dimvals \PGRID_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PGRID_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PGRID_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] coords        \PGRID_coord_array In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  * \details The cgp_coord_general_read_data() perform data conversions if
  *          \e datatype is different from \e mem_datatype. If \e coords == NULL,
@@ -1720,14 +1720,14 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
  * \param[in]  Z             \Z_Zone
  * \param[in]  S             \PSOL_S
  * \param[in]  F             \PSOL_F
- * \param[in]  rmin          \PSOL_range_min
- * \param[in]  rmax          \PSOL_range_max
+ * \param[in]  rmin          \PSOL_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PSOL_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PSOL_mem_datatype
  * \param[in]  m_numdim      \PSOL_mem_rank
- * \param[in]  m_arg_dimvals \PSOL_mem_dimensions
- * \param[in]  m_rmin        \PSOL_mem_range_min
- * \param[in]  m_rmax        \PSOL_mem_range_max
- * \param[in]  data          \PSOL_solution_array
+ * \param[in]  m_arg_dimvals \PSOL_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PSOL_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PSOL_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  data          \PSOL_solution_array In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  * \details If \e data == NULL, meaning this processor reads no data, then
  *  only \e fn,\e  B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
@@ -1878,14 +1878,14 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
  * \param[in]  Z             \Z_Zone
  * \param[in]  S             \PSOL_S
  * \param[in]  F             \PSOL_F
- * \param[in]  rmin          \PSOL_range_min
- * \param[in]  rmax          \PSOL_range_max
+ * \param[in]  rmin          \PSOL_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PSOL_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PSOL_mem_datatype
  * \param[in]  m_numdim      \PSOL_mem_rank
- * \param[in]  m_arg_dimvals \PSOL_mem_dimensions
- * \param[in]  m_rmin        \PSOL_mem_range_min
- * \param[in]  m_rmax        \PSOL_mem_range_max
- * \param[out] data          \PSOL_solution_array
+ * \param[in]  m_arg_dimvals \PSOL_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PSOL_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PSOL_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] data          \PSOL_solution_array In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
@@ -2779,14 +2779,14 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
  * \brief Write shaped array to a subset of data array in parallel.
  *
  * \param[in]  A             \PARR_A
- * \param[in]  rmin          \PARR_range_min
- * \param[in]  rmax          \PARR_range_max
+ * \param[in]  rmin          \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PARR_mem_datatype
  * \param[in]  m_numdim      \PARR_mem_rank
- * \param[in]  m_arg_dimvals \PARR_mem_dimensions
- * \param[in]  m_rmin        \PARR_mem_range_min
- * \param[in]  m_rmax        \PARR_mem_range_max
- * \param[out] data          \PARR_data
+ * \param[in]  m_arg_dimvals \PARR_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PARR_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PARR_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] data          \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
@@ -2919,14 +2919,14 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
  * \brief Read subset of data array to a shaped array in parallel.
  *
  * \param[in]  A             \PARR_A
- * \param[in]  rmin          \PARR_range_min
- * \param[in]  rmax          \PARR_range_max
+ * \param[in]  rmin          \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax          \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \param[in]  m_type        \PARR_mem_datatype
  * \param[in]  m_numdim      \PARR_mem_rank
- * \param[in]  m_arg_dimvals \PARR_mem_dimensions
- * \param[in]  m_rmin        \PARR_mem_range_min
- * \param[in]  m_rmax        \PARR_mem_range_max
- * \param[out] data          \PARR_data
+ * \param[in]  m_arg_dimvals \PARR_mem_dimensions In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmin        \PARR_mem_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  m_rmax        \PARR_mem_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] data          \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then

@@ -47,6 +47,7 @@ echo "=== running tests ==="; \
 for dir in $DIRS;do
     printf "%-40s \n" "Testing $dir..."
     cd $dir
+    mkdir -p build
     x="   Program: cgwrite"
     printf "$x"
     itime=""
@@ -83,6 +84,7 @@ done
 dir=Test_cgio
 printf "%-40s \n" "Testing $dir..."
 cd $dir
+mkdir -p build
 x="   Program: cgiotest"
 printf "$x"
 if [ "$TIMING_AVAIL" = "0" ]; then
