@@ -13,7 +13,7 @@
 # define cgulong_t unsigned long
 #endif
 
-/* Tcl 8.6 compatibility - Tcl_Size was introduced in Tcl 9.0 */
+/* Tcl 8.x compatibility - Tcl_Size was introduced in Tcl 9.0 */
 #if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9
 # if !defined(Tcl_Size)
    typedef int Tcl_Size;
