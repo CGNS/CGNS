@@ -6701,11 +6701,11 @@ CONTAINS
     INTEGER, INTENT(IN) :: fn
     INTEGER, INTENT(IN) :: B
     INTEGER, INTENT(IN) :: P
-    CHARACTER(LEN=*) , INTENT(INOUT) :: particlename
+    CHARACTER(LEN=*) , INTENT(OUT) :: particlename
     INTEGER(CGSIZE_T), INTENT(OUT)   :: nsize
     INTEGER, INTENT(OUT) :: ier
 
-    CHARACTER(LEN=LEN_TRIM(particlename)+1,KIND=C_CHAR) :: c_particlename
+    CHARACTER(len=1, kind=C_CHAR) :: c_particlename(MAX_LEN+1)
 
     INTERFACE
        INTEGER(C_INT) FUNCTION cg_particle_read(fn, B, P, particlename, nsize) BIND(C, NAME="cg_particle_read")
@@ -6826,10 +6826,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: C
-      CHARACTER(LEN=*) :: pcoord_name
+      CHARACTER(LEN=*), INTENT(OUT) :: pcoord_name
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(pcoord_name)+1, KIND=C_CHAR) :: c_pcoord_name
+      CHARACTER(len=1, kind=C_CHAR) :: c_pcoord_name(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_particle_coord_node_read(fn, B, P, C, pcoord_name) BIND(C, NAME="cg_particle_coord_node_read")
@@ -6987,11 +6987,11 @@ CONTAINS
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: C
       INTEGER(cgenum_t), INTENT(OUT) :: datatype
-      CHARACTER(LEN=*)     :: coordname
+      CHARACTER(LEN=*), INTENT(OUT) :: coordname
       INTEGER, INTENT(OUT) :: ier
 
       INTEGER(C_INT) :: c_datatype
-      CHARACTER(LEN=LEN_TRIM(coordname)+1, KIND=C_CHAR) :: c_coordname
+      CHARACTER(len=1, kind=C_CHAR) :: c_coordname(MAX_LEN+1)
 
       INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_coord_info(fn, B, P, C, datatype, coordname) BIND(C, NAME="cg_particle_coord_info")
@@ -7219,10 +7219,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      CHARACTER(LEN=*)    :: solname
+      CHARACTER(LEN=*), INTENT(OUT) :: solname
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(solname)+1,KIND=C_CHAR) :: c_solname
+      CHARACTER(len=1, kind=C_CHAR) :: c_solname(MAX_LEN+1)
 
       INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_sol_info(fn, B, P, S, solname) BIND(C, NAME="cg_particle_sol_info")
@@ -7481,10 +7481,10 @@ CONTAINS
       INTEGER, INTENT(IN)  :: S
       INTEGER, INTENT(IN)  :: F
       INTEGER(cgenum_t), INTENT(OUT) :: datatype
-      CHARACTER(LEN=*),  INTENT(INOUT) :: fieldname
+      CHARACTER(LEN=*),  INTENT(OUT) :: fieldname
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(fieldname)+1, KIND=C_CHAR) :: c_fieldname
+      CHARACTER(len=1, kind=C_CHAR) :: c_fieldname(MAX_LEN+1)
 
      INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_field_info(fn, B, P, S, F, datatype, fieldname) BIND(C, NAME="cg_particle_field_info")
@@ -7635,10 +7635,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      CHARACTER(LEN=*),  INTENT(INOUT) :: pitername
+      CHARACTER(LEN=*), INTENT(OUT) :: pitername
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(pitername)+1, KIND=C_CHAR) :: c_pitername
+      CHARACTER(len=1, kind=C_CHAR) :: c_pitername(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_piter_read(fn, B, P, pitername) &
