@@ -7824,11 +7824,11 @@ CONTAINS
 !DEC$endif
     SUBROUTINE cg_particle_model_read_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
-      CHARACTER(LEN=*) , INTENT(INOUT) :: ModelLabel
+      CHARACTER(LEN=*), INTENT(OUT) :: ModelLabel
       INTEGER(CGENUM_T), INTENT(OUT) :: ModelType
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(ModelLabel)+1,KIND=C_CHAR) :: c_ModelLabel
+      CHARACTER(len=1, kind=C_CHAR) :: c_ModelLabel(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_particle_model_read(ModelLabel, ModelType) &
