@@ -17501,7 +17501,7 @@ int cg_array_read(int A, void *Data)
 {
     cgns_array *array;
     int n, ier=0;
-    cgsize_t num = 1;
+    size_t num = 1;
 
     CHECK_FILE_OPEN
 
@@ -17515,7 +17515,7 @@ int cg_array_read(int A, void *Data)
     for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
 
     if (array->data)
-        memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
+        memcpy(Data, array->data, num*size_of(array->data_type));
     else {
         if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
             cg_io_error("cgio_read_all_data_type");
@@ -17543,7 +17543,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
 {
     cgns_array *array;
     int n, ier=0;
-    cgsize_t num = 1;
+    size_t num = 1;
     void *array_data;
 
     CHECK_FILE_OPEN
@@ -17567,7 +17567,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     }
     if (type==CGNS_ENUMV(Character)) {
         if (array->data)
-            memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
+            memcpy(Data, array->data, num*size_of(array->data_type));
         else {
             if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
                 cg_io_error("cgio_read_all_data_type");
@@ -17581,7 +17581,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     if (array->data)
         array_data = array->data;
     else {
-        array_data = malloc(((size_t)num)*size_of(array->data_type));
+        array_data = malloc(num*size_of(array->data_type));
         if (array_data == NULL) {
             cgi_error("Error allocating array_data");
             return CG_ERROR;
@@ -17592,7 +17592,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
         }
     }
 
-    ier = cgi_convert_data(num, cgi_datatype(array->data_type),
+    ier = cgi_convert_data((cgsize_t)num, cgi_datatype(array->data_type),
               array_data, type, Data);
     if (array_data != array->data) free(array_data);
 
