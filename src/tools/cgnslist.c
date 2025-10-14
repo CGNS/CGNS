@@ -8,9 +8,7 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
+#include "cgnstypes.h"
 
 #if CG_HAVE_STAT64_STRUCT
 #ifdef _WIN32
