@@ -37,7 +37,6 @@
 int CellDim = 3, PhyDim = 3;
 
 int cgfile, cgbase, cgzone;
-int CellDim, PhyDim;
 cgsize_t size[9];
 
 #define NUM_SIDE 5
