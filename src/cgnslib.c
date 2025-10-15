@@ -17512,7 +17512,7 @@ int cg_array_read(int A, void *Data)
     array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ier);
     if (array==0) return ier;
 
-    for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
+    for (n=0; n<array->data_dim; n++) num *= (size_t)array->dim_vals[n];
 
     if (array->data)
         memcpy(Data, array->data, num*size_of(array->data_type));
@@ -17555,7 +17555,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ier);
     if (array==0) return ier;
 
-    for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
+    for (n=0; n<array->data_dim; n++) num *= (size_t)array->dim_vals[n];
 
      /* Special for Character arrays */
     if ((type == CGNS_ENUMV(Character) &&
