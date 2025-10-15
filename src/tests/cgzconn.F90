@@ -4,7 +4,7 @@
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
-      include 'cgnslib_f.h'
+      use CGNS
 
       cgsize_t ierr, cgfile, cgbase, cgzone, cgcoord
       cgsize_t cgz1, cgz2, cgconn, nzconn, nconn, n1to1
