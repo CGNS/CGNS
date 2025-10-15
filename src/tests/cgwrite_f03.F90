@@ -46,6 +46,8 @@ PROGRAM write_cgns_1
   USE CGNS
   USE ISO_C_BINDING
   USE cgns_write_test
+  USE ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
+
   IMPLICIT NONE
 
   ! author: Diane Poirier (diane@icemcfd.com)
@@ -328,7 +330,10 @@ PROGRAM write_cgns_1
   f_ptr = C_LOC(maxnum_files)
   CALL cg_configure_f(CG_CONFIG_GET_MAXIMUM_FILES, f_ptr, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  IF (maxnum_files .NE. 1024) CALL cg_error_exit_f
+  IF (maxnum_files .NE. 1024) THEN
+    WRITE(ERROR_UNIT, *) "ERROR: Unexpected CG_CONFIG_GET_MAXIMUM_FILES result"
+    CALL cg_error_exit_f
+  ENDIF
 
   ! enable committing memory to disk
   value_f = 1
