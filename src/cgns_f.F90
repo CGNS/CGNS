@@ -6618,23 +6618,22 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_configure_ptr
 !DEC$endif
   SUBROUTINE cg_configure_ptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_PTR
+    USE ISO_C_BINDING, ONLY : C_PTR, C_INT
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: what
     TYPE(C_PTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
     INTERFACE
-       SUBROUTINE cg_configure_c_ptr(what, value, ier) BIND(C, name="cg_configure_c_ptr")
-         IMPORT :: C_PTR
+      INTEGER(C_INT) FUNCTION cg_configure_c_ptr(what, value) BIND(C, name="cg_configure_c_ptr")
+         IMPORT :: C_PTR, C_INT
          IMPLICIT NONE
-         INTEGER :: what
+         INTEGER(C_INT), VALUE :: what
          TYPE(C_PTR), VALUE :: value
-         INTEGER :: ier
-       END SUBROUTINE cg_configure_c_ptr
+      END FUNCTION cg_configure_c_ptr
     END INTERFACE
 
-    CALL cg_configure_c_ptr(what, value, ier)
+    ier = INT(cg_configure_c_ptr(INT(what, C_INT), value))
 
   END SUBROUTINE cg_configure_ptr
 
@@ -6642,23 +6641,22 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
 !DEC$endif
   SUBROUTINE cg_configure_funptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_FUNPTR
+    USE ISO_C_BINDING, ONLY : C_FUNPTR, C_INT
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: what
     TYPE(C_FUNPTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
     INTERFACE
-      SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C, name="cg_configure_c_funptr")
-        IMPORT :: C_FUNPTR
+      INTEGER(C_INT) FUNCTION cg_configure_c_funptr(what, value) BIND(C, name="cg_configure_c_funptr")
+        IMPORT :: C_FUNPTR, C_INT
         IMPLICIT NONE
-        INTEGER :: what
+        INTEGER(C_INT), VALUE :: what
         TYPE(C_FUNPTR), VALUE :: value
-        INTEGER :: ier
-      END SUBROUTINE cg_configure_c_funptr
+      END FUNCTION cg_configure_c_funptr
     END INTERFACE
 
-    CALL cg_configure_c_funptr(what, value, ier)
+    ier = INT(cg_configure_c_funptr(INT(what, C_INT), value))
 
   END SUBROUTINE cg_configure_funptr
 

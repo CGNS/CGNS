@@ -119,51 +119,54 @@ static void string_2_F_string(char *c_string, char *string,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL int cg_configure_c_ptr(int what, void *value)
 {
+  int ier;
   /* CHARACTERS */
-  if( (int)*what == CG_CONFIG_SET_PATH ||
-      (int)*what == CG_CONFIG_ADD_PATH) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
-  } else if( (int)*what == CG_CONFIG_ERROR) {
-    *ier = (cgint_f)CG_ERROR;
+  if( what == CG_CONFIG_SET_PATH ||
+      what == CG_CONFIG_ADD_PATH) {
+    ier = cg_configure(what, value);
+  } else if( what == CG_CONFIG_ERROR) {
+    ier = CG_ERROR;
 
   /* MPI COMMUNICATOR */
 #if CG_BUILD_PARALLEL
-  } else if( (int)*what == CG_CONFIG_HDF5_MPI_COMM ) {
-    MPI_Fint F_comm = *(MPI_Fint *)value;
+  } else if( what == CG_CONFIG_HDF5_MPI_COMM ) {
+    MPI_Fint F_comm = (MPI_Fint)value;
     MPI_Comm C_comm = MPI_Comm_f2c(F_comm);
-    *ier = (cgint_f)cg_configure((int)*what, &C_comm);
+    ier = cg_configure(what, &C_comm);
 #endif
 
   /* RIND */
-  } else if( (int)*what == CG_CONFIG_RIND_INDEX) {
-    if(*(int*)value == 0) {
-      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_ZERO);
-    } else if(*(int*)value == 1) {
-      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_CORE);
+  } else if( what == CG_CONFIG_RIND_INDEX) {
+    if(*(int *)value == 0) {
+      ier = cg_configure(what, CG_CONFIG_RIND_ZERO);
+    } else if(*(int *)value == 1) {
+      ier = cg_configure(what, CG_CONFIG_RIND_CORE);
     } else {
-      *ier = (cgint_f)CG_ERROR;
-      return;
+      ier = CG_ERROR;
+      return ier;
     }
   /* get value */
-  } else if( (int)*what == CG_CONFIG_GET_MAXIMUM_FILES) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
+  } else if( what == CG_CONFIG_GET_MAXIMUM_FILES) {
+    ier = cg_configure(what, value);
 
   /* EVERYTHING ELSE */
   } else {
-    *ier = (cgint_f)cg_configure((int)*what, (void *)(*(size_t *)value));
+    ier = cg_configure(what, (void *)(*(size_t *)value));
   }
+  return ier;
 }
 
-CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL int cg_configure_c_funptr(int what, void *value)
 {
-  if ( (int)*what == CG_CONFIG_ERROR ) {
-      *ier = (cgint_f)cg_configure((int)*what, value);
+  int ier;
+  if ( what == CG_CONFIG_ERROR ) {
+      ier = cg_configure(what, value);
   } else {
-      *ier = (cgint_f)CG_ERROR;
+      ier = CG_ERROR;
   }
-  return;
+  return ier;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
