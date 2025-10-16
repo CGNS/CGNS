@@ -80,7 +80,7 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) coordname(Ndim)
   CHARACTER(LEN=32) donorname
 
-  INTEGER, TARGET :: value_f
+  INTEGER(C_INT), TARGET :: value_f
   INTEGER(C_INT), TARGET :: maxnum_files
   INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
@@ -322,8 +322,8 @@ PROGRAM write_cgns_1
   ! **************************
   ! Test cg_configure options
   ! **************************
-  value_f = 1
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
+  value_size_t_f = INT(1, C_SIZE_T)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   maxnum_files = 1
@@ -336,8 +336,8 @@ PROGRAM write_cgns_1
   ENDIF
 
   ! enable committing memory to disk
-  value_f = 1
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_WRITE, C_LOC(value_f), ier)
+  value_size_t_f = INT(1, C_SIZE_T)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_WRITE, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_size_t_f = INT(20*1024*1024,C_SIZE_T)
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_INCR, C_LOC(value_size_t_f), ier)
@@ -353,26 +353,26 @@ PROGRAM write_cgns_1
   CALL cg_close_f(cg, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-  value_f = 0
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
+  value_size_t_f = INT(0, C_SIZE_T)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-  value_f = CG_FILE_ADF2
-  value_f = CG_FILE_ADF
-  f_ptr = C_LOC(value_f)
+  value_size_t_f = CG_FILE_ADF2
+  value_size_t_f = CG_FILE_ADF
+  f_ptr = C_LOC(value_size_t_f)
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, f_ptr, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  value_f = CG_FILE_HDF5
-  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
+  value_size_t_f = CG_FILE_HDF5
+  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  value_f = -1
-  CALL cg_configure_f(CG_CONFIG_HDF5_COMPRESS, C_LOC(value_f), ier)
+  value_size_t_f = -1
+  CALL cg_configure_f(CG_CONFIG_HDF5_COMPRESS, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  value_f = -1
-  CALL cg_configure_f(CG_CONFIG_COMPRESS, C_LOC(value_f), ier)
+  value_size_t_f = -1
+  CALL cg_configure_f(CG_CONFIG_COMPRESS, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  value_f =  CG_CONFIG_RIND_ZERO
 
+  value_f =  CG_CONFIG_RIND_ZERO
   CALL cg_configure_f(CG_CONFIG_RIND_INDEX, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f = CG_CONFIG_RIND_CORE
@@ -390,8 +390,8 @@ PROGRAM write_cgns_1
   CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-  value_f = 100 ! Trigger an error
-  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
+  value_size_t_f = 100 ! Trigger an error
+  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_size_t_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
 
 ! testing using callbacks with CG_CONFIGURE

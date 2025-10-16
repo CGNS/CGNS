@@ -149,7 +149,7 @@ CGNSDLL int cg_configure_c_ptr(int what, void *value)
     }
   /* get value */
   } else if( what == CG_CONFIG_GET_MAXIMUM_FILES) {
-    ier = cg_configure(what, value);
+    ier = cg_configure(what, (void *)((int *)value));
 
   /* EVERYTHING ELSE */
   } else {
