@@ -48,6 +48,7 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include "fortran_macros.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
@@ -153,20 +154,20 @@ CGNSDLL void cg_configure_c_ptr(int *what, void *value, cgint_f *ier)
   } else if( *what == CG_CONFIG_GET_MAXIMUM_FILES) {
     *ier = (cgint_f)cg_configure(*what, value);
 
-  /* SIZE_T VALUES - cast size_t value as pointer */
+  /* SIZE_T VALUES - cast size_t value as pointer using intptr_t for clarity and portability */
   } else if( *what == CG_CONFIG_HDF5_DISKLESS_INCR ||
              *what == CG_CONFIG_HDF5_MD_BLOCK_SIZE ||
              *what == CG_CONFIG_HDF5_BUFFER ||
              *what == CG_CONFIG_HDF5_SIEVE_BUF_SIZE ||
              *what == CG_CONFIG_HDF5_ELINK_CACHE_SIZE ) {
     /* For these options, the value is a size_t that needs to be passed by value (as pointer) */
-    *ier = (cgint_f)cg_configure(*what, (void *)(*(size_t *)value));
+    *ier = (cgint_f)cg_configure(*what, (void *)(intptr_t)(*(size_t *)value));
 
-  /* INTEGER VALUES - cast int to size_t then to pointer */
+  /* INTEGER VALUES - cast int to intptr_t then to pointer */
   } else {
     /* For most other options (FILE_TYPE, COMPRESS, HDF5 flags, etc.),
-       the value is an int that gets cast to size_t then to pointer */
-    *ier = (cgint_f)cg_configure(*what, (void *)(size_t)(*(int *)value));
+       the value is an int that gets cast to intptr_t then to pointer */
+    *ier = (cgint_f)cg_configure(*what, (void *)(intptr_t)(*(int *)value));
   }
 }
 
