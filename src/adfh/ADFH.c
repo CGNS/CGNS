@@ -1502,15 +1502,18 @@ void ADFH_Configure(const int option, void *value, int *err)
         set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_MD_BLOCK_SIZE) {
-      h5pset_meta_block_size_size = (hsize_t)((size_t)value);
+      size_t size_value = (size_t)value;  /* Decode pointer-as-value */
+      h5pset_meta_block_size_size = (hsize_t)size_value;
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_HDF5_BUFFER) {
-      h5pset_buffer_size_size = (hsize_t)((size_t)value);
+      size_t size_value = (size_t)value;  /* Decode pointer-as-value */
+      h5pset_buffer_size_size = (hsize_t)size_value;
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE) {
-      h5pset_sieve_buf_size_size = (hsize_t)((size_t)value);
+      size_t size_value = (size_t)value;  /* Decode pointer-as-value */
+      h5pset_sieve_buf_size_size = (hsize_t)size_value;
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
