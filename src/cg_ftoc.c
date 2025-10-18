@@ -48,7 +48,6 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include "fortran_macros.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
