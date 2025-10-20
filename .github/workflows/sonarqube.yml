@@ -82,6 +82,16 @@ jobs:
             cmake --build cbuild --config "Debug" --parallel 8
         shell: bash
 
+      - name: Verify SONAR_TOKEN is set
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "ERROR: SONAR_TOKEN is not set"
+            exit 1
+          else
+            echo "SONAR_TOKEN is set (length: ${#SONAR_TOKEN})"
+          fi
+        shell: bash
+
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         with:
