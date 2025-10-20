@@ -15,6 +15,9 @@ jobs:
     name: SonarQube Scan
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message || github.event.pull_request.title, 'skip-ci')"
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: https://sonarcloud.io
 
     steps:
       - name: Checkout repository
@@ -81,11 +84,6 @@ jobs:
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
         with:
           args: >
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-            -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
