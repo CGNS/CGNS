@@ -14,7 +14,11 @@ jobs:
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message || github.event.pull_request.title, 'skip-ci')"
+    # Only run on push events or PRs from the same repository (not forks)
+    # Forks cannot access secrets, so this prevents the workflow from failing
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: https://sonarcloud.io
