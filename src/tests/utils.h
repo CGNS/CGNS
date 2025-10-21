@@ -6,9 +6,6 @@
 #include <string.h>
 
 
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
 #ifndef CGNS_ENUMT
 # define CGNS_ENUMT(e) e
 # define CGNS_ENUMV(e) e
@@ -101,8 +98,8 @@ int write_test_header(char *title_header, int len)
 
   width = TAB_SPACE+10;
 
-  char *title_centered = (char*)malloc(4*width+1*sizeof(char));
-  char *str = (char*)malloc(2*width+2*sizeof(char));
+  char *title_centered = (char*)malloc((4*width+1)*sizeof(char));
+  char *str = (char*)malloc((2*width+2)*sizeof(char));
 
   memcpy(str,title_header,len);
   str[len] = '\0';

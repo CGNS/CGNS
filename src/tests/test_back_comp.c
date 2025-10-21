@@ -433,6 +433,7 @@ int main()
       cg_error_exit();
     if ( ! compareValuesChr(state,"ReferenceQuantities"))
       cg_error_exit();
+    cg_free(state);
 
     printf("\nReferenceState = %s\n",state);
 
@@ -503,6 +504,7 @@ int main()
         cg_error_exit();
 
       printf("\nThe descriptor is:\n\n%s\n",text);
+      cg_free(text);
     }
 
     /* ---------------------------------- read_convergence*/

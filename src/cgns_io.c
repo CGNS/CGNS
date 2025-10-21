@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 #define _XOPEN_SOURCE 600
 #endif
 #endif
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
   #define _POSIX_C_SOURCE 200112L
 #endif
 #include <stdio.h>

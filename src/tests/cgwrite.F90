@@ -10,7 +10,7 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
+	use CGNS
 
 	integer Ndim
 	parameter (Ndim = 3)
