@@ -101,3 +101,4 @@ jobs:
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.cfamily.build-wrapper-output=${{ env.BUILD_WRAPPER_OUT_DIR }}
