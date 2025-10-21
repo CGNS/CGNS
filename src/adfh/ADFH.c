@@ -1477,6 +1477,7 @@ void ADFH_Configure(const int option, void *value, int *err)
       return;
     }
 
+    /* Integer values - passed by value (encoded as pointer) */
     if (option == ADFH_CONFIG_COMPRESS) {
         int compress = (int)((size_t)value);
         if (compress < 0)
@@ -1495,15 +1496,10 @@ void ADFH_Configure(const int option, void *value, int *err)
         core_vfd_backing_store = (hbool_t)((size_t)value);
         set_error(NO_ERROR, err);
     }
+    /* size_t values - passed by value (encoded as pointer) */
     else if (option == ADFH_CONFIG_CORE_INCR) {
         core_vfd_increment = (size_t)value;
         set_error(NO_ERROR, err);
-    }
-    else if (option == ADFH_CONFIG_ALIGNMENT) {
-      const size_t* val = (const size_t*)value; 
-      h5pset_alignment_threshold = (hsize_t)(val[0]);
-      h5pset_alignment_alignment = (hsize_t)(val[1]);
-      set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_MD_BLOCK_SIZE) {
       h5pset_meta_block_size_size = (hsize_t)value;
@@ -1519,6 +1515,13 @@ void ADFH_Configure(const int option, void *value, int *err)
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
       h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
+      set_error(NO_ERROR, err);
+    }
+    /* Pointer values - passed by reference */
+    else if (option == ADFH_CONFIG_ALIGNMENT) {
+      const size_t* val = (const size_t*)value;
+      h5pset_alignment_threshold = (hsize_t)(val[0]);
+      h5pset_alignment_alignment = (hsize_t)(val[1]);
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_GET_MAXIMUM_FILES) {

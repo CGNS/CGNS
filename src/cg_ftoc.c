@@ -119,47 +119,61 @@ static void string_2_F_string(char *c_string, char *string,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL void cg_configure_c_ptr(int *what, void *value, cgint_f *ier)
 {
-  /* CHARACTERS */
-  if( (int)*what == CG_CONFIG_SET_PATH ||
-      (int)*what == CG_CONFIG_ADD_PATH) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
-  } else if( (int)*what == CG_CONFIG_ERROR) {
+  /* CHARACTERS/STRINGS - pass pointer directly */
+  if( *what == CG_CONFIG_SET_PATH ||
+      *what == CG_CONFIG_ADD_PATH) {
+    *ier = (cgint_f)cg_configure(*what, value);
+
+  /* ERROR HANDLER - not supported via C_PTR interface */
+  } else if( *what == CG_CONFIG_ERROR) {
     *ier = (cgint_f)CG_ERROR;
 
   /* MPI COMMUNICATOR */
 #if CG_BUILD_PARALLEL
-  } else if( (int)*what == CG_CONFIG_HDF5_MPI_COMM ) {
+  } else if( *what == CG_CONFIG_HDF5_MPI_COMM ) {
     MPI_Fint F_comm = *(MPI_Fint *)value;
     MPI_Comm C_comm = MPI_Comm_f2c(F_comm);
-    *ier = (cgint_f)cg_configure((int)*what, &C_comm);
+    *ier = (cgint_f)cg_configure(*what, &C_comm);
 #endif
 
-  /* RIND */
-  } else if( (int)*what == CG_CONFIG_RIND_INDEX) {
+  /* RIND INDEX - special handling for enum values */
+  } else if( *what == CG_CONFIG_RIND_INDEX) {
     if(*(int*)value == 0) {
-      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_ZERO);
+      *ier = (cgint_f)cg_configure(*what, CG_CONFIG_RIND_ZERO);
     } else if(*(int*)value == 1) {
-      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_CORE);
+      *ier = (cgint_f)cg_configure(*what, CG_CONFIG_RIND_CORE);
     } else {
       *ier = (cgint_f)CG_ERROR;
       return;
     }
-  /* get value */
-  } else if( (int)*what == CG_CONFIG_GET_MAXIMUM_FILES) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
 
-  /* EVERYTHING ELSE */
+  /* OUTPUT PARAMETERS - pass pointer directly */
+  } else if( *what == CG_CONFIG_GET_MAXIMUM_FILES) {
+    *ier = (cgint_f)cg_configure(*what, value);
+
+  /* SIZE_T VALUES - cast size_t value as pointer using intptr_t for clarity and portability */
+  } else if( *what == CG_CONFIG_HDF5_DISKLESS_INCR ||
+             *what == CG_CONFIG_HDF5_MD_BLOCK_SIZE ||
+             *what == CG_CONFIG_HDF5_BUFFER ||
+             *what == CG_CONFIG_HDF5_SIEVE_BUF_SIZE ||
+             *what == CG_CONFIG_HDF5_ELINK_CACHE_SIZE ) {
+    /* For these options, the value is a size_t that needs to be passed by value (as pointer) */
+    *ier = (cgint_f)cg_configure(*what, (void *)(intptr_t)(*(size_t *)value));
+
+  /* INTEGER VALUES - cast int to intptr_t then to pointer */
   } else {
-    *ier = (cgint_f)cg_configure((int)*what, (void *)(*(size_t *)value));
+    /* For most other options (FILE_TYPE, COMPRESS, HDF5 flags, etc.),
+       the value is an int that gets cast to intptr_t then to pointer */
+    *ier = (cgint_f)cg_configure(*what, (void *)(intptr_t)(*(int *)value));
   }
 }
 
-CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL void cg_configure_c_funptr(int *what, void *value, cgint_f *ier)
 {
-  if ( (int)*what == CG_CONFIG_ERROR ) {
-      *ier = (cgint_f)cg_configure((int)*what, value);
+  if ( *what == CG_CONFIG_ERROR ) {
+      *ier = (cgint_f)cg_configure(*what, value);
   } else {
       *ier = (cgint_f)CG_ERROR;
   }
