@@ -17257,7 +17257,7 @@ void cgi_free_particle(cgns_pzone *pzone)
    }
    if (pzone->nintegrals) {
        for (n=0; n<pzone->nintegrals; n++)
-            cgi_free_integral(pzone->integral);
+            cgi_free_integral(&pzone->integral[n]);
        CGNS_FREE(pzone->integral);
    }
    if (pzone->state) {
