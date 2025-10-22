@@ -32,7 +32,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev
+          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev gcovr
           sudo apt-get install -y libxmu-dev tk-dev tcl-dev
           sudo apt-get install -y libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
           echo "CC=mpicc" >> $GITHUB_ENV
@@ -62,7 +62,7 @@ jobs:
           export HOME_DIR=$(echo ~)
           mkdir cbuild
           cd cbuild
-          cmake \
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake \
             -D CGNS_ENABLE_FORTRAN:BOOL=OFF \
             -D CMAKE_PREFIX_PATH=$HOME_DIR/hdf5 \
             -D CGNS_ENABLE_HDF5:BOOL=ON \
@@ -72,12 +72,23 @@ jobs:
             -D CGNS_ENABLE_LEGACY:BOOL=ON \
             -D CGNS_ENABLE_64BIT:BOOL=OFF \
             -D CMAKE_C_COMPILER:PATH=$CC \
-            -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
+            -D CMAKE_C_FLAGS:STRING="$CFLAGS -fprofile-arcs -ftest-coverage" \
             -D CMAKE_BUILD_TYPE:STRING="Debug" \
             -D CGNS_ENABLE_TESTS:BOOL=ON \
+            -D CGNS_ENABLE_PARALLEL:BOOL=ON \
             -D CGNS_ENABLE_LFS:BOOL=ON \
             -D CMAKE_INSTALL_PREFIX:PATH="./" \
             ..
+          cmake --build . --config "Debug" --parallel 8
+        shell: bash
+
+      - name: Run Tests and Generate Coverage
+        run: |
+          cd cbuild
+          # Run the tests to generate the .gcda files
+          ctest .
+          # Run gcovr to convert the .gcda files to SonarQube XML format
+          gcovr -r ../ --xml-pretty > coverage.xml
         shell: bash
 
       - name: Build with SonarQube Build Wrapper
@@ -102,3 +113,4 @@ jobs:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.cfamily.build-wrapper-output=${{ env.BUILD_WRAPPER_OUT_DIR }}
+            -Dsonar.cfamily.gcov.reportsPath=cbuild/coverage.xml
