@@ -32,7 +32,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev gcov
+          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev
           sudo apt-get install -y libxmu-dev tk-dev tcl-dev
           sudo apt-get install -y libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
           echo "CC=mpicc" >> $GITHUB_ENV
