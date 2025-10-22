@@ -295,7 +295,7 @@ int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes
     if (error) { \
         for (m = 0; m < NofBaseLabel; m++) { \
             if (childbylabel[m] == NULL) continue; \
-            CGNS_FREE(childbylabel[m]) \
+            CGNS_FREE(childbylabel[m]); \
         } \
         return CG_ERROR; \
     }
@@ -491,7 +491,7 @@ int cgi_read_base(cgns_base *base)
 
     for (m = 0; m < NofBaseLabel; m++) {
         if (childbylabel[m] == NULL) continue;
-        CGNS_FREE(childbylabel[m])
+        CGNS_FREE(childbylabel[m]);
     }
     /* read zones */
     for (n = 0; n < base->nzones; n++) {
