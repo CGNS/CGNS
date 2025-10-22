@@ -17279,7 +17279,7 @@ void cgi_free_particle(cgns_pzone *pzone)
    if (pzone->nuser_data) {
       for (n=0; n<pzone->nuser_data; n++)
            cgi_free_user_data(&pzone->user_data[n]);
-      CGNS_FREE(pzone->user_data)
+      CGNS_FREE(pzone->user_data);
    }
 }
 
