@@ -114,7 +114,7 @@ typedef int cgint3_t[3];
 
 #define CGNS_NEW(type,size)  (type *)cgi_malloc((size_t)(size),sizeof(type))
 #define CGNS_RENEW(type,size,old) (type *)cgi_realloc(old,(size_t)(size)*sizeof(type))
-#define CGNS_FREE(data) free(data);
+#define CGNS_FREE(data) free(data)
 
 #define INVALID_ENUM(E,EMAX) ((int)(E)<0 || (int)(E)>=(EMAX))
 
