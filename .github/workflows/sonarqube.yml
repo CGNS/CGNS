@@ -32,7 +32,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev
+          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev gcovr
           sudo apt-get install -y libxmu-dev tk-dev tcl-dev
           sudo apt-get install -y libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
           echo "CC=mpicc" >> $GITHUB_ENV
@@ -89,6 +89,7 @@ jobs:
         run: |
           cd cbuild
           ctest .
+          gcovr -r .. --sonarqube coverage.xml
         shell: bash
 
       - name: Run SonarQube Scan
@@ -97,4 +98,4 @@ jobs:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.cfamily.build-wrapper-output=cbuild/${{ env.BUILD_WRAPPER_OUT_DIR }}
-            -Dsonar.cfamily.gcov.dir=cbuild
+            -Dsonar.coverage.reportPaths=cbuild/coverage.xml
