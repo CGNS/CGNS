@@ -62,9 +62,8 @@ jobs:
           export HOME_DIR=$(echo ~)
           mkdir cbuild
           cd cbuild
-          # 1. Run CMake configuration and build under the build-wrapper
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} \
-            cmake \
+          # 1. Run CMake configuration
+          cmake \
             -D CGNS_ENABLE_FORTRAN:BOOL=OFF \
             -D CMAKE_PREFIX_PATH=$HOME_DIR/hdf5 \
             -D CGNS_ENABLE_HDF5:BOOL=ON \
@@ -82,7 +81,8 @@ jobs:
             -D CMAKE_INSTALL_PREFIX:PATH="./" \
             ..
           # 2. Build the project (still wrapped by the command above)
-          cmake --build . --config "Debug" --parallel 8
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} \
+            cmake --build . --config "Debug" --parallel 8
         shell: bash
 
       - name: Run Tests and Generate Coverage
@@ -96,5 +96,5 @@ jobs:
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.cfamily.build-wrapper-output=${{ env.BUILD_WRAPPER_OUT_DIR }}
+            -Dsonar.cfamily.build-wrapper-output=cbuild/${{ env.BUILD_WRAPPER_OUT_DIR }}
             -Dsonar.cfamily.gcov.dir=cbuild
