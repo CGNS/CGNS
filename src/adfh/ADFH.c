@@ -348,8 +348,11 @@ static herr_t print_H5_error(int n, H5E_error2_t *desc, void *data)
 {
   const char *p;
 
-  if ((p = strrchr(desc->file_name, '/')) == NULL &&
-      (p = strrchr(desc->file_name, '\\')) == NULL)
+  p = strrchr(desc->file_name, '/');
+  if (p == NULL) {
+    p = strrchr(desc->file_name, '\\');
+  }
+  if (p == NULL)
     p = desc->file_name;
   else
     p++;
