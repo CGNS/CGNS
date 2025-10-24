@@ -32,9 +32,11 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev gcovr
+          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev python3-pip
           sudo apt-get install -y libxmu-dev tk-dev tcl-dev
           sudo apt-get install -y libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
+          # Install newer gcovr via pip to support latest gcov format
+          pip3 install --upgrade gcovr
           echo "CC=mpicc" >> $GITHUB_ENV
           echo "FC=mpif90" >> $GITHUB_ENV
           echo "F77=mpif90" >> $GITHUB_ENV
@@ -73,7 +75,8 @@ jobs:
             -D CGNS_ENABLE_LEGACY:BOOL=ON \
             -D CGNS_ENABLE_64BIT:BOOL=OFF \
             -D CMAKE_C_COMPILER:PATH=$CC \
-            -D CMAKE_C_FLAGS:STRING="$CFLAGS -fprofile-arcs -ftest-coverage" \
+            -D CMAKE_C_FLAGS:STRING="$CFLAGS --coverage" \
+            -D CMAKE_EXE_LINKER_FLAGS:STRING="--coverage" \
             -D CMAKE_BUILD_TYPE:STRING="Debug" \
             -D CGNS_ENABLE_TESTS:BOOL=ON \
             -D CGNS_ENABLE_PARALLEL:BOOL=ON \
@@ -89,7 +92,9 @@ jobs:
         run: |
           cd cbuild
           ctest .
-          gcovr -r .. --sonarqube coverage.xml
+          # Generate SonarQube-compatible XML coverage report
+          # Use --exclude-unreachable-branches and --exclude-throw-branches to avoid false negatives
+          gcovr -r .. --sonarqube --exclude-unreachable-branches --exclude-throw-branches > coverage.xml
         shell: bash
 
       - name: Run SonarQube Scan
@@ -97,5 +102,4 @@ jobs:
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.cfamily.build-wrapper-output=cbuild/${{ env.BUILD_WRAPPER_OUT_DIR }}
-            -Dsonar.coverage.reportPaths=cbuild/coverage.xml
+            -Dsonar.cfamily.compile-commands=cbuild/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
