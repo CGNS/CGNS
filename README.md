@@ -20,7 +20,7 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
 
 1. Install HDF5 on your system.
   
-   - HDF5 can use the standard GNU autotools, so `./configure`, `make`, `sudo make install` should install HDF5 without problems on most systems.
+   - Either use a package manager or install it from source with CMake.
 2. Unpack the tar ball containing the source code into some directory.
 3. Create a new directory in which to build the library.
 4. Use `cmake` to initialize the build tree.
@@ -55,7 +55,7 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
 ### Installation Instructions using `make`
 
 1. Install HDF5 on your system.
-   - HDF5 can use the standard GNU autotools, so `./configure`, `make`, `sudo make install` should install HDF5 without problems on most systems.
+   - Either use a package manager or install it from source with CMake.
 2. Typically the standard `./configure`, `make`, `make install` will suffice.  
 3. Sample scripts for building parallel CGNS can be found in `src/SampleScripts`.
 
