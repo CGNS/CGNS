@@ -2299,7 +2299,8 @@ void ADFH_Database_Open(const char   *name,
   MPI_Initialized(&flag);
   if(flag) {
     /* Set the access property list to use MPI */
-    if (0 == strcmp(fmt, "PARALLEL")) {
+    /* Use enum instead of string comparison for efficiency (Issue #836) */
+    if (ctx_cgio.hdf5_access_mode == CGIO_PARALLEL_MODE) {
 
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 #if HDF5_HAVE_COLL_METADATA  

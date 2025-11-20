@@ -501,9 +501,19 @@ void cgp_error_exit(void)
  * \param[in]  mode     \FILE_mode
  * \param[out] fn       \FILE_fn
  * \return \ier
- * \details Similar to cg_open() and calls that routine. The differences
+ * \details Similar to cg_open() and calls that routine. The difference
  *          is that cgp_open() explicitly sets an internal CGNS flag to
  *          indicate parallel access.
+ *
+ * \warning IMPORTANT: The library uses global state for the parallel/native access mode.
+ *          When MPI is initialized, calling cgp_open() sets the mode to PARALLEL globally.
+ *          Any subsequent calls to cg_open() in the same MPI program may also use parallel
+ *          mode until all files are closed. Mixing cgp_open() and cg_open() in the same
+ *          MPI program is not recommended and behavior is undefined.
+ *
+ * \note Multiple parallel files can be open simultaneously. Each file's HDF5 handle
+ *       maintains its own MPIO driver state independently, even though CGNS uses
+ *       global configuration at file open time. (See Issue #836)
  */
 int cgp_open(const char *filename, int mode, int *fn)
 {
