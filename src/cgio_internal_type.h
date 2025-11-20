@@ -1,6 +1,12 @@
+typedef enum {
+  CGIO_NATIVE_MODE = 0,
+  CGIO_PARALLEL_MODE = 1
+} access_mode_t;
+
 typedef struct _cgns_io_ctx_t {
     /* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
-    char hdf5_access[64];
+    char hdf5_access[64];  /* Keep for API compatibility */
+    access_mode_t hdf5_access_mode;  /* Internal enum, avoid string comparisons */
 #if CG_BUILD_PARALLEL
     /* MPI-2 info object */
     MPI_Comm pcg_mpi_comm;
@@ -12,8 +18,3 @@ typedef struct _cgns_io_ctx_t {
     hid_t default_pio_mode;
 #endif
 } cgns_io_ctx_t;
-
-typedef enum {
-  CGIO_NATIVE_MODE = 0,
-  CGIO_PARALLEL_MODE = 1
-} access_mode_t;

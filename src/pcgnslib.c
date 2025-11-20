@@ -517,6 +517,7 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Flag this as a parallel access */
     strcpy(ctx_cgio.hdf5_access,"PARALLEL");
+    ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
