@@ -91,8 +91,7 @@ typedef struct {
     int type;
     int mode;
     double rootid;
-    int access_mode;
-    int storage_type;  /* HDF5 storage type for this file */
+    int access_mode;  /* Per-file parallel/native access mode */
 #if CG_BUILD_PARALLEL
     MPI_Comm mpi_comm;
     MPI_Info mpi_info;
@@ -160,26 +159,6 @@ static cgns_io *get_cgnsio (int cgio_num, int write)
     last_type = iolist[cgio_num].type;
     last_err = CGIO_ERR_NONE;
     return &iolist[cgio_num];
-}
-
-/*---------------------------------------------------------*/
-
-/* Get per-file storage type */
-static int get_file_storage_type(int cgio_num)
-{
-    cgns_io *cgio = get_cgnsio(cgio_num, 0);
-    if (cgio == NULL) return HDF5storage_type; /* fallback to global */
-    return cgio->storage_type;
-}
-
-/*---------------------------------------------------------*/
-
-/* Get per-file access mode */
-static int get_file_access_mode(int cgio_num)
-{
-    cgns_io *cgio = get_cgnsio(cgio_num, 0);
-    if (cgio == NULL) return CGIO_NATIVE_MODE;
-    return cgio->access_mode;
 }
 
 /*---------------------------------------------------------*/
@@ -875,7 +854,6 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].rootid = rootid;
 
     /* Copy global configuration to per-file settings */
-    iolist[n].storage_type = HDF5storage_type;
     iolist[n].access_mode = CGIO_NATIVE_MODE;
 #if CG_BUILD_HDF5
     if (file_type == CGIO_FILE_HDF5) {
@@ -1220,7 +1198,7 @@ int cgio_new_node (int cgio_num, double pid, const char *name,
       ADFH_Set_Label(*id, label, &ierr);
       if (ierr > 0) return set_error(ierr);
       if (data_type != NULL && strcmp(data_type, "MT")) {
-        ADFH_Put_Dimension_Information(*id, data_type, ndims, dims, cgio->storage_type, &ierr);
+        ADFH_Put_Dimension_Information(*id, data_type, ndims, dims, HDF5storage_type, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (data != NULL) {
           ADFH_Write_All_Data(*id, NULL, (const char *)data, &ierr);
@@ -1380,7 +1358,7 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADFH_Set_Label(id_out, label, &ierr);
         if (ierr <= 0) {
             ADFH_Put_Dimension_Information(id_out, data_type, ndims,
-                                           dims, output->storage_type, &ierr);
+                                           dims, HDF5storage_type, &ierr);
             if (ierr <= 0 && data_size)
                 ADFH_Write_All_Data(id_out, NULL, (const char *)data, &ierr);
         }
@@ -1943,7 +1921,7 @@ int cgio_set_dimensions (int cgio_num, double id,
     }
 #if CG_BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
-      ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, cgio->storage_type, &ierr);
+      ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, HDF5storage_type, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif
