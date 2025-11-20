@@ -91,12 +91,6 @@ typedef struct {
     int type;
     int mode;
     double rootid;
-    int access_mode;  /* Per-file parallel/native access mode */
-#if CG_BUILD_PARALLEL
-    MPI_Comm mpi_comm;
-    MPI_Info mpi_info;
-    hid_t pio_mode;
-#endif
 } cgns_io;
 
 static int num_open = 0;
@@ -852,19 +846,6 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
     iolist[n].rootid = rootid;
-
-    /* Copy global configuration to per-file settings */
-    iolist[n].access_mode = CGIO_NATIVE_MODE;
-#if CG_BUILD_HDF5
-    if (file_type == CGIO_FILE_HDF5) {
-        iolist[n].access_mode = ctx_cgio.hdf5_access_mode;
-    }
-#endif
-#if CG_BUILD_PARALLEL
-    iolist[n].mpi_comm = ctx_cgio.pcg_mpi_comm;
-    iolist[n].mpi_info = ctx_cgio.pcg_mpi_info;
-    iolist[n].pio_mode = ctx_cgio.default_pio_mode;
-#endif
 
     *cgio_num = n + 1;
     num_open++;
