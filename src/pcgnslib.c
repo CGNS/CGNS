@@ -523,11 +523,6 @@ int cgp_open(const char *filename, int mode, int *fn)
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;
 
-    /* reset parallel access
-     * the global hdf5_access is only used at file opening
-     */
-    strcpy(ctx_cgio.hdf5_access,"NATIVE");
-
     return ierr;
 }
 
