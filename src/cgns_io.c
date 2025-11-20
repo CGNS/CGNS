@@ -857,7 +857,6 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].access_mode = CGIO_NATIVE_MODE;
 #if CG_BUILD_HDF5
     if (file_type == CGIO_FILE_HDF5) {
-        /* Use enum instead of string comparison for efficiency */
         iolist[n].access_mode = ctx_cgio.hdf5_access_mode;
     }
 #endif
