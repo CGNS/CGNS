@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
                 cgp_error_exit();
 
             /* Close the first file
-             * This would reset hdf5_access to NATIVE before the fix */
+             * This would reset hdf5_access_mode to NATIVE before the fix */
             if (cgp_close(fn1))
                 cgp_error_exit();
 
