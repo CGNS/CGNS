@@ -1,3 +1,6 @@
+#ifndef CGIO_INTERNAL_TYPE_H
+#define CGIO_INTERNAL_TYPE_H
+
 typedef enum {
   CGIO_NATIVE_MODE = 0,
   CGIO_PARALLEL_MODE = 1
@@ -17,3 +20,5 @@ typedef struct _cgns_io_ctx_t {
     hid_t default_pio_mode;
 #endif
 } cgns_io_ctx_t;
+
+#endif /* CGIO_INTERNAL_TYPE_H */
