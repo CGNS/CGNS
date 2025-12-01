@@ -60,14 +60,15 @@ freely, subject to the following restrictions:
 #endif
 
 #if CG_BUILD_HDF5
-cgns_io_ctx_t ctx_cgio = { .hdf5_access = "NATIVE",
+cgns_io_ctx_t ctx_cgio = {
+    .hdf5_access_mode = CGIO_NATIVE_MODE,
 #if CG_BUILD_PARALLEL
-.pcg_mpi_comm = MPI_COMM_NULL, 
-.pcg_mpi_comm_size=1,
-.pcg_mpi_comm_rank=0,
-.pcg_mpi_initialized=0,
-.pcg_mpi_info=MPI_INFO_NULL,
-.default_pio_mode=H5FD_MPIO_COLLECTIVE
+    .pcg_mpi_comm = MPI_COMM_NULL,
+    .pcg_mpi_comm_size=1,
+    .pcg_mpi_comm_rank=0,
+    .pcg_mpi_initialized=0,
+    .pcg_mpi_info=MPI_INFO_NULL,
+    .default_pio_mode=H5FD_MPIO_COLLECTIVE
 #endif
 };
 #endif
@@ -89,7 +90,6 @@ typedef struct {
     int type;
     int mode;
     double rootid;
-    int access_mode;
 } cgns_io;
 
 static int num_open = 0;
@@ -812,7 +812,9 @@ int cgio_open_file (const char *filename, int file_mode,
 #endif
 #if CG_BUILD_HDF5
     else if (file_type == CGIO_FILE_HDF5) {
-        ADFH_Database_Open(filename, fmode, ctx_cgio.hdf5_access, &rootid, &ierr);
+        /* Convert enum to string for ADFH API (Issue #836) */
+        const char *format = (ctx_cgio.hdf5_access_mode == CGIO_PARALLEL_MODE) ? "PARALLEL" : "NATIVE";
+        ADFH_Database_Open(filename, fmode, format, &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif
@@ -845,15 +847,7 @@ int cgio_open_file (const char *filename, int file_mode,
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
     iolist[n].rootid = rootid;
-/* keep track of file parallel/native opening mode */
-    iolist[n].access_mode = CGIO_NATIVE_MODE;
-#if CG_BUILD_HDF5
-    if (file_type == CGIO_FILE_HDF5) {
-        if (strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0){
-          iolist[n].access_mode = CGIO_PARALLEL_MODE;
-        }
-    }
-#endif
+
     *cgio_num = n + 1;
     num_open++;
 

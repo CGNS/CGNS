@@ -2292,14 +2292,16 @@ void ADFH_Database_Open(const char   *name,
 #endif
 
   /* open the file */
-  access_mode = CGIO_NATIVE_MODE;
+  /* Convert format string to enum for internal use (Issue #836) */
+  access_mode = (0 == strcmp(fmt, "PARALLEL")) ? CGIO_PARALLEL_MODE : CGIO_NATIVE_MODE;
+
 #if CG_BUILD_PARALLEL
   int flag = 0;
   /* check if we are actually running a parallel program */
   MPI_Initialized(&flag);
   if(flag) {
     /* Set the access property list to use MPI */
-    if (0 == strcmp(fmt, "PARALLEL")) {
+    if (access_mode == CGIO_PARALLEL_MODE) {
 
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 #if HDF5_HAVE_COLL_METADATA  
