@@ -610,18 +610,8 @@ if(CGNS_BUILD_SHARED)
   add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
   add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
-  if (WIN32 AND CGNS_ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+  if (WIN32 AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
-
-    # Configure the Fortran DLL export definitions file
-    configure_file(
-      ${CMAKE_CURRENT_SOURCE_DIR}/cgns_fortrandll.def.in
-      ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def
-      COPYONLY
-    )
-
-    # Add the .def file to the shared library sources to export Fortran symbols
-    target_sources(cgns_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def)
   endif()
 
   if (WIN32 OR CYGWIN)
