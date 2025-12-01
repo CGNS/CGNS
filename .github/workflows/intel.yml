@@ -118,11 +118,16 @@ jobs:
           if ($dllPath) {
             Write-Host "Found DLL at: $($dllPath.FullName)"
             Write-Host "Checking for Fortran module symbols..."
-            & dumpbin /EXPORTS "$($dllPath.FullName)" | Select-String "CGNS_mp_cg_nbases_f|CGNS_mp_cg_ncoords_f|CGNS_mp_cg_nsections_f"
-            if ($LASTEXITCODE -eq 0) {
+            $exports = & dumpbin /EXPORTS "$($dllPath.FullName)" | Out-String
+            $foundSymbols = $exports | Select-String "CGNS_mp_cg_nbases_f"
+            if ($foundSymbols) {
               Write-Host "SUCCESS: Fortran symbols found in DLL"
+              Write-Host "Sample matched symbols:"
+              $exports | Select-String "CGNS_mp_cg_(nbases|ncoords|nsections)_f"
             } else {
               Write-Host "ERROR: Fortran symbols NOT found in DLL"
+              Write-Host "Available exports:"
+              $exports
               exit 1
             }
           } else {
