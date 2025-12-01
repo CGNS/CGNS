@@ -612,6 +612,16 @@ if(CGNS_BUILD_SHARED)
 
   if (MSVC AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
+
+    # Configure the Fortran DLL export definitions file
+    configure_file(
+      ${CMAKE_CURRENT_SOURCE_DIR}/cgns_fortrandll.def.in
+      ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def
+      COPYONLY
+    )
+
+    # Add the .def file to the shared library sources to export Fortran symbols
+    target_sources(cgns_shared PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def)
   endif()
 
   if (WIN32 OR CYGWIN)
