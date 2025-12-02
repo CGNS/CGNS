@@ -203,7 +203,7 @@ static void read_fgrid(char *filename, int flags)
                 exit(1);
             }
         }
-        build_trisets(void);
+        build_trisets();
     }
 
     /* read tets */

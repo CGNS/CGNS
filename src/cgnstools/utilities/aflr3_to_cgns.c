@@ -303,7 +303,7 @@ static void read_ugrid(char *filename, int flags)
                 exit(1);
             }
         }
-        build_trisets(void);
+        build_trisets();
     }
     if (nQuads) {
         for (n = 0; n < nQuads; n++) {
@@ -312,7 +312,7 @@ static void read_ugrid(char *filename, int flags)
                 exit(1);
             }
         }
-        build_quadsets(void);
+        build_quadsets();
     }
 
     /* read tets */

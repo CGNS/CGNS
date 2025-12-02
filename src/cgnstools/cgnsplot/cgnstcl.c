@@ -5257,7 +5257,7 @@ static int OGLcutplane (ClientData data, Tcl_Interp *interp, int argc, char **ar
         if (mode == 1) {
             if (cutplane.nedges == 0)
                 find_intersects();
-            draw_edges (void);
+            draw_edges ();
         }
         else {
             draw_elements (mode > 2 ? GL_FILL : GL_LINE);
