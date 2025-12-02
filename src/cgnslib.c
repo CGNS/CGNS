@@ -140,6 +140,9 @@ freely, subject to the following restrictions:
 /* to determine default file type */
 #if CG_BUILD_HDF5
 # include "hdf5.h"
+# include "cgio_internal_type.h"
+extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
+extern int cgp_open_active;     /* flag set by cgp_open() */
 #endif
 
 /* fix for unresolved reference to __ftol2 when using VC7 with VC6 libs */
@@ -497,6 +500,9 @@ int cg_open(const char *filename, int mode, int *fn)
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
+#if CG_BUILD_HDF5
+    access_mode_t saved_access_mode;
+#endif
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: before open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
@@ -519,6 +525,17 @@ int cg_open(const char *filename, int mode, int *fn)
             cgi_error("Unknown opening file mode: %d ??",mode);
             return CG_ERROR;
     }
+
+#if CG_BUILD_HDF5
+    /* Set access mode for this file open. Unless we're being called FROM cgp_open()
+     * (indicated by cgp_open_active flag), force NATIVE mode. This prevents direct
+     * cg_open() calls in MPI programs from using stale PARALLEL mode left over from
+     * previous cgp_open() calls. (Fix for issue #836) */
+    if (!cgp_open_active) {
+        ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
+    }
+    /* else: cgp_open() has set PARALLEL mode, keep it for this open */
+#endif
 
     /* Open CGNS file */
     if (cgio_open_file(filename, mode, cgns_filetype, &cgio)) {
