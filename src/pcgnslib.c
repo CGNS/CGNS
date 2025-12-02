@@ -67,9 +67,8 @@ freely, subject to the following restrictions:
                              (type >= CGNS_ENUMV(BAR_4) && \
                               type <= CGNS_ENUMV(HEXA_125)))
 
-#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t and cgp_open_active */
 extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
-extern int cgp_open_active;     /* flag indicating cgp_open() is active */
 
 extern int cgns_filetype;
 extern void* cgns_rindindex;

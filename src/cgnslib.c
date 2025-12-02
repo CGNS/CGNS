@@ -142,7 +142,6 @@ freely, subject to the following restrictions:
 # include "hdf5.h"
 # include "cgio_internal_type.h"
 extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
-extern int cgp_open_active;     /* flag set by cgp_open() */
 #endif
 
 /* fix for unresolved reference to __ftol2 when using VC7 with VC6 libs */
