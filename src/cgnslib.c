@@ -500,9 +500,6 @@ int cg_open(const char *filename, int mode, int *fn)
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
-#if CG_BUILD_HDF5
-    access_mode_t saved_access_mode;
-#endif
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: before open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
