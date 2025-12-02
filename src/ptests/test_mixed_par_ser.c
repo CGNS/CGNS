@@ -143,10 +143,10 @@ void test_serial(const char *fname)
 
     /* Make a serial file */
     ierr = cg_open(fname, CG_MODE_WRITE, &cg);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     ierr = cg_base_write(cg, "Base#1", 3, 3, &base);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     memset(sizes, 0, sizeof(sizes));
     sizes[0] = 10;
@@ -170,19 +170,19 @@ void test_serial(const char *fname)
     }
 
     ierr = cg_zone_write(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), &zone);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     ierr = cg_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateX", Dxyz, &iCoor);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     ierr = cg_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateY", Dxyz, &iCoor);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     ierr = cg_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateZ", Dxyz, &iCoor);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     ierr = cg_close(cg);
-    if (ierr) cgp_error_exit();
+    if (ierr) cg_error_exit();
 
     free(Dxyz);
 
@@ -200,16 +200,16 @@ void test_parallel(const char *fname)
     }
 
     ierr = cgp_mpi_comm(MPI_COMM_WORLD);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_pio_mode(CGP_COLLECTIVE);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_open(fname, CG_MODE_WRITE, &cg);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cg_base_write(cg, "Base#1", 3, 3, &base);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     memset(sizes, 0, sizeof(sizes));
     sizes[0] = 10;
@@ -220,19 +220,19 @@ void test_parallel(const char *fname)
     sizes[5] = sizes[2] - 1;
 
     ierr = cg_zone_write(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), &zone);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateX", &iCoor);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateY", &iCoor);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_coord_write(cg, base, zone, CGNS_ENUMV(RealDouble), "CoordinateZ", &iCoor);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     ierr = cgp_close(cg);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     if (commrank == 0) printf("PASS\n");
 }
@@ -254,17 +254,17 @@ void test_multiple_parallel_open(void)
 
     /* Setup MPI for parallel I/O */
     ierr = cgp_mpi_comm(MPI_COMM_WORLD);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
     ierr = cgp_pio_mode(CGP_COLLECTIVE);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Open first parallel file */
     ierr = cgp_open("multi_file1.cgns", CG_MODE_WRITE, &cg1);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Open second parallel file (while first is still open) */
     ierr = cgp_open("multi_file2.cgns", CG_MODE_WRITE, &cg2);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Create content in file 1 */
     memset(sizes, 0, sizeof(sizes));
@@ -276,28 +276,28 @@ void test_multiple_parallel_open(void)
     sizes[5] = sizes[2] - 1;
 
     ierr = cg_base_write(cg1, "Base", 3, 3, &base1);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
     ierr = cg_zone_write(cg1, base1, "Zone", sizes, CGNS_ENUMV(Structured), &zone1);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
     ierr = cgp_coord_write(cg1, base1, zone1, CGNS_ENUMV(RealDouble), "CoordinateX", &iCoor1);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Close first file (this previously would reset mode to NATIVE, breaking file2) */
     ierr = cgp_close(cg1);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Create content in file 2 - should still work in parallel mode
      * This would fail before PR #906 fix */
     ierr = cg_base_write(cg2, "Base", 3, 3, &base2);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
     ierr = cg_zone_write(cg2, base2, "Zone", sizes, CGNS_ENUMV(Structured), &zone2);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
     ierr = cgp_coord_write(cg2, base2, zone2, CGNS_ENUMV(RealDouble), "CoordinateY", &iCoor2);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     /* Close second file */
     ierr = cgp_close(cg2);
-    if (ierr) cg_error_exit();
+    if (ierr) cgp_error_exit();
 
     if (commrank == 0) printf("PASS\n");
 }

@@ -116,10 +116,10 @@ CONTAINS
 
     ! Make a serial file:
     CALL cg_open_f(fname, CG_MODE_WRITE, cg, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f()
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f()
 
     CALL cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     sizes = 0
     sizes(1) = 10
@@ -141,19 +141,19 @@ CONTAINS
     ENDDO
 
     CALL cg_zone_write_f(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), i, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateX", Dxyz, iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateY", Dxyz, iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
-    
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+
     CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateZ", Dxyz, iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     CALL cg_close_f(cg, ierr)
-    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     DEALLOCATE(Dxyz)
 
@@ -169,16 +169,16 @@ CONTAINS
     IF( commrank.EQ.0) WRITE(*,"(3X,A)", ADVANCE="NO") "PARALLEL CREATE..."
 
     CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cgp_open_f(fName, CG_MODE_WRITE, cg, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     
     sizes = 0
     sizes(1) = 10
@@ -188,19 +188,19 @@ CONTAINS
     sizes(5) = sizes(2) - 1
     sizes(6) = sizes(3) - 1
     CALL cg_zone_write_f(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), i, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateX", iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateY", iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
-    
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
     CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateZ", iCoor, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
-    
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
     CALL cgp_close_f(cg, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     
     IF( commrank.EQ.0) WRITE(*,"(A)") "PASS"
     
@@ -219,17 +219,17 @@ CONTAINS
 
     ! Setup MPI for parallel I/O
     CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Open first parallel file
     CALL cgp_open_f("multi_file1.cgns", CG_MODE_WRITE, cg1, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Open second parallel file (while first is still open)
     CALL cgp_open_f("multi_file2.cgns", CG_MODE_WRITE, cg2, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Create content in file 1
     sizes = 0
@@ -241,28 +241,28 @@ CONTAINS
     sizes(6) = sizes(3) - 1
 
     CALL cg_base_write_f(cg1, "Base", 3, 3, base1, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     CALL cg_zone_write_f(cg1, base1, "Zone", sizes, CGNS_ENUMV(Structured), zone1, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     CALL cgp_coord_write_f(cg1, base1, zone1, CGNS_ENUMV(RealDouble), "CoordinateX", iCoor1, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Close first file (this previously would reset mode to NATIVE, breaking file2)
     CALL cgp_close_f(cg1, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Create content in file 2 - should still work in parallel mode
     ! This would fail before PR #906 fix
     CALL cg_base_write_f(cg2, "Base", 3, 3, base2, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     CALL cg_zone_write_f(cg2, base2, "Zone", sizes, CGNS_ENUMV(Structured), zone2, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     CALL cgp_coord_write_f(cg2, base2, zone2, CGNS_ENUMV(RealDouble), "CoordinateY", iCoor2, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Close second file
     CALL cgp_close_f(cg2, ierr)
-    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     IF(commrank.EQ.0) WRITE(*,"(A)") "PASS"
 

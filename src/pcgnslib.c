@@ -542,17 +542,23 @@ int cgp_open(const char *filename, int mode, int *fn)
     }
 
     ierr = cg_open(filename, mode, fn);
-    cgns_filetype = old_type;
 
-    /* Clear flag - no longer in cgp_open() */
+    /* Clear flag - no longer in cgp_open().
+     * IMPORTANT: Clear this immediately after cg_open(), even if it failed,
+     * to prevent corrupting subsequent cg_open() calls. */
     cgp_open_active = 0;
 
-    /* Keep mode as PARALLEL for subsequent parallel opens (issue #836).
-     * cg_open() will have preserved PARALLEL mode because cgp_open_active was set. */
-    /* Ensure mode is PARALLEL for next parallel open */
+    cgns_filetype = old_type;
+
+    if (ierr) return ierr;
+
+    /* Ensure mode is PARALLEL for subsequent parallel opens (issue #836).
+     * This is technically redundant (cg_open() preserved the PARALLEL mode we set above
+     * because cgp_open_active was set), but we set it explicitly here as defensive
+     * programming and to clearly document the intended state after cgp_open(). */
     ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
-    return ierr;
+    return CG_OK;
 }
 
 /*---------------------------------------------------------*/
