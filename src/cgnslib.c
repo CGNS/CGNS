@@ -527,10 +527,15 @@ int cg_open(const char *filename, int mode, int *fn)
      * (indicated by cgp_open_active flag), force NATIVE mode. This prevents direct
      * cg_open() calls in MPI programs from using stale PARALLEL mode left over from
      * previous cgp_open() calls. (Fix for issue #836) */
+#if CG_BUILD_PARALLEL
     if (!cgp_open_active) {
         ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
     }
     /* else: cgp_open() has set PARALLEL mode, keep it for this open */
+#else
+    /* No parallel support, always use NATIVE mode */
+    ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
+#endif
 #endif
 
     /* Open CGNS file */
