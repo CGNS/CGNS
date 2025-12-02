@@ -28,7 +28,7 @@ typedef struct {
 } FloatArrayStruct, * FloatArray;
 
 static FloatArray
-NewFloatArray ()
+NewFloatArray (void)
 {
    FloatArray ptr = malloc (sizeof(FloatArrayStruct));
    assert (ptr != NULL);

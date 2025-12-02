@@ -166,7 +166,7 @@ static void 	OGLwinRedraw (ClientData clientData);
 
 int             OGLwinCmd(ClientData, Tcl_Interp*, int, char**);
 
-static int      UnusedDList ();
+static int      UnusedDList (void);
 
 static int      FreeDisplayList (int) ;
 
@@ -799,7 +799,7 @@ OGLwinRedraw (clientData)
  */
 
 static int
-UnusedDList ()
+UnusedDList (void)
 {
    /* Returns an integer number corresponding to a free display list
     */

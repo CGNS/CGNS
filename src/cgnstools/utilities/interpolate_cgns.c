@@ -1013,7 +1013,7 @@ static void build_solution (int nz)
 
 /* this is for debugging - solution and grid files must have same nodes */
 
-static void compare_solution ()
+static void compare_solution (void)
 {
     int nz, nf, n;
     double f, diff, fmax, favg, fsum;

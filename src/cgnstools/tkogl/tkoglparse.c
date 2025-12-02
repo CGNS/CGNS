@@ -800,7 +800,7 @@ InsDesc (tclName, func, argList)
 }
 
 void
-InitHashTables ()
+InitHashTables (void)
 {
    int i, newEntry;
    Tcl_HashEntry *enumEntry;

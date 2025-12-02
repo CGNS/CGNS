@@ -320,7 +320,7 @@ static int sort_faces (const void *v1, const void *v2)
 
 /*--------------------------------------------------------------------*/
 
-static void count_elements ()
+static void count_elements (void)
 {
     int ns, nsect, nn, ip;
     cgsize_t i, n, is, ie, ne;
@@ -457,7 +457,7 @@ static void count_elements ()
 
 /*--------------------------------------------------------------------*/
 
-static void structured_elements ()
+static void structured_elements (void)
 {
     int i, j, k, nq = 0;
     int ni = (int)sizes[0];
@@ -546,7 +546,7 @@ static void structured_elements ()
 
 /*--------------------------------------------------------------------*/
 
-static void unstructured_elements ()
+static void unstructured_elements (void)
 {
     int ns, nsect, nn, ip, nf, j;
     cgsize_t i, n, is, ie, ne;
@@ -904,7 +904,7 @@ static void unstructured_boundary (int nb,
 
 /*--------------------------------------------------------------------*/
 
-static void boundary_conditions ()
+static void boundary_conditions (void)
 {
     int nb, ib, nrmlindex[3];
     cgsize_t is, np, *ptset;

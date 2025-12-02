@@ -836,7 +836,7 @@ double vec_rand (void)
  * does the parsing and evaluation of the string
  *-------------------------------------------------------------------*/
 
-static VECDATA *parse ()
+static VECDATA *parse (void)
 {
     size_t n;
     size_t cur_len = max_len;
@@ -941,7 +941,7 @@ static int reset_recurs (VECSYM *sym, void *userdata)
  * clean up on error or parsing completion
  *------------------------------------------------------------------*/
 
-static void clean_up ()
+static void clean_up (void)
 {
     VECLIST *prev;
 
@@ -964,7 +964,7 @@ static void clean_up ()
  * process an intrinsic variable
  *------------------------------------------------------------------*/
 
-static int do_intrinsic ()
+static int do_intrinsic (void)
 {
     char c, *p = exp_ptr;
     int lo, hi, n, m;
@@ -1072,7 +1072,7 @@ int nargs;
  * processes a user symbol
  *------------------------------------------------------------------*/
 
-static int do_symbol ()
+static int do_symbol (void)
 {
     int c, is_func;
     char symname[SYMNAME_MAXLEN+2], *p = exp_ptr;
@@ -1300,7 +1300,7 @@ VECDATA *vdata;
  * call user routine
  *------------------------------------------------------------------*/
 
-static int do_userfunc ()
+static int do_userfunc (void)
 {
     char *p, *s;
     double dval;
@@ -1388,7 +1388,7 @@ void *op_val;
  * evaluates logical operations
  *------------------------------------------------------------------*/
 
-static void logical ()
+static void logical (void)
 {
     relational ();
 
@@ -1430,7 +1430,7 @@ static void logical ()
  * evaluates relational operators
  *------------------------------------------------------------------*/
 
-static void relational ()
+static void relational (void)
 {
     additive ();
 
@@ -1486,7 +1486,7 @@ static void relational ()
  * evaluates additive operators
  *------------------------------------------------------------------*/
 
-static void additive ()
+static void additive (void)
 {
     multiplicative ();
 
@@ -1512,7 +1512,7 @@ static void additive ()
  * evaluates multiplicative operators
  *------------------------------------------------------------------*/
 
-static void multiplicative ()
+static void multiplicative (void)
 {
     exponential ();
 
@@ -1547,7 +1547,7 @@ static void multiplicative ()
  * evaluates exponential operators
  *------------------------------------------------------------------*/
 
-static void exponential ()
+static void exponential (void)
 {
     unary ();
 
@@ -1573,7 +1573,7 @@ static void exponential ()
  * evaluates unary operations
  *------------------------------------------------------------------*/
 
-static void unary ()
+static void unary (void)
 {
     skip_space (exp_ptr);
 
@@ -1595,7 +1595,7 @@ static void unary ()
  * evaluates an expression
  *------------------------------------------------------------------*/
 
-static void expression ()
+static void expression (void)
 {
     char *p;
     int i;

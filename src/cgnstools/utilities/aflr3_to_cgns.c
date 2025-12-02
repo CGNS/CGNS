@@ -88,7 +88,7 @@ static int sort_faces(const void *v1, const void *v2)
 
 /*----------------------------------------------------------------------*/
 
-static void build_trisets()
+static void build_trisets(void)
 {
     int n, id, ns, nf;
 
@@ -136,7 +136,7 @@ static void build_trisets()
 
 /*----------------------------------------------------------------------*/
 
-static void build_quadsets()
+static void build_quadsets(void)
 {
     int n, id, ns, nf;
 
@@ -303,7 +303,7 @@ static void read_ugrid(char *filename, int flags)
                 exit(1);
             }
         }
-        build_trisets();
+        build_trisets(void);
     }
     if (nQuads) {
         for (n = 0; n < nQuads; n++) {
@@ -312,7 +312,7 @@ static void read_ugrid(char *filename, int flags)
                 exit(1);
             }
         }
-        build_quadsets();
+        build_quadsets(void);
     }
 
     /* read tets */
