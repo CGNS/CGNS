@@ -21,11 +21,4 @@ typedef struct _cgns_io_ctx_t {
 #endif
 } cgns_io_ctx_t;
 
-/* Coordination flag between cgp_open() and cg_open() to prevent
- * cg_open() from forcing NATIVE mode when called from cgp_open().
- * Declared here to ensure type consistency across translation units. */
-#if CG_BUILD_PARALLEL
-extern int cgp_open_active;
-#endif
-
 #endif /* CGIO_INTERNAL_TYPE_H */

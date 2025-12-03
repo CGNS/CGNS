@@ -71,10 +71,6 @@ cgns_io_ctx_t ctx_cgio = {
     .default_pio_mode=H5FD_MPIO_COLLECTIVE
 #endif
 };
-
-/* Flag to indicate if we're inside a cgp_open() call.
- * Used to prevent cg_open() from resetting mode to NATIVE when called from cgp_open(). */
-int cgp_open_active = 0;
 #endif
 
 #if CG_HAVE_STAT64_STRUCT

@@ -67,7 +67,7 @@ freely, subject to the following restrictions:
                              (type >= CGNS_ENUMV(BAR_4) && \
                               type <= CGNS_ENUMV(HEXA_125)))
 
-#include "cgio_internal_type.h" /* for cgns_io_ctx_t and cgp_open_active */
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
 extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
 
 extern int cgns_filetype;
@@ -525,35 +525,24 @@ int cgp_open(const char *filename, int mode, int *fn)
       cgp_mpi_comm(MPI_COMM_WORLD);
     }
 
-    /* Set flag to indicate cg_open() is being called FROM cgp_open().
-     * This prevents cg_open() from forcing NATIVE mode. */
-    cgp_open_active = 1;
-
     /* Set global parallel access mode for this file open.
      * Note: HDF5 will remember the MPIO driver with the file handle after opening.
      * The global state is only used at file open time to configure HDF5. */
     ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
-    if (ierr) {
-        cgp_open_active = 0;
-        return ierr;
-    }
+    if (ierr) return ierr;
 
-    ierr = cg_open(filename, mode, fn);
-
-    /* Clear flag - no longer in cgp_open().
-     * IMPORTANT: Clear this immediately after cg_open(), even if it failed,
-     * to prevent corrupting subsequent cg_open() calls. */
-    cgp_open_active = 0;
+    /* Call internal implementation with open_parallel=1 to preserve PARALLEL mode */
+    ierr = cgi_open(filename, mode, 1, fn);
 
     cgns_filetype = old_type;
 
     if (ierr) return ierr;
 
     /* Ensure mode is PARALLEL for subsequent parallel opens (issue #836).
-     * This is technically redundant (cg_open() preserved the PARALLEL mode we set above
-     * because cgp_open_active was set), but we set it explicitly here as defensive
+     * This is technically redundant (cgi_open() preserved the PARALLEL mode we set above
+     * because open_parallel=1 was passed), but we set it explicitly here as defensive
      * programming and to clearly document the intended state after cgp_open(). */
     ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
