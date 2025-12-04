@@ -702,8 +702,10 @@ if( parent_node.entries_for_sub_nodes <= parent_node.num_sub_nodes ) {
    if( old_num_entries > 0 ) {
       ADFI_read_sub_node_table( file_index, &parent_node.sub_node_table,
 	   sub_node_table, error_return ) ;
-      if( *error_return != NO_ERROR )
+      if( *error_return != NO_ERROR ) {
+         free( sub_node_table ) ;
          return ;
+      }
       } /* end if */
 
 	/** Blank out the new part of the sub-node_table **/
@@ -720,15 +722,19 @@ if( parent_node.entries_for_sub_nodes <= parent_node.num_sub_nodes ) {
    if( parent_node.num_sub_nodes > 0 ) { /* delete old table from file */
       ADFI_delete_sub_node_table( file_index, &parent_node.sub_node_table,
                                   old_num_entries, error_return ) ;
-      if( *error_return != NO_ERROR )
+      if( *error_return != NO_ERROR ) {
+         free( sub_node_table ) ;
          return ;
+      }
       } /* end if */
 
   ADFI_file_malloc( file_index, TAG_SIZE + DISK_POINTER_SIZE + TAG_SIZE +
     parent_node.entries_for_sub_nodes * (ADF_NAME_LENGTH + DISK_POINTER_SIZE),
     &tmp_disk_ptr, error_return ) ;
-   if( *error_return != NO_ERROR )
+   if( *error_return != NO_ERROR ) {
+      free( sub_node_table ) ;
       return ;
+   }
 
    parent_node.sub_node_table.block = tmp_disk_ptr.block ;
    parent_node.sub_node_table.offset = tmp_disk_ptr.offset ;
@@ -1654,8 +1660,10 @@ if( parent_node.entries_for_sub_nodes > 0 ) {
 for( i=0; i<(int)parent_node.num_sub_nodes; i++ ) {
    ADFI_compare_node_names( sub_node_table[i].child_name, name,
 	found, error_return ) ;
-   if( *error_return != NO_ERROR )
-      break ;
+   if( *error_return != NO_ERROR ) {
+      free( sub_node_table ) ;
+      return ;
+   }
    if( *found == 1 ) {	/* name was found, save off addresses */
       sub_node_entry_location->block = parent_node.sub_node_table.block ;
       sub_node_entry_location->offset = parent_node.sub_node_table.offset +
@@ -1663,8 +1671,10 @@ for( i=0; i<(int)parent_node.num_sub_nodes; i++ ) {
 		(ADF_NAME_LENGTH + DISK_POINTER_SIZE) * i ;
 
       ADFI_adjust_disk_pointer( sub_node_entry_location, error_return ) ;
-      if( *error_return != NO_ERROR )
+      if( *error_return != NO_ERROR ) {
+         free( sub_node_table ) ;
          return ;
+      }
 
 	/** Also save off the child's name **/
       strncpy( sub_node_entry->child_name, sub_node_table[i].child_name,
@@ -2756,15 +2766,19 @@ default : /** Multiple data-chunks to free.  Free them,
     /** Read in the table **/
    ADFI_read_data_chunk_table( file_index, &node_header->data_chunks,
                                data_chunk_table, error_return ) ;
-   if( *error_return != NO_ERROR )
+   if( *error_return != NO_ERROR ) {
+      free( data_chunk_table ) ;
       return ;
+      }
 
     /** Free each entry in the table **/
    for( i=0; i<(int)node_header->number_of_data_chunks; i++ ) {
       ADFI_file_free( file_index, &data_chunk_table[i].start,
                       0, error_return ) ;
-      if( *error_return != NO_ERROR )
+      if( *error_return != NO_ERROR ) {
+         free( data_chunk_table ) ;
          return ;
+         }
       } /* end for */
    free( data_chunk_table ) ;
    ADFI_file_free( file_index, &node_header->data_chunks, 0, error_return ) ;
@@ -2870,14 +2884,18 @@ strncpy ( sub_node_table[i].child_name,
 ADFI_write_sub_node_table( file_index, &parent_node.sub_node_table,
                            parent_node.entries_for_sub_nodes,
                            sub_node_table, error_return ) ;
-if( *error_return != NO_ERROR )
+if( *error_return != NO_ERROR ) {
+   free( sub_node_table ) ;
    return ;
+}
 
     /** Update the sub-node count and write the parent's node-header **/
 parent_node.num_sub_nodes -= 1;
 ADFI_write_node_header( file_index, parent, &parent_node, error_return ) ;
-if( *error_return != NO_ERROR )
+if( *error_return != NO_ERROR ) {
+   free( sub_node_table ) ;
    return ;
+}
 
 /** Clear all subnode/disk entries off the priority stack for file **/
 ADFI_stack_control(file_index, 0, 0, CLEAR_STK_TYPE, SUBNODE_STK,
