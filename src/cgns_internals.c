@@ -15072,6 +15072,7 @@ int *cgi_diffusion_address(int local_mode, int *ier)
             CGNS_FREE(id);
         }
         CGNS_FREE(diffusion_model);
+        return CG_OK;
     }
     return diffusion_model;
 }

@@ -2769,7 +2769,7 @@ default : /** Multiple data-chunks to free.  Free them,
    if( *error_return != NO_ERROR ) {
       free( data_chunk_table ) ;
       return ;
-      }
+   }
 
     /** Free each entry in the table **/
    for( i=0; i<(int)node_header->number_of_data_chunks; i++ ) {
@@ -2778,7 +2778,7 @@ default : /** Multiple data-chunks to free.  Free them,
       if( *error_return != NO_ERROR ) {
          free( data_chunk_table ) ;
          return ;
-         }
+      }
       } /* end for */
    free( data_chunk_table ) ;
    ADFI_file_free( file_index, &node_header->data_chunks, 0, error_return ) ;

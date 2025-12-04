@@ -7107,23 +7107,31 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
         }
         WRITE_ALL_INT_DATA(2, section->parelem, newelems)
 
+        /* Allocate separate buffer for parface data (always 2 rows) */
+        cgsize_t *newface = (cgsize_t *)malloc((size_t)(2 * newsize * sizeof(cgsize_t)));
+        if (NULL == newface) {
+            cgi_error("Error allocating new ParentElementsPosition data");
+            free(newelems);
+            return CG_ERROR;
+        }
         for (n = 0; n < 2*newsize; n++)
-            newelems[n] = 0;
+            newface[n] = 0;
         oldelems = (cgsize_t *)section->parface->data;
         for (num = 0, i = 0; i < 2; i++) {
             j = i * newsize + offset;
             for (n = 0; n < oldsize; n++)
-                newelems[j++] = oldelems[num++];
+                newface[j++] = oldelems[num++];
         }
         for (i = 0; i < 2; i++) {
             j = i * newsize + offset;
             for (n = start; n <= end; n++)
-                newelems[j++] = 0;
+                newface[j++] = 0;
         }
 
         free(section->parface->data);
-        section->parface->data = newelems;
+        section->parface->data = newface;
         section->parface->dim_vals[0] = newsize;
+        free(newelems);
         section->parelem->data = NULL;
 
         if (cgio_set_dimensions(cg->cgio, section->parface->id,
@@ -7132,7 +7140,7 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_ALL_INT_DATA(2, section->parface, newelems)
+        WRITE_ALL_INT_DATA(2, section->parface, newface)
                 free_parent_data(section);
     }
     return CG_OK;
@@ -7747,23 +7755,31 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
         }
         WRITE_ALL_INT_DATA(2, section->parelem, newelems)
 
-                for (n = 0; n < 2*newsize; n++)
-                newelems[n] = 0;
+        /* Allocate separate buffer for parface data (always 2 rows) */
+        cgsize_t *newface = (cgsize_t *)malloc((size_t)(2 * newsize * sizeof(cgsize_t)));
+        if (NULL == newface) {
+            cgi_error("Error allocating new ParentElementsPosition data");
+            free(newelems);
+            return CG_ERROR;
+        }
+        for (n = 0; n < 2*newsize; n++)
+            newface[n] = 0;
         oldelems = (cgsize_t *)section->parface->data;
         for (num = 0, i = 0; i < 2; i++) {
             j = i * newsize + offset;
             for (n = 0; n < s_range_size; n++)
-                newelems[j++] = oldelems[num++];
+                newface[j++] = oldelems[num++];
         }
         for (i = 0; i < 2; i++) {
             j = i * newsize + offset;
             for (n = start; n <= end; n++)
-                newelems[j++] = 0;
+                newface[j++] = 0;
         }
 
         free(section->parface->data);
-        section->parface->data = newelems;
+        section->parface->data = newface;
         section->parface->dim_vals[0] = newsize;
+        free(newelems);
         section->parelem->data = NULL;
 
         if (cgio_set_dimensions(cg->cgio, section->parface->id,
@@ -7772,7 +7788,7 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_ALL_INT_DATA(2, section->parface, newelems)
+        WRITE_ALL_INT_DATA(2, section->parface, newface)
         free_parent_data(section);
     }
 
