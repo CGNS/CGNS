@@ -14158,7 +14158,6 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
             return CG_OK;
         }
         cgi_free_descr(descr);
-        return CG_OK;
     }
     return descr;
 }
@@ -14517,7 +14516,6 @@ cgns_units *cgi_units_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_units(units);
-        return CG_OK;
     }
     return units;
 }
@@ -14736,7 +14734,6 @@ cgns_conversion *cgi_conversion_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_convert(convert);
-        return CG_OK;
     }
     return convert;
 }
@@ -14780,7 +14777,6 @@ cgns_exponent *cgi_exponent_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_exponents(exponents);
-        return CG_OK;
     }
     return exponents;
 }
@@ -14831,7 +14827,6 @@ cgns_integral *cgi_integral_address(int local_mode, int given_no,
             return CG_OK;
         }
         cgi_free_integral(integral);
-        return CG_OK;
     }
     return integral;
 }
@@ -14878,7 +14873,6 @@ cgns_equations *cgi_equations_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_equations(equations);
-        return CG_OK;
     }
     return equations;
 }
@@ -14938,7 +14932,6 @@ cgns_state *cgi_state_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_state(state);
-        return CG_OK;
     }
     return state;
 }
@@ -14990,7 +14983,6 @@ cgns_converg *cgi_converg_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_converg(converg);
-        return CG_OK;
     }
     return converg;
 }
@@ -15034,7 +15026,6 @@ cgns_governing *cgi_governing_address(int local_mode, int *ier)
             return CG_OK;
         }
         cgi_free_governing(governing);
-        return CG_OK;
     }
     return governing;
 }
@@ -15085,7 +15076,6 @@ int *cgi_diffusion_address(int local_mode, int *ier)
             CGNS_FREE(id);
         }
         CGNS_FREE(diffusion_model);
-        return CG_OK;
     }
     return diffusion_model;
 }
