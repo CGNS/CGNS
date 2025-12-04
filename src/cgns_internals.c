@@ -10594,10 +10594,6 @@ int cgi_array_general_write(
 
     if (have_dup) {
          /* overwrite a DataArray_t node of same name, size and data-type: */
-        if (array == NULL) {
-            cgi_error("Internal error: array pointer is NULL");
-            return CG_ERROR;
-        }
          /* array rank in file must agree */
         if (array->data_dim != s_numdim) {
             cgi_error("Mismatch in array rank");
