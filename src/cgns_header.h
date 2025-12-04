@@ -1092,6 +1092,9 @@ extern cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
  * Internal Functions
  */
 
+/* Internal file opening implementation used by both cg_open() and cgp_open() */
+int cgi_open(const char *filename, int mode, int open_parallel, int *fn);
+
 CGNSDLL void *cgi_malloc(size_t cnt,size_t size);
 CGNSDLL void *cgi_realloc(void *old,size_t bytes);
 

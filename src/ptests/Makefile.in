@@ -26,13 +26,14 @@ CALL =	pcgns_ctest$(EXE) \
 	test_general_readwrite$(EXE) \
         Metadata_Stressing$(EXE) \
 	test_poly_unstructured$(EXE) \
+	test_mixed_par_ser$(EXE) \
 	thesis_benchmark$(EXE)
 
 FALL =	pcgns_ftest$(EXE) \
 	ftest_zone$(EXE) \
 	fexample$(EXE) \
 	benchmark_hdf5_f90$(EXE) \
-	test_mixed_par_ser$(EXE) \
+	test_mixed_par_ser_f90$(EXE) \
 	test_unstruc_quad_f90$(EXE) \
 	test_poly_unstructured_f90$(EXE) \
 	test_general_wrappers_f90$(EXE)
@@ -188,6 +189,12 @@ test_poly_unstructured$(EXE) : test_poly_unstructured.c $(CGNSLIB)
 
 #----------
 
+test_mixed_par_ser$(EXE) : test_mixed_par_ser.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_mixed_par_ser.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ thesis_benchmark.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -200,8 +207,8 @@ pcgns_ftest$(EXE) : pcgns_ftest.F90 utilsf.$(O) $(CGNSLIB)
 
 #----------
 
-test_mixed_par_ser$(EXE) : test_mixed_par_ser.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_mixed_par_ser.F90 $(LDLIBS) $(FLIBS)
+test_mixed_par_ser_f90$(EXE) : test_mixed_par_ser_f90.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_mixed_par_ser_f90.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

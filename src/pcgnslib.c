@@ -527,16 +527,26 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Set global parallel access mode for this file open.
      * Note: HDF5 will remember the MPIO driver with the file handle after opening.
-     * The global state is only used at file open time to configure HDF5.
-     * Do NOT reset this in cgp_close() - it would corrupt subsequent parallel opens. */
+     * The global state is only used at file open time to configure HDF5. */
     ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
-    ierr = cg_open(filename, mode, fn);
+
+    /* Call internal implementation with open_parallel=1 to preserve PARALLEL mode */
+    ierr = cgi_open(filename, mode, 1, fn);
+
     cgns_filetype = old_type;
 
-    return ierr;
+    if (ierr) return ierr;
+
+    /* Ensure mode is PARALLEL for subsequent parallel opens (issue #836).
+     * This is technically redundant (cgi_open() preserved the PARALLEL mode we set above
+     * because open_parallel=1 was passed), but we set it explicitly here as defensive
+     * programming and to clearly document the intended state after cgp_open(). */
+    ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
+
+    return CG_OK;
 }
 
 /*---------------------------------------------------------*/
