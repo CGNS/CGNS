@@ -1446,16 +1446,36 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
   int err;
   char type[ADF_DATA_TYPE_LENGTH+1];
 
-  if (*name != D_PREFIX && (gid = H5Gopen2(id, name, H5P_DEFAULT)) >= 0 &&
-     !get_str_att(gid, A_TYPE, type, &err) && strcmp(type, ADFH_LK)) {
-#if ADFH_HDF5_HAVE_112_API
-    H5Literate2(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
-#else
-    H5Literate(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
-#endif
-    transpose_dimensions(gid,name);
+  /* Skip names starting with D_PREFIX */
+  if (*name == D_PREFIX)
+    return 0;
+
+  /* Try to open the group */
+  gid = H5Gopen2(id, name, H5P_DEFAULT);
+  if (gid < 0)
+    return 0;
+
+  /* Get the type attribute */
+  if (get_str_att(gid, A_TYPE, type, &err) != 0) {
     H5Gclose(gid);
+    return 0;
   }
+
+  /* Skip if type is ADFH_LK */
+  if (strcmp(type, ADFH_LK) == 0) {
+    H5Gclose(gid);
+    return 0;
+  }
+
+  /* Process the group */
+#if ADFH_HDF5_HAVE_112_API
+  H5Literate2(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
+#else
+  H5Literate(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
+#endif
+  transpose_dimensions(gid,name);
+  H5Gclose(gid);
+
   return 0;
 }
 
