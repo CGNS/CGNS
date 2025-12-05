@@ -4170,7 +4170,7 @@ static int classify_polygon (Zone *z, int nnodes, cgsize_t *nodeid)
 
 /*------------------------------------------------------------------*/
 
-static cgsize_t find_elements ()
+static cgsize_t find_elements (void)
 {
 #define ELEM_INC 50
     int nz, nnodes, nn, nr, nf;
@@ -4923,7 +4923,7 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
 
 /*------------------------------------------------------------------*/
 
-static cgsize_t find_intersects ()
+static cgsize_t find_intersects (void)
 {
     int nz, nr, nf, nfaces, nnodes;
     cgsize_t n, ne;
@@ -4996,7 +4996,7 @@ static cgsize_t find_intersects ()
 
 /*------------------------------------------------------------------*/
 
-static void draw_edges ()
+static void draw_edges (void)
 {
     int nz, nr;
     cgsize_t ne, nn;

@@ -7,11 +7,6 @@
 #include "cgns_io.h"
 #include "cgnslib.h" /* only needed for CGNS_VERSION */
 
-#ifndef CGNSTYPES_H
-# define cgsize_t  int
-# define cglong_t  long
-# define cgulong_t unsigned long
-#endif
 
 /* Tcl 8.x compatibility - Tcl_Size was introduced in Tcl 9.0 */
 #if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9

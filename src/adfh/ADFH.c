@@ -21,7 +21,7 @@ freely, subject to the following restrictions:
 /*-------------------------------------------------------------------
  * HDF5 interface to ADF
  *-------------------------------------------------------------------*/
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
   #define _POSIX_C_SOURCE 200112L
 #endif
 #include <stdio.h>
@@ -374,8 +374,11 @@ static herr_t print_H5_error(int n, H5E_error2_t *desc, void *data)
 {
   const char *p;
 
-  if ((p = strrchr(desc->file_name, '/')) == NULL &&
-      (p = strrchr(desc->file_name, '\\')) == NULL)
+  p = strrchr(desc->file_name, '/');
+  if (p == NULL) {
+    p = strrchr(desc->file_name, '\\');
+  }
+  if (p == NULL)
     p = desc->file_name;
   else
     p++;
@@ -1469,16 +1472,36 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
   int err;
   char type[ADF_DATA_TYPE_LENGTH+1];
 
-  if (*name != D_PREFIX && (gid = H5Gopen2(id, name, H5P_DEFAULT)) >= 0 &&
-     !get_str_att(gid, A_TYPE, type, &err) && strcmp(type, ADFH_LK)) {
-#if ADFH_HDF5_HAVE_112_API
-    H5Literate2(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
-#else
-    H5Literate(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
-#endif
-    transpose_dimensions(gid,name);
+  /* Skip names starting with D_PREFIX */
+  if (*name == D_PREFIX)
+    return 0;
+
+  /* Try to open the group */
+  gid = H5Gopen2(id, name, H5P_DEFAULT);
+  if (gid < 0)
+    return 0;
+
+  /* Get the type attribute */
+  if (get_str_att(gid, A_TYPE, type, &err) != 0) {
     H5Gclose(gid);
+    return 0;
   }
+
+  /* Skip if type is ADFH_LK */
+  if (strcmp(type, ADFH_LK) == 0) {
+    H5Gclose(gid);
+    return 0;
+  }
+
+  /* Process the group */
+#if ADFH_HDF5_HAVE_112_API
+  H5Literate2(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
+#else
+  H5Literate(gid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL);
+#endif
+  transpose_dimensions(gid,name);
+  H5Gclose(gid);
+
   return 0;
 }
 
@@ -1507,6 +1530,7 @@ void ADFH_Configure(const int option, void *value, int *err)
       return;
     }
 
+    /* Integer values - passed by value (encoded as pointer) */
     if (option == ADFH_CONFIG_COMPRESS) {
         int compress = (int)((size_t)value);
         if (compress < 0)
@@ -1562,15 +1586,10 @@ void ADFH_Configure(const int option, void *value, int *err)
         core_vfd_backing_store = (hbool_t)((size_t)value);
         set_error(NO_ERROR, err);
     }
+    /* size_t values - passed by value (encoded as pointer) */
     else if (option == ADFH_CONFIG_CORE_INCR) {
         core_vfd_increment = (size_t)value;
         set_error(NO_ERROR, err);
-    }
-    else if (option == ADFH_CONFIG_ALIGNMENT) {
-      const size_t* val = (const size_t*)value; 
-      h5pset_alignment_threshold = (hsize_t)(val[0]);
-      h5pset_alignment_alignment = (hsize_t)(val[1]);
-      set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_MD_BLOCK_SIZE) {
       h5pset_meta_block_size_size = (hsize_t)value;
@@ -1586,6 +1605,13 @@ void ADFH_Configure(const int option, void *value, int *err)
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
       h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
+      set_error(NO_ERROR, err);
+    }
+    /* Pointer values - passed by reference */
+    else if (option == ADFH_CONFIG_ALIGNMENT) {
+      const size_t* val = (const size_t*)value;
+      h5pset_alignment_threshold = (hsize_t)(val[0]);
+      h5pset_alignment_alignment = (hsize_t)(val[1]);
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_GET_MAXIMUM_FILES) {
@@ -2353,15 +2379,17 @@ void ADFH_Database_Open(const char   *name,
 #endif
 
   /* open the file */
-  access_mode = CGIO_NATIVE_MODE;
-#if CG_BUILD_PARALLEL
+  /* Convert format string to enum for internal use (Issue #836) */
+  access_mode = (0 == strcmp(fmt, "PARALLEL")) ? CGIO_PARALLEL_MODE : CGIO_NATIVE_MODE;
 
+#if CG_BUILD_PARALLEL
   int flag = 0;
   /* check if we are actually running a parallel program */
   MPI_Initialized(&flag);
   if(flag) {
     /* Set the access property list to use MPI */
-    if (0 == strcmp(fmt, "PARALLEL")) {
+    if (access_mode == CGIO_PARALLEL_MODE) {
+
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 
 #ifdef H5_HAVE_SUBFILING_VFD
@@ -2376,12 +2404,11 @@ void ADFH_Database_Open(const char   *name,
       } else
 #endif
         H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
-      
+
 #if HDF5_HAVE_COLL_METADATA
       H5Pset_coll_metadata_write(g_propfileopen, 1);
 #endif /*HDF5_HAVE_COLL_METADATA*/
 
-      H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
       access_mode = CGIO_PARALLEL_MODE;
     }
   }

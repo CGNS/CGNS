@@ -234,6 +234,7 @@ int cgi_read_all_base_children(double base_id, int* nnodes, _childnode_t** child
     if (cgio_children_ids(cg->cgio, base_id, 1, nchildren,
         &len, idlist)) {
         cg_io_error("cgio_children_ids");
+        CGNS_FREE(idlist);
         return CG_ERROR;
     }
     if (len != nchildren) {
@@ -247,6 +248,8 @@ int cgi_read_all_base_children(double base_id, int* nnodes, _childnode_t** child
         /* Get the node label */
         if (cgio_get_label(cg->cgio, idlist[n], nodelabel)) {
             cg_io_error("cgio_get_label");
+            CGNS_FREE(idlist);
+            CGNS_FREE(childlist);
             return CG_ERROR;
         }
         childlist[n].type = get_base_label_type_as_enum(nodelabel);
@@ -259,6 +262,8 @@ int cgi_read_all_base_children(double base_id, int* nnodes, _childnode_t** child
             /* Get also the node name */
             if (cgio_get_name(cg->cgio, idlist[n], childlist[nid].name)) {
                 cg_io_error("cgio_get_name");
+                CGNS_FREE(idlist);
+                CGNS_FREE(childlist);
                 return CG_ERROR;
             }
             nid++;
@@ -295,7 +300,7 @@ int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes
     if (error) { \
         for (m = 0; m < NofBaseLabel; m++) { \
             if (childbylabel[m] == NULL) continue; \
-            CGNS_FREE(childbylabel[m]) \
+            CGNS_FREE(childbylabel[m]); \
         } \
         return CG_ERROR; \
     }
@@ -491,7 +496,7 @@ int cgi_read_base(cgns_base *base)
 
     for (m = 0; m < NofBaseLabel; m++) {
         if (childbylabel[m] == NULL) continue;
-        CGNS_FREE(childbylabel[m])
+        CGNS_FREE(childbylabel[m]);
     }
     /* read zones */
     for (n = 0; n < base->nzones; n++) {
@@ -6538,6 +6543,11 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                 if (cgi_read_string(idi[i], name, &text)) return CG_ERROR;
                 if (strcmp(name, "BCRegionName") &&
                     strcmp(name, "GridConnectivityRegionName")) {
+                    if (j >= ndescr) {
+                        cgi_error("Descriptor count mismatch in ZoneSubRegion");
+                        CGNS_FREE(text);
+                        return CG_ERROR;
+                    }
                     reg[n].descr[j].id = idi[i];
                     reg[n].descr[j].link = cgi_read_link(idi[i]);
                     reg[n].descr[j].in_link = in_link;
@@ -10560,7 +10570,7 @@ int cgi_array_general_write(
     const int access_full_range =
         (s_access_full_range == 1) && (m_access_full_range == 1);
 
-    cgns_array *array;
+    cgns_array *array = NULL;
 
      /* check for existing array */
     int have_dup = 0;
@@ -17257,7 +17267,7 @@ void cgi_free_particle(cgns_pzone *pzone)
    }
    if (pzone->nintegrals) {
        for (n=0; n<pzone->nintegrals; n++)
-            cgi_free_integral(pzone->integral);
+            cgi_free_integral(&pzone->integral[n]);
        CGNS_FREE(pzone->integral);
    }
    if (pzone->state) {
@@ -17279,7 +17289,7 @@ void cgi_free_particle(cgns_pzone *pzone)
    if (pzone->nuser_data) {
       for (n=0; n<pzone->nuser_data; n++)
            cgi_free_user_data(&pzone->user_data[n]);
-      CGNS_FREE(pzone->user_data)
+      CGNS_FREE(pzone->user_data);
    }
 }
 

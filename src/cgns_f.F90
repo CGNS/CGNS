@@ -225,33 +225,34 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*     Configuration options (found in cgnslib.h)                      *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  INTEGER, PARAMETER :: CG_CONFIG_ERROR      = 1
-  INTEGER, PARAMETER :: CG_CONFIG_COMPRESS   = 2
-  INTEGER, PARAMETER :: CG_CONFIG_SET_PATH   = 3
-  INTEGER, PARAMETER :: CG_CONFIG_ADD_PATH   = 4
-  INTEGER, PARAMETER :: CG_CONFIG_FILE_TYPE  = 5
-  INTEGER, PARAMETER :: CG_CONFIG_RIND_INDEX = 6
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_ERROR      = 1
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_COMPRESS   = 2
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_SET_PATH   = 3
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_ADD_PATH   = 4
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_FILE_TYPE  = 5
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_INDEX = 6
 
 ! Fortran length of names for variables is limited to 31 characters
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_COMPRESS         = 201
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MPI_COMM         = 202
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS         = 203
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR    = 204
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE   = 205
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ALIGNMENT        = 206
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MD_BLOCK_SIZE    = 207
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_BUFFER           = 208
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE   = 209
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE = 210
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SUBFILING        = 211
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SUBFILING_CONFIG = 212
-  INTEGER, PARAMETER :: CG_CONFIG_GET_MAXIMUM_FILES     = 401
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_COMPRESS         = 201
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_MPI_COMM         = 202
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_DISKLESS         = 203
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR    = 204
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE   = 205
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_ALIGNMENT        = 206
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_MD_BLOCK_SIZE    = 207
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_BUFFER           = 208
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE   = 209
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE = 210
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_SUBFILING        = 211
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_SUBFILING_CONFIG = 212
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_GET_MAXIMUM_FILES     = 401
 
-  INTEGER, PARAMETER :: CG_CONFIG_RESET = 1000
-  INTEGER, PARAMETER :: CG_CONFIG_RESET_HDF5 = 1
 
-  INTEGER, PARAMETER :: CG_CONFIG_RIND_ZERO = 0
-  INTEGER, PARAMETER :: CG_CONFIG_RIND_CORE = 1
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_RESET = 1000
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_RESET_HDF5 = 1
+
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_ZERO = 0
+  INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_CORE = 1
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_ERROR
@@ -6621,17 +6622,17 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_configure_ptr
 !DEC$endif
   SUBROUTINE cg_configure_ptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_PTR
+    USE ISO_C_BINDING, ONLY : C_PTR, C_INT
     IMPLICIT NONE
-    INTEGER, INTENT(IN) :: what
+    INTEGER(C_INT), INTENT(IN) :: what
     TYPE(C_PTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
     INTERFACE
        SUBROUTINE cg_configure_c_ptr(what, value, ier) BIND(C, name="cg_configure_c_ptr")
-         IMPORT :: C_PTR
+         IMPORT :: C_PTR, C_INT
          IMPLICIT NONE
-         INTEGER :: what
+         INTEGER(C_INT) :: what
          TYPE(C_PTR), VALUE :: value
          INTEGER :: ier
        END SUBROUTINE cg_configure_c_ptr
@@ -6645,17 +6646,17 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
 !DEC$endif
   SUBROUTINE cg_configure_funptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_FUNPTR
+    USE ISO_C_BINDING, ONLY : C_FUNPTR, C_INT
     IMPLICIT NONE
-    INTEGER, INTENT(IN) :: what
+    INTEGER(C_INT), INTENT(IN) :: what
     TYPE(C_FUNPTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
     INTERFACE
       SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C, name="cg_configure_c_funptr")
-        IMPORT :: C_FUNPTR
+        IMPORT :: C_FUNPTR, C_INT
         IMPLICIT NONE
-        INTEGER :: what
+        INTEGER(C_INT) :: what
         TYPE(C_FUNPTR), VALUE :: value
         INTEGER :: ier
       END SUBROUTINE cg_configure_c_funptr
@@ -6704,11 +6705,11 @@ CONTAINS
     INTEGER, INTENT(IN) :: fn
     INTEGER, INTENT(IN) :: B
     INTEGER, INTENT(IN) :: P
-    CHARACTER(LEN=*) , INTENT(INOUT) :: particlename
+    CHARACTER(LEN=*) , INTENT(OUT) :: particlename
     INTEGER(CGSIZE_T), INTENT(OUT)   :: nsize
     INTEGER, INTENT(OUT) :: ier
 
-    CHARACTER(LEN=LEN_TRIM(particlename)+1,KIND=C_CHAR) :: c_particlename
+    CHARACTER(len=1, kind=C_CHAR) :: c_particlename(MAX_LEN+1)
 
     INTERFACE
        INTEGER(C_INT) FUNCTION cg_particle_read(fn, B, P, particlename, nsize) BIND(C, NAME="cg_particle_read")
@@ -6829,10 +6830,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: C
-      CHARACTER(LEN=*) :: pcoord_name
+      CHARACTER(LEN=*), INTENT(OUT) :: pcoord_name
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(pcoord_name)+1, KIND=C_CHAR) :: c_pcoord_name
+      CHARACTER(len=1, kind=C_CHAR) :: c_pcoord_name(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_particle_coord_node_read(fn, B, P, C, pcoord_name) BIND(C, NAME="cg_particle_coord_node_read")
@@ -6990,11 +6991,11 @@ CONTAINS
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: C
       INTEGER(cgenum_t), INTENT(OUT) :: datatype
-      CHARACTER(LEN=*)     :: coordname
+      CHARACTER(LEN=*), INTENT(OUT) :: coordname
       INTEGER, INTENT(OUT) :: ier
 
       INTEGER(C_INT) :: c_datatype
-      CHARACTER(LEN=LEN_TRIM(coordname)+1, KIND=C_CHAR) :: c_coordname
+      CHARACTER(len=1, kind=C_CHAR) :: c_coordname(MAX_LEN+1)
 
       INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_coord_info(fn, B, P, C, datatype, coordname) BIND(C, NAME="cg_particle_coord_info")
@@ -7222,10 +7223,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      CHARACTER(LEN=*)    :: solname
+      CHARACTER(LEN=*), INTENT(OUT) :: solname
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(solname)+1,KIND=C_CHAR) :: c_solname
+      CHARACTER(len=1, kind=C_CHAR) :: c_solname(MAX_LEN+1)
 
       INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_sol_info(fn, B, P, S, solname) BIND(C, NAME="cg_particle_sol_info")
@@ -7484,10 +7485,10 @@ CONTAINS
       INTEGER, INTENT(IN)  :: S
       INTEGER, INTENT(IN)  :: F
       INTEGER(cgenum_t), INTENT(OUT) :: datatype
-      CHARACTER(LEN=*),  INTENT(INOUT) :: fieldname
+      CHARACTER(LEN=*),  INTENT(OUT) :: fieldname
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(fieldname)+1, KIND=C_CHAR) :: c_fieldname
+      CHARACTER(len=1, kind=C_CHAR) :: c_fieldname(MAX_LEN+1)
 
      INTERFACE
           INTEGER(C_INT) FUNCTION cg_particle_field_info(fn, B, P, S, F, datatype, fieldname) BIND(C, NAME="cg_particle_field_info")
@@ -7638,10 +7639,10 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      CHARACTER(LEN=*),  INTENT(INOUT) :: pitername
+      CHARACTER(LEN=*), INTENT(OUT) :: pitername
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(pitername)+1, KIND=C_CHAR) :: c_pitername
+      CHARACTER(len=1, kind=C_CHAR) :: c_pitername(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_piter_read(fn, B, P, pitername) &
@@ -7827,11 +7828,11 @@ CONTAINS
 !DEC$endif
     SUBROUTINE cg_particle_model_read_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
-      CHARACTER(LEN=*) , INTENT(INOUT) :: ModelLabel
+      CHARACTER(LEN=*), INTENT(OUT) :: ModelLabel
       INTEGER(CGENUM_T), INTENT(OUT) :: ModelType
       INTEGER, INTENT(OUT) :: ier
 
-      CHARACTER(LEN=LEN_TRIM(ModelLabel)+1,KIND=C_CHAR) :: c_ModelLabel
+      CHARACTER(len=1, kind=C_CHAR) :: c_ModelLabel(MAX_LEN+1)
 
       INTERFACE
          INTEGER(C_INT) FUNCTION cg_particle_model_read(ModelLabel, ModelType) &

@@ -191,7 +191,7 @@ static void write_doubles (FILE *fp, int cnt, double *data)
 
 /*--------------------------------------------------------------------*/
 
-static void count_elements ()
+static void count_elements (void)
 {
     int ns, nsect, nn, ip;
     cgsize_t i, n, is, ie, ne;
@@ -356,7 +356,7 @@ static int sort_tris (const void *v1, const void *v2)
 
 /*--------------------------------------------------------------------*/
 
-static void boundary_elements ()
+static void boundary_elements (void)
 {
     int ns, nsect, nn, ip, nf;
     cgsize_t i, n, is, ie, ne;
@@ -611,7 +611,7 @@ static void boundary_tris (int nb, CGNS_ENUMT(PointSetType_t) ptype,
 
 /*--------------------------------------------------------------------*/
 
-static void boundary_conditions ()
+static void boundary_conditions (void)
 {
     int nb, ib, nrmlindex[3];
     cgsize_t is, np, *ptset;

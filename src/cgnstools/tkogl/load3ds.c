@@ -201,7 +201,7 @@ static MaterialFaceInfo * matface = NULL;
  *---------------------------------------------------------------------------*/
 
 static void
-AllocMatFace ()
+AllocMatFace (void)
 {
    /* Allocate and initialize vector matface */
    int i;
@@ -221,7 +221,7 @@ AllocMatFace ()
 }
 
 static void
-FreeMatFace ()
+FreeMatFace (void)
 {
    /* Frees the matface table */
    int i, j;
@@ -244,7 +244,7 @@ FreeMatFace ()
 }
 
 static void
-AllocFace ()
+AllocFace (void)
 {
    /* Allocates and initializes the face table */
    assert (face == NULL);
@@ -255,7 +255,7 @@ AllocFace ()
 }
 
 static void
-FreeFace ()
+FreeFace (void)
 {
    /* Frees memory associated with the face table */
    free (face);
@@ -264,7 +264,7 @@ FreeFace ()
 }
 
 static void
-AllocVtx ()
+AllocVtx (void)
 {
    /* Allocates and initializes the vtx table */
    int i;
@@ -280,7 +280,7 @@ AllocVtx ()
 }
 
 static void
-FreeVtx ()
+FreeVtx (void)
 {
    /* Deallocates heap space associated with the vtx array */
    int i;
@@ -299,7 +299,7 @@ FreeVtx ()
 }
 
 static int
-FindMatFace ()
+FindMatFace (void)
 {
    /* Finds an unused matface entry in 'matface' and returns its index */
    int i;
@@ -349,7 +349,7 @@ FindSmooth (int ivtx, dword group)
 }
 
 static void
-SmoothVertices ()
+SmoothVertices (void)
 {
    /* Average all vertex normals */
    int i;
@@ -858,7 +858,7 @@ FaceMatReader (Tcl_DString* desc, FILE *f, long p)
    assert (i < 80);
    buf [i] = '\0';
 
-   imat = FindMatFace (buf);
+   imat = FindMatFace ();
    assert (imat >= 0 && imat < nmat);
 
    strcpy (matface [imat].name, buf);

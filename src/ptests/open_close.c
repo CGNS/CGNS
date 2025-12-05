@@ -133,6 +133,82 @@ int main(int argc, char* argv[]) {
         if (cgp_close(fn))
           cgp_error_exit();
 
+        /* Test for GitHub issue #836: multiple parallel file operations
+         * Verify that closing one file doesn't corrupt parallel access mode
+         * for other open files */
+        {
+            int fn1, fn2, B, Z, C;
+            cgsize_t sizes[9];
+            cgsize_t rmin[3], rmax[3];
+            double coord_array[10];
+            int i;
+
+            if (comm_rank == 0)
+                printf("Testing multiple parallel file operations\n");
+
+            /* Open first file in parallel mode */
+            if (cgp_open("test_multi_file1.cgns", CG_MODE_WRITE, &fn1))
+                cgp_error_exit();
+
+            /* Create base and zone in file 1 */
+            sizes[0] = comm_size * 10;
+            sizes[1] = 1;
+            sizes[2] = 1;
+            sizes[3] = sizes[0] - 1;
+            sizes[4] = 0;
+            sizes[5] = 0;
+            sizes[6] = 0;
+            sizes[7] = 0;
+            sizes[8] = 0;
+
+            if (cg_base_write(fn1, "Base", 3, 3, &B) ||
+                cg_zone_write(fn1, B, "Zone", sizes, CGNS_ENUMV(Structured), &Z) ||
+                cgp_coord_write(fn1, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX", &C))
+                cgp_error_exit();
+
+            /* Open second file in parallel mode */
+            if (cgp_open("test_multi_file2.cgns", CG_MODE_WRITE, &fn2))
+                cgp_error_exit();
+
+            /* Create base and zone in file 2 */
+            if (cg_base_write(fn2, "Base", 3, 3, &B) ||
+                cg_zone_write(fn2, B, "Zone", sizes, CGNS_ENUMV(Structured), &Z) ||
+                cgp_coord_write(fn2, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY", &C))
+                cgp_error_exit();
+
+            /* Write data to file 1 */
+            rmin[0] = comm_rank * 10 + 1;
+            rmin[1] = 1;
+            rmin[2] = 1;
+            rmax[0] = (comm_rank + 1) * 10;
+            rmax[1] = 1;
+            rmax[2] = 1;
+            for (i = 0; i < 10; i++)
+                coord_array[i] = (double)(comm_rank * 10 + i);
+
+            if (cgp_coord_write_data(fn1, B, Z, C, rmin, rmax, coord_array))
+                cgp_error_exit();
+
+            /* Close the first file
+             * This would reset hdf5_access_mode to NATIVE before the fix */
+            if (cgp_close(fn1))
+                cgp_error_exit();
+
+            /* Write to file 2 - should still work in parallel mode
+             * This would fail previously */
+            for (i = 0; i < 10; i++)
+                coord_array[i] = (double)(comm_rank * 10 + i + 100);
+
+            if (cgp_coord_write_data(fn2, B, Z, C, rmin, rmax, coord_array))
+                cgp_error_exit();
+
+            if (cgp_close(fn2))
+                cgp_error_exit();
+
+            if (comm_rank == 0)
+                printf("  Multiple parallel file test passed\n");
+        }
+
 	err = MPI_Finalize();
 	if(err!=MPI_SUCCESS) cgp_doError;
 	return err;

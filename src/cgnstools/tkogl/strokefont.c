@@ -37,7 +37,7 @@ typedef StrokeFont* StrokeFontPtr;
  *  Returns a pointer to a newly allocated empty font
  */
 
-static StrokeFontPtr NewFont ()
+static StrokeFontPtr NewFont (void)
 {
    StrokeFontPtr fontPtr = (StrokeFontPtr) malloc (sizeof (StrokeFont));
    int glyph;

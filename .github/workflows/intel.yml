@@ -110,6 +110,29 @@ jobs:
           & cmake --build . --config Debug
           & ctest
           #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
+    - name: Verify Fortran DLL Exports
+      shell: pwsh
+      run: |
+          cd ../CGNS_BUILD
+          $dllPath = Get-ChildItem -Path . -Filter "cgns.dll" -Recurse | Select-Object -First 1
+          if ($dllPath) {
+            Write-Host "Found DLL at: $($dllPath.FullName)"
+            Write-Host "Checking for Fortran module symbols..."
+            $exports = & dumpbin /EXPORTS "$($dllPath.FullName)" | Out-String
+            $foundSymbols = $exports | Select-String "CGNS_mp_cg_nbases_f"
+            if ($foundSymbols) {
+              Write-Host "SUCCESS: Fortran symbols found in DLL"
+              Write-Host "Sample matched symbols:"
+              $exports | Select-String "CGNS_mp_cg_(nbases|ncoords|nsections)_f"
+            } else {
+              Write-Host "ERROR: Fortran symbols NOT found in DLL"
+              Write-Host "Available exports:"
+              $exports
+              exit 1
+            }
+          } else {
+            Write-Host "WARNING: cgns.dll not found, skipping symbol check"
+          }
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran

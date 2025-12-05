@@ -21,6 +21,7 @@
 #include "mpi.h"
 #include "timer.h"
 #include "hdf5.h"
+#include "H5FDsubfiling.h"
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -689,6 +690,10 @@ int main(int argc, char* argv[]) {
                   fname, (uint64_t)file_info.st_ino);
 
   config_file = fopen(config_filename, "r");
+  if (!config_file) {
+    printf("*FAILED* Could not open subfiling config file: %s\n", config_filename);
+    cgp_error_exit();
+  }
 
   fseek(config_file, 0, SEEK_END);
 
@@ -701,6 +706,7 @@ int main(int argc, char* argv[]) {
 
   fread(config_buf, (size_t)config_file_len, 1, config_file);
   config_buf[config_file_len] = '\0';
+  fclose(config_file);
 
   /* Check the stripe_size field in the configuration file */
   char *substr;
@@ -722,6 +728,8 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* subfiling stripe count value is incorrect \n");
     cgp_error_exit();
   }
+
+  free(config_buf);
 
   if(comm_rank == 0) write_test_status(PASSED, "Check subfiling configure parameters", NULL);
 
@@ -810,6 +818,9 @@ int main(int argc, char* argv[]) {
 
     free(config_filename);
 
+  } else {
+    free(config_filename);
+    if(comm_rank == 0) write_test_status(SKIP, "h5fuse (script not found)", NULL);
   }
 
 #else

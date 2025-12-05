@@ -104,7 +104,7 @@ freely, subject to the following restrictions:
  * \defgroup ParticleModel Particle Model
  *
  */
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
   #define _POSIX_C_SOURCE 200112L
 #endif
 #include <stdio.h>
@@ -140,6 +140,8 @@ freely, subject to the following restrictions:
 /* to determine default file type */
 #if CG_BUILD_HDF5
 # include "hdf5.h"
+# include "cgio_internal_type.h"
+extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
 #endif
 
 /* fix for unresolved reference to __ftol2 when using VC7 with VC6 libs */
@@ -449,49 +451,11 @@ int cg_is_cgns(const char *filename, int *file_type)
     return ierr ? CG_ERROR : CG_OK;
 }
 
-/**
- * \ingroup CGNSFile
- *
- * \brief Open a CGNS file.
- *
- * \param[in]  filename \FILE_filename
- * \param[in]  mode     \FILE_mode
- * \param[out] fn       \FILE_fn
- * \return \ier
- *
- * \details The function cg_open() must always be called first. It opens a CGNS file for
- *          reading and/or writing and returns an index number \e file_number. The index number
- *          serves to identify the CGNS file in subsequent function calls. Several CGNS files
- *          can be opened simultaneously. The current limit on the number of files opened simultaneously
- *          depends on the platform. On an SGI workstation, this limit is set at 100 (parameter
- *          FOPEN_MAX in stdio.h).
- *
- *          The file can be opened in one of the following modes:
- *
- *          |   |   |
- *          |---|---|
- *          |__CG_MODE_READ__ | Read only mode.  |
- *          |__CG_MODE_WRITE__| Write only mode. |
- *          |__CG_MODE_MODIFY__| Reading and/or writing is allowed.|
- *
- *          When the file is opened, if no \e CGNSLibraryVersion_t node is found, a default value
- *          of 1.05 is assumed for the CGNS version number. Note that this corresponds to an old
- *          version of the CGNS standard that doesn't include many data structures supported by
- *          the current standard.
- *
- *          To reduce memory usage and improve execution speed, large arrays such as grid
- *          coordinates or flow solutions are not stored in memory. Instead, only basic
- *          information about the node is kept, while reads and writes of the data are direct to
- *          and from the application's memory. An attempt is made to do the same with
- *          unstructured mesh element data.
- *
- * \note CGNS maintains one-way forward compatibility insofar as any file open and modified by,
- *       for example, version major.minor.patch will be readable with major.minor.patch\b +.
- *       It can't be guaranteed the reverse major.minor.patch\b - compatibility for that file
- *       will be true.
- *
- */
-int cg_open(const char *filename, int mode, int *fn)
+/* Internal implementation of CGNS file opening used by both cg_open() and cgp_open().
+ * The open_parallel parameter controls HDF5 access mode behavior:
+ *   open_parallel=0: Force NATIVE mode (used by cg_open)
+ *   open_parallel=1: Preserve PARALLEL mode set by caller (used by cgp_open) */
+int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
 {
     int cgio, filetype;
     cgsize_t dim_vals;
@@ -519,6 +483,23 @@ int cg_open(const char *filename, int mode, int *fn)
             cgi_error("Unknown opening file mode: %d ??",mode);
             return CG_ERROR;
     }
+
+#if CG_BUILD_HDF5
+    /* Set access mode for this file open based on open_parallel parameter.
+     * If open_parallel=0 (called from cg_open), force NATIVE mode to prevent
+     * direct cg_open() calls in MPI programs from using stale PARALLEL mode
+     * left over from previous cgp_open() calls. (Fix for issue #836)
+     * If open_parallel=1 (called from cgp_open), preserve the PARALLEL mode. */
+#if CG_BUILD_PARALLEL
+    if (!open_parallel) {
+        ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
+    }
+    /* else: cgp_open() has set PARALLEL mode, keep it for this open */
+#else
+    /* No parallel support, always use NATIVE mode */
+    ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
+#endif
+#endif
 
     /* Open CGNS file */
     if (cgio_open_file(filename, mode, cgns_filetype, &cgio)) {
@@ -662,6 +643,54 @@ int cg_open(const char *filename, int mode, int *fn)
 #endif
 
     return CG_OK;
+}
+
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Open a CGNS file.
+ *
+ * \param[in]  filename \FILE_filename
+ * \param[in]  mode     \FILE_mode
+ * \param[out] fn       \FILE_fn
+ * \return \ier
+ *
+ * \details The function cg_open() must always be called first. It opens a CGNS file for
+ *          reading and/or writing and returns an index number \e file_number. The index number
+ *          serves to identify the CGNS file in subsequent function calls. Several CGNS files
+ *          can be opened simultaneously. The current limit on the number of files opened simultaneously
+ *          depends on the platform. On an SGI workstation, this limit is set at 100 (parameter
+ *          FOPEN_MAX in stdio.h).
+ *
+ *          The file can be opened in one of the following modes:
+ *
+ *          |   |   |
+ *          |---|---|
+ *          |__CG_MODE_READ__ | Read only mode.  |
+ *          |__CG_MODE_WRITE__| Write only mode. |
+ *          |__CG_MODE_MODIFY__| Reading and/or writing is allowed.|
+ *
+ *          When the file is opened, if no \e CGNSLibraryVersion_t node is found, a default value
+ *          of 1.05 is assumed for the CGNS version number. Note that this corresponds to an old
+ *          version of the CGNS standard that doesn't include many data structures supported by
+ *          the current standard.
+ *
+ *          To reduce memory usage and improve execution speed, large arrays such as grid
+ *          coordinates or flow solutions are not stored in memory. Instead, only basic
+ *          information about the node is kept, while reads and writes of the data are direct to
+ *          and from the application's memory. An attempt is made to do the same with
+ *          unstructured mesh element data.
+ *
+ * \note CGNS maintains one-way forward compatibility insofar as any file open and modified by,
+ *       for example, version major.minor.patch will be readable with major.minor.patch\b +.
+ *       It can't be guaranteed the reverse major.minor.patch\b - compatibility for that file
+ *       will be true.
+ *
+ */
+int cg_open(const char *filename, int mode, int *fn)
+{
+    /* Call internal implementation with open_parallel=0 to force NATIVE mode */
+    return cgi_open(filename, mode, 0, fn);
 }
 
 /**
@@ -17513,7 +17542,7 @@ int cg_array_read(int A, void *Data)
 {
     cgns_array *array;
     int n, ier=0;
-    cgsize_t num = 1;
+    size_t num = 1;
 
     CHECK_FILE_OPEN
 
@@ -17524,10 +17553,10 @@ int cg_array_read(int A, void *Data)
     array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ier);
     if (array==0) return ier;
 
-    for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
+    for (n=0; n<array->data_dim; n++) num *= (size_t)array->dim_vals[n];
 
     if (array->data)
-        memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
+        memcpy(Data, array->data, num*size_of(array->data_type));
     else {
         if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
             cg_io_error("cgio_read_all_data_type");
@@ -17555,7 +17584,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
 {
     cgns_array *array;
     int n, ier=0;
-    cgsize_t num = 1;
+    size_t num = 1;
     void *array_data;
 
     CHECK_FILE_OPEN
@@ -17567,7 +17596,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ier);
     if (array==0) return ier;
 
-    for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
+    for (n=0; n<array->data_dim; n++) num *= (size_t)array->dim_vals[n];
 
      /* Special for Character arrays */
     if ((type == CGNS_ENUMV(Character) &&
@@ -17579,7 +17608,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     }
     if (type==CGNS_ENUMV(Character)) {
         if (array->data)
-            memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
+            memcpy(Data, array->data, num*size_of(array->data_type));
         else {
             if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
                 cg_io_error("cgio_read_all_data_type");
@@ -17593,7 +17622,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     if (array->data)
         array_data = array->data;
     else {
-        array_data = malloc(((size_t)num)*size_of(array->data_type));
+        array_data = malloc(num*size_of(array->data_type));
         if (array_data == NULL) {
             cgi_error("Error allocating array_data");
             return CG_ERROR;
@@ -17604,7 +17633,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
         }
     }
 
-    ier = cgi_convert_data(num, cgi_datatype(array->data_type),
+    ier = cgi_convert_data((cgsize_t)num, cgi_datatype(array->data_type),
               array_data, type, Data);
     if (array_data != array->data) free(array_data);
 

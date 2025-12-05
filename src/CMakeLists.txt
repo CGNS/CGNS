@@ -463,7 +463,7 @@ if (CGNS_ENABLE_HDF5)
     set(HDF5_HAVE_SUBFILING_VFD 1)
     message (STATUS "Testing HDF5 Subfiling VFD - OK")
 
-    set(CMAKE_REQUIRED_LIBRARIES hdf5::hdf5-${CG_HDF5_LINK_TYPE})
+    set(CMAKE_REQUIRED_LIBRARIES hdf5-${CG_HDF5_LINK_TYPE})
     include(CheckSymbolExists)
     check_symbol_exists(H5FDsubfiling_get_file_mapping "hdf5.h" CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
     if(CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
@@ -634,7 +634,7 @@ if(CGNS_BUILD_SHARED)
   add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
   add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
-  if (MSVC AND CGNS_ENABLE_FORTRAN)
+  if (WIN32 AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
   endif()
 

@@ -192,7 +192,7 @@ typedef struct {
 } CrossSection;
 
 static CrossSection*
-NewCrossSection ()
+NewCrossSection (void)
 {
    /* Allocates a new cross section structure */
    CrossSection * result = (CrossSection*) malloc (sizeof (CrossSection));
@@ -327,7 +327,7 @@ typedef struct {
 } Model;
 
 static Model *
-NewModel ()
+NewModel (void)
 {
    /* Allocates a new model and returns a pointer to it */
    Model* result;

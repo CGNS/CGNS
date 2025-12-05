@@ -41,8 +41,9 @@ set(C_PTESTS_LIST
 	test_unstructured
 	test_unstruc_quad
 	test_zone
-	test_general_readwrite
-        test_poly_unstructured
+        test_general_readwrite
+	test_poly_unstructured
+        test_mixed_par_ser
         test_subfiling
 	thesis_benchmark)
 
@@ -62,7 +63,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     pcgns_ftest
     fexample
     benchmark_hdf5_f90
-    test_mixed_par_ser
+    test_mixed_par_ser_f90
     fopen_close
     test_unstruc_quad_f90
     test_poly_unstructured_f90
