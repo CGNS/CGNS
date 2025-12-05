@@ -2768,7 +2768,8 @@ void ADFH_subfiling_fuse(const double root, int *nfork, int *status)
           total_length += strlen(filenames[i]) + 1; // Add 1 for commas
         }
 
-        char *subf_list = (char*)malloc(total_length*sizeof(char));
+        // Allocate at least 1 byte for null terminator
+        char *subf_list = (char*)malloc((total_length > 0 ? total_length : 1) * sizeof(char));
         subf_list[0] = '\0';
 
         // Concatenate the strings with commas
