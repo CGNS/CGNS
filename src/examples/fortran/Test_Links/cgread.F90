@@ -1,5 +1,4 @@
-
-	program read_links
+        PROGRAM read_links
 	USE CGNS
 
 ! This program reads a 3D mesh, structured or unstructured.
@@ -1239,5 +1238,5 @@
  600	format(3a)
  700	format(4a)
 
- 9999	end
+        END PROGRAM read_links
 

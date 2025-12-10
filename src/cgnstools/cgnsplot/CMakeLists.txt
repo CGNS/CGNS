@@ -63,37 +63,26 @@ if (WIN32)
   	LINK_FLAGS /subsystem:windows)
 endif ()
 
+install(TARGETS
+  plotwish
+  RUNTIME DESTINATION ${CGNS_INSTALL_TOOLS_BINDIR})
 if (WIN32)
-  install(TARGETS
-	plotwish
-	RUNTIME DESTINATION bin)
   install(PROGRAMS
 	cgnsplot.bat
-	DESTINATION bin)
-  install(FILES
-	cgnsplot.tcl
-	cgnsplot.ico
-	cgnsplot.png
-	cgnsplot-icon.xbm
-	cgnsplot-mask.xbm
-	DESTINATION share)
+	TYPE BIN)
 else ()
-  install(TARGETS
-	plotwish
-	RUNTIME DESTINATION bin/cgnstools)
   install(PROGRAMS
 	cgnsplot.sh
-	DESTINATION bin
+	TYPE BIN
 	RENAME cgnsplot)
   install(PROGRAMS
 	cgnsplot.desktop
-	DESTINATION bin)
-  install(FILES
-	cgnsplot.tcl
-	cgnsplot.ico
-	cgnsplot.png
-	cgnsplot-icon.xbm
-	cgnsplot-mask.xbm
-	DESTINATION share/cgnstools)
+	TYPE BIN)
 endif ()
-
+install(FILES
+  cgnsplot.tcl
+  cgnsplot.ico
+  cgnsplot.png
+  cgnsplot-icon.xbm
+  cgnsplot-mask.xbm
+  DESTINATION ${CGNS_INSTALL_TOOLS_DATADIR})

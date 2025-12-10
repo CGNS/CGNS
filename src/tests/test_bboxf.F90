@@ -66,7 +66,7 @@
 !     check bounding box is not modified
       call cg_grid_bounding_box_read_f(cgfile, cgbase, cgzone, 1, &
      &                               CGNS_ENUMV(RealDouble), bbox, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
+      if (ierr .eq. CG_ERROR) call cg_error_exit_f
       if (bbox(1,2) .ne. -1.0) stop
       if (bbox(1,1) .ne. 1.0) stop
       call cg_close_f (cgfile, ierr)

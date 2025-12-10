@@ -11,11 +11,18 @@ endif (WIN32)
 # create configured header files #
 ################################
 
-if ("${SIZEOF_LONG}" GREATER 4)
-  set(CGLONGT long)
-else ()
+if("${SIZEOF_INT64_T}" EQUAL "8")
+  set(CGLONGT "int64_t")
+  set(CGULONGT "uint64_t")
+elseif("${SIZEOF_LONG}" EQUAL "8")
+  set(CGLONGT "long")
+  set(CGULONGT "unsigned long")
+elseif("${SIZEOF_LONG_LONG}" EQUAL "8")
   set(CGLONGT "long long")
-endif ()
+  set(CGULONGT "unsigned long long")
+else()
+  message(FATAL_ERROR "Can't find suitable int64_t")
+endif()
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
@@ -75,15 +82,24 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Sun")
   check_and_add_compiler_option("-xc99")
 endif()
 
-string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
-if (IS_DEBUG)
-  set(BUILDDEBUG 1)
-  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
-  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+if (NOT DEFINED CMAKE_CONFIGURATION_TYPES)
+  # Buggy section used for generating buildConfig.def
+  # A CMake generator with conditional could be used
+  # as using CMAKE_BUILD_TYPE is not good practise
+  string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
+  if (IS_DEBUG)
+    set(BUILDDEBUG 1)
+    set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+    set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+  else ()
+    set(BUILDDEBUG 0)
+    set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
+    set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+  endif ()
 else ()
   set(BUILDDEBUG 0)
-  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
-  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+  set(CFLAGS "")
+  set(LDFLAGS "")
 endif ()
 
 set(BUILDHDF5 0)
@@ -142,6 +158,9 @@ endif()
 #--------------------------------------------------------------------------
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
+ if ("${HDF5_VERSION}" VERSION_GREATER_EQUAL "1.14.3")
+    SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ieee=full")
+ endif()
 endif()
 
 ENABLE_LANGUAGE(Fortran)
@@ -432,16 +451,16 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif ()
 
-  # Check if HDF5 library has multi-dataset read/write APIs
+  # Check if HDF5 library has multi-dataset read/write APIs, HDF5 >= 1.14.0
   # --------------------------------------------------------------------
 
 CHECK_HDF5_FEATURE(Multi_Dataset
   " 
  #include \"hdf5.h\"
- void main(void) 
+ int main(void)
 {
-  H5D_rw_multi_t *multi_info;
-  return;
+  H5Dwrite_multi(0, NULL, NULL, NULL, NULL, 0, NULL);
+  return 0;
 }
   "
    CHECK_HDF5_HAVE_MULTI_DATASETS
@@ -456,12 +475,12 @@ CHECK_HDF5_FEATURE(Multi_Dataset
 CHECK_HDF5_FEATURE(Collective_metadata
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_coll_metadata_write(foo, 1);
    H5Pset_all_coll_metadata_ops(foo, 1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_COLL_METADATA
@@ -476,11 +495,11 @@ CHECK_HDF5_FEATURE(Collective_metadata
 CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
@@ -518,10 +537,11 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f03.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cg_hash_types.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cg_hash_types.h )
+# The following is only useful with Unix Makefile Generator
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
 ###########
 # Library #
@@ -576,7 +596,13 @@ add_library(cgns_static STATIC ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<
 add_library(CGNS::cgns-static ALIAS cgns_static)
 # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
 set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
-target_link_libraries(cgns_static PRIVATE $<$<BOOL:${CGNS_ENABLE_HDF5}>:hdf5::hdf5-${CG_HDF5_LINK_TYPE}>)
+if (CGNS_ENABLE_HDF5)
+  if (CG_HDF5_LINK_TYPE STREQUAL "static")
+    target_link_libraries(cgns_static PRIVATE hdf5-${CG_HDF5_LINK_TYPE})
+  else()
+    target_link_libraries(cgns_static PUBLIC hdf5-${CG_HDF5_LINK_TYPE})
+  endif()
+endif()
 
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
@@ -584,7 +610,7 @@ if(CGNS_BUILD_SHARED)
   add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
   add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
-  if (MSVC AND CGNS_ENABLE_FORTRAN)
+  if (WIN32 AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
   endif()
 
@@ -593,7 +619,12 @@ if(CGNS_BUILD_SHARED)
     target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
   endif ()
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-    target_link_libraries(cgns_shared PUBLIC hdf5::hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    if (CG_HDF5_LINK_TYPE STREQUAL "shared")
+      target_link_libraries(cgns_shared PUBLIC hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    else()
+      target_link_libraries(cgns_shared PRIVATE hdf5-${CG_HDF5_LINK_TYPE})
+      target_link_libraries(cgns_shared PUBLIC $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    endif()
     if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
       target_link_libraries(cgns_shared PUBLIC ${ZLIB_LIBRARY})
     endif()
@@ -681,11 +712,7 @@ endif ()
 # Set the install path of the static and shared library
 # for windows, need to install both cgnsdll.dll and cgnsdll.lib
 install (TARGETS ${install_targets}
-         EXPORT cgns-targets
-         LIBRARY DESTINATION lib COMPONENT libraries
-         ARCHIVE DESTINATION lib COMPONENT libraries
-         RUNTIME DESTINATION bin COMPONENT libraries
-         INCLUDES DESTINATION include)
+         EXPORT cgns-targets)
 
 # Set the install path of the header files
 set(headers
@@ -722,15 +749,29 @@ if (CGNS_ENABLE_LEGACY)
   endif ()
 endif ()
 
+# Set the CMake namespace
+set (CGNS_PACKAGE_NAMESPACE "CGNS::" CACHE STRING "Name for CGNS package namespace (can be empty)" FORCE)
 # Set the install path of the header files
 install(FILES ${headers}
-	DESTINATION include)
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #if (NOT CGNS_EXTERNALLY_CONFIGURE)
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
+  VERSION ${CGNS_VERSION}
+  COMPATIBILITY SameMajorVersion )
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cgns-config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns)
 install(EXPORT cgns-targets
 	FILE cgns-targets.cmake
-	NAMESPACE CGNS::
-	DESTINATION lib/cmake/cgns
+	NAMESPACE ${CGNS_PACKAGE_NAMESPACE}
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns
 	)
 #endif()
 

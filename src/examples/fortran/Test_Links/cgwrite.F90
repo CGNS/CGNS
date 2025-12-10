@@ -1,4 +1,4 @@
-	program write_links
+        PROGRAM write_links
 	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -265,7 +265,7 @@
 		data(i) = i
 	    enddo
 	    call cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
-                 1, npnts, data, ier)
+                 1, [npnts], data, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition data attributes:
@@ -311,5 +311,5 @@
 	call cg_close_f(cg2, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_links
 

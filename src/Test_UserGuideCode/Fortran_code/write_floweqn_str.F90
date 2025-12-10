@@ -74,7 +74,7 @@
 !   Create 'SpecificHeatRatio' under GasModel
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'GasModel_t',1,'end')
-      call cg_array_write_f('SpecificHeatRatio',CGNS_ENUMV(RealSingle),1,nuse,gamma,ier)
+      call cg_array_write_f('SpecificHeatRatio',CGNS_ENUMV(RealSingle),1,[nuse],gamma,ier)
 !   Create 'DataClass' under 'SpecificHeatRatio'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'GasModel_t',1,'DataArray_t',1,'end')
@@ -87,7 +87,7 @@
 !   Create 'PrandtlTurbulent' under 'TurbulenceClosure'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'TurbulenceClosure_t',1,'end')
-      call cg_array_write_f('PrandtlTurbulent',CGNS_ENUMV(RealSingle),1,nuse,prandtl,ier)
+      call cg_array_write_f('PrandtlTurbulent',CGNS_ENUMV(RealSingle),1,[nuse],prandtl,ier)
 !   Create 'DataClass' under 'PrandtlTurbulent'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'TurbulenceClosure_t',1,                      &

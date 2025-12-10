@@ -88,7 +88,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationCO', CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofCO,ier)
+          [1_cgsize_t],[hofCO],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -99,8 +99,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
@@ -113,7 +113,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationO2',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofO2,ier)
+          [1_cgsize_t],[hofO2],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -124,8 +124,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
@@ -138,7 +138,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationCO2',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofCO2,ier)
+          [1_cgsize_t],[hofCO2],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -149,8 +149,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
@@ -163,7 +163,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('ReferenceTemperatureHOF',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,RThof,ier)
+          [1_cgsize_t],[RThof],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -174,7 +174,7 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(Null,Null,Null,CGNS_ENUMV(Kelvin),Null,ierr)
+	call cg_units_write_f(CG_Null,CG_Null,CG_Null,CGNS_ENUMV(Kelvin),CG_Null,ierr)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         units(1)=0
@@ -390,7 +390,7 @@
 		data(i) = i
 	    enddo
 	    call cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
-                 1, npnts, data, ier)
+                 1, [npnts], data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
  	enddo					! zone loop

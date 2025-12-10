@@ -1,53 +1,38 @@
-cmake_minimum_required(VERSION 3.12)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif()
+cmake_minimum_required(VERSION 3.20...3.20)
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
-  cmake_policy(SET CMP0015 NEW)
-endif()
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-  cmake_policy(SET CMP0081 NEW)
-endif()
-
-# Macro to handle muticonfig generator
-macro (SET_CGNS_BUILD_TYPE)
+# Function to handle muticonfig generator
+function(set_cgns_build_type)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build.")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+      "MinSizeRel" "RelWithDebInfo")
   get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
   if(_isMultiConfig)
-    set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR})
-    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME})
+    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR} PARENT_SCOPE)
+    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME} PARENT_SCOPE)
   else()
-    set(CGNS_CFG_BUILD_TYPE ".")
-    if(CMAKE_BUILD_TYPE)
-      set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-      set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE})
-    else()
-      set(CGNS_CFG_NAME "Release")
-      set(CGNS_BUILD_TYPE "Release")
-    endif()
+    set(CGNS_CFG_BUILD_TYPE "." PARENT_SCOPE)
+    set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
   endif()
-  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15.0")
-      message (VERBOSE "Setting build type to 'Release' as none was specified.")
-    endif()
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-      "MinSizeRel" "RelWithDebInfo")
-  endif()
-endmacro ()
+  set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
+endfunction()
 
-SET_CGNS_BUILD_TYPE()
+set_cgns_build_type()
 
 project("cgns" C)
+
+include(GNUInstallDirs)
 
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
     "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
 
+set(CGNS_PACKAGE "cgns")
+set(CGNS_PACKAGE_NAME "CGNS")
+
 # Allow for building a package
+set(CPACK_PACKAGE_NAME "${CGNS_PACKAGE_NAME}")
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns-${CGNS_VERSION}")
 set(CPACK_GENERATOR "STGZ;TGZ;ZIP")
@@ -62,19 +47,26 @@ CONFIGURE_FILE(
 ADD_CUSTOM_TARGET(uninstall
 	"${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
-# if this is cygwin, turn off win32 flag
-if (CYGWIN)
-  set(WIN32 "NO")
-endif ()
-
 ##############
 # build mode #
 ##############
+
+include(CheckIncludeFile)
+check_include_file(stdint.h HAVE_STDINT_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+if (NOT HAVE_STDINT_H)
+  message(FATAL_ERROR "stdint.h is not found")
+endif ()
+if (NOT HAVE_INTTYPES_H)
+  message(FATAL_ERROR "inttypes.h is not found")
+endif ()
 
 # get some type sizes
 include(CheckTypeSize)
 CHECK_TYPE_SIZE(long SIZEOF_LONG)
 CHECK_TYPE_SIZE(off_t SIZEOF_OFF_T)
+CHECK_TYPE_SIZE("int64_t" SIZEOF_INT64_T)
+CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
 
 if ("${SIZEOF_OFF_T}" LESS 8)
   option(CGNS_ENABLE_LFS "Enable or disable large file support" "OFF")
@@ -91,7 +83,23 @@ option(CGNS_ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OF
 option(CGNS_ENABLE_BASE_SCOPE "Enable or disable base scoped families or connectivities" "OFF")
 option(CGNS_ENABLE_MEM_DEBUG "Enable or disable memory debugging" "OFF")
 
+set(tools_install_suffix "/cgnstools")
+if(WIN32)
+  set(tools_install_suffix "")
+endif()
+
+set(CGNS_INSTALL_TOOLS_BINDIR "${CMAKE_INSTALL_BINDIR}${install_suffix}" CACHE PATH
+    "CGNS: tools binary install location")
+set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${install_suffix}" CACHE PATH
+    "CGNS: arch independent tools data install location")
+
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
+# useful to write cmake config.
+set(CGNS_ENABLE_SHARED_LIB NO)
+set(CGNS_ENABLE_STATIC_LIB YES)
+if (CGNS_BUILD_SHARED)
+  set(CGNS_ENABLE_SHARED_LIB YES)
+endif()
 
 if (CGNS_ENABLE_LEGACY)
   set(CGNS_ENABLE_64BIT "OFF")
@@ -251,15 +259,6 @@ if (CGNS_ENABLE_HDF5)
   message (STATUS "HDF5 find comps: ${FIND_HDF_COMPONENTS}")
 
   set (SEARCH_PACKAGE_NAME "hdf5")
-  
-  # If the first `find_package` below does not succeed, then the legacy `find_package`
-  # is tried (the `else` below).  The legacy find_package uses `HDF5_ROOT`.  But if 
-  # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
-  # not used even though it might be.  This can confuse user, so set policy to not
-  # issue that warning.
-  if (${CMAKE_VERSION} VERSION_GREATER "3.13")
-     cmake_policy(SET CMP0074 NEW)
-  endif()
 
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
@@ -339,7 +338,7 @@ if (CGNS_ENABLE_HDF5)
 
   # Check if HDF5 version is 1.8 or greater
   if (HDF5_VERSION VERSION_LESS "1.8.0")
-    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+    message (FATAL_ERROR "HDF5 ${HDF5_VERSION}: version must be greater than 1.8.0")
   endif ()
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
@@ -372,22 +371,48 @@ if (CGNS_ENABLE_HDF5)
   mark_as_advanced(CLEAR HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
 
   #Modern Target Library import if not defined
-  if (NOT TARGET hdf5::hdf5-${CG_HDF5_LINK_TYPE})
-    add_library(hdf5::hdf5-${CG_HDF5_LINK_TYPE} INTERFACE IMPORTED)
+  if (NOT TARGET hdf5-${CG_HDF5_LINK_TYPE})
+    add_library(hdf5-${CG_HDF5_LINK_TYPE} INTERFACE IMPORTED)
     string(REPLACE "-D" "" _hdf5_definitions "${HDF5_DEFINITIONS}")
-    set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+    set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
                           INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARY}"
                           INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
                           INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions}")
     if (CG_HDF5_LINK_TYPE STREQUAL "shared")
-      set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+      set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
                             INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_DYNAMIC_LIB)
 
     else()
-      set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+      set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
 			    INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_STATIC_LIB)
     endif()
+    # User provided information about HDF5 requirements.
+    if (HDF5_NEED_ZLIB)
+      set(HDF5_ENABLE_ZLIB_SUPPORT ON)
+      # Next line is ON just not to enter the following find_package(ZLIB)
+      # It is assumed that since we are faking a modern cmake
+      # The package search for ZLIB was done earlier.
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
+    if (HDF5_NEED_SZIP)
+      set(HDF5_ENABLE_SZIP_SUPPORT ON)
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
   endif ()
+
+  # If HDF5 needs ZLIB, but ZLIB is an external package not provided by hdf5
+  # a ZLIB dependency should be added.
+  if (TARGET hdf5-static)
+    if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs ZLIB through an external library")
+      find_package(ZLIB)
+    endif ()
+    if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs SZIP through external libraries")
+      find_package(libaec)
+    endif()
+  endif()
+
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
@@ -403,13 +428,28 @@ if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
   set(CGNS_ENABLE_PARALLEL "OFF" CACHE BOOL "Enable or disable parallel interface ?")
   mark_as_advanced(CLEAR CGNS_ENABLE_PARALLEL)
   # Check that HDF5 has parallel support
-  if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
+  if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL OR HDF5_PROVIDES_PARALLEL))
     message(FATAL_ERROR "HDF5 has been found, but is missing parallel support.")
   endif()
 else ()
   set(CGNS_ENABLE_PARALLEL "OFF")
   mark_as_advanced(FORCE CGNS_ENABLE_PARALLEL)
 endif ()
+
+####################################
+# Display CMake HDF5 configuration #
+####################################
+if ((NOT CGNS_BUILD_SHARED) AND CGNS_ENABLE_HDF5 AND (CG_HDF5_LINK_TYPE STREQUAL "shared"))
+  message(STATUS "")
+  message(STATUS "=== CGNS Build Configuration Notice ===")
+  message(STATUS "CGNS: Building static CGNS  library with shared HDF5")
+  message(STATUS "Applications using CGNS will need:")
+  message(STATUS "  1. HDF5 shared libraries available at runtime")
+  message(STATUS "  2. Proper RPATH/LD_LIBRARY_PATH configuration")
+  message(STATUS "  3. find_package(CGNS::cgns_static) in the application's CMakeLists.txt")
+  message(STATUS "=====================================")
+  message(STATUS "")
+endif()
 
 ####################
 # RPATH Management #
@@ -424,7 +464,7 @@ if (CGNS_BUILD_SHARED)
   set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
   # the RPATH to be used when installing
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}; ${CMAKE_INSTALL_PREFIX}/lib")
 
   # add the automatically determined parts of the RPATH
   # which point to directories outside the build tree to the install RPATH
@@ -442,9 +482,9 @@ endif()
 #-----------------------------------------------------------------------------
 option (CGNS_BUILD_TESTING "Build CGNS Testing" OFF)
 if (CGNS_BUILD_TESTING)
-  set (DART_TESTING_TIMEOUT "1200"
+  set (DART_TESTING_TIMEOUT "600"
       CACHE STRING
-      "Timeout in seconds for each test (default 1200=20minutes)"
+      "Timeout in seconds for each test (default 600=10minutes)"
   )
   enable_testing ()
   include (CTest)

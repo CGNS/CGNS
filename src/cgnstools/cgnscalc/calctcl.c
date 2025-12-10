@@ -8,8 +8,11 @@
 #include "calc.h"
 #include "cgnslib.h"
 
-#ifndef CONST
-# define CONST
+/* Tcl 8.x compatibility - Tcl_Size was introduced in Tcl 9.0 */
+#if !defined(TCL_MAJOR_VERSION) || TCL_MAJOR_VERSION < 9
+# if !defined(Tcl_Size)
+   typedef int Tcl_Size;
+# endif
 #endif
 
 static Tcl_Interp *global_interp;
@@ -704,8 +707,9 @@ static int CalcCommand (ClientData data, Tcl_Interp *interp,
 static int CalcDelete (ClientData data, Tcl_Interp *interp,
                        int argc, char **argv)
 {
-    int i, n, nargs;
-    CONST char **args;
+    int i, n;
+    Tcl_Size nargs;
+    const char **args;
 
     for (n = 1; n < argc; n++) {
         if (TCL_OK == Tcl_SplitList (interp, argv[n], &nargs, &args)) {

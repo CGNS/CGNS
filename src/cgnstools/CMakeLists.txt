@@ -91,8 +91,8 @@ endif ()
 if (WIN32)
   file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} WIN_INSTALL_DIR)
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
-"set CG_BIN_DIR=${WIN_INSTALL_DIR}\\bin
-set CG_LIB_DIR=${WIN_INSTALL_DIR}\\share
+"set CG_BIN_DIR=${WIN_INSTALL_DIR}\\${CGNS_INSTALL_TOOLS_BINDIR}
+set CG_LIB_DIR=${WIN_INSTALL_DIR}\\${CGNS_INSTALL_TOOLS_DATADIR}
 ")
 # don't need this since dll is put in the bin directory
 #  if (CGNS_USE_SHARED)
@@ -111,15 +111,28 @@ set CG_LIB_DIR=${WIN_INSTALL_DIR}\\share
 
   install(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
-	DESTINATION bin)
+	TYPE BIN)
 else ()
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cgconfig
-"CG_BIN_DIR=${CMAKE_INSTALL_PREFIX}/bin; export CG_BIN_DIR
-CG_LIB_DIR=${CMAKE_INSTALL_PREFIX}/share/cgnstools; export CG_LIB_DIR
+"CG_BIN_DIR=${CMAKE_INSTALL_PREFIX}/${CGNS_INSTALL_TOOLS_BINDIR}; export CG_BIN_DIR
+CG_LIB_DIR=${CMAKE_INSTALL_PREFIX}/${CGNS_INSTALL_TOOLS_DATADIR}; export CG_LIB_DIR
 ")
 
   install(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/cgconfig
-	DESTINATION bin)
+	TYPE BIN)
 endif ()
 
+# Because of the hard-coding above, the package is not relocatable
+# This can be avoided using `cmake_path(RELATIVE_PATH)` or writing the
+# files at install time.
+install(CODE [===[
+if (DEFINED CACHE{CMAKE_INSTALL_PREFIX})
+    message(FATAL_ERROR
+        "CGNS is not relocatable.\n"
+        "Overwriting the install location with `cmake --install --prefix` is not supported.\n"
+        "Please re-run the configure/build/install with the CMAKE_INSTALL_PREFIX set to desired location."
+        )
+endif ()
+]===]
+)

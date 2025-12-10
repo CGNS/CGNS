@@ -1,28 +1,42 @@
-MODULE callback
+MODULE cgns_write_test
+  USE CGNS
+  USE ISO_C_BINDING
+  IMPLICIT NONE
 
 CONTAINS
+  ! Callback checks
+  SUBROUTINE print_error(error_code, error_msg) BIND(C)
 
-  SUBROUTINE error_exit(iserr, msg) bind(C)
-
-    USE ISO_C_BINDING
     IMPLICIT NONE
-    INTEGER, PARAMETER :: MSG_SIZE = 34
-    CHARACTER(LEN=MSG_SIZE), PARAMETER :: msg_correct = "file type unknown or not supported"
-    INTEGER(C_INT), VALUE :: iserr
-    CHARACTER(LEN=1), DIMENSION(*) :: msg
-    CHARACTER(LEN=MSG_SIZE) :: msg_check
-    INTEGER i
 
-    DO i=1, 34
-       msg_check(i:i) = msg(i)
-    ENDDO
-    IF(msg_check .NE. msg_correct)THEN
-       PRINT*,"ERROR:  cg_configure_f failed for CG_CONFIG_ERROR"
-       STOP
-    ENDIF
+    INTEGER(C_INT), VALUE :: error_code
+    TYPE(C_PTR), VALUE :: error_msg
 
-  END SUBROUTINE error_exit
-END MODULE callback
+    INTEGER :: eol
+    INTEGER :: check
+    INTEGER :: i
+    CHARACTER(KIND=C_CHAR), POINTER :: f_error_msg(:)
+!   ALTERNATIVE
+!   CHARACTER(LEN=1), DIMENSION(*) :: error_msg
+
+    CALL C_F_POINTER(error_msg, f_error_msg, [80])
+
+    eol = 0
+    DO i = 1, 80 !CGIO_MAX_ERROR_LENGTH
+       IF(f_error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
+       eol = eol + 1
+    END DO
+
+    ! error_msg should be "cgio_open_file:invalid configuration option"
+    IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
+         f_error_msg(1) .NE. "c" .OR. f_error_msg(4) .NE. "o") THEN
+       STOP 1
+    END IF
+
+  END SUBROUTINE print_error
+
+END MODULE cgns_write_test
+
 
 PROGRAM write_cgns_1
 #include "cgnstypes_f03.h"
@@ -31,7 +45,9 @@ PROGRAM write_cgns_1
 #endif
   USE CGNS
   USE ISO_C_BINDING
-  USE callback
+  USE cgns_write_test
+  USE ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
+
   IMPLICIT NONE
 
   ! author: Diane Poirier (diane@icemcfd.com)
@@ -65,8 +81,12 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) donorname
 
   INTEGER, TARGET :: value_f
+  INTEGER(C_INT), TARGET :: maxnum_files
   INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
+
+  TYPE(C_FUNPTR) :: f_funptr
+  TYPE(C_PTR) :: f_ptr
 
   coordname(1) = 'CoordinateX'
   coordname(2) = 'CoordinateY'
@@ -299,14 +319,21 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 #if CG_BUILD_HDF5
-! Disable with gfortran, GCC Bugzilla - Bug 99982
-#ifndef __GFORTRAN__
   ! **************************
   ! Test cg_configure options
   ! **************************
   value_f = 1
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  maxnum_files = 1
+  f_ptr = C_LOC(maxnum_files)
+  CALL cg_configure_f(CG_CONFIG_GET_MAXIMUM_FILES, f_ptr, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  IF (maxnum_files .NE. 1024) THEN
+    WRITE(ERROR_UNIT, *) "ERROR: Unexpected CG_CONFIG_GET_MAXIMUM_FILES result"
+    CALL cg_error_exit_f
+  ENDIF
 
   ! enable committing memory to disk
   value_f = 1
@@ -332,7 +359,8 @@ PROGRAM write_cgns_1
 
   value_f = CG_FILE_ADF2
   value_f = CG_FILE_ADF
-  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
+  f_ptr = C_LOC(value_f)
+  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, f_ptr, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f = CG_FILE_HDF5
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
@@ -361,13 +389,20 @@ PROGRAM write_cgns_1
   path = C_NULL_CHAR
   CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  CALL cg_configure_f(CG_CONFIG_ERROR, c_funloc(error_exit), ier)
-  IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   value_f = 100 ! Trigger an error
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
-#endif
+
+! testing using callbacks with CG_CONFIGURE
+  f_funptr = C_FUNLOC(print_error)
+
+  CALL cg_configure_f(CG_CONFIG_ERROR, f_funptr, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  CALL cg_open_f('nonexists.cgns', CG_MODE_READ, cg, ier)
+  IF (ier .NE. ERROR) CALL cg_error_exit_f
+
 #endif
 
 END PROGRAM write_cgns_1

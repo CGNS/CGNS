@@ -22,11 +22,6 @@
 #include "cgns_io.h"
 #endif
 
-#ifndef CGNSTYPES_H
-# define cgsize_t  int
-# define cglong_t  long
-# define cgulong_t unsigned long
-#endif
 #ifndef CGNS_ENUMT
 # define CGNS_ENUMT(e) e
 # define CGNS_ENUMV(e) e

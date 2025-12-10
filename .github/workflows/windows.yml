@@ -1,0 +1,149 @@
+name: Windows
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        hdf5_version: ["1.8.23", "1.10.11", "1.14.6"]
+        build_config:
+          - opts: "-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF"
+            name: "static-32bit"
+          - opts: "-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON"
+            name: "static-64bit"
+          - opts: "-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON"
+            name: "shared-64bit"
+        exclude:
+          # Only test HDF5 1.8.23 with static-32bit config
+          - hdf5_version: "1.8.23"
+            build_config:
+              name: "static-64bit"
+          - hdf5_version: "1.8.23"
+            build_config:
+              name: "shared-64bit"
+          # Only test HDF5 1.10.11 with 64-bit configs (both static and shared)
+          - hdf5_version: "1.10.11"
+            build_config:
+              name: "static-32bit"
+
+    name: Windows 2022 - HDF5 ${{ matrix.hdf5_version }} - ${{ matrix.build_config.name }}
+    runs-on: windows-2022
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install HDF5 ${{ matrix.hdf5_version }}
+        shell: pwsh
+        run: |
+          $hdf5_ver = "${{ matrix.hdf5_version }}"
+          $shortgen = "vs17"
+
+          # HDF5 1.10.11 doesn't have vs17 binaries, build from source
+          if ($hdf5_ver -eq "1.10.11") {
+            $hdf5_tag = "hdf5_$($hdf5_ver.Replace('.', '_'))"
+            Write-Host "Building HDF5 $hdf5_ver from source (tag: $hdf5_tag)..."
+
+            git clone --depth 1 --branch $hdf5_tag https://github.com/HDFGroup/hdf5.git hdf5-src
+            New-Item -ItemType Directory -Path "hdf5-build" -Force
+            cd hdf5-build
+
+            cmake -G "Visual Studio 17 2022" -A x64 `
+              -D CMAKE_BUILD_TYPE:STRING=Release `
+              -D BUILD_SHARED_LIBS:BOOL=OFF `
+              -D BUILD_TESTING:BOOL=OFF `
+              -D HDF5_BUILD_TOOLS:BOOL=OFF `
+              -D HDF5_BUILD_EXAMPLES:BOOL=OFF `
+              -D HDF5_BUILD_HL_LIB:BOOL=ON `
+              -D HDF5_ENABLE_Z_LIB_SUPPORT:BOOL=OFF `
+              -D HDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF `
+              -D CMAKE_INSTALL_PREFIX:PATH="C:\Program Files\HDF_Group\HDF5\${hdf5_ver}" `
+              ..\hdf5-src
+
+            cmake --build . --config Release --parallel 4
+            cmake --install . --config Release
+            cd ..
+          }
+          elseif ($hdf5_ver -eq "1.14.6") {
+            # Download pre-built binary from GitHub releases for 1.14.6
+            $url = "https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-${hdf5_ver}-win-vs2022_cl.msi"
+            Write-Host "Downloading from: $url"
+
+            New-Item -ItemType Directory -Path "hdf5-download" -Force
+            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.msi"
+
+            Write-Host "Installing HDF5 MSI..."
+            Start-Process msiexec.exe -ArgumentList "/i", "hdf5-download\hdf5.msi", "/quiet", "/qn", "/norestart", "/log", "install.log" -Wait
+
+            Get-Content install.log
+          }
+          else {
+            # Download pre-built binary from FTP for 1.8.23
+            $minor = "1.8"
+
+            $url = "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${minor}/hdf5-${hdf5_ver}/bin/windows/hdf5-${hdf5_ver}-Std-win10_64-${shortgen}.zip"
+            Write-Host "Downloading from: $url"
+
+            New-Item -ItemType Directory -Path "hdf5-download" -Force
+            Invoke-WebRequest -Uri $url -OutFile "hdf5-download/hdf5.zip"
+
+            Write-Host "Extracting HDF5..."
+            Expand-Archive -Path "hdf5-download/hdf5.zip" -DestinationPath "hdf5-download"
+            $msiFile = Get-ChildItem -Path "hdf5-download" -Recurse -Filter "*.msi" | Select-Object -First 1
+
+            Write-Host "Installing: $($msiFile.FullName)"
+            Start-Process msiexec.exe -ArgumentList "/i", "$($msiFile.FullName)", "/quiet", "/qn", "/norestart", "/log", "install.log" -Wait
+
+            Get-Content install.log
+          }
+
+          # Set environment variable
+          echo "HDF5_DIR=C:\Program Files\HDF_Group\HDF5\${hdf5_ver}\cmake" >> $env:GITHUB_ENV
+
+      - name: Configure CGNS
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          cmake --version
+          cmake -G "Visual Studio 17 2022" -A x64 ^
+            ${{ matrix.build_config.opts }} ^
+            -D CMAKE_C_FLAGS:STRING="" ^
+            -D CMAKE_BUILD_TYPE:STRING=Release ^
+            -D HDF5_NEED_ZLIB:BOOL=ON ^
+            -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
+            -D CGNS_ENABLE_HDF5:BOOL=ON ^
+            -D CGNS_ENABLE_TESTS:BOOL=ON ^
+            -D CGNS_ENABLE_LFS:BOOL=OFF ^
+            -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
+            -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
+            -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
+            -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
+            -D CMAKE_INSTALL_PREFIX:PATH="." ^
+            ..
+
+      - name: Build CGNS
+        shell: cmd
+        run: |
+          cd build
+          cmake --build . --config Release
+
+      - name: Test CGNS
+        shell: cmd
+        run: |
+          set PATH=%CD%\build\src\Release;%PATH%
+          set PATH=C:\Program Files\HDF_Group\HDF5\${{ matrix.hdf5_version }}\bin;%PATH%
+          cd build
+          ctest -C Release --output-on-failure
+
+      - name: Install CGNS
+        shell: cmd
+        run: |
+          cd build
+          cmake --install . --config Release

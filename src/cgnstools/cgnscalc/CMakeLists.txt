@@ -56,44 +56,29 @@ if (WIN32)
   	LINK_FLAGS /subsystem:windows)
 endif ()
 
-if (WIN32)
-  install(TARGETS
+install(TARGETS
 	calcwish
-	RUNTIME DESTINATION bin)
+	RUNTIME DESTINATION ${CGNS_INSTALL_TOOLS_BINDIR})
+if (WIN32)
   install(PROGRAMS
 	cgnscalc.bat
 	unitconv.bat
-	DESTINATION bin)
-  install(FILES
-	cgnscalc.tcl
-	unitconv.tcl
-	cgnscalc.ico
-	cgnscalc.png
-	cgnscalc-icon.xbm
-	cgnscalc-mask.xbm
-	unitconv.ico
-	unitconv.png
-	unitconv.xbm
-	DESTINATION share)
+	DESTINATION ${CMAKE_INSTALL_BINDIR})
 else ()
-  install(TARGETS
-	calcwish
-	RUNTIME DESTINATION bin/cgnstools)
   install(PROGRAMS
 	cgnscalc.sh
-	DESTINATION bin
+	TYPE BIN
 	RENAME cgnscalc)
   install(PROGRAMS
-	cgnscalc.desktop
-	DESTINATION bin)
-  install(PROGRAMS
 	unitconv.sh
-	DESTINATION bin
+	TYPE BIN
 	RENAME unitconv)
   install(PROGRAMS
+	cgnscalc.desktop
 	unitconv.desktop
-	DESTINATION bin)
-  install(FILES
+	TYPE BIN)
+endif ()
+install(FILES
 	cgnscalc.tcl
 	unitconv.tcl
 	cgnscalc.ico
@@ -103,6 +88,4 @@ else ()
 	unitconv.ico
 	unitconv.png
 	unitconv.xbm
-	DESTINATION share/cgnstools)
-endif ()
-
+	DESTINATION ${CGNS_INSTALL_TOOLS_DATADIR})

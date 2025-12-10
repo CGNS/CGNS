@@ -192,7 +192,7 @@ typedef struct {
 } CrossSection;
 
 static CrossSection*
-NewCrossSection ()
+NewCrossSection (void)
 {
    /* Allocates a new cross section structure */
    CrossSection * result = (CrossSection*) malloc (sizeof (CrossSection));
@@ -327,7 +327,7 @@ typedef struct {
 } Model;
 
 static Model *
-NewModel ()
+NewModel (void)
 {
    /* Allocates a new model and returns a pointer to it */
    Model* result;
@@ -682,9 +682,9 @@ RenderModel (Model* model)
       Vector normal;
       GLdouble v [3];
       obj = gluNewTess();
-      gluTessCallback(obj, GLU_BEGIN, glBegin);
-      gluTessCallback(obj, GLU_VERTEX, glVertex3fv);
-      gluTessCallback(obj, GLU_END, glEnd);
+      gluTessCallback(obj, GLU_BEGIN, (void (*)())glBegin);
+      gluTessCallback(obj, GLU_VERTEX, (void (*)())glVertex3fv);
+      gluTessCallback(obj, GLU_END, (void (*)())glEnd);
       if (flags&CLOSE_FIRST) {
          CrossSection *a = model->cross [0];
          CrossSectionNormal2 (a, normal);

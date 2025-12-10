@@ -19,19 +19,19 @@
 #include <malloc.h>
 #include <locale.h>
 
-extern int CGIOtcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int CGIOtcl_Init (Tcl_Interp *interp);
 #ifdef USE_HTMLHELP
-extern int WinHtml_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int WinHtml_Init (Tcl_Interp *interp);
 #endif
 
 /*
  * Forward declarations for procedures defined later in this file:
  */
 
-static void setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
-static void WishPanic _ANSI_ARGS_(TCL_VARARGS(char *,format));
-static int Proc_LoadIcon _ANSI_ARGS_((ClientData data,
-    Tcl_Interp *interp, int argc, char **argv));
+static void setargv (int *argcPtr, char ***argvPtr);
+static void WishPanic (const char *format, ...);
+static int Proc_LoadIcon (ClientData data,
+    Tcl_Interp *interp, int argc, char **argv);
 
 static HINSTANCE myInstance;
 
@@ -169,14 +169,14 @@ error:
  */
 
 void
-WishPanic TCL_VARARGS_DEF(char *,arg1)
+WishPanic (const char *format, ...)
 {
     va_list argList;
     char buf[1024];
-    char *format;
 
-    format = TCL_VARARGS_START(char *,arg1,argList);
+    va_start(argList, format);
     vsprintf(buf, format, argList);
+    va_end(argList);
 
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, buf, "Fatal Error in Wish",

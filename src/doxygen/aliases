@@ -1,0 +1,167 @@
+
+# This tag can be used to specify a number of aliases that act as commands in
+# the documentation. An alias has the form:
+# name=value
+# For example adding
+# "sideeffect=@par Side Effects:\n"
+# will allow you to put the command \sideeffect (or @sideeffect) in the
+# documentation, which will result in a user-defined paragraph with heading
+# "Side Effects:". You can put \n's in the value part of an alias to insert
+# newlines (in the resulting output). You can put ^^ in the value part of an
+# alias to insert a newline as if a physical newline was in the original file.
+#
+#    _____ _____ _   _  _____    _____   ____   _____     
+#   / ____/ ____| \ | |/ ____|  |  __ \ / __ \ / ____|    
+#  | |   | |  __|  \| | (___    | |  | | |  | | |         
+#  | |   | | |_ | . ` |\___ \   | |  | | |  | | |         
+#  | |___| |__| | |\  |____) |  | |__| | |__| | |____   _ 
+#   \_____\_____|_| \_|_____/   |_____/ \____/ \_____| (_)
+#                        
+#            _      _____           _____ ______  _____ 
+#      /\   | |    |_   _|   /\    / ____|  ____|/ ____|
+#     /  \  | |      | |    /  \  | (___ | |__  | (___  
+#    / /\ \ | |      | |   / /\ \  \___ \|  __|  \___ \ 
+#   / ____ \| |____ _| |_ / ____ \ ____) | |____ ____) |
+#  /_/    \_\______|_____/_/    \_\_____/|______|_____/ 
+#
+                                           
+ALIASES                = 
+
+##############################################################################
+# CGNS General error
+##############################################################################
+ALIASES += ier="Error status."
+ALIASES += ier_F="\b INTEGER; \ier"
+
+##############################################################################
+# CGNS COMMON PARAMETERS
+##############################################################################
+ALIASES += FILE_fn="CGNS file index number."
+ALIASES += B_Base="Base index number, where 1 ≤ \e B ≤ \e nbases."
+ALIASES += Z_Zone="Zone index number, where 1 ≤ \e Z ≤ \e nzones."
+ALIASES += P_ParticleZone="Particle Zone index number, where 1 ≤ \e P ≤ \e n_particle_zones."
+
+ALIASES += FILE_fn_F="\b INTEGER; \FILE_fn"
+ALIASES += B_Base_F="\b INTEGER; \B_Base"
+ALIASES += Z_Zone_F="\b INTEGER; \Z_Zone"
+ALIASES += A_grid="Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions."
+ALIASES += A="Data array index, where 1 ≤ A ≤ narrays."
+ALIASES += DSet="Dataset index number, where 1 ≤ \e Dset ≤ \e ndataset."
+
+##############################################################################
+# CGNS FILE
+##############################################################################
+ALIASES += FILE_filename="Name of the CGNS file, including path name if necessary. There is no limit on the length of this character variable."
+ALIASES += FILE_mode="Mode used for opening the file. The modes currently supported are \p CG_MODE_READ, \p CG_MODE_WRITE, and \p CG_MODE_MODIFY."
+
+ALIASES += FILE_version="CGNS version number."
+ALIASES += FILE_precision="Precision used to write the CGNS file. The return value will be one of 32 (32-bit), 64 (64-bit), or 0 if not known."
+ALIASES += FILE_file_type="Type of CGNS file. This will typically be either \p CG_FILE_ADF or \p CG_FILE_HDF5 depending on the underlying file format.^^ However, note that when built in 32-bit, there is also an option to create a Version 2.5 CGNS file by setting the file type to \p CG_FILE_ADF2."
+ALIASES += FILE_follow_links="This flag determines whether links are left intact when saving a CGNS file. If non-zero, then the links will be removed and the data associated with the linked files copied to the new file."
+
+##############################################################################
+# CGNS BOUNDARY CONDITIONS
+##############################################################################
+ALIASES += BC="Boundary condition index number, where 1 ≤ BC ≤ nbocos."
+
+##############################################################################
+# CGNS FAMILY
+##############################################################################
+ALIASES += Fam="Family index number, where 1 ≤ Fam ≤ nfamilies."
+ALIASES += BC_idx="Family boundary condition index number. This must be equal to 1."
+ALIASES += family_name="Name of the family."
+
+
+##############################################################################
+# CGNS SOLUTION
+##############################################################################
+ALIASES += SOL_S="Flow solution index number, where 1 ≤ \e S ≤ \e nsols."
+ALIASES += SOL_F="Solution array index number, where 1 ≤ \e F ≤ \e nfields."
+
+#############################################################################
+# PARALLEL GRID COORDINATE DATA
+#############################################################################
+
+#TODO: ref " SIDS nomenclature conventions"
+
+ALIASES += PGRID_Coordinate="Coordinate Array index number, where 1 ≤ \e C ≤ \e ncoords."
+ALIASES += PGRID_datatype="Data type of the coordinate array written to the file. Admissible data types for a coordinate array are \e RealSingle and \e RealDouble."
+ALIASES += PGRID_coordname="Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility."
+ALIASES += PGRID_range_min="Lower range index in file (eg., \e imin, \e jmin, \e kmin)."
+ALIASES += PGRID_range_max="Upper range index in file (eg., \e imax, \e jmax, \e kmax)."
+ALIASES += PGRID_mem_datatype="Data type of an array in memory. Admissible data types for a coordinate array are \e RealSingle and \e RealDouble."
+ALIASES += PGRID_mem_rank="Number of dimensions of array in memory."
+ALIASES += PGRID_mem_dimensions="Dimensions of array in memory."
+ALIASES += PGRID_mem_range_min="Lower range index in memory (eg., \e imin, \e jmin, \e kmin)."
+ALIASES += PGRID_mem_range_max="Upper range index in memory (eg., \e imax, \e jmax, \e kmax)."
+ALIASES += PGRID_coord_array="Array of coordinate values for the range prescribed."
+
+#############################################################################
+# PARALLEL ELEMENT CONNECTIVITY DATA
+#############################################################################
+
+#TODO: ref "typdefs"
+
+ALIASES += CONN_S="Element section index, where 1 ≤ \e S ≤ \e nsections."
+ALIASES += PCONN_ElementSectionName="Name of the \e Elements_t node."
+ALIASES += PCONN_type="Type of element. See the eligible types for \e ElementType_t in the Typedefs section."
+ALIASES += PCONN_start="Index of first element in the section."
+ALIASES += PCONN_end="Index of last element in the section."
+ALIASES += PCONN_nbndry="Index of last boundary element in the section. Set to zero if the elements are unsorted."
+ALIASES += PCONN_Elements="Element connectivity data."
+ALIASES += PCONN_Offsets="Element connectivity offsets data."
+ALIASES += PCONN_MaxOffset="Maximum data size that should be reserved for Element connectivity data. "
+
+#############################################################################
+# PARALLEL SOLUTION DATA
+#############################################################################
+
+ALIASES += PSOL_S="Flow solution index number, where 1 ≤ S ≤ nsols."
+ALIASES += PSOL_F="Solution array index number, where 1 ≤ F ≤ nfields."
+ALIASES += PSOL_datatype="Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble."
+ALIASES += PSOL_fieldname="Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility."
+ALIASES += PSOL_range_min="Lower range index in file (eg., imin, jmin, kmin)."
+ALIASES += PSOL_range_max="Upper range index in file (eg., imax, jmax, kmax)."
+ALIASES += PSOL_mem_datatype="Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble."
+ALIASES += PSOL_mem_rank="Number of dimensions of array in memory."
+ALIASES += PSOL_mem_dimensions="Dimensions of array in memory."
+ALIASES += PSOL_mem_range_min="Lower range index in memory (eg., \e imin, \e jmin, \e kmin)."
+ALIASES += PSOL_mem_range_max="Upper range index in memory (eg., \e imax, \e jmax, \e kmax)."
+ALIASES += PSOL_solution_array="Array of solution values for the range prescribed."
+
+#############################################################################
+# PARALLEL ARRAY DATA
+#############################################################################
+
+ALIASES += PARR_A="Data array index, where 1 ≤ \e A ≤ \e narrays."
+ALIASES += PARR_arrayname="Name of the \e DataArray_t node."
+ALIASES += PARR_datatype="Type of data held in the \e DataArray_t node. The admissible types are \e Integer, \e LongInteger, \e RealSingle, \e RealDouble, and \e Character."
+ALIASES += PARR_rank="Number of dimensions of array in file."
+ALIASES += PARR_dimensions="Dimensions of array in file."
+ALIASES += PARR_range_min="Lower range index in file (eg., \e imin, \e jmin, \e kmin)."
+ALIASES += PARR_range_max="Upper range index in file (eg., \e imax, \e jmax, \e kmax)."
+ALIASES += PARR_mem_datatype="The type of data held in memory. The admissible types are \e Integer, \e LongInteger, \e RealSingle, \e RealDouble, and \e Character."
+ALIASES += PARR_mem_rank="Number of dimensions of array in memory."
+ALIASES += PARR_mem_dimensions="Dimensions of array in memory."
+ALIASES += PARR_mem_range_min="Lower range index in memory (eg., \e imin, \e jmin, \e kmin)."
+ALIASES += PARR_mem_range_max="Upper range index in memory (eg., \e imax, \e jmax, \e kmax)."
+ALIASES += PARR_data="The data array."
+
+ALIASES += G_Grid="Grid index number, where 1 ≤ \e G ≤ \e ngrids."
+ALIASES += C_Coordinate="Coordinate array index number, where 1 ≤ \e C ≤ \e ncoords."
+
+ALIASES += C_Coordinate_multi="An array composed of coordinate array index numbers."
+ALIASES += PARR_nsets_multi="The number of data sets stored in the data buffer."
+ALIASES += PARR_data_multi_read="Buffers to receive data read from the CGNS file."
+ALIASES += PARR_data_multi_write="Buffers with data to be written to the CGNS file."
+ALIASES += PSOL_F_multi="An array composed of solution array index numbers."
+ALIASES += PARR_SOL_F_multi="An array composed of solution array index numbers."
+ALIASES += PARR_A_multi="An array of data array index numbers."
+
+
+#############################################################################
+# CGNS WEBSITE
+#############################################################################
+
+ALIASES += CGNS_ORG="https://cgns.github.io/cgns-modern.github.io"
+ALIASES += SIDS_REF="standard/SIDS"

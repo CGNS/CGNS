@@ -10,7 +10,8 @@
 #include "gl_config.h"
 #include <assert.h>
 #if defined(__WIN32__) || defined(_WIN32)
-#   include "tkWinInt.h"
+/* Note: tkWinInt.h not available in standard Tcl/Tk distributions */
+/* Private headers included in tkogl.c where needed for Windows internals */
 #   if defined(_MSC_VER)
 #	    define EXPORT(a,b) __declspec(dllexport) a b
 #	    define DllEntryPoint DllMain
@@ -22,6 +23,8 @@
 #	        define EXPORT(a,b) a b
 #	    endif
 #   endif
+#elif defined(__APPLE__)
+#include <X11/Xatom.h>
 #else
 #   define EXPORT(a,b) a b
 #   include <X11/Xatom.h>		/* for XA_RGB_DEFAULT_MAP atom */

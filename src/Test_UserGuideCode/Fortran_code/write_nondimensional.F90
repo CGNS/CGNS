@@ -77,13 +77,13 @@
       call cg_state_write_f('ReferenceQuantities',ier)
 !   Go to ReferenceState node, write Mach array and its dataclass
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,'end')
-      call cg_array_write_f('Mach',CGNS_ENUMV(RealDouble),1,nuse,xmach,ier)
+      call cg_array_write_f('Mach',CGNS_ENUMV(RealDouble),1,[nuse],xmach,ier)
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,           &
            'DataArray_t',1,'end')
       call cg_dataclass_write_f(CGNS_ENUMV(NondimensionalParameter),ier)
 !   Go to ReferenceState node, write Reynolds array and its dataclass
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,'end')
-      call cg_array_write_f('Reynolds',CGNS_ENUMV(RealDouble),1,nuse,reue,ier)
+      call cg_array_write_f('Reynolds',CGNS_ENUMV(RealDouble),1,[nuse],reue,ier)
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,           &
            'DataArray_t',2,'end')
       call cg_dataclass_write_f(CGNS_ENUMV(NondimensionalParameter),ier)
@@ -91,34 +91,34 @@
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,'end')
 !   First, write reference quantities that make up Mach and Reynolds:
 !   Mach_Velocity
-      call cg_array_write_f('Mach_Velocity',CGNS_ENUMV(RealDouble),1,nuse,xmv,ier)
+      call cg_array_write_f('Mach_Velocity',CGNS_ENUMV(RealDouble),1,[nuse],xmv,ier)
 !   Mach_VelocitySound
-      call cg_array_write_f('Mach_VelocitySound',CGNS_ENUMV(RealDouble),1,nuse,xmc,ier)
+      call cg_array_write_f('Mach_VelocitySound',CGNS_ENUMV(RealDouble),1,[nuse],xmc,ier)
 !   Reynolds_Velocity
-      call cg_array_write_f('Reynolds_Velocity',CGNS_ENUMV(RealDouble),1,nuse,rev,ier)
+      call cg_array_write_f('Reynolds_Velocity',CGNS_ENUMV(RealDouble),1,[nuse],rev,ier)
 !   Reynolds_Length
-      call cg_array_write_f('Reynolds_Length',CGNS_ENUMV(RealDouble),1,nuse,rel,ier)
+      call cg_array_write_f('Reynolds_Length',CGNS_ENUMV(RealDouble),1,[nuse],rel,ier)
 !   Reynolds_ViscosityKinematic
       call cg_array_write_f('Reynolds_ViscosityKinematic',CGNS_ENUMV(RealDouble),          &
-           1,nuse,renu,ier)
+           1,[nuse],renu,ier)
 !
 !   Next, write flow field reference quantities:
 !   Density
-      call cg_array_write_f('Density',CGNS_ENUMV(RealDouble),1,nuse,rho0,ier)
+      call cg_array_write_f('Density',CGNS_ENUMV(RealDouble),1,[nuse],rho0,ier)
 !   Pressure
-      call cg_array_write_f('Pressure',CGNS_ENUMV(RealDouble),1,nuse,p0,ier)
+      call cg_array_write_f('Pressure',CGNS_ENUMV(RealDouble),1,[nuse],p0,ier)
 !   VelocitySound
-      call cg_array_write_f('VelocitySound',CGNS_ENUMV(RealDouble),1,nuse,c0,ier)
+      call cg_array_write_f('VelocitySound',CGNS_ENUMV(RealDouble),1,[nuse],c0,ier)
 !   ViscosityMolecular
-      call cg_array_write_f('ViscosityMolecular',CGNS_ENUMV(RealDouble),1,nuse,vm0,ier)
+      call cg_array_write_f('ViscosityMolecular',CGNS_ENUMV(RealDouble),1,[nuse],vm0,ier)
 !   LengthReference
-      call cg_array_write_f('LengthReference',CGNS_ENUMV(RealDouble),1,nuse,xlength0,ier)
+      call cg_array_write_f('LengthReference',CGNS_ENUMV(RealDouble),1,[nuse],xlength0,ier)
 !   VelocityX
-      call cg_array_write_f('VelocityX',CGNS_ENUMV(RealDouble),1,nuse,vx,ier)
+      call cg_array_write_f('VelocityX',CGNS_ENUMV(RealDouble),1,[nuse],vx,ier)
 !   VelocityY
-      call cg_array_write_f('VelocityY',CGNS_ENUMV(RealDouble),1,nuse,vy,ier)
+      call cg_array_write_f('VelocityY',CGNS_ENUMV(RealDouble),1,[nuse],vy,ier)
 !   VelocityZ
-      call cg_array_write_f('VelocityZ',CGNS_ENUMV(RealDouble),1,nuse,vz,ier)
+      call cg_array_write_f('VelocityZ',CGNS_ENUMV(RealDouble),1,[nuse],vz,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully wrote nondimensional info to file'',           &

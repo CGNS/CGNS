@@ -11,8 +11,8 @@ echoresults() {
     printf ' %*.*s' 0 $((padlength - ${#x} )) "$pad"
     if test $status -ne 0
     then
-	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
-        status = 1
+        printf " [${ERROR_COLOR}FAILED${NO_COLOR}]\n"
+        status=1
     else
 	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
         printf "%+12s\n" "$itime"
@@ -47,6 +47,7 @@ echo "=== running tests ==="; \
 for dir in $DIRS;do
     printf "%-40s \n" "Testing $dir..."
     cd $dir
+    mkdir -p build
     x="   Program: cgwrite"
     printf "$x"
     itime=""
@@ -83,6 +84,7 @@ done
 dir=Test_cgio
 printf "%-40s \n" "Testing $dir..."
 cd $dir
+mkdir -p build
 x="   Program: cgiotest"
 printf "$x"
 if [ "$TIMING_AVAIL" = "0" ]; then

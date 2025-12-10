@@ -16,7 +16,7 @@
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, conn, ier, size(Ndim*3), i, num, n
 	integer nbases
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	integer AverageInterfaceType, pnts(Ndim,20), donor_pnts(Ndim,20)
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
 	real *4 Translation(Ndim), version

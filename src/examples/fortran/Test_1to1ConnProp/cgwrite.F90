@@ -1,4 +1,4 @@
-	program write_cprop
+        PROGRAM write_cprop
 	USE CGNS
 	implicit none
 
@@ -34,7 +34,7 @@
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
 	real *4 Translation(Ndim)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	integer transform(Ndim), one21
 	character*32 donorname
 
@@ -331,5 +331,5 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_cprop
 

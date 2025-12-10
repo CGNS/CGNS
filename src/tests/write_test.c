@@ -10,9 +10,6 @@
 #endif
 #include "cgnslib.h"
 
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
 #ifndef CGNS_ENUMT
 # define CGNS_ENUMT(e) e
 # define CGNS_ENUMV(e) e
@@ -40,7 +37,6 @@
 int CellDim = 3, PhyDim = 3;
 
 int cgfile, cgbase, cgzone;
-int CellDim, PhyDim;
 cgsize_t size[9];
 
 #define NUM_SIDE 5
@@ -1178,7 +1174,7 @@ void write_mismatched()
     }
     if (cg_zone_write(cgfile, cgbase, "CartesianZone", size,
             CGNS_ENUMV(Structured), &cgzone))
-        error_exit("cartesion zone");
+        error_exit("cartesian zone");
     write_coords(1);
 
     /* zone 2 is cylindrical */

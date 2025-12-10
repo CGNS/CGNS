@@ -16,7 +16,7 @@
 #include "cgnsutil.h"
 
 #ifdef USE_FORTRAN
-#include "pd3fint.h"
+#include "p3dfint.h"
 #else
 extern void OPENF   (int *,char *,int);
 extern void CLOSEF  (void);

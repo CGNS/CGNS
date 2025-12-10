@@ -7,9 +7,7 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
+#include "cgnstypes.h"
 
 static int nocase = 0;
 static int nospace = 0;

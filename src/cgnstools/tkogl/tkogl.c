@@ -22,9 +22,29 @@
 #include "printstr.h"
 #include "feedback.h"
 
-#ifndef CONST
-# define CONST
+/*
+ * Platform-specific handling of Tk internal structures:
+ *
+ * Windows code (WinMakeWindowExist) requires access to TkWindow struct members
+ * (dispPtr, dirtyAtts, dirtyChanges), so we must include the full header.
+ *
+ * Unix/Linux code only needs TkWmAddToColormapWindows function, which can be
+ * forward-declared without including the private header.
+ *
+ * See: https://github.com/CGNS/CGNS/issues/689
+ */
+#if defined(__WIN32__) || defined(_WIN32)
+/* Windows: Need full TkWindow definition for internal member access */
+#define _TKPORT
+/* Private headers should be in include path when built from source */
+#include "tkInt.h"
+#include "tkWinInt.h"
+#else
+/* Unix/Linux: Forward declaration only - don't need full TkWindow definition */
+typedef struct TkWindow TkWindow;
+extern void TkWmAddToColormapWindows(TkWindow *winPtr);
 #endif
+
 
 /*
  * A data structure of the following type is kept for each glxwin
@@ -91,35 +111,35 @@ typedef struct {
 
 static Tk_ConfigSpec configSpecs[] = {
     {TK_CONFIG_PIXELS, "-height", "height", "Height",
-       "300" , Tk_Offset(OGLwin, height), 0},
+       "300" , offsetof(OGLwin, height), 0},
 
     {TK_CONFIG_PIXELS, "-width", "width", "Width",
-       "300" , Tk_Offset(OGLwin, width), 0},
+       "300" , offsetof(OGLwin, width), 0},
 
     {TK_CONFIG_STRING, "-context", "context", "Context",
-	NULL, Tk_Offset (OGLwin, context), TK_CONFIG_NULL_OK},
+	NULL, offsetof (OGLwin, context), TK_CONFIG_NULL_OK},
 
     {TK_CONFIG_BOOLEAN, "-doublebuffer", "doublebuffer", "DoubleBuffer",
-	"1", Tk_Offset (OGLwin, doubleBuffer), 0},
+	"1", offsetof (OGLwin, doubleBuffer), 0},
 
     {TK_CONFIG_INT, "-depthsize", "depthsize", "DepthSize",
-	"16", Tk_Offset (OGLwin, depthSize), 0},
+	"16", offsetof (OGLwin, depthSize), 0},
 
     {TK_CONFIG_INT, "-stencilsize", "stencilsize", "StencilSize",
-	"0", Tk_Offset (OGLwin, stencilSize), 0},
+	"0", offsetof (OGLwin, stencilSize), 0},
 
     {TK_CONFIG_INT, "-alphasize", "alphasize", "AlphaSize",
-	"0", Tk_Offset (OGLwin, alphaSize), 0},
+	"0", offsetof (OGLwin, alphaSize), 0},
 
     {TK_CONFIG_INT, "-accumsize", "accumsize", "AccumSize",
-	"0", Tk_Offset (OGLwin, accumSize), 0},
+	"0", offsetof (OGLwin, accumSize), 0},
 
     {TK_CONFIG_DOUBLE, "-aspectratio", "aspectratio", "AspectRatio",
-	"0", Tk_Offset (OGLwin, aspectRatio), 0},
+	"0", offsetof (OGLwin, aspectRatio), 0},
 
 
     {TK_CONFIG_BORDER, "-background", "background", "Background",
-	"#d9d9d9", Tk_Offset(OGLwin, bgBorder), 0},
+	"#d9d9d9", offsetof(OGLwin, bgBorder), 0},
 
 
     {TK_CONFIG_END, (char *) NULL, (char *) NULL, (char *) NULL,
@@ -130,23 +150,23 @@ static Tk_ConfigSpec configSpecs[] = {
  * Forward declarations for procedures defined later in this file:
  */
 
-static int	OGLwinConfigure _ANSI_ARGS_((Tcl_Interp *interp,
+static int	OGLwinConfigure (Tcl_Interp *interp,
 			    OGLwin *glxwinPtr, int argc, char **argv,
-			    int flags));
-static void	OGLwinDestroy _ANSI_ARGS_((char* clientData));
+			    int flags);
+static void	OGLwinDestroy (void* clientData);
 
-static void	OGLwinEventProc _ANSI_ARGS_((ClientData clientData,
-			    XEvent *eventPtr));
+static void	OGLwinEventProc (ClientData clientData,
+			    XEvent *eventPtr);
 
-static int	OGLwinWidgetCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *, int argc, char **argv));
+static int	OGLwinWidgetCmd (ClientData clientData,
+			    Tcl_Interp *, int argc, char **argv);
 
 
-static void 	OGLwinRedraw _ANSI_ARGS_ ((ClientData clientData));
+static void 	OGLwinRedraw (ClientData clientData);
 
 int             OGLwinCmd(ClientData, Tcl_Interp*, int, char**);
 
-static int      UnusedDList ();
+static int      UnusedDList (void);
 
 static int      FreeDisplayList (int) ;
 
@@ -161,8 +181,7 @@ static void     MakeCurrent (OGLwin* oglwinPtr);
     static void SetDCPixelFormat (OGLwin*);
 
 #else
-    static Colormap getColormap _ANSI_ARGS_((Display *dpy,
-						 XVisualInfo *vi));
+    static Colormap getColormap (Display *dpy, XVisualInfo *vi);
 #endif
 
 #define ERRMSG(msg) {\
@@ -325,30 +344,33 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
 {
    static char* TkOGLClassName = "TkOGL Class";
    static int TkOGLClassInitted = 0;
-   TkWindow *winPtr = (TkWindow *) oglWinPtr->tkwin;
-   Display *dpy = Tk_Display (oglWinPtr->tkwin);
+   Tk_Window tkwin = oglWinPtr->tkwin;
+   TkWindow *winPtr = (TkWindow *) tkwin;
+   Display *dpy = Tk_Display(tkwin);
    Window parent;
    HWND hwnd, parentWin;
    HANDLE hInstance;
    WNDCLASS TkOGLClass;
    Tcl_HashEntry *hPtr;
    int new_flag;
+   Window win;
 
    /* Destroy window if already exists */
-   if (winPtr->window != None) {
-      XDestroyWindow(dpy, winPtr->window);
+   win = Tk_WindowId(tkwin);
+   if (win != None) {
+      XDestroyWindow(dpy, win);
    }
 
    /* Find parent of window */
    /* Necessary for creation */
-   if ((winPtr->parentPtr == NULL) || (winPtr->flags & TK_TOP_LEVEL)) {
-      parent = XRootWindow(winPtr->display, winPtr->screenNum);
+   if (Tk_Parent(tkwin) == NULL || Tk_IsTopLevel(tkwin)) {
+      parent = RootWindowOfScreen(Tk_Screen(tkwin));
    }
    else {
-      if (winPtr->parentPtr->window == None) {
-         Tk_MakeWindowExist((Tk_Window) winPtr->parentPtr);
+      if (Tk_WindowId(Tk_Parent(tkwin)) == None) {
+         Tk_MakeWindowExist(Tk_Parent(tkwin));
       }
-      parent = winPtr->parentPtr->window;
+      parent = Tk_WindowId(Tk_Parent(tkwin));
    }
 
    /* Create a window class for TkOGL windows if not done this yet */
@@ -599,7 +621,7 @@ OGLwinCmd(clientData, interp, argc, argv)
 
     if ((Tk_Parent(tkwin) != NULL) &&
 	(Tk_Colormap(tkwin) != Tk_Colormap (Tk_Parent(tkwin)))) {
-       TkWmAddToColormapWindows(tkwin);
+       TkWmAddToColormapWindows((TkWindow *)tkwin);
     }
 
     /* See if this window will share display lists with another */
@@ -777,7 +799,7 @@ OGLwinRedraw (clientData)
  */
 
 static int
-UnusedDList ()
+UnusedDList (void)
 {
    /* Returns an integer number corresponding to a free display list
     */
@@ -1161,7 +1183,7 @@ OGLwinConfigure(interp, glxwinPtr, argc, argv, flags)
 					 * Tk_ConfigureWidget. */
 {
     if (Tk_ConfigureWidget(interp, glxwinPtr->tkwin, configSpecs,
-	    argc, (CONST char **)argv, (char *) glxwinPtr, flags) != TCL_OK) {
+	    argc, (void *)argv, (char *) glxwinPtr, flags|TK_CONFIG_OBJS) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1245,7 +1267,7 @@ OGLwinEventProc(clientData, eventPtr)
 	    if (glxwinPtr->updatePending) {
     	   Tcl_CancelIdleCall(OGLwinRedraw, (ClientData) glxwinPtr);
         }
-	    Tcl_EventuallyFree((ClientData) glxwinPtr, OGLwinDestroy);
+	    Tcl_EventuallyFree((ClientData) glxwinPtr, (Tcl_FreeProc *)(void *)OGLwinDestroy);
     }
 
 }
@@ -1270,7 +1292,7 @@ OGLwinEventProc(clientData, eventPtr)
  */
 
 static void
-OGLwinDestroy(char* clientData)
+OGLwinDestroy(void* clientData)
 {
     OGLwin *glxwinPtr = (OGLwin *) clientData;
 

@@ -793,7 +793,7 @@ proc units:create {top} {
   focus $w.values.input.ent
   $w.values.input.ent selection range 0 end
 
-  trace variable _UnitData(input:value) w "units:update {$w}"
+  trace add variable _UnitData(input:value) write "units:update {$w}"
 }
 
 proc units:invoke {but} {
@@ -812,7 +812,7 @@ proc units:destroy {top} {
   } else {
     set w $top
   }
-  trace vdelete _UnitData(input:value) w "units:update {$w}"
+  trace remove variable _UnitData(input:value) write "units:update {$w}"
   units:last $w
   destroy $top
 }

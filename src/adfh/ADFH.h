@@ -117,6 +117,7 @@
 #define NULL_NODEID_POINTER	       62
 #define MAX_FILE_SIZE_EXCEEDED         63
 #define MAX_INT32_SIZE_EXCEEDED        64
+#define CHILDREN_IDS_NOT_FOUND         65
 
 #endif  /* ADF_INCLUDE */
 
@@ -175,7 +176,11 @@
 #define ADFH_CONFIG_ALIGNMENT     6
 #define ADFH_CONFIG_MD_BLOCK_SIZE 7
 #define ADFH_CONFIG_HDF5_BUFFER   8
-#define ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE  9
+#define ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE    9
+#define ADFH_CONFIG_ELINK_FILE_CACHE_SIZE 10
+
+/* get configuration options */
+#define ADFH_CONFIG_GET_MAXIMUM_FILES 201
 
 #define ADFH_CONFIG_RESET 800
 #define ADFH_CONFIG_RESET_HDF5 1
@@ -196,7 +201,7 @@
 
 EXTERN	void	ADFH_Configure(
 			const int option,
-			const void *value,
+                        void *value,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Children_Names(
@@ -371,7 +376,7 @@ EXTERN	void	ADFH_Put_Name(
 
 EXTERN	void	ADFH_Read_All_Data(
 			const double ID,
-                        const char *m_data_type,
+			const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 
@@ -379,7 +384,7 @@ EXTERN	void	ADFH_Read_Block_Data(
 			const double ID,
 			const cgsize_t b_start,
 			const cgsize_t b_end,
-                        const char *m_data_type,
+			const char *m_data_type,
 			void *data,
 			int *error_return ) ;
 
@@ -393,7 +398,7 @@ EXTERN	void	ADFH_Read_Data(
 			const cgsize_t m_start[],
 			const cgsize_t m_end[],
 			const cgsize_t m_stride[],
-                        const char *m_data_type,
+			const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 

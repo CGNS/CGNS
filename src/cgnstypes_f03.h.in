@@ -62,9 +62,13 @@
 
 #ifdef CGNS_SCOPE_ENUMS
 ! set scope prefix (case does not matter in Fortran)
+! set scope prefix for values only
 #define CGNS_ENUMV(x) CONCATENATE(CG_,x)
+! set scope prefix for types
+#define CGNS_ENUMT(x) CONCATENATE(CG_,x)
 #else
 #define CGNS_ENUMV(x) x
+#define CGNS_ENUMT(x) x
 #endif
 
 #endif

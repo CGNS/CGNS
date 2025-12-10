@@ -8,7 +8,7 @@ proc error_exit {msg} {
   exit 1
 }
 
-if {[catch {package require Tk 8.0} msg]} {
+if {[catch {package vsatisfies [package provide Tcl] 8.6 9} msg]} {
   error_exit $msg
 }
 
@@ -1147,8 +1147,8 @@ proc set_perline {w} {
 
 #---------- update buttons when node changes
 
-trace variable Node(parent) w check_node
-trace variable Node(name) w check_node
+trace add variable Node(parent) write check_node
+trace add variable Node(name) write check_node
 
 #========== procedures ===============================================
 
