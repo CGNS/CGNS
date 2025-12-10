@@ -8909,9 +8909,9 @@ int cg_field_write(int fn, int B, int Z, int S,
 
      /* dimension is dependent on multidim or ptset */
     cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
-    
+
     m_numdim = zone->index_dim;
-    if ( cg_sol_size(file_number, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
+    if ( cg_sol_size(fn, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
       cg_error_print();
       cgi_error("FlowSolution: Unable to retrieve field size to write");
       return CG_ERROR;
@@ -16423,31 +16423,35 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     cgsize_t dim_vals;
     cgns_family *family;
     cgns_elementInterpolation *einterp, *tmpinterp;
-    
+    CGNS_ENUMT(ElementType_t) type;
+
     *en = -1;
-    
+
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
-    
+
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    
+
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
-    
+
     // Check Element Type
     if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
         cgi_error("Invalid element type %s for writing Element interpolation %s",
                   cg_ElementTypeName(et),node_name);
         return CG_ERROR;
     }
-    
+
+    // Get Basic type
+    cg_element_basic_element_type(et,&type);
+
     // Already exists ?
     einterp = 0;
     for (n = 0 ; n<family->nelementinterpolation ; n++)
     {
         tmpinterp = &family->elementinterpolations[n];
-        
-        if (tmpinterp->type == et )
+
+        if (tmpinterp->type == type )
         {
             if (cg->mode==CG_MODE_WRITE) 
             {
@@ -16487,7 +16491,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     
     memset(einterp,0,sizeof(cgns_elementInterpolation));
     strcpy(einterp->name,node_name);
-    einterp->type = et;
+    einterp->type = type;
     
     // Write node
     dim_vals = 1;
@@ -16788,16 +16792,16 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     
     // Get Basic type
     cg_element_basic_element_type(et,&type);
-    
+
     // Already exists ?
     sinterp = 0;
     for (n = 0 ; n<family->nsolutioninterpolation ; n++)
     {
         tmpinterp = &family->solutioninterpolations[n];
-        if (tmpinterp->type == type && os == tmpinterp->spatialorder && 
+        if (tmpinterp->type == type && os == tmpinterp->spatialorder &&
             ot == tmpinterp->temporalorder )
         {
-            if (cg->mode==CG_MODE_WRITE) 
+            if (cg->mode==CG_MODE_WRITE)
             {
                 cgi_error("SolutionInterpolation_t already defined under Family_t.");
                 return CG_ERROR;
