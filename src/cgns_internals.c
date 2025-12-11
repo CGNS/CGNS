@@ -918,7 +918,7 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
          /* read & save ElementInterpolation_t */
         family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation);
         for (n=0; n<family->nelementinterpolation; n++) {
-            memset(family->elementinterpolations,sizeof(cgns_elementInterpolation),0);
+            memset(&family->elementinterpolations[n],0,sizeof(cgns_elementInterpolation));
             family->elementinterpolations[n].id = id[n];
             if (cgi_read_element_interpolation(&family->elementinterpolations[n])) return CG_ERROR;
         }
@@ -943,7 +943,7 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
          /* read & save ElementInterpolation_t */
         family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation);
         for (n=0; n<family->nsolutioninterpolation; n++) {
-            memset(family->solutioninterpolations,sizeof(cgns_solutionInterpolation),0);
+            memset(&family->solutioninterpolations[n],0,sizeof(cgns_solutionInterpolation));
             family->solutioninterpolations[n].id = id[n];
             if (cgi_read_solution_interpolation(&family->solutioninterpolations[n])) return CG_ERROR;
         }
@@ -4766,7 +4766,7 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     }
     edata = (int *)vdata;
     eltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
-    
+
      /* DataArray_t:
      Required: none
      Optional: LagrangeControlPoints
@@ -4861,7 +4861,7 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
     sltinterpolation->spatialorder = edata[1];
     sltinterpolation->temporalorder = edata[2];
-    
+
      /* InterpolationType_t:
      Required: InterpolationType
       */
@@ -4938,6 +4938,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
         }
     }   /* loop through DataArray_t */
     if (nnod) CGNS_FREE(id);
+
+    return CG_OK;
 }
 int cgi_read_converg_from_list(int in_link, _childnode_t *nodelist, int nnodes, cgns_converg** converg)
 {

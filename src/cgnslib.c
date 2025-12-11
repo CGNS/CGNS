@@ -1921,7 +1921,8 @@ int cg_family_read(int fn, int B, int Fam, char *family_name,
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
 
     family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
@@ -16319,7 +16320,7 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_
 
     if (en > family->nelementinterpolation) return CG_ERROR;
     en--;
-    
+
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
     
     /* Set Name */
@@ -16451,7 +16452,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     {
         tmpinterp = &family->elementinterpolations[n];
 
-        if (tmpinterp->type == type )
+        if (tmpinterp->type == et )
         {
             if (cg->mode==CG_MODE_WRITE) 
             {
@@ -16491,8 +16492,8 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     
     memset(einterp,0,sizeof(cgns_elementInterpolation));
     strcpy(einterp->name,node_name);
-    einterp->type = type;
-    
+    einterp->type = et;
+
     // Write node
     dim_vals = 1;
     array[0] = et;
@@ -16605,9 +16606,9 @@ int cg_element_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
-    
+
     if (!family->nelementinterpolation) return CG_OK;
-    
+
     for (n = 0 ; n < family->nelementinterpolation ; n++)
     {
         ei = &family->elementinterpolations[n];
@@ -16757,7 +16758,7 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
 }
 
 int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
-                                    CGNS_ENUMT(ElementType_t) et, int os, int ot, 
+                                    CGNS_ENUMT(ElementType_t) et, int os, int ot,
                                     CGNS_ENUMT(InterpolationType_t) it, int *sn )
 {
     int n,nnodes;
@@ -16768,7 +16769,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     cgns_family *family;
     cgns_solutionInterpolation *sinterp, *tmpinterp;
     CGNS_ENUMT(ElementType_t) type;
-    
+
     *sn = -1;
     
     cg = cgi_get_file(fn);

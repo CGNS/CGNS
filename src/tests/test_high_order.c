@@ -286,8 +286,8 @@ do HO QUAD elements (NOT following standard SIDS ordering)
      * ************************************************************************** */
     
     printf ("reading cgns file high_order.cgns in READ mode ...\n");
-    if (cg_open ("high_order.cgns", CG_MODE_READ, &cgfile) ) cg_error_exit();
-    
+    if (cg_open ("high_order.cgns", CG_MODE_READ, &cgfile)) cg_error_exit();
+
     // Get Information from Current Zone
     if (cg_zone_read(cgfile, cgbase,cgzone,zonename,sizeread) ) cg_error_exit();
     
