@@ -1,7 +1,7 @@
 /**
  *
  * \page CGNS_Navigation_Ill
- * \section CGNS_Navigation_Ill CGNS File Navigation Illustration
+ * \section CGNS_Navigation_Illustration CGNS File Navigation Illustration
  * 
  * To illustrate the use of the accessing a node routines, assume you have a file with CGNS
  * index number \e filenum, a base node named \e Base with index number \e basenum, 2 zones
