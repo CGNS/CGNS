@@ -9359,6 +9359,7 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimens
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return CG_ERROR;
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
@@ -10745,6 +10746,7 @@ int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
 
     for (Z=1; Z<=base->nzones; Z++) {
         zone = cgi_get_zone(cg, B, Z);
+        if (zone==0) return CG_ERROR;
         if (zone->type==CGNS_ENUMV( Unstructured )) {
             cgi_error("GridConnectivity1to1 is only applicable to structured zones.");
             return CG_ERROR;
@@ -14890,6 +14892,7 @@ int cg_particle_sol_size(int fn, int B, int P, int S, cgsize_t *size)
 
    if (sol->ptset == NULL) {
       cgns_pzone *pzone = cgi_get_particle(cg, B, P);
+       if (pzone==0) return CG_ERROR;
        *size = pzone->nparticles;
    } else {
        *size = sol->ptset->size_of_patch;

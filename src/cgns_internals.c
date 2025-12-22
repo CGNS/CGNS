@@ -109,6 +109,12 @@ int cgi_read()
     int b;
     double *id;
 
+    /* Retrieve the Root Node ID from the open file handle (cg->cgio) */
+    if (cgio_get_root_id(cg->cgio, &cg->rootid)) {
+        cgi_error("Error getting root ID");
+        return CG_ERROR;
+    }
+
      /* get number of CGNSBase_t nodes and their ID */
     if (cgi_get_nodes(cg->rootid, "CGNSBase_t", &cg->nbases, &id)) return CG_ERROR;
 
@@ -310,7 +316,7 @@ int cgi_read_base(cgns_base *base)
     char_33 data_type;
     int ndim, *index;
     int n, m;
-    void *vdata;
+    void *vdata = NULL;
     cgsize_t dim_vals[12];
     int nchildren;
     _childnode_t* childlist = NULL;
@@ -328,7 +334,11 @@ int cgi_read_base(cgns_base *base)
         cgi_error("Error reading base");
         return CG_ERROR;
     }
-    index = (int *)vdata;
+
+    if ( (index = (int *)vdata) == NULL) {
+        cgi_error("Base dimension data missing");
+        return CG_ERROR;
+    }
 
      /* check data type */
     if (strcmp(data_type,"I4")!=0) {
@@ -345,7 +355,18 @@ int cgi_read_base(cgns_base *base)
         base->cell_dim = base->phys_dim = index[0];
     } else {
         base->cell_dim = index[0];
-        base->phys_dim = index[1];
+
+        /* Check if there is a second dimension value before accessing it */
+        if (dim_vals[0] >= 2) {
+            base->phys_dim = index[1];
+        } else {
+            /* 
+             * Fallback for transitional versions (1050 < version < 1100).
+             * These files may only contain 1 value. In this case, 
+             * PhysicalDimension defaults to CellDimension.
+             */ 
+            base->phys_dim = base->cell_dim;
+        }
     }
     CGNS_FREE(vdata);
 
@@ -653,7 +674,7 @@ int cgi_read_zone(cgns_zone *zone)
         for (n = 0; n < zone->nfamname; n++) {
             zone->famname[n].id = id[n];
             if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(zone->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
+            snprintf(zone->famname[n].family, CG_FULL_PATH_BUFFER_SIZE, "%s", fam);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -742,7 +763,7 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
         for (n = 0; n < family->nfamname; n++) {
             family->famname[n].id = id[n];
             if (cgi_read_string(id[n], family->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(family->famname[n].family, fam,(CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
+            snprintf(family->famname[n].family, CG_FULL_PATH_BUFFER_SIZE, "%s", fam);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -1023,10 +1044,7 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
 
          /* FamilyName in data field of the ADF node */
             if (cgi_read_string(id[0], NodeName, &FamilyName)) return CG_ERROR;
-            if (strlen(FamilyName) > (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1))) {
-                FamilyName[(CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1))]='\0'; /* ** FAMILY TREE ** */
-            }
-            strcpy(family_name, FamilyName);
+            snprintf(family_name, CG_FULL_PATH_BUFFER_SIZE, "%s", FamilyName);
             if (FamilyName) CGNS_FREE(FamilyName);
 
         } else {
@@ -1951,7 +1969,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
 
      /* get donor name */
     if (cgi_read_string(one21->id, one21->name, &string_data)) return CG_ERROR;
-    strcpy(one21->donor, string_data);
+    snprintf(one21->donor, CG_FULL_PATH_BUFFER_SIZE, "%s", string_data);
     CGNS_FREE(string_data);
 
      /* get ADF-ID of point sets for donor and receiver */
@@ -2102,7 +2120,7 @@ int cgi_read_conn(cgns_conn *conn)
      /* get donor name */
     if (cgi_read_string(conn->id, conn->name, &string_data)) return CG_ERROR;
     if (cgi_check_strlen(string_data)) return CG_ERROR;
-    strcpy(conn->donor, string_data);
+    snprintf(conn->donor, CGIO_MAX_NAME_LENGTH+1, "%s", string_data);
     CGNS_FREE(string_data);
 
      /* GridLocation */
@@ -2752,7 +2770,7 @@ int cgi_read_boco(cgns_boco *boco)
         for (n = 0; n < boco->nfamname; n++) {
             boco->famname[n].id = id[n];
             if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(boco->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
+            snprintf(boco->famname[n].family, CG_FULL_PATH_BUFFER_SIZE, "%s", fam);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -6871,7 +6889,7 @@ int cgi_read_particle(cgns_pzone *pzone)
        for (n = 0; n < pzone->nfamname; n++) {
            pzone->famname[n].id = id[n];
            if (cgi_read_string(id[n], pzone->famname[n].name, &fam)) return CG_ERROR;
-           strncpy(pzone->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
+           snprintf(pzone->famname[n].family, CG_FULL_PATH_BUFFER_SIZE, "%s", fam);
            CGNS_FREE(fam);
        }
        CGNS_FREE(id);

@@ -891,6 +891,7 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
 #ifndef NO_MESH_BOUNDARIES
     z->nregs += (2 * CellDim);
 #endif
+    /* MALLOC never returns NULL - it calls FATAL/exit on allocation failure */
     z->regs = (Regn *) MALLOC (funcname, z->nregs * sizeof(Regn));
     ni = dim[0] - 1;
     nj = dim[1] - 1;

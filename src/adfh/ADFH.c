@@ -1326,7 +1326,8 @@ static char *check_name(const char *new_name, int *err)
     set_error(STRING_LENGTH_TOO_BIG, err);
     return NULL;
   }
-  strcpy(name, p);
+  strncpy(name, p, ADF_NAME_LENGTH);
+  name[ADF_NAME_LENGTH] = 0;
 
   /* remove trailing space */
 
@@ -1699,7 +1700,8 @@ void ADFH_Set_Label(const double  id,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  strcpy(label_name, label);
+  strncpy(label_name, label, ADF_NAME_LENGTH);
+  label_name[ADF_NAME_LENGTH] = 0;
   set_str_att(hid, A_LABEL, label_name, err);
 }
 
