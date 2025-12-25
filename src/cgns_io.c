@@ -748,8 +748,9 @@ int cgio_copy_dimensions (int ndims, const cglong_t *dims64, cgsize_t *dims)
  * file operations
  *=========================================================*/
 
-int cgio_open_file (const char *filename, int file_mode,
-    int file_type, int *cgio_num)
+/* Extended internal API - accepts explicit HDF5 access mode for thread safety */
+int cgio_open_file_with_mode (const char *filename, int file_mode,
+    int file_type, int hdf5_access_mode, int *cgio_num)
 {
     int n, ierr;
     int type;
@@ -812,8 +813,10 @@ int cgio_open_file (const char *filename, int file_mode,
 #endif
 #if CG_BUILD_HDF5
     else if (file_type == CGIO_FILE_HDF5) {
-        /* Convert enum to string for ADFH API (Issue #836) */
-        const char *format = (ctx_cgio.hdf5_access_mode == CGIO_PARALLEL_MODE) ? "PARALLEL" : "NATIVE";
+        /* Convert enum to string for ADFH API (Issue #836)
+         * Use the explicit hdf5_access_mode parameter instead of global state
+         * to ensure thread-safety (fixes race condition in parallel I/O) */
+        const char *format = (hdf5_access_mode == CGIO_PARALLEL_MODE) ? "PARALLEL" : "NATIVE";
         ADFH_Database_Open(filename, fmode, format, &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -852,6 +855,16 @@ int cgio_open_file (const char *filename, int file_mode,
     num_open++;
 
     return set_error(CGIO_ERR_NONE);
+}
+
+/* Public API wrapper - preserved for ABI/API compatibility
+ * Defaults to NATIVE mode for backward compatibility with external applications */
+int cgio_open_file (const char *filename, int file_mode,
+    int file_type, int *cgio_num)
+{
+    /* Call extended function with NATIVE mode (serial I/O) as default */
+    return cgio_open_file_with_mode(filename, file_mode, file_type,
+                                     CGIO_NATIVE_MODE, cgio_num);
 }
 
 /*---------------------------------------------------------*/

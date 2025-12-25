@@ -1059,6 +1059,16 @@ typedef struct {
     cgns_base *base;        /* ptrs to in-memory copies of bases    */
 } cgns_file;
 
+/* Parameter object for thread-safe configuration */
+typedef struct cg_parameters_s {
+    int min_version;        /* Minimum acceptable CGNS version */
+    int max_version;        /* Maximum acceptable CGNS version */
+    int write_version;      /* Version to write (or CG_LIBVER_AUTO) */
+    int file_type;          /* File type (HDF5, ADF, etc.) */
+    int compress;           /* Compression level (0=none, 1-9) */
+    /* Extensible: Future parameters can be added here without breaking ABI */
+} cg_parameters_s;
+
 typedef struct {
     void *posit;
     char label[33];
@@ -1093,7 +1103,8 @@ extern cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
  */
 
 /* Internal file opening implementation used by both cg_open() and cgp_open() */
-int cgi_open(const char *filename, int mode, int open_parallel, int *fn);
+int cgi_open(const char *filename, int mode, int open_parallel,
+             const cg_parameters_s *params, int *fn);
 
 CGNSDLL void *cgi_malloc(size_t cnt,size_t size);
 CGNSDLL void *cgi_realloc(void *old,size_t bytes);

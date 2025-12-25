@@ -51,6 +51,23 @@
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
+/* Version bounds constants for cg_parameters_t */
+#define CG_LIBVER_EARLIEST 1050  /* CGNS 1.05 (read compatibility) */
+#define CG_LIBVER_V12      1200  /* CGNS 1.2 */
+#define CG_LIBVER_V20      2000  /* CGNS 2.0 */
+#define CG_LIBVER_V25      2540  /* CGNS 2.54 (COMPATVERSION) */
+#define CG_LIBVER_V30      3000  /* CGNS 3.0 */
+#define CG_LIBVER_V31      3100  /* CGNS 3.1 */
+#define CG_LIBVER_V32      3200  /* CGNS 3.2 */
+#define CG_LIBVER_V33      3300  /* CGNS 3.3 */
+#define CG_LIBVER_V40      4000  /* CGNS 4.0 */
+#define CG_LIBVER_V41      4100  /* CGNS 4.1 */
+#define CG_LIBVER_V42      4200  /* CGNS 4.2 */
+#define CG_LIBVER_V43      4300  /* CGNS 4.3 */
+#define CG_LIBVER_V44      4400  /* CGNS 4.4 */
+#define CG_LIBVER_LATEST   5000  /* CGNS 5.0 (CGNS_VERSION) */
+#define CG_LIBVER_AUTO     -1    /* Automatic version selection */
+
 #include "cgnstypes.h"
 
 #if CG_BUILD_SCOPE
@@ -1038,9 +1055,278 @@ extern CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTyp
  *      LIBRARY FUNCTIONS						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/**
+ * \defgroup ParameterAPI Parameter Object API
+ * \brief Thread-safe configuration for CGNS file operations
+ *
+ * The parameter object API provides explicit, thread-safe configuration
+ * for CGNS file operations. It replaces global state modification with
+ * immutable parameter objects passed through the call stack.
+ *
+ * \par Design Goals:
+ * - **Thread Safety**: Multiple threads can configure CGNS independently
+ * - **Explicit Configuration**: Clear parameter passing instead of globals
+ * - **Minimal API**: Only 4 functions, extensible key-value pattern
+ * - **Backward Compatible**: Existing code continues to work unchanged
+ *
+ * \par Basic Usage:
+ * \code
+ * cg_parameters_t params;
+ * cg_params_create(&params);
+ * cg_params_set_int(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
+ * cg_params_set_int(params, CG_PARAM_MAX_VERSION, CG_LIBVER_LATEST);
+ *
+ * int fn;
+ * cg_open_with_params("file.cgns", CG_MODE_WRITE, params, &fn);
+ * cg_base_write(fn, "Base", 3, 3, &B);
+ * cg_close(fn);
+ *
+ * cg_params_destroy(params);
+ * \endcode
+ *
+ * \par Thread Safety:
+ * Parameter objects are thread-safe when each thread uses its own object.
+ * Parameters are passed by value through the call stack, eliminating race
+ * conditions from global variable modification.
+ *
+ * \par Parallel I/O:
+ * Use cgp_open_with_params() for MPI parallel applications with the same parameter
+ * API for consistent configuration across processes.
+ *
+ * @{
+ */
+
+/**
+ * \brief Opaque handle for parameter object
+ *
+ * This opaque type encapsulates CGNS configuration parameters.
+ * Parameter objects are allocated on the heap and must be freed
+ * with cg_params_destroy().
+ */
+typedef struct cg_parameters_s *cg_parameters_t;
+
+/**
+ * \brief Sentinel value for default parameters
+ *
+ * Pass CG_PARAMS_DEFAULT to cg_open_with_params() to use legacy global configuration.
+ * This maintains backward compatibility with existing code.
+ */
+#define CG_PARAMS_DEFAULT ((cg_parameters_t)NULL)
+
+/**
+ * \brief Parameter keys for cg_params_set_int()
+ *
+ * These keys identify which parameter to set in the generic setter function.
+ * The enum values are intentionally spaced to allow future additions without
+ * breaking ABI compatibility.
+ */
+typedef enum {
+    CG_PARAM_FILE_TYPE     = 100,  /**< File type: CG_FILE_HDF5, CG_FILE_ADF, etc. */
+    CG_PARAM_COMPRESS      = 101,  /**< Compression level: 0 (none) to 9 (max) */
+    CG_PARAM_MIN_VERSION   = 102,  /**< Minimum CGNS version: CG_LIBVER_* */
+    CG_PARAM_MAX_VERSION   = 103,  /**< Maximum CGNS version: CG_LIBVER_* */
+    CG_PARAM_WRITE_VERSION = 104   /**< Write version: CG_LIBVER_* or CG_LIBVER_AUTO */
+} CG_PARAM_KEY;
+
+/**
+ * \ingroup ParameterAPI
+ * \brief Create a new parameter object
+ *
+ * \param[out] params Pointer to receive the parameter object handle
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \details Allocates and initializes a parameter object with default values:
+ * - min_version: CG_LIBVER_EARLIEST (maximum compatibility)
+ * - max_version: CG_LIBVER_LATEST (current library version)
+ * - write_version: CG_LIBVER_AUTO (automatic selection)
+ * - file_type: Current cgns_filetype global
+ * - compress: Current cgns_compress global
+ *
+ * \par Thread Safety:
+ * Version bounds use hard defaults for thread safety. File type and
+ * compression inherit from system configuration globals, which are
+ * typically set once at program startup.
+ *
+ * \par Example:
+ * \code
+ * cg_parameters_t params;
+ * if (cg_params_create(&params) != CG_OK) {
+ *     fprintf(stderr, "Error: %s\n", cg_get_error());
+ *     return 1;
+ * }
+ * \endcode
+ *
+ * \note The parameter object must be freed with cg_params_destroy()
+ * \sa cg_params_destroy, cg_params_set_int
+ */
+CGNSDLL int cg_params_create(cg_parameters_t *params);
+
+/**
+ * \ingroup ParameterAPI
+ * \brief Destroy a parameter object
+ *
+ * \param[in] params Parameter object to destroy
+ * \return CG_OK on success, CG_ERROR on failure (NULL pointer)
+ *
+ * \details Frees the memory allocated by cg_params_create().
+ *
+ * \par Example:
+ * \code
+ * cg_params_destroy(params);
+ * \endcode
+ *
+ * \warning Passing NULL returns CG_ERROR
+ * \sa cg_params_create
+ */
+CGNSDLL int cg_params_destroy(cg_parameters_t params);
+
+/**
+ * \ingroup ParameterAPI
+ * \brief Set a parameter value using a generic key-value interface
+ *
+ * \param[in] params Parameter object
+ * \param[in] key    Parameter key (CG_PARAM_*)
+ * \param[in] value  Integer value to set
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \details This generic setter follows the cg_configure() pattern, reducing
+ * API surface while maintaining extensibility. Future parameters can be added
+ * by defining new CG_PARAM_* keys without changing the function signature.
+ *
+ * \par Validation:
+ * - CG_PARAM_MIN_VERSION: Must be ≤ max_version (cross-validated)
+ * - CG_PARAM_MAX_VERSION: Must be ≥ min_version (cross-validated)
+ * - CG_PARAM_FILE_TYPE: Validated at file open time
+ * - CG_PARAM_COMPRESS: Validated by HDF5 (0-9 range)
+ * - CG_PARAM_WRITE_VERSION: No validation (any integer accepted)
+ *
+ * \par Design Rationale:
+ * Validation is intentionally deferred to the point of use (file open) for:
+ * - Forward compatibility: New HDF5 compression levels don't break old code
+ * - Defense in depth: Final validation happens where it's needed
+ * - Simplicity: No hardcoded validation macros to maintain
+ *
+ * \par Example:
+ * \code
+ * // Set version bounds for v4.0+ files
+ * cg_params_set(params, CG_PARAM_MIN_VERSION, (void *)CG_LIBVER_V40);
+ * cg_params_set(params, CG_PARAM_MAX_VERSION, (void *)CG_LIBVER_LATEST);
+ *
+ * // Enable HDF5 compression
+ * cg_params_set(params, CG_PARAM_FILE_TYPE, (void *)CG_FILE_HDF5);
+ * cg_params_set(params, CG_PARAM_COMPRESS, (void *)6);
+ * \endcode
+ *
+ * \note This function follows the same pattern as cg_configure(), using void*
+ *       for type flexibility. Currently all parameters are integers, cast via
+ *       (int)((size_t)value).
+ *
+ * \warning Passing NULL params returns CG_ERROR
+ * \sa cg_params_create, cg_open_with_params, cg_configure, CG_PARAM_KEY
+ */
+CGNSDLL int cg_params_set(cg_parameters_t params, int key, void *value);
+
+/** @} */
+
+/* File Operations */
 CGNSDLL int cg_is_cgns(const char *filename, int *file_type);
 
-CGNSDLL int cg_open(const char * filename, int mode, int *fn);
+/**
+ * \brief Open a CGNS file (legacy 3-argument version)
+ *
+ * Opens a CGNS file using global configuration state. This is the traditional
+ * API maintained for backward compatibility.
+ *
+ * \param[in] filename Name of the CGNS file
+ * \param[in] mode Access mode (CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY)
+ * \param[out] fn File index number
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \par Example:
+ * \code
+ * int fn;
+ * cg_open("file.cgns", CG_MODE_READ, &fn);
+ * // ... use file ...
+ * cg_close(fn);
+ * \endcode
+ *
+ * \par Thread Safety:
+ * This function uses global state and is NOT thread-safe.
+ * For thread-safe operation, use cg_open_with_params().
+ *
+ * \par Progressive Enhancement (C11+):
+ * On C11+ compilers, cg_open() becomes a polymorphic macro that can also
+ * accept 4 arguments (with cg_parameters_t). This provides automatic type
+ * dispatch without changing function names.
+ *
+ * \sa cg_open_with_params, cg_close, cgp_open
+ */
+CGNSDLL int cg_open(const char *filename, int mode, int *fn);
+
+/**
+ * \brief Open a CGNS file with explicit parameter object (modern 4-argument version)
+ *
+ * Opens a CGNS file using an explicit parameter object for thread-safe,
+ * configurable file access. This is the recommended API for new code.
+ *
+ * \param[in] filename Name of the CGNS file
+ * \param[in] mode Access mode (CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY)
+ * \param[in] params Parameter object created with cg_params_create()
+ * \param[out] fn File index number
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \par Example:
+ * \code
+ * cg_parameters_t params;
+ * cg_params_create(&params);
+ * cg_params_set_int(params, CG_PARAM_FILE_TYPE, CG_FILE_HDF5);
+ * cg_params_set_int(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
+ *
+ * int fn;
+ * cg_open_with_params("file.cgns", CG_MODE_WRITE, params, &fn);
+ * // ... use file ...
+ * cg_close(fn);
+ * cg_params_destroy(params);
+ * \endcode
+ *
+ * \par Thread Safety:
+ * This function is fully thread-safe. Each thread can have its own parameter
+ * object and call this function concurrently.
+ *
+ * \par Progressive Enhancement (C11+):
+ * On C11+ compilers, you can call cg_open() with 4 arguments and the compiler
+ * will automatically dispatch to this function based on the parameter type.
+ * On C99 compilers, you must explicitly call cg_open_with_params().
+ *
+ * \sa cg_open, cg_params_create, cg_params_set_int, cgp_open_with_params
+ */
+CGNSDLL int cg_open_with_params(const char *filename, int mode,
+                                  cg_parameters_t params, int *fn);
+
+#ifndef BUILDING_CGNS
+/* Progressive Enhancement: Polymorphic cg_open() via argument counting
+ * Uses variadic macros (C99) to support both 3 and 4 argument forms.
+ * Only enabled when not building the library itself (to avoid macro conflicts).
+ *
+ * This allows calling cg_open() with either 3 or 4 arguments:
+ *   cg_open(file, mode, &fn)           // 3-arg: calls cg_open_with_params(file, mode, CG_PARAMS_DEFAULT, &fn)
+ *   cg_open(file, mode, params, &fn)   // 4-arg: calls cg_open_with_params(file, mode, params, &fn)
+ */
+
+/* Helper macros for argument counting */
+#define CG_OPEN_3(file, mode, fn) \
+    cg_open_with_params(file, mode, CG_PARAMS_DEFAULT, fn)
+#define CG_OPEN_4(file, mode, params, fn) \
+    cg_open_with_params(file, mode, params, fn)
+#define CG_OPEN_CHOOSER(_1, _2, _3, _4, NAME, ...) NAME
+#define CG_OPEN_EXPAND(x) x  /* MSVC workaround: force __VA_ARGS__ expansion */
+
+/* Redefine cg_open to dispatch based on argument count */
+#undef cg_open
+#define cg_open(...) \
+    CG_OPEN_EXPAND(CG_OPEN_CHOOSER(__VA_ARGS__, CG_OPEN_4, CG_OPEN_3)(__VA_ARGS__))
+
+#endif /* !BUILDING_CGNS */
 CGNSDLL int cg_version(int fn, float *FileVersion);
 CGNSDLL int cg_precision(int fn, int *precision);
 CGNSDLL int cg_close(int fn);

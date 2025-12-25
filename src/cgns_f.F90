@@ -252,6 +252,30 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_ZERO = 0
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_CORE = 1
 
+! Parameter API Keys (cg_params_set)
+  INTEGER(C_INT), PARAMETER :: CG_PARAM_FILE_TYPE     = 100
+  INTEGER(C_INT), PARAMETER :: CG_PARAM_COMPRESS      = 101
+  INTEGER(C_INT), PARAMETER :: CG_PARAM_MIN_VERSION   = 102
+  INTEGER(C_INT), PARAMETER :: CG_PARAM_MAX_VERSION   = 103
+  INTEGER(C_INT), PARAMETER :: CG_PARAM_WRITE_VERSION = 104
+
+! CGNS Library Version Constants
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_EARLIEST = 1050
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V12      = 1200
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V20      = 2000
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V25      = 2540
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V30      = 3000
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V31      = 3100
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V32      = 3200
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V33      = 3300
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V40      = 4000
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V41      = 4100
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V42      = 4200
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V43      = 4300
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_V44      = 4400
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_LATEST   = 5000
+  INTEGER(C_INT), PARAMETER :: CG_LIBVER_AUTO     = -1
+
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_ERROR
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_COMPRESS
@@ -1102,13 +1126,13 @@ MODULE cgns
       INTEGER(C_INT), INTENT(OUT) :: file_type
     END FUNCTION cg_is_cgns
 
-    INTEGER(C_INT) FUNCTION cg_open(filename, mode, fn) BIND(C,NAME="cg_open")
+    INTEGER(C_INT) FUNCTION cg_open_c(filename, mode, fn) BIND(C,NAME="cg_open")
       USE ISO_C_BINDING
       IMPLICIT NONE
       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
       INTEGER(C_INT), INTENT(IN), VALUE  :: mode
       INTEGER(C_INT), INTENT(OUT) :: fn
-    END FUNCTION cg_open
+    END FUNCTION cg_open_c
 
   END INTERFACE
 
@@ -4442,6 +4466,72 @@ MODULE cgns
   PRIVATE cg_configure_ptr, cg_configure_funptr
   PRIVATE cg_get_type_c_int, cg_get_type_c_long_long, cg_get_type_c_float, cg_get_type_c_double
 
+!> @defgroup ParameterAPI Parameter Object API
+!> @brief Thread-safe parameter configuration for CGNS file operations
+!> @{
+
+!> @brief Create a parameter object
+  INTERFACE
+    INTEGER(C_INT) FUNCTION cg_params_create(params) BIND(C, NAME="cg_params_create")
+      IMPORT :: C_INT, C_PTR
+      TYPE(C_PTR), INTENT(OUT) :: params
+    END FUNCTION cg_params_create
+  END INTERFACE
+
+!> @brief Destroy a parameter object
+  INTERFACE
+    INTEGER(C_INT) FUNCTION cg_params_destroy(params) BIND(C, NAME="cg_params_destroy")
+      IMPORT :: C_INT, C_PTR
+      TYPE(C_PTR), VALUE :: params
+    END FUNCTION cg_params_destroy
+  END INTERFACE
+
+!> @brief Set a parameter value (direct C binding)
+!> Follows cg_configure pattern - value is void* (C_PTR) containing integer cast to pointer
+  INTERFACE
+    INTEGER(C_INT) FUNCTION cg_params_set(params, key, value) BIND(C, NAME="cg_params_set")
+      IMPORT :: C_INT, C_PTR
+      TYPE(C_PTR), VALUE :: params
+      INTEGER(C_INT), VALUE :: key
+      TYPE(C_PTR), VALUE :: value
+    END FUNCTION cg_params_set
+  END INTERFACE
+
+!> @}
+
+!> @brief Direct C interface for cg_open_with_params
+  INTERFACE
+    INTEGER(C_INT) FUNCTION cg_open_with_params_c(filename, mode, params, fn) &
+        BIND(C, NAME="cg_open_with_params")
+      IMPORT :: C_INT, C_PTR, C_CHAR
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename
+      INTEGER(C_INT), VALUE :: mode
+      TYPE(C_PTR), VALUE :: params
+      INTEGER(C_INT), INTENT(OUT) :: fn
+    END FUNCTION cg_open_with_params_c
+  END INTERFACE
+
+#if CG_BUILD_PARALLEL_F
+!> @brief Direct C interface for cgp_open_with_params
+  INTERFACE
+    INTEGER(C_INT) FUNCTION cgp_open_with_params_c(filename, mode, params, fn) &
+        BIND(C, NAME="cgp_open_with_params")
+      IMPORT :: C_INT, C_PTR, C_CHAR
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename
+      INTEGER(C_INT), VALUE :: mode
+      TYPE(C_PTR), VALUE :: params
+      INTEGER(C_INT), INTENT(OUT) :: fn
+    END FUNCTION cgp_open_with_params_c
+  END INTERFACE
+#endif
+
+!> @brief Polymorphic interface for cg_open
+!> Fortran overloading: call cg_open with either 3 or 4 arguments
+  INTERFACE cg_open
+    MODULE PROCEDURE cg_open_f         ! 3-argument legacy version
+    MODULE PROCEDURE cg_open_params_f  ! 4-argument version with params
+  END INTERFACE cg_open
+
 CONTAINS
 
 #if CG_BUILD_PARALLEL_F
@@ -4546,7 +4636,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     INTEGER(C_INT) :: i_fn
 
-    ier = INT(cg_open(TRIM(filename)//C_NULL_CHAR, INT(mode, C_INT), i_fn))
+    ! Call C function directly (not the generic interface)
+    ier = INT(cg_open_c(TRIM(filename)//C_NULL_CHAR, INT(mode, C_INT), i_fn))
     fn = INT(i_fn)
 
   END SUBROUTINE cg_open_f
@@ -8950,6 +9041,44 @@ CONTAINS
            start, end, c_offsets, c_elements))
 
     END SUBROUTINE cgp_poly_elements_read_data_elements_f
+
+#endif
+
+!> @brief Wrapper for cg_open with parameter object (4-argument version)
+!> Calls C directly via ISO_C_BINDING - only handles string conversion
+  SUBROUTINE cg_open_params_f(filename, mode, params, fn, ier)
+    IMPLICIT NONE
+    CHARACTER(*), INTENT(IN) :: filename
+    INTEGER, INTENT(IN) :: mode
+    TYPE(C_PTR), INTENT(IN) :: params
+    INTEGER, INTENT(OUT) :: fn
+    INTEGER, INTENT(OUT) :: ier
+
+    INTEGER(C_INT) :: c_fn
+
+    ! Call C function directly
+    ier = INT(cg_open_with_params_c(TRIM(filename)//C_NULL_CHAR, INT(mode, C_INT), params, c_fn))
+    fn = INT(c_fn)
+  END SUBROUTINE cg_open_params_f
+
+#if CG_BUILD_PARALLEL_F
+
+!> @brief Wrapper for cgp_open with parameter object (4-argument version)
+!> Calls C directly via ISO_C_BINDING - only handles string conversion
+  SUBROUTINE cgp_open_params_f(filename, mode, params, fn, ier)
+    IMPLICIT NONE
+    CHARACTER(*), INTENT(IN) :: filename
+    INTEGER, INTENT(IN) :: mode
+    TYPE(C_PTR), INTENT(IN) :: params
+    INTEGER, INTENT(OUT) :: fn
+    INTEGER, INTENT(OUT) :: ier
+
+    INTEGER(C_INT) :: c_fn
+
+    ! Call C function directly
+    ier = INT(cgp_open_with_params_c(TRIM(filename)//C_NULL_CHAR, INT(mode, C_INT), params, c_fn))
+    fn = INT(c_fn)
+  END SUBROUTINE cgp_open_params_f
 
 #endif
 

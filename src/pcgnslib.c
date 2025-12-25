@@ -515,12 +515,22 @@ void cgp_error_exit(void)
  *       maintains its own MPIO driver state independently, even though CGNS uses
  *       global configuration at file open time. (See Issue #836)
  */
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Open a CGNS file for parallel MPI access (legacy 3-argument version)
+ *
+ * This is the traditional API using global configuration state for parallel I/O.
+ * For thread-safe operation with explicit parameters, use cgp_open_with_params().
+ *
+ * On C11+ compilers, this function also serves as the basis for polymorphic
+ * cgp_open() macro that can accept either 3 or 4 arguments via _Generic dispatch.
+ */
 int cgp_open(const char *filename, int mode, int *fn)
 {
     int ierr, old_type = cgns_filetype;
 
-    /* Initialize communicators if cgp_mpi_comm() was not called by
-       client */
+    /* Initialize communicators if cgp_mpi_comm() was not called by client */
     if (ctx_cgio.pcg_mpi_comm == MPI_COMM_NULL) {
       cgp_mpi_comm(MPI_COMM_WORLD);
     }
@@ -534,7 +544,7 @@ int cgp_open(const char *filename, int mode, int *fn)
     if (ierr) return ierr;
 
     /* Call internal implementation with open_parallel=1 to preserve PARALLEL mode */
-    ierr = cgi_open(filename, mode, 1, fn);
+    ierr = cgi_open(filename, mode, 1, NULL, fn);
 
     cgns_filetype = old_type;
 
@@ -547,6 +557,53 @@ int cgp_open(const char *filename, int mode, int *fn)
     ctx_cgio.hdf5_access_mode = CGIO_PARALLEL_MODE;
 
     return CG_OK;
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Open a CGNS file for parallel MPI access with explicit parameters
+ *
+ * This is the thread-safe API using an explicit parameter object for parallel I/O.
+ * Each thread can have its own parameter object without interfering with others.
+ *
+ * On C11+ compilers, you can call cgp_open() with 4 arguments and it will
+ * automatically dispatch to this function via _Generic type matching.
+ * On C99 compilers, you must explicitly call cgp_open_with_params().
+ */
+int cgp_open_with_params(const char *filename, int mode, cg_parameters_t params, int *fn)
+{
+    int ierr, old_type = cgns_filetype;
+    const cg_parameters_s *p = (const cg_parameters_s*)params;
+
+    /* Initialize communicators if cgp_mpi_comm() was not called by client */
+    if (ctx_cgio.pcg_mpi_comm == MPI_COMM_NULL) {
+        cgp_mpi_comm(MPI_COMM_WORLD);
+    }
+
+    /* Validate file type for parallel I/O */
+    if (p != NULL) {
+        /* Using explicit params - validate file type is HDF5 */
+        if (p->file_type != CG_FILE_HDF5) {
+            cgi_error("Parallel I/O requires file_type to be CG_FILE_HDF5 (got %d)", p->file_type);
+            return CG_ERROR;
+        }
+        /* No global modification needed - params has HDF5 */
+    } else {
+        /* Using global state (legacy) - set file type to HDF5 */
+        ierr = cg_set_file_type(CG_FILE_HDF5);
+        if (ierr) return ierr;
+    }
+
+    /* Call internal implementation with params and open_parallel=1.
+     * The open_parallel flag ensures CGIO_PARALLEL_MODE is used for HDF5 access,
+     * without modifying global state (thread-safe). */
+    ierr = cgi_open(filename, mode, 1, p, fn);
+
+    cgns_filetype = old_type;
+
+    return ierr;
 }
 
 /*---------------------------------------------------------*/

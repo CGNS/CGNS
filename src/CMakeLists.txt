@@ -594,6 +594,8 @@ option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 # Build a static version of the library
 add_library(cgns_static STATIC ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
 add_library(CGNS::cgns-static ALIAS cgns_static)
+# Disable polymorphic macros when building the library to avoid macro conflicts
+target_compile_definitions(cgns_static PRIVATE BUILDING_CGNS)
 # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
 set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 if (CGNS_ENABLE_HDF5)
@@ -609,6 +611,8 @@ if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
   add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
   add_library(CGNS::cgns-shared ALIAS cgns_shared)
+  # Disable polymorphic macros when building the library to avoid macro conflicts
+  target_compile_definitions(cgns_shared PRIVATE BUILDING_CGNS)
 
   if (WIN32 AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)

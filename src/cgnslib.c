@@ -185,6 +185,11 @@ int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
 void* cgns_rindindex = CG_CONFIG_RIND_CORE;
 
+/* Version bounds for file creation/opening */
+int cgns_version_low_bound = CG_LIBVER_EARLIEST;
+int cgns_version_high_bound = CG_LIBVER_LATEST;
+int cgns_write_version = CG_LIBVER_AUTO;
+
 /* Flag for contiguous (0) or compact storage (1) */
 int HDF5storage_type = CG_COMPACT;
 
@@ -455,17 +460,29 @@ int cg_is_cgns(const char *filename, int *file_type)
  * The open_parallel parameter controls HDF5 access mode behavior:
  *   open_parallel=0: Force NATIVE mode (used by cg_open)
  *   open_parallel=1: Preserve PARALLEL mode set by caller (used by cgp_open) */
-int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
+int cgi_open(const char *filename, int mode, int open_parallel,
+             const cg_parameters_s *params, int *fn)
 {
     int cgio, filetype;
+    int requested_file_type;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
+#if CG_BUILD_HDF5
+    int hdf5_access_mode;
+#endif
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: before open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
            cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
+
+    /* Determine requested file type: use params if provided, otherwise use global */
+    if (params != NULL) {
+        requested_file_type = params->file_type;
+    } else {
+        requested_file_type = cgns_filetype;
+    }
 
     /* check file mode */
     switch(mode) {
@@ -476,36 +493,44 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
         case CG_MODE_WRITE:
             /* unlink is now done in cgio_open_file */
             /* set default file type if not done */
-            if (cgns_filetype == CG_FILE_NONE)
-                cg_set_file_type(CG_FILE_NONE);
+            if (requested_file_type == CG_FILE_NONE) {
+                if (params != NULL) {
+                    /* Using explicit params - file type must be set */
+                    cgi_error("file_type in parameter object is CG_FILE_NONE");
+                    return CG_ERROR;
+                } else {
+                    /* Using global state - set default */
+                    cg_set_file_type(CG_FILE_NONE);
+                    requested_file_type = cgns_filetype;
+                }
+            }
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);
             return CG_ERROR;
     }
 
+    /* Open CGNS file using extended API for thread safety.
+     * For HDF5 files, determine access mode based on open_parallel parameter. */
 #if CG_BUILD_HDF5
-    /* Set access mode for this file open based on open_parallel parameter.
-     * If open_parallel=0 (called from cg_open), force NATIVE mode to prevent
-     * direct cg_open() calls in MPI programs from using stale PARALLEL mode
-     * left over from previous cgp_open() calls. (Fix for issue #836)
-     * If open_parallel=1 (called from cgp_open), preserve the PARALLEL mode. */
+    /* Determine HDF5 access mode: PARALLEL if open_parallel=1, NATIVE otherwise */
 #if CG_BUILD_PARALLEL
-    if (!open_parallel) {
-        ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
-    }
-    /* else: cgp_open() has set PARALLEL mode, keep it for this open */
+    hdf5_access_mode = open_parallel ? CGIO_PARALLEL_MODE : CGIO_NATIVE_MODE;
 #else
-    /* No parallel support, always use NATIVE mode */
-    ctx_cgio.hdf5_access_mode = CGIO_NATIVE_MODE;
+    /* No parallel support compiled in, always use NATIVE mode */
+    hdf5_access_mode = CGIO_NATIVE_MODE;
 #endif
-#endif
-
-    /* Open CGNS file */
-    if (cgio_open_file(filename, mode, cgns_filetype, &cgio)) {
+    if (cgio_open_file_with_mode(filename, mode, requested_file_type, hdf5_access_mode, &cgio)) {
+        cg_io_error("cgio_open_file_with_mode");
+        return CG_ERROR;
+    }
+#else
+    /* No HDF5 support, use public API (ADF only) */
+    if (cgio_open_file(filename, mode, requested_file_type, &cgio)) {
         cg_io_error("cgio_open_file");
         return CG_ERROR;
     }
+#endif
     n_open++;
 
     /* make sure there is enough space in the cgns_files array */
@@ -577,7 +602,7 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
             }
         }
 #if CG_SIZEOF_SIZE == 32
-        if (mode == CG_MODE_MODIFY && cgns_filetype == CG_FILE_ADF2 &&
+        if (mode == CG_MODE_MODIFY && requested_file_type == CG_FILE_ADF2 &&
             filetype == CG_FILE_ADF && cg->version < 3000) {
             filetype = cg->filetype = CG_FILE_ADF2;
         }
@@ -687,10 +712,159 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
  *       will be true.
  *
  */
+
+/***********************************************************************
+ * Parameter Object API - Thread-safe Configuration
+ ***********************************************************************/
+
+/**
+ * \brief Create a new parameter object with default values
+ */
+int cg_params_create(cg_parameters_t *params)
+{
+    cg_parameters_s *p;
+
+    if (params == NULL) {
+        cgi_error("NULL pointer for params");
+        return CG_ERROR;
+    }
+
+    p = (cg_parameters_s *)malloc(sizeof(cg_parameters_s));
+    if (p == NULL) {
+        cgi_error("malloc failed for parameter object");
+        return CG_ERROR;
+    }
+
+    /* Initialize with library defaults */
+    p->min_version = CG_LIBVER_EARLIEST;
+    p->max_version = CG_LIBVER_LATEST;
+    p->write_version = CG_LIBVER_AUTO;
+    p->file_type = cgns_filetype;
+    p->compress = cgns_compress;
+
+    *params = p;
+    return CG_OK;
+}
+
+/**
+ * \brief Destroy a parameter object
+ */
+int cg_params_destroy(cg_parameters_t params)
+{
+    if (params == NULL) {
+        cgi_error("NULL parameter object");
+        return CG_ERROR;
+    }
+
+    free(params);
+    return CG_OK;
+}
+
+/**
+ * \brief Set a parameter value using a generic key-value interface
+ *
+ * \param params Parameter object
+ * \param key    Parameter key (CG_PARAM_*)
+ * \param value  Integer value to set
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * This generic setter follows the cg_configure() pattern, reducing API surface
+ * from many specific functions to one flexible interface.
+ *
+ * This function follows the same pattern as cg_configure(), using void* for
+ * type flexibility and future extensibility.
+ *
+ * Example:
+ *   cg_params_set(params, CG_PARAM_FILE_TYPE, (void *)CG_FILE_HDF5);
+ *   cg_params_set(params, CG_PARAM_MIN_VERSION, (void *)CG_LIBVER_V31);
+ */
+int cg_params_set(cg_parameters_t params, int key, void *value)
+{
+    int int_value;
+
+    if (params == NULL) {
+        cgi_error("NULL parameter object");
+        return CG_ERROR;
+    }
+
+    /* Extract integer value from void pointer (following cg_configure pattern) */
+    int_value = (int)((size_t)value);
+
+    switch (key) {
+        case CG_PARAM_FILE_TYPE:
+            params->file_type = int_value;
+            break;
+
+        case CG_PARAM_COMPRESS:
+            params->compress = int_value;
+            break;
+
+        case CG_PARAM_MIN_VERSION:
+            if (int_value > params->max_version) {
+                cgi_error("Invalid MIN_VERSION: %d > MAX_VERSION (%d)",
+                          int_value, params->max_version);
+                return CG_ERROR;
+            }
+            params->min_version = int_value;
+            break;
+
+        case CG_PARAM_MAX_VERSION:
+            if (int_value < params->min_version) {
+                cgi_error("Invalid MAX_VERSION: %d < MIN_VERSION (%d)",
+                          int_value, params->min_version);
+                return CG_ERROR;
+            }
+            params->max_version = int_value;
+            break;
+
+        case CG_PARAM_WRITE_VERSION:
+            params->write_version = int_value;
+            break;
+
+        default:
+            cgi_error("Unknown parameter key: %d", key);
+            return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Open a CGNS file (legacy 3-argument version)
+ *
+ * This is the traditional API using global configuration state.
+ * For thread-safe operation with explicit parameters, use cg_open_with_params().
+ *
+ * On C11+ compilers, this function also serves as the basis for polymorphic
+ * cg_open() macro that can accept either 3 or 4 arguments via _Generic dispatch.
+ */
 int cg_open(const char *filename, int mode, int *fn)
 {
-    /* Call internal implementation with open_parallel=0 to force NATIVE mode */
-    return cgi_open(filename, mode, 0, fn);
+    /* Call internal implementation with open_parallel=0 to force NATIVE mode.
+     * Pass NULL for params to use global configuration (backward compatibility). */
+    return cgi_open(filename, mode, 0, NULL, fn);
+}
+
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Open a CGNS file with explicit parameters (modern 4-argument version)
+ *
+ * This is the thread-safe API using an explicit parameter object.
+ * Each thread can have its own parameter object without interfering with others.
+ *
+ * On C11+ compilers, you can call cg_open() with 4 arguments and it will
+ * automatically dispatch to this function via _Generic type matching.
+ * On C99 compilers, you must explicitly call cg_open_with_params().
+ */
+int cg_open_with_params(const char *filename, int mode, cg_parameters_t params, int *fn)
+{
+    /* Pass parameters directly to cgi_open - NO global state modification!
+     * This ensures thread safety: each thread can pass its own parameters
+     * without interfering with other threads' operations. */
+    return cgi_open(filename, mode, 0, (const cg_parameters_s*)params, fn);
 }
 
 /**

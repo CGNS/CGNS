@@ -55,7 +55,116 @@ CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
 
 /*===== File IO Prototypes =====*/
 
+/**
+ * \ingroup ParallelFile
+ * \brief Open a CGNS file for parallel MPI access (legacy 3-argument version)
+ *
+ * Opens a CGNS file for parallel access using global configuration state.
+ * This is the traditional API maintained for backward compatibility.
+ *
+ * \param[in] filename Name of the CGNS file
+ * \param[in] mode Access mode (CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY)
+ * \param[out] fn File index number
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \par Example:
+ * \code
+ * MPI_Init(&argc, &argv);
+ * cgp_mpi_comm(MPI_COMM_WORLD);
+ *
+ * int fn;
+ * cgp_open("file.cgns", CG_MODE_WRITE, &fn);
+ * // ... parallel I/O ...
+ * cgp_close(fn);
+ * MPI_Finalize();
+ * \endcode
+ *
+ * \par Thread Safety:
+ * This function uses global state and is NOT thread-safe.
+ * For thread-safe operation, use cgp_open_with_params().
+ *
+ * \par Progressive Enhancement (C11+):
+ * On C11+ compilers, cgp_open() becomes a polymorphic macro that can also
+ * accept 4 arguments (with cg_parameters_t). This provides automatic type
+ * dispatch without changing function names.
+ *
+ * \note Parallel I/O requires HDF5 with parallel support enabled
+ * \sa cgp_open_with_params, cgp_close, cgp_mpi_comm, cg_open
+ */
 CGNSDLL int cgp_open(const char *filename, int mode, int *fn);
+
+/**
+ * \ingroup ParallelFile
+ * \brief Open a CGNS file for parallel MPI access with explicit parameters
+ *
+ * Opens a CGNS file for parallel access using an explicit parameter object
+ * for thread-safe, configurable file access.
+ *
+ * \param[in] filename Name of the CGNS file
+ * \param[in] mode Access mode (CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY)
+ * \param[in] params Parameter object created with cg_params_create()
+ * \param[out] fn File index number
+ * \return CG_OK on success, CG_ERROR on failure
+ *
+ * \par Example:
+ * \code
+ * MPI_Init(&argc, &argv);
+ * cgp_mpi_comm(MPI_COMM_WORLD);
+ *
+ * cg_parameters_t params;
+ * cg_params_create(&params);
+ * cg_params_set_int(params, CG_PARAM_FILE_TYPE, CG_FILE_HDF5);
+ * cg_params_set_int(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
+ *
+ * int fn;
+ * cgp_open_with_params("parallel.cgns", CG_MODE_WRITE, params, &fn);
+ * // ... parallel I/O ...
+ * cgp_close(fn);
+ * cg_params_destroy(params);
+ * MPI_Finalize();
+ * \endcode
+ *
+ * \par Thread Safety:
+ * This function is fully thread-safe. Each thread can have its own parameter
+ * object and call this function concurrently.
+ *
+ * \par Progressive Enhancement (C11+):
+ * On C11+ compilers, you can call cgp_open() with 4 arguments and the compiler
+ * will automatically dispatch to this function based on the parameter type.
+ * On C99 compilers, you must explicitly call cgp_open_with_params().
+ *
+ * \note Parallel I/O requires HDF5 with parallel support enabled.
+ *       The parameter object must have file_type set to CG_FILE_HDF5.
+ * \sa cgp_open, cg_params_create, cg_params_set_int, cgp_mpi_comm
+ */
+CGNSDLL int cgp_open_with_params(const char *filename, int mode,
+                                   cg_parameters_t params, int *fn);
+
+#ifndef BUILDING_CGNS
+/* Progressive Enhancement: Polymorphic cgp_open() via argument counting
+ * Uses variadic macros (C99) to support both 3 and 4 argument forms.
+ * Only enabled when not building the library itself (to avoid macro conflicts).
+ *
+ * This allows calling cgp_open() with either 3 or 4 arguments:
+ *   cgp_open(file, mode, &fn)           // 3-arg: calls cgp_open_with_params(file, mode, CG_PARAMS_DEFAULT, &fn)
+ *   cgp_open(file, mode, params, &fn)   // 4-arg: calls cgp_open_with_params(file, mode, params, &fn)
+ */
+
+/* Helper macros for argument counting */
+#define CGP_OPEN_3(file, mode, fn) \
+    cgp_open_with_params(file, mode, CG_PARAMS_DEFAULT, fn)
+#define CGP_OPEN_4(file, mode, params, fn) \
+    cgp_open_with_params(file, mode, params, fn)
+#define CGP_OPEN_CHOOSER(_1, _2, _3, _4, NAME, ...) NAME
+#define CGP_OPEN_EXPAND(x) x  /* MSVC workaround: force __VA_ARGS__ expansion */
+
+/* Redefine cgp_open to dispatch based on argument count */
+#undef cgp_open
+#define cgp_open(...) \
+    CGP_OPEN_EXPAND(CGP_OPEN_CHOOSER(__VA_ARGS__, CGP_OPEN_4, CGP_OPEN_3)(__VA_ARGS__))
+
+#endif /* !BUILDING_CGNS */
+
 CGNSDLL int cgp_close(int fn);
 
 /*===== Grid IO Prototypes =====*/
