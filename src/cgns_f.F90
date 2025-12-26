@@ -884,6 +884,12 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(AverageK)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: WallFunctionTypeName
+!DEC$ATTRIBUTES DLLEXPORT :: AreaTypeName
+!DEC$ATTRIBUTES DLLEXPORT :: AverageInterfaceTypeName
+!DEC$endif
+
 ! For portability to Linux Absoft, all data statements were moved after the
 ! variables and parameters declarations
 
