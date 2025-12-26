@@ -169,9 +169,13 @@ if (CGNS_ENABLE_TESTS)
     # Set test properties for Windows DLL paths if using shared libraries
     if(CGNS_BUILD_SHARED AND WIN32)
       # Collect all DLL directories from write and read executables
+      # Prefer WRITE_PROG if available, otherwise use READ_PROG
       if(WRITE_PROG)
         set_tests_properties(fortran_ex_${DIR} PROPERTIES ENVIRONMENT_MODIFICATION
           "PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${EXAMPLE_PREFIX}${DIR}_${WRITE_PROG}>,\;>")
+      elseif(READ_PROG)
+        set_tests_properties(fortran_ex_${DIR} PROPERTIES ENVIRONMENT_MODIFICATION
+          "PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${EXAMPLE_PREFIX}${DIR}_${READ_PROG}>,\;>")
       endif()
     endif()
   endforeach()
