@@ -14,7 +14,7 @@
       parameter (dotest = 1)
 
       integer cgfile,cgbase,cgzone,cgcoord,cgsect
-      integer cdim,pdim,ier,type,nb,pflag
+      integer cdim,pdim,ier,nb
       integer*8 i,n,ns,ne,nerrs
       integer*8 size(3),elems(4,nelems)
       real*4 nodes(nnodes)
