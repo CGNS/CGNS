@@ -86,93 +86,78 @@ if (CGNS_ENABLE_TESTS)
 	  endif()
 	endforeach (example ${examples})
 
-	# Test_Grid_Str group - sequential dependencies and shared working directory
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_grid_str PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_flowvert_str PROPERTIES DEPENDS C_code_write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_nondimensional PROPERTIES DEPENDS C_code_write_flowvert_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_descriptor PROPERTIES DEPENDS C_code_write_nondimensional WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_convergence PROPERTIES DEPENDS C_code_write_descriptor WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_floweqn_str PROPERTIES DEPENDS C_code_write_convergence WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_write_bcpnts_str PROPERTIES DEPENDS C_code_write_floweqn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	# Read tests depend on corresponding write tests
-	set_tests_properties(C_code_read_grid_str PROPERTIES DEPENDS C_code_write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_flowvert_str PROPERTIES DEPENDS C_code_write_flowvert_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_nondimensional PROPERTIES DEPENDS C_code_write_nondimensional WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_descriptor PROPERTIES DEPENDS C_code_write_descriptor WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_convergence PROPERTIES DEPENDS C_code_write_convergence WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_floweqn_str PROPERTIES DEPENDS C_code_write_floweqn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
-	set_tests_properties(C_code_read_bcpnts_str PROPERTIES DEPENDS C_code_write_bcpnts_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str)
+	# Helper function to setup test group with sequential write chain and corresponding read tests
+	function(setup_test_group GROUP_NAME WRITE_CHAIN)
+		set(WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GROUP_NAME})
+		file(MAKE_DIRECTORY ${WORK_DIR})
 
-	# Test_Grid_Unstr group - sequential dependencies and shared working directory
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_write_grid_unst PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_write_flowvert_unst PROPERTIES DEPENDS C_code_write_grid_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_write_dimensional PROPERTIES DEPENDS C_code_write_flowvert_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_write_bcpnts_unst PROPERTIES DEPENDS C_code_write_grid_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	# Read tests depend on corresponding write tests
-	set_tests_properties(C_code_read_grid_unst PROPERTIES DEPENDS C_code_write_grid_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_read_flowvert_unst PROPERTIES DEPENDS C_code_write_flowvert_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_read_dimensional PROPERTIES DEPENDS C_code_write_dimensional WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
-	set_tests_properties(C_code_read_bcpnts_unst PROPERTIES DEPENDS C_code_write_bcpnts_unst WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Unstr)
+		set(PREV_TEST "")
+		foreach(TEST_NAME ${WRITE_CHAIN})
+			# Set working directory and dependency for write test
+			if("${PREV_TEST}" STREQUAL "")
+				set_tests_properties(C_code_${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${WORK_DIR})
+			else()
+				set_tests_properties(C_code_${TEST_NAME} PROPERTIES DEPENDS C_code_${PREV_TEST} WORKING_DIRECTORY ${WORK_DIR})
+			endif()
 
-	# Test_Grid_Str_Timeacc group - separate working directory with grid setup fixture
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_Timeacc)
-	add_test(NAME C_code_Test_Grid_Str_Timeacc_setup COMMAND write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_Timeacc)
-	set_tests_properties(C_code_Test_Grid_Str_Timeacc_setup PROPERTIES FIXTURES_SETUP Test_Grid_Str_Timeacc_fixture)
-	set_tests_properties(C_code_write_timevert_str PROPERTIES FIXTURES_REQUIRED Test_Grid_Str_Timeacc_fixture WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_Timeacc)
-	set_tests_properties(C_code_read_timevert_str PROPERTIES DEPENDS C_code_write_timevert_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_Timeacc)
+			# Setup corresponding read test
+			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
+			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES DEPENDS C_code_${TEST_NAME} WORKING_DIRECTORY ${WORK_DIR})
 
-	# Test_Grid_Str_FlowCent group - separate working directory with grid setup fixture
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
-	add_test(NAME C_code_Test_Grid_Str_FlowCent_setup COMMAND write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
-	set_tests_properties(C_code_Test_Grid_Str_FlowCent_setup PROPERTIES FIXTURES_SETUP Test_Grid_Str_FlowCent_fixture)
-	set_tests_properties(C_code_write_flowcent_str PROPERTIES FIXTURES_REQUIRED Test_Grid_Str_FlowCent_fixture WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
-	set_tests_properties(C_code_write_bc_str PROPERTIES DEPENDS C_code_write_flowcent_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
-	set_tests_properties(C_code_read_flowcent_str PROPERTIES DEPENDS C_code_write_flowcent_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
-	set_tests_properties(C_code_read_bc_str PROPERTIES DEPENDS C_code_write_bc_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCent)
+			set(PREV_TEST ${TEST_NAME})
+		endforeach()
+	endfunction()
 
-	# Test_Grid_Str_FlowCentRind group - separate working directory with grid setup fixture
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCentRind)
-	add_test(NAME C_code_Test_Grid_Str_FlowCentRind_setup COMMAND write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCentRind)
-	set_tests_properties(C_code_Test_Grid_Str_FlowCentRind_setup PROPERTIES FIXTURES_SETUP Test_Grid_Str_FlowCentRind_fixture)
-	set_tests_properties(C_code_write_flowcentrind_str PROPERTIES FIXTURES_REQUIRED Test_Grid_Str_FlowCentRind_fixture WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCentRind)
-	set_tests_properties(C_code_read_flowcentrind_str PROPERTIES DEPENDS C_code_write_flowcentrind_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_FlowCentRind)
+	# Helper function to setup fixture-based test with grid setup
+	function(setup_fixture_test GROUP_NAME SETUP_EXE WRITE_TESTS)
+		set(WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GROUP_NAME})
+		file(MAKE_DIRECTORY ${WORK_DIR})
 
-	# Test_Grid_Str_DiscreteFace group - separate working directory with grid setup fixture
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_DiscreteFace)
-	add_test(NAME C_code_Test_Grid_Str_DiscreteFace_setup COMMAND write_grid_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_DiscreteFace)
-	set_tests_properties(C_code_Test_Grid_Str_DiscreteFace_setup PROPERTIES FIXTURES_SETUP Test_Grid_Str_DiscreteFace_fixture)
-	set_tests_properties(C_code_write_discreteface_str PROPERTIES FIXTURES_REQUIRED Test_Grid_Str_DiscreteFace_fixture WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_DiscreteFace)
-	set_tests_properties(C_code_read_discreteface_str PROPERTIES DEPENDS C_code_write_discreteface_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_DiscreteFace)
+		# Create fixture setup test
+		add_test(NAME C_code_${GROUP_NAME}_setup COMMAND ${SETUP_EXE} WORKING_DIRECTORY ${WORK_DIR})
+		set_tests_properties(C_code_${GROUP_NAME}_setup PROPERTIES FIXTURES_SETUP ${GROUP_NAME}_fixture)
 
-	# Test_Grid_Str_2zn group - separate working directory
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zn)
-	set_tests_properties(C_code_write_grid2zn_str PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zn)
-	set_tests_properties(C_code_write_con2zn_str PROPERTIES DEPENDS C_code_write_grid2zn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zn)
-	set_tests_properties(C_code_read_grid2zn_str PROPERTIES DEPENDS C_code_write_grid2zn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zn)
-	set_tests_properties(C_code_read_con2zn_str PROPERTIES DEPENDS C_code_write_con2zn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zn)
+		# Add Windows DLL support if needed
+		if(CGNS_BUILD_SHARED AND WIN32)
+			set_tests_properties(C_code_${GROUP_NAME}_setup PROPERTIES ENVIRONMENT_MODIFICATION
+				"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${SETUP_EXE}>,\;>")
+		endif()
 
-	# Test_Grid_Str_2zngenrl group - separate working directory (needs separate write_grid2zn_str instance)
-	file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zngenrl)
-	add_test(NAME C_code_Test_Grid_Str_2zngenrl_setup COMMAND write_grid2zn_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zngenrl)
-	set_tests_properties(C_code_Test_Grid_Str_2zngenrl_setup PROPERTIES FIXTURES_SETUP Test_Grid_Str_2zngenrl_fixture)
-	set_tests_properties(C_code_write_con2zn_genrl_str PROPERTIES FIXTURES_REQUIRED Test_Grid_Str_2zngenrl_fixture WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zngenrl)
-	set_tests_properties(C_code_read_con2zn_genrl_str PROPERTIES DEPENDS C_code_write_con2zn_genrl_str WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Test_Grid_Str_2zngenrl)
+		# Setup write tests that require the fixture
+		list(GET WRITE_TESTS 0 FIRST_WRITE)
+		set_tests_properties(C_code_${FIRST_WRITE} PROPERTIES FIXTURES_REQUIRED ${GROUP_NAME}_fixture WORKING_DIRECTORY ${WORK_DIR})
 
-	# Add Windows DLL path support for fixture tests
-	if(CGNS_BUILD_SHARED AND WIN32)
-		set_tests_properties(C_code_Test_Grid_Str_Timeacc_setup PROPERTIES ENVIRONMENT_MODIFICATION
-			"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:write_grid_str>,\;>")
-		set_tests_properties(C_code_Test_Grid_Str_FlowCent_setup PROPERTIES ENVIRONMENT_MODIFICATION
-			"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:write_grid_str>,\;>")
-		set_tests_properties(C_code_Test_Grid_Str_FlowCentRind_setup PROPERTIES ENVIRONMENT_MODIFICATION
-			"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:write_grid_str>,\;>")
-		set_tests_properties(C_code_Test_Grid_Str_DiscreteFace_setup PROPERTIES ENVIRONMENT_MODIFICATION
-			"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:write_grid_str>,\;>")
-		set_tests_properties(C_code_Test_Grid_Str_2zngenrl_setup PROPERTIES ENVIRONMENT_MODIFICATION
-			"PATH=path_list_prepend:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:write_grid2zn_str>,\;>")
-	endif()
+		# Setup dependency chain for remaining write tests and all read tests
+		set(PREV_TEST ${FIRST_WRITE})
+		list(LENGTH WRITE_TESTS NUM_TESTS)
+		if(NUM_TESTS GREATER 1)
+			list(SUBLIST WRITE_TESTS 1 -1 REMAINING_WRITES)
+			foreach(TEST_NAME ${REMAINING_WRITES})
+				set_tests_properties(C_code_${TEST_NAME} PROPERTIES DEPENDS C_code_${PREV_TEST} WORKING_DIRECTORY ${WORK_DIR})
+				set(PREV_TEST ${TEST_NAME})
+			endforeach()
+		endif()
+
+		# Setup all corresponding read tests
+		foreach(TEST_NAME ${WRITE_TESTS})
+			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
+			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES DEPENDS C_code_${TEST_NAME} WORKING_DIRECTORY ${WORK_DIR})
+		endforeach()
+	endfunction()
+
+	# Test_Grid_Str group
+	setup_test_group("Test_Grid_Str" "write_grid_str;write_flowvert_str;write_nondimensional;write_descriptor;write_convergence;write_floweqn_str;write_bcpnts_str")
+
+	# Test_Grid_Unstr group
+	setup_test_group("Test_Grid_Unstr" "write_grid_unst;write_flowvert_unst;write_dimensional;write_bcpnts_unst")
+
+	# Fixture-based test groups
+	setup_fixture_test("Test_Grid_Str_Timeacc" "write_grid_str" "write_timevert_str")
+	setup_fixture_test("Test_Grid_Str_FlowCent" "write_grid_str" "write_flowcent_str;write_bc_str")
+	setup_fixture_test("Test_Grid_Str_FlowCentRind" "write_grid_str" "write_flowcentrind_str")
+	setup_fixture_test("Test_Grid_Str_DiscreteFace" "write_grid_str" "write_discreteface_str")
+	setup_fixture_test("Test_Grid_Str_2zn" "write_grid2zn_str" "write_con2zn_str")
+	setup_fixture_test("Test_Grid_Str_2zngenrl" "write_grid2zn_str" "write_con2zn_genrl_str")
 
 endif (CGNS_ENABLE_TESTS)
 #	write_grid_str
