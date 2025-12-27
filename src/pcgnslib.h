@@ -83,10 +83,9 @@ CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
  * This function uses global state and is NOT thread-safe.
  * For thread-safe operation, use cgp_open_with_params().
  *
- * \par Progressive Enhancement (C11+):
- * On C11+ compilers, cgp_open() becomes a polymorphic macro that can also
- * accept 4 arguments (with cg_parameters_t). This provides automatic type
- * dispatch without changing function names.
+ * \par Progressive Enhancement:
+ * cgp_open() is a polymorphic macro that accepts either 3 or 4 arguments.
+ * The 4-argument form automatically calls cgp_open_with_params().
  *
  * \note Parallel I/O requires HDF5 with parallel support enabled
  * \sa cgp_open_with_params, cgp_close, cgp_mpi_comm, cg_open
@@ -128,10 +127,9 @@ CGNSDLL int cgp_open(const char *filename, int mode, int *fn);
  * This function is fully thread-safe. Each thread can have its own parameter
  * object and call this function concurrently.
  *
- * \par Progressive Enhancement (C11+):
- * On C11+ compilers, you can call cgp_open() with 4 arguments and the compiler
- * will automatically dispatch to this function based on the parameter type.
- * On C99 compilers, you must explicitly call cgp_open_with_params().
+ * \par Progressive Enhancement:
+ * You can call cgp_open() with 4 arguments and it will automatically dispatch
+ * to this function, or call cgp_open_with_params() explicitly.
  *
  * \note Parallel I/O requires HDF5 with parallel support enabled.
  *       The parameter object must have file_type set to CG_FILE_HDF5.

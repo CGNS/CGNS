@@ -3321,21 +3321,6 @@ CGNSDLL void FMNAME(cgp_open_f, CGP_OPEN_F) (STR_PSTR(filename), int *mode,
 
 /*-----------------------------------------------------------------------*/
 
-/* NOTE: Legacy cg_open_params_f and cgpi_open_params_f wrappers REMOVED.
- *
- * These wrappers had a critical safety issue: they accepted cgint_f* for the params
- * argument and cast the integer value to a pointer, causing segfaults on 64-bit systems.
- *
- * Since CGNS requires Fortran 2003 support, all Fortran code uses the safe wrappers
- * in cgns_f.F90 that properly declare params as TYPE(C_PTR) and call the C API
- * directly via BIND(C).
- *
- * The unsafe legacy wrappers are no longer needed and have been removed to prevent
- * accidental misuse.
- */
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void cgp_close_f(cgint_f *fn, cgint_f *ier)
 {
   *ier = (cgint_f)cgp_close((int)*fn);

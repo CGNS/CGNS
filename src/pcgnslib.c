@@ -523,8 +523,8 @@ void cgp_error_exit(void)
  * This is the traditional API using global configuration state for parallel I/O.
  * For thread-safe operation with explicit parameters, use cgp_open_with_params().
  *
- * On C11+ compilers, this function also serves as the basis for polymorphic
- * cgp_open() macro that can accept either 3 or 4 arguments via _Generic dispatch.
+ * This function serves as the basis for polymorphic cgp_open() macro that can
+ * accept either 3 or 4 arguments.
  */
 int cgp_open(const char *filename, int mode, int *fn)
 {
@@ -568,9 +568,8 @@ int cgp_open(const char *filename, int mode, int *fn)
  * This is the thread-safe API using an explicit parameter object for parallel I/O.
  * Each thread can have its own parameter object without interfering with others.
  *
- * On C11+ compilers, you can call cgp_open() with 4 arguments and it will
- * automatically dispatch to this function via _Generic type matching.
- * On C99 compilers, you must explicitly call cgp_open_with_params().
+ * You can call cgp_open() with 4 arguments and it will automatically dispatch
+ * to this function, or call cgp_open_with_params() explicitly.
  */
 int cgp_open_with_params(const char *filename, int mode, cg_parameters_t params, int *fn)
 {

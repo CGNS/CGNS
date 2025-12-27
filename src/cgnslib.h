@@ -1254,10 +1254,9 @@ CGNSDLL int cg_is_cgns(const char *filename, int *file_type);
  * This function uses global state and is NOT thread-safe.
  * For thread-safe operation, use cg_open_with_params().
  *
- * \par Progressive Enhancement (C11+):
- * On C11+ compilers, cg_open() becomes a polymorphic macro that can also
- * accept 4 arguments (with cg_parameters_t). This provides automatic type
- * dispatch without changing function names.
+ * \par Progressive Enhancement:
+ * cg_open() is a polymorphic macro that accepts either 3 or 4 arguments.
+ * The 4-argument form automatically calls cg_open_with_params().
  *
  * \sa cg_open_with_params, cg_close, cgp_open
  */
@@ -1293,10 +1292,9 @@ CGNSDLL int cg_open(const char *filename, int mode, int *fn);
  * This function is fully thread-safe. Each thread can have its own parameter
  * object and call this function concurrently.
  *
- * \par Progressive Enhancement (C11+):
- * On C11+ compilers, you can call cg_open() with 4 arguments and the compiler
- * will automatically dispatch to this function based on the parameter type.
- * On C99 compilers, you must explicitly call cg_open_with_params().
+ * \par Progressive Enhancement:
+ * You can call cg_open() with 4 arguments and it will automatically dispatch
+ * to this function, or call cg_open_with_params() explicitly.
  *
  * \sa cg_open, cg_params_create, cg_params_set_int, cgp_open_with_params
  */
