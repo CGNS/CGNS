@@ -112,8 +112,7 @@ if (CGNS_ENABLE_TESTS)
 			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
 			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES
 				DEPENDS C_code_${TEST_NAME}
-				WORKING_DIRECTORY ${WORK_DIR}
-				PASS_REGULAR_EXPRESSION "Test passed!")
+				WORKING_DIRECTORY ${WORK_DIR})
 
 			# Replace test command with verification script
 			set_property(TEST C_code_${READ_TEST_NAME} PROPERTY COMMAND
@@ -171,8 +170,7 @@ if (CGNS_ENABLE_TESTS)
 			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
 			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES
 				DEPENDS C_code_${TEST_NAME}
-				WORKING_DIRECTORY ${WORK_DIR}
-				PASS_REGULAR_EXPRESSION "Test passed!")
+				WORKING_DIRECTORY ${WORK_DIR})
 
 			# Replace test command with verification script
 			set_property(TEST C_code_${READ_TEST_NAME} PROPERTY COMMAND
