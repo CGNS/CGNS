@@ -89,9 +89,17 @@ if (CGNS_ENABLE_TESTS)
 	# Helper function to setup test group with sequential write chain and corresponding read tests
 	function(setup_test_group GROUP_NAME WRITE_CHAIN)
 		set(WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GROUP_NAME})
+		set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${GROUP_NAME})
 		file(MAKE_DIRECTORY ${WORK_DIR})
 
+		# Copy OUTPUT reference files to build directory
+		file(GLOB OUTPUT_FILES "${SRC_DIR}/OUTPUT*")
+		foreach(OUTPUT_FILE ${OUTPUT_FILES})
+			file(COPY ${OUTPUT_FILE} DESTINATION ${WORK_DIR})
+		endforeach()
+
 		set(PREV_TEST "")
+		set(OUTPUT_NUM 1)
 		foreach(TEST_NAME ${WRITE_CHAIN})
 			# Set working directory and dependency for write test
 			if("${PREV_TEST}" STREQUAL "")
@@ -100,18 +108,37 @@ if (CGNS_ENABLE_TESTS)
 				set_tests_properties(C_code_${TEST_NAME} PROPERTIES DEPENDS C_code_${PREV_TEST} WORKING_DIRECTORY ${WORK_DIR})
 			endif()
 
-			# Setup corresponding read test
+			# Setup corresponding read test with output verification
 			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
-			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES DEPENDS C_code_${TEST_NAME} WORKING_DIRECTORY ${WORK_DIR})
+			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES
+				DEPENDS C_code_${TEST_NAME}
+				WORKING_DIRECTORY ${WORK_DIR}
+				PASS_REGULAR_EXPRESSION "Test passed!")
+
+			# Replace test command with verification script
+			set_property(TEST C_code_${READ_TEST_NAME} PROPERTY COMMAND
+				${CMAKE_COMMAND}
+				-DTEST_PROGRAM=$<TARGET_FILE:${READ_TEST_NAME}>
+				-DREF_OUTPUT=${WORK_DIR}/OUTPUT${OUTPUT_NUM}
+				-DWORK_DIR=${WORK_DIR}
+				-P ${CMAKE_CURRENT_SOURCE_DIR}/../run_test_with_output_check.cmake)
 
 			set(PREV_TEST ${TEST_NAME})
+			math(EXPR OUTPUT_NUM "${OUTPUT_NUM} + 1")
 		endforeach()
 	endfunction()
 
 	# Helper function to setup fixture-based test with grid setup
 	function(setup_fixture_test GROUP_NAME SETUP_EXE WRITE_TESTS)
 		set(WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GROUP_NAME})
+		set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${GROUP_NAME})
 		file(MAKE_DIRECTORY ${WORK_DIR})
+
+		# Copy OUTPUT reference files to build directory
+		file(GLOB OUTPUT_FILES "${SRC_DIR}/OUTPUT*")
+		foreach(OUTPUT_FILE ${OUTPUT_FILES})
+			file(COPY ${OUTPUT_FILE} DESTINATION ${WORK_DIR})
+		endforeach()
 
 		# Create fixture setup test
 		add_test(NAME C_code_${GROUP_NAME}_setup COMMAND ${SETUP_EXE} WORKING_DIRECTORY ${WORK_DIR})
@@ -138,10 +165,24 @@ if (CGNS_ENABLE_TESTS)
 			endforeach()
 		endif()
 
-		# Setup all corresponding read tests
+		# Setup all corresponding read tests with output verification
+		set(OUTPUT_NUM 1)
 		foreach(TEST_NAME ${WRITE_TESTS})
 			string(REPLACE "write_" "read_" READ_TEST_NAME ${TEST_NAME})
-			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES DEPENDS C_code_${TEST_NAME} WORKING_DIRECTORY ${WORK_DIR})
+			set_tests_properties(C_code_${READ_TEST_NAME} PROPERTIES
+				DEPENDS C_code_${TEST_NAME}
+				WORKING_DIRECTORY ${WORK_DIR}
+				PASS_REGULAR_EXPRESSION "Test passed!")
+
+			# Replace test command with verification script
+			set_property(TEST C_code_${READ_TEST_NAME} PROPERTY COMMAND
+				${CMAKE_COMMAND}
+				-DTEST_PROGRAM=$<TARGET_FILE:${READ_TEST_NAME}>
+				-DREF_OUTPUT=${WORK_DIR}/OUTPUT${OUTPUT_NUM}
+				-DWORK_DIR=${WORK_DIR}
+				-P ${CMAKE_CURRENT_SOURCE_DIR}/../run_test_with_output_check.cmake)
+
+			math(EXPR OUTPUT_NUM "${OUTPUT_NUM} + 1")
 		endforeach()
 	endfunction()
 
