@@ -27,8 +27,9 @@ CONTAINS
        eol = eol + 1
     END DO
 
-    ! error_msg should be "cgio_open_file:invalid configuration option"
-    IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
+    ! error_msg should be "cgio_open_file_with_mode:invalid configuration option" (53 chars)
+    ! or "cgio_open_file:invalid configuration option" (43 chars) for non-HDF5 builds
+    IF(error_code.NE.1 .OR. (eol .NE. 43 .AND. eol .NE. 53) .OR. &
          f_error_msg(1) .NE. "c" .OR. f_error_msg(4) .NE. "o") THEN
        STOP 1
     END IF

@@ -14,7 +14,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(_WIN32) && !defined(__NUTC__)
+# include <io.h>
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 #include "cgnslib.h"
 
 #define TEST_FILE_1 "test_params_default.cgns"
