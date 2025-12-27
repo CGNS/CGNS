@@ -9046,6 +9046,9 @@ CONTAINS
 
 !> @brief Wrapper for cg_open with parameter object (4-argument version)
 !> Calls C directly via ISO_C_BINDING - only handles string conversion
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_open_params_f
+!DEC$endif
   SUBROUTINE cg_open_params_f(filename, mode, params, fn, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename
@@ -9065,6 +9068,9 @@ CONTAINS
 
 !> @brief Wrapper for cgp_open with parameter object (4-argument version)
 !> Calls C directly via ISO_C_BINDING - only handles string conversion
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cgp_open_params_f
+!DEC$endif
   SUBROUTINE cgp_open_params_f(filename, mode, params, fn, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename

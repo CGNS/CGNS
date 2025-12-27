@@ -1073,8 +1073,8 @@ extern CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTyp
  * \code
  * cg_parameters_t params;
  * cg_params_create(&params);
- * cg_params_set_int(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
- * cg_params_set_int(params, CG_PARAM_MAX_VERSION, CG_LIBVER_LATEST);
+ * cg_params_set(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
+ * cg_params_set(params, CG_PARAM_MAX_VERSION, CG_LIBVER_LATEST);
  *
  * int fn;
  * cg_open_with_params("file.cgns", CG_MODE_WRITE, params, &fn);
@@ -1114,7 +1114,7 @@ typedef struct cg_parameters_s *cg_parameters_t;
 #define CG_PARAMS_DEFAULT ((cg_parameters_t)NULL)
 
 /**
- * \brief Parameter keys for cg_params_set_int()
+ * \brief Parameter keys for cg_params_set()
  *
  * These keys identify which parameter to set in the generic setter function.
  * The enum values are intentionally spaced to allow future additions without
@@ -1157,7 +1157,7 @@ typedef enum {
  * \endcode
  *
  * \note The parameter object must be freed with cg_params_destroy()
- * \sa cg_params_destroy, cg_params_set_int
+ * \sa cg_params_destroy, cg_params_set
  */
 CGNSDLL int cg_params_create(cg_parameters_t *params);
 
@@ -1278,8 +1278,8 @@ CGNSDLL int cg_open(const char *filename, int mode, int *fn);
  * \code
  * cg_parameters_t params;
  * cg_params_create(&params);
- * cg_params_set_int(params, CG_PARAM_FILE_TYPE, CG_FILE_HDF5);
- * cg_params_set_int(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
+ * cg_params_set(params, CG_PARAM_FILE_TYPE, CG_FILE_HDF5);
+ * cg_params_set(params, CG_PARAM_MIN_VERSION, CG_LIBVER_V40);
  *
  * int fn;
  * cg_open_with_params("file.cgns", CG_MODE_WRITE, params, &fn);
@@ -1296,7 +1296,7 @@ CGNSDLL int cg_open(const char *filename, int mode, int *fn);
  * You can call cg_open() with 4 arguments and it will automatically dispatch
  * to this function, or call cg_open_with_params() explicitly.
  *
- * \sa cg_open, cg_params_create, cg_params_set_int, cgp_open_with_params
+ * \sa cg_open, cg_params_create, cg_params_set, cgp_open_with_params
  */
 CGNSDLL int cg_open_with_params(const char *filename, int mode,
                                   cg_parameters_t params, int *fn);
