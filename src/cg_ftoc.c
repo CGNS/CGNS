@@ -180,6 +180,42 @@ CGNSDLL void cg_configure_c_funptr(int *what, void *value, cgint_f *ier)
   return;
 }
 
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_set_compress_f(cgint_f *cmpr, cgint_f *ier)
+{
+    *ier = (cgint_f)cg_set_compress((int)*cmpr);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_get_compress_f(cgint_f *cmpr, cgint_f *ier)
+{
+    int i_cmpr;
+
+    *ier = (cgint_f)cg_get_compress(&i_cmpr);
+    *cmpr = (cgint_f)i_cmpr;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_set_filter_f(cgns_filter *fltr, cgint_f *ier)
+{
+    if(fltr->filter_id == 0)
+      fltr = CG_FILTER_NONE;
+
+    *ier = (cgint_f)cg_set_filter(fltr);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_set_chunk_f(cgsize_t *chnk, cgint_f *ier)
+{
+    if(chnk[0] == 0)
+      chnk = CG_CHUNK_NONE;
+    *ier = (cgint_f)cg_set_chunk(chnk);
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t/DataArray_t Nodes               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

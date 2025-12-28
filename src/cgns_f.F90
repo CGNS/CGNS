@@ -36,7 +36,8 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, &
+
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_SIZE_T, &
                             C_NULL_CHAR, C_NULL_PTR, C_LOC, C_ASSOCIATED, C_F_POINTER
   IMPLICIT NONE
 
@@ -90,6 +91,12 @@ MODULE cgns
   INTEGER, PARAMETER, PRIVATE :: MAX_LEN = 32
   PRIVATE :: C_F_string_chars
   PRIVATE :: C_F_string_ptr
+
+  TYPE, BIND(C) :: CGNS_FILTER_F
+     INTEGER(C_INT)    :: filter_id
+     INTEGER(C_SIZE_T) :: nparams
+     TYPE(C_PTR)       :: params
+  END TYPE CGNS_FILTER_F
 
   INTERFACE cgio_set_dimensions_f
 
@@ -245,6 +252,15 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE = 210
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_GET_MAXIMUM_FILES     = 401
 
+  INTEGER(CGSIZE_T), DIMENSION(1), PARAMETER :: CG_CHUNK_NONE  = 0
+  TYPE(CGNS_FILTER_F)  , PARAMETER :: CG_FILTER_NONE = CGNS_FILTER_F(0,0,C_NULL_PTR)
+
+  INTEGER, PARAMETER :: CG_FILTER_DEFLATE     = 1
+  INTEGER, PARAMETER :: CG_FILTER_SHUFFLE     = 2
+  INTEGER, PARAMETER :: CG_FILTER_FLETCHER32  = 3
+  INTEGER, PARAMETER :: CG_FILTER_SZIP        = 4
+  INTEGER, PARAMETER :: CG_FILTER_NBIT        = 5
+  INTEGER, PARAMETER :: CG_FILTER_SCALEOFFSET = 6
 
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RESET = 1000
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RESET_HDF5 = 1
@@ -4438,6 +4454,22 @@ MODULE cgns
   END INTERFACE
 
 #endif
+
+INTERFACE
+  SUBROUTINE cg_set_filter_f(fltr, ier) BIND(C, NAME="cg_set_filter_f")
+    IMPORT :: CGNS_FILTER_F
+    IMPLICIT NONE
+    TYPE(CGNS_FILTER_F), INTENT(IN) :: fltr
+    INTEGER, INTENT(OUT) :: ier
+  END SUBROUTINE cg_set_filter_f
+
+  SUBROUTINE cg_set_chunk_f(chnk, ier) BIND(C, NAME="cg_set_chunk_f")
+    IMPORT :: CGSIZE_T
+    IMPLICIT NONE
+    INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN) :: chnk
+    INTEGER, INTENT(OUT) :: ier
+  END SUBROUTINE cg_set_chunk_f
+  END INTERFACE
 
   PRIVATE cg_configure_ptr, cg_configure_funptr
   PRIVATE cg_get_type_c_int, cg_get_type_c_long_long, cg_get_type_c_float, cg_get_type_c_double

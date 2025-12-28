@@ -8,6 +8,8 @@ CGNS_mp_cg_set_file_type_f
 CGNS_mp_cg_get_file_type_f
 CGNS_mp_cg_set_compress_f
 CGNS_mp_cg_get_compress_f
+CGNS_mp_cg_set_chunk_f
+CGNS_mp_cg_set_filter_f
 CGNS_mp_cg_set_path_f
 CGNS_mp_cg_add_path_f
 CGNS_mp_cg_set_rind_zero_f

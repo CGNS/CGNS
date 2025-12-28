@@ -50,6 +50,7 @@ set(write_zones_FILES write_zones.c utils.c)
 set(test_family_tree_FILES test_family_tree.c)
 set(test_complex_FILES test_complex.c)
 set(test_convert_elem_FILES test_convert_elem.c)
+set(test_chunked_compression_FILES test_chunked_compression.c)
 set(test_back_comp_FILES test_back_comp.c)
 set(test_particle_FILES test_particle.c)
 #set(cgiof_FILES cgiof.F90)
@@ -94,6 +95,7 @@ add_executable( test_complex         ${test_complex_FILES}         )
 add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
 add_executable( test_back_comp       ${test_back_comp_FILES}       )
 add_executable( test_particle        ${test_particle_FILES}        )
+add_executable( test_chunked_compression ${test_chunked_compression_FILES} )
 #
 set(C_TESTS_LIST
 	cgioc
@@ -117,10 +119,12 @@ set(C_TESTS_LIST
 	write_zones          
 	test_family_tree     
 	test_bbox            
-	test_complex         
+        test_complex
         test_convert_elem
         test_back_comp
-        test_particle)
+        test_particle
+        test_chunked_compression)
+
 set(SKIP_TESTS
         dbtest)
 # Modern Linking
