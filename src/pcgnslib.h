@@ -81,7 +81,7 @@ CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
  *
  * \par Thread Safety:
  * This function uses global state and is NOT thread-safe.
- * For thread-safe operation, use cgp_open_with_params().
+ * For thread-safe operation, use cgp_open() with 4 arguments (see below).
  *
  * \par Progressive Enhancement:
  * cgp_open() is a polymorphic macro that accepts either 3 or 4 arguments.

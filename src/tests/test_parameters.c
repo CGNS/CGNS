@@ -7,7 +7,7 @@
  *  2. Generic parameter setter (cg_params_set)
  *  3. Version bounds configuration
  *  4. File type and compression settings
- *  5. cg_open() polymorphic API with explicit parameters (C11 _Generic)
+ *  5. cg_open() polymorphic API with explicit parameters (C99 variadic macros)
  *  6. Backward compatibility with cg_open() legacy 3-argument usage
  */
 
@@ -183,7 +183,7 @@ void test_file_options(void)
     cg_params_destroy(params);
 }
 
-/* Test 5: cg_open() polymorphic - default parameters (C11) */
+/* Test 5: cg_open() polymorphic - default parameters */
 void test_open_ex_default(void)
 {
     int fn, B, result;
@@ -203,7 +203,7 @@ void test_open_ex_default(void)
     printf("  Created file: %s\n", TEST_FILE_1);
 }
 
-/* Test 6: cg_open() polymorphic - custom parameters (C11) */
+/* Test 6: cg_open() polymorphic - custom parameters */
 void test_open_ex_custom(void)
 {
     cg_parameters_t params = NULL;
@@ -220,13 +220,9 @@ void test_open_ex_custom(void)
     cg_params_set(params, CG_PARAM_WRITE_VERSION, (void *)CG_LIBVER_V40);
 
     /* Open file with custom parameters using polymorphic cg_open()
-     * On C11+, this uses _Generic dispatch and cg_open() automatically calls cg_open_with_params().
-     * On C99, we explicitly call cg_open_with_params(). */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-    result = cg_open(TEST_FILE_2, CG_MODE_WRITE, params, &fn);  // C11: polymorphic dispatch
-#else
-    result = cg_open_with_params(TEST_FILE_2, CG_MODE_WRITE, params, &fn);  // C99: explicit call
-#endif
+     * The macro uses C99 variadic macros to count arguments and dispatch accordingly.
+     * Calling cg_open() with 4 arguments automatically routes to cg_open_with_params(). */
+    result = cg_open(TEST_FILE_2, CG_MODE_WRITE, params, &fn);
     TEST_CHECK(result == CG_OK, "cg_open() with custom params succeeds");
 
     /* Create a base */

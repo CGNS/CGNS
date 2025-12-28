@@ -1090,8 +1090,9 @@ extern CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTyp
  * conditions from global variable modification.
  *
  * \par Parallel I/O:
- * Use cgp_open_with_params() for MPI parallel applications with the same parameter
- * API for consistent configuration across processes.
+ * Use cgp_open() with 4 arguments (or cgp_open_with_params() explicitly) for MPI
+ * parallel applications with the same parameter API for consistent configuration
+ * across processes.
  *
  * @{
  */
@@ -1252,7 +1253,7 @@ CGNSDLL int cg_is_cgns(const char *filename, int *file_type);
  *
  * \par Thread Safety:
  * This function uses global state and is NOT thread-safe.
- * For thread-safe operation, use cg_open_with_params().
+ * For thread-safe operation, use cg_open() with 4 arguments (see below).
  *
  * \par Progressive Enhancement:
  * cg_open() is a polymorphic macro that accepts either 3 or 4 arguments.
