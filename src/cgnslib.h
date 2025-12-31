@@ -45,7 +45,7 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 4501
+#define CGNS_VERSION 4510
 #define CGNS_DOTVERS 4.51
 
 #define CGNS_COMPATVERSION 2540
