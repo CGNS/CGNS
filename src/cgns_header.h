@@ -37,6 +37,9 @@ typedef char const cchar_33[33];
 typedef cgsize_t cgsize6_t[6];
 typedef int cgint3_t[3];
 
+/* Maximum buffer size for full path names (CG_MAX_GOTO_DEPTH nodes * (name_length + '/') + null terminator) */
+#define CG_FULL_PATH_BUFFER_SIZE (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)+1)
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 

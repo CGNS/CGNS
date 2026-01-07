@@ -70,6 +70,16 @@ set(test_complexf_FILES test_complexf.F90)
 set(test_particlef_FILES test_particlef.F90 utilsf.F90)
 set(test_params_fortran_FILES test_params_fortran.F90)
 
+# HDF5-specific tests
+set(cgioc_hdf_FILES cgioc_hdf.c)
+
+# 64-bit tests
+set(test64c_FILES test64c.c utils.c)
+# Note: test64f.F90 and test64f_f03.F90 use fixed-form syntax despite .F90 extension
+# In autotools, these are in a separate FALL64 variable and may not be regularly built
+set(test64f_FILES test64f.F90)
+set(test64f_f03_FILES test64f_f03.F90)
+
 # Build each test
 add_executable( cgioc                ${cgioc_FILES}                )
 add_executable( dbtest               ${dbtest_FILES}               )
@@ -97,6 +107,16 @@ add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
 add_executable( test_back_comp       ${test_back_comp_FILES}       )
 add_executable( test_particle        ${test_particle_FILES}        )
 add_executable( test_parameters      ${test_parameters_FILES}      )
+
+# HDF5-specific test (conditional on HDF5 support)
+if (CGNS_ENABLE_HDF5)
+  add_executable( cgioc_hdf ${cgioc_hdf_FILES} )
+endif()
+
+# 64-bit test (conditional on 64-bit support)
+if (CGNS_ENABLE_64BIT)
+  add_executable( test64c ${test64c_FILES} )
+endif()
 #
 set(C_TESTS_LIST
 	cgioc
@@ -125,6 +145,17 @@ set(C_TESTS_LIST
         test_back_comp
         test_particle
         test_parameters)
+
+# Conditionally add HDF5-specific tests
+if (CGNS_ENABLE_HDF5)
+  list(APPEND C_TESTS_LIST cgioc_hdf)
+endif()
+
+# Conditionally add 64-bit tests
+if (CGNS_ENABLE_64BIT)
+  list(APPEND C_TESTS_LIST test64c)
+endif()
+
 set(SKIP_TESTS
         dbtest)
 # Modern Linking
@@ -146,6 +177,16 @@ if (CGNS_ENABLE_FORTRAN)
         add_executable( test_complexf      ${test_complexf_FILES}      )
         add_executable( test_particlef     ${test_particlef_FILES}     )
         add_executable( test_params_fortran ${test_params_fortran_FILES} )
+
+	# 64-bit Fortran tests (conditional on 64-bit support)
+	# Both test64f.F90 and test64f_f03.F90 use fixed-form syntax despite .F90 extension
+	if (CGNS_ENABLE_64BIT)
+	  add_executable( test64f ${test64f_FILES} )
+	  set_source_files_properties(test64f.F90 PROPERTIES Fortran_FORMAT FIXED)
+
+	  add_executable( test64f_f03 ${test64f_f03_FILES} )
+	  set_source_files_properties(test64f_f03.F90 PROPERTIES Fortran_FORMAT FIXED)
+        endif()
 #	if (NOT CGNS_ENABLE_64BIT)
 # Don't build the F77 source because they will fail if ENABLE_64BIT is used
 #	  add_executable( cgiof       ${cgiof_FILES}  )
@@ -154,19 +195,25 @@ if (CGNS_ENABLE_FORTRAN)
 #	  add_executable( cgzconn      ${cgzconn_FILES}  )
 #	  add_executable( cgsubreg     ${cgsubreg_FILES}  )
 #	endif (NOT CGNS_ENABLE_64BIT)
-	set(FORTRAN_TESTS_LIST
-	cgiof_f03
-	cgwrite_f03
-	cgread_f03
-	cgzconn_f03
-	cgsubreg_f03
-	test_general_rindf
-	test_family_treef
+        set(FORTRAN_TESTS_LIST
+	cgiof_f03          
+	cgwrite_f03        
+	cgread_f03         
+	cgzconn_f03        
+	cgsubreg_f03       
+	test_general_rindf 
+        test_family_treef
 	test_bboxf
         test_complexf
         test_particlef
         test_params_fortran
         )
+
+	# Conditionally add 64-bit Fortran tests
+	if (CGNS_ENABLE_64BIT)
+	  list(APPEND FORTRAN_TESTS_LIST test64f test64f_f03)
+	endif()
+
 	# Modern Linking
 	foreach(TGTNAME ${FORTRAN_TESTS_LIST})
 	  target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})

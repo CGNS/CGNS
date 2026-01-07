@@ -235,7 +235,8 @@ static int rewrite_file (int cginp, const char *filename)
     struct cgns_stat st;
 #endif
 
-    input = get_cgnsio(cginp, 0);
+    if ((input = get_cgnsio(cginp, 0)) == NULL)
+        return get_error();
     if (input->mode != CGIO_MODE_READ && cgio_flush_to_disk(cginp))
         return get_error();
 
@@ -274,10 +275,16 @@ static int rewrite_file (int cginp, const char *filename)
     if (cgio_open_file(tmpfile, CGIO_MODE_WRITE, input->type, &cgout)) {
         UNLINK(tmpfile);
         free(tmpfile);
-        if (linkfile != NULL) free(linkfile);
+        free(linkfile);
         return get_error();
     }
-    output = get_cgnsio(cgout, 0);
+    if ((output = get_cgnsio(cgout, 0)) == NULL) {
+        cgio_close_file(cgout);
+        UNLINK(tmpfile);
+        free(tmpfile);
+        free(linkfile);
+        return get_error();
+    }
 
     ierr = recurse_nodes(cginp, input->rootid, cgout, output->rootid, 0, 0);
     cgio_close_file (cgout);
@@ -285,7 +292,7 @@ static int rewrite_file (int cginp, const char *filename)
     if (ierr) {
         UNLINK(tmpfile);
         free(tmpfile);
-        if (linkfile != NULL) free(linkfile);
+        free(linkfile);
         return set_error(ierr);
     }
 

@@ -1,9 +1,10 @@
       program test64f
+      use CGNS
       implicit none
+#include "cgnstypes_f03.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
-      use CGNS
 
       integer*8 nnodes,nelems
       integer dotest
@@ -12,13 +13,13 @@
       parameter (nelems = 40000000)
       parameter (dotest = 1)
 
-      integer*8 cgfile,cgbase,cgzone,cgcoord,cgsect
-      integer*8 cdim,pdim,i,ier,type,nb,pflag
-      integer*8 n,ns,ne,nerrs
+      integer cgfile,cgbase,cgzone,cgcoord,cgsect
+      integer cdim,pdim,ier,nb
+      integer*8 i,n,ns,ne,nerrs
       integer*8 size(3),elems(4,nelems)
       real*4 nodes(nnodes)
 
-      if (CG_BUILD_64BIT .eq. 0) then
+      if (.not. CG_BUILD_64BIT) then
         print *, 'must be built in 64 bit mode'
         stop
       endif
@@ -35,14 +36,15 @@
       size(2) = nelems
       size(3) = 0
       call cg_zone_write_f(cgfile,cgbase,'Zone',size,
-     &                     Unstructured, cgzone, ier)
+     &                     CGNS_ENUMV(Unstructured), cgzone, ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
       print *,'writing',nnodes,' coordinates'
       do n=1,nnodes
         nodes(n) = n
       enddo
-      call cg_coord_write_f(cgfile,cgbase,cgzone,RealSingle,
+      call cg_coord_write_f(cgfile,cgbase,cgzone,
+     &                      CGNS_ENUMV(RealSingle),
      &                      'Coordinates',nodes,cgcoord,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
@@ -56,7 +58,8 @@
       ne = nelems
       nb = 0
       call cg_section_write_f(cgfile,cgbase,cgzone,'Elements',
-     &                        TETRA_4,ns,ne,nb,elems,cgsect,ier)
+     &                        CGNS_ENUMV(TETRA_4),ns,ne,nb,elems,
+     &                        cgsect,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
       call cg_close_f(cgfile,ier)
@@ -74,7 +77,7 @@
       ns = 1
       ne = nnodes
       call cg_coord_read_f(cgfile,cgbase,cgzone,'Coordinates',
-     &                     RealSingle,ns,ne,nodes,ier)
+     &                     CGNS_ENUMV(RealSingle),ns,ne,nodes,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
       nerrs = 0
       do n=1,nnodes
