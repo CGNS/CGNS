@@ -6365,7 +6365,7 @@ CONTAINS
         IMPORT :: c_int, c_char
         IMPLICIT NONE
         INTEGER(c_int), VALUE :: fn
-        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: name1
         INTEGER(c_int), VALUE :: index1
       END FUNCTION cg_gorel_fc1
     END INTERFACE
