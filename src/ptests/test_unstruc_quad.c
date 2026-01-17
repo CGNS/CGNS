@@ -405,6 +405,8 @@ int main(int argc, char* argv[]) {
       if (read_data[i] != parent_data[i]) {
         printf("Rank %d: ParentElements mismatch at index %ld: expected %ld, got %ld\n",
                comm_rank, (long)i, (long)parent_data[i], (long)read_data[i]);
+        free(parent_data);
+        free(read_data);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
