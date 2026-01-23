@@ -13885,7 +13885,7 @@ static int cgi_next_posit(char *label, int index, char *name)
     return CG_NODE_NOT_FOUND;
 }
 
-int cgi_update_posit(int cnt, int *index, char **label)
+int cgi_update_posit(int cnt, int *index, const char **label)
 {
     int n, ierr;
     double pid, id;
@@ -13954,7 +13954,7 @@ int cgi_update_posit(int cnt, int *index, char **label)
     return CG_OK;
 }
 
-int cgi_set_posit(int fn, int B, int n, int *index, char **label)
+int cgi_set_posit(int fn, int B, int n, int *index, const char **label)
 {
     cgns_base *base;
 

@@ -15839,7 +15839,7 @@ int cg_gopath(int fn, const char *path)
  * \return \ier
  *
  */
-int cg_golist(int fn, int B, int depth, char **label, int *index)
+int cg_golist(int fn, int B, int depth, const char **label, int *index)
 {
     if (depth >= CG_MAX_GOTO_DEPTH) {
         cgi_error("path is too deep");
