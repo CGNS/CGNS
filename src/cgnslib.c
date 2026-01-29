@@ -10178,6 +10178,12 @@ int cg_conn_id(int fn, int B, int Z, int J, double *conn_id)
  *                              ptset_type of PointRange, npnts is always two. For a ptset_type of
  *                              PointList, npnts is the number of points in the PointList.
  * \param[in]  pnts             Array of points defining the interface in the current zone.
+ *                              Post 4.5.1 release, may be NULL when npnts > 0 to create the node
+ *                              structure without data (useful for parallel I/O with PointList).
+ *                              The created node name will be "PointList" (if ptset_type is PointList)
+ *                              or "PointRange" (if ptset_type is PointRange).
+ *                              When NULL, use cg_goto() to navigate to this node
+ *                              and cgp_array_write_data() to write the data in parallel.
  * \param[in]  donorname        Name of the zone interfacing with the current zone.
  * \param[in]  donor_zonetype   Type of the donor zone. The admissible types are Structured and
  *                              Unstructured.
@@ -10190,11 +10196,28 @@ int cg_conn_id(int fn, int B, int Z, int J, double *conn_id)
  *                              only for backward compatibility. The donor data is always read as cgsize_t.
  * \param[in]  ndata_donor      Number of points or cells in the current zone. These are paired with points,
  *                              cells, or fractions thereof in the donor zone.
- * \param[in]  donor_data       Array of donor points or cells corresponding to ndata_donor. Note that it is
- *                              possible that the same donor point or cell may be used multiple times.
+ * \param[in]  donor_data       Array of donor points or cells corresponding to ndata_donor.
+ *                              Post 4.5.1 release, may be NULL when ndata_donor > 0 to create the node
+ *                              structure without data (useful for parallel I/O).
+ *                              The created node name will be "PointListDonor" (if donor_ptset_type is PointListDonor)
+ *                              or "CellListDonor" (if donor_ptset_type is CellListDonor).
+ *                              When NULL, use cg_goto() to navigate to this node
+ *                              and cgp_array_write_data() to write the data in parallel.
+ *                              Note that it is possible that the same donor point or cell may be
+ *                              used multiple times.
  * \param[out] J                Interface index number, where 1 ≤ J ≤ nconns.
  * \return \ier
  *
+ * \note For parallel I/O workflows (CGNS version > 4.5.1):
+ *       1. Call cg_conn_write() with pnts=NULL and/or donor_data=NULL to create the node structure.
+ *       2. Use cg_goto() to navigate to the created "PointList" or "PointListDonor" node.
+ *       3. Call cgp_array_write_data() to write the actual index data in parallel.
+ *       This pattern follows the same approach as cg_boco_write() and other parallel I/O operations.
+ *
+ * \warning If pnts or donor_data is NULL and npnts > 0, the corresponding node will be created with
+ *          dimensions set but no data. The data MUST be written later using
+ *          cgp_array_write_data(), otherwise the file will be incomplete and reading
+ *          operations will fail or return undefined values.
  */
 int cg_conn_write(int fn, int B, int Z,  const char * connectname,
           CGNS_ENUMT(GridLocation_t) location,
@@ -10224,8 +10247,8 @@ int cg_conn_write(int fn, int B, int Z,  const char * connectname,
         cgi_error("Invalid input:  GridConnectivityType=%d ?",connect_type);
         return CG_ERROR;
     }
-    // Vertex and CellCenter valid for all dimensions
     bool is_location_valid = false;
+    // Vertex and CellCenter valid for all dimensions
     if (location == CGNS_ENUMV(Vertex) || location == CGNS_ENUMV(CellCenter)) is_location_valid = true;
     switch (cg->base[B-1].cell_dim) {
         case 2:
@@ -10262,10 +10285,6 @@ int cg_conn_write(int fn, int B, int Z,  const char * connectname,
         return CG_ERROR;
     }
     if (ndata_donor) {
-        if (NULL == donor_data) {
-            cgi_error("Invalid input: number of donor points given but data is NULL");
-            return CG_ERROR;
-        }
         if (donor_ptset_type!=CGNS_ENUMV(CellListDonor) &&
             donor_ptset_type!=CGNS_ENUMV(PointListDonor)) {
             cgi_error("Invalid point set type for donor %s",donorname);
