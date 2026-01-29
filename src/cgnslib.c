@@ -10437,6 +10437,7 @@ int cg_conn_write(int fn, int B, int Z,  const char * connectname,
     conn->location = location;
     conn->ptset.id = 0;
     conn->ptset.link = 0;
+    strcpy(conn->ptset.name,PointSetTypeName[ptset_type]);
     conn->ptset.type = ptset_type;
     strcpy(conn->ptset.data_type,CG_SIZE_DATATYPE);
     conn->ptset.npts = npnts;
