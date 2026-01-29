@@ -10224,12 +10224,23 @@ int cg_conn_write(int fn, int B, int Z,  const char * connectname,
         cgi_error("Invalid input:  GridConnectivityType=%d ?",connect_type);
         return CG_ERROR;
     }
-    if (location != CGNS_ENUMV(Vertex) &&
-        location != CGNS_ENUMV(CellCenter) &&
-        location != CGNS_ENUMV(FaceCenter)  &&
-        location != CGNS_ENUMV(IFaceCenter) &&
-        location != CGNS_ENUMV(JFaceCenter) &&
-        location != CGNS_ENUMV(KFaceCenter)) {
+    // Vertex and CellCenter valid for all dimensions
+    bool is_location_valid = false;
+    if (location == CGNS_ENUMV(Vertex) || location == CGNS_ENUMV(CellCenter)) is_location_valid = true;
+    switch (cg->base[B-1].cell_dim) {
+        case 2:
+            if (location == CGNS_ENUMV(EdgeCenter)) is_location_valid = true;
+            break;
+        case 3:
+            if (location == CGNS_ENUMV(FaceCenter)  ||
+                location == CGNS_ENUMV(IFaceCenter) ||
+                location == CGNS_ENUMV(JFaceCenter) ||
+                location == CGNS_ENUMV(KFaceCenter)) {
+                is_location_valid = true;
+            }
+            break;
+    }
+    if (!is_location_valid) {
         cgi_error("Invalid input:  GridLocation=%d ?",location);
         return CG_ERROR;
     }
