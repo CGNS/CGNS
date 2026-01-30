@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef _WIN32
@@ -257,6 +258,8 @@ static int get_nodes (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *sizes)
         rng[0][0] = 1;
         rng[1][0] = nn;
     }
+    if (nn > INT_MAX)
+        FATAL ("Number of nodes exceeds INT_MAX for VTK converter");
     nnodes = (int)nn;
 
     /* read the nodes */
@@ -374,11 +377,17 @@ static int get_variables (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *siz
         for (n = 0; n < CellDim; n++) {
             varrng[0][n] = rind[2*n] + 1;
             varrng[1][n] = rind[2*n] + sizes[n+nv];
+            if (sizes[n+nv] > INT_MAX)
+                FATAL ("Solution data size exceeds INT_MAX for VTK converter");
             ndata *= (int)sizes[n+nv];
         }
+        if (ndata > INT_MAX)
+            FATAL ("Total solution data count exceeds INT_MAX for VTK converter");
     }
     else {
         nv = varloc == CGNS_ENUMV(Vertex) ? 0 : 1;
+        if (sizes[nv] > INT_MAX)
+            FATAL ("Solution data size exceeds INT_MAX for VTK converter");
         ndata = (int)sizes[nv];
         varrng[0][0] = rind[0] + 1;
         varrng[1][0] = rind[0] + ndata;
@@ -514,7 +523,8 @@ static void write_solution (FILE *fp, int nz, int *mask)
 
 static void write_volume_cells (FILE *fp, int nz)
 {
-    int i, n, ns, nsect, nn, ip;
+    int i, n, ns, nsect, ip, nn_int;
+    cgsize_t nn;
     int elemcnt, elemsize;
     int *types, cell[9];
     cgsize_t is, ie, nelems, maxsize, maxelems;
@@ -529,7 +539,7 @@ static void write_volume_cells (FILE *fp, int nz)
     maxsize = maxelems = 0;
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
-                name, &elemtype, &is, &ie, &nn, &ip) ||
+                name, &elemtype, &is, &ie, &nn_int, &ip) ||
             cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &size))
             FATAL (NULL);
         nelems = ie - is + 1;
@@ -547,7 +557,7 @@ static void write_volume_cells (FILE *fp, int nz)
     elemcnt = elemsize = 0;
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
-                name, &elemtype, &is, &ie, &nn, &ip))
+                name, &elemtype, &is, &ie, &nn_int, &ip))
             FATAL (NULL);
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
@@ -585,8 +595,10 @@ static void write_volume_cells (FILE *fp, int nz)
                     default:
                         break;
                 }
-                if (cg_npe (et, &nn) || nn == 0)
+                int npe_temp;
+                if (cg_npe (et, &npe_temp) || npe_temp == 0)
                     FATAL ("invalid element type in MIXED");
+                nn = (cgsize_t)npe_temp;
                 i += nn;
             }
             free(conn_offset);
@@ -616,7 +628,11 @@ static void write_volume_cells (FILE *fp, int nz)
                     break;
             }
             if (nn) {
+                if (nelems > INT_MAX - elemcnt)
+                    FATAL ("Element count exceeds INT_MAX for VTK converter");
                 elemcnt += (int)nelems;
+                if (nn * nelems > INT_MAX - elemsize)
+                    FATAL ("Element size exceeds INT_MAX for VTK converter");
                 elemsize += (nn * (int)nelems);
             }
         }
@@ -642,7 +658,7 @@ static void write_volume_cells (FILE *fp, int nz)
     elemcnt = 0;
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
-                name, &elemtype, &is, &ie, &nn, &ip))
+                name, &elemtype, &is, &ie, &nn_int, &ip))
             FATAL (NULL);
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
@@ -694,8 +710,10 @@ static void write_volume_cells (FILE *fp, int nz)
                     cell[ip+1] = (int)conn[i+ip] - 1;
                 write_ints (fp, nn+1, cell);
             }
-            if (cg_npe (et, &nn) || nn == 0)
+            int npe_temp;
+            if (cg_npe (et, &npe_temp) || npe_temp == 0)
                 FATAL ("invalid element type");
+            nn = (cgsize_t)npe_temp;
             i += nn;
         }
     }
@@ -716,6 +734,8 @@ static void write_volume_cells (FILE *fp, int nz)
 static void write_element_sets (int nz, cgsize_t *sizes)
 {
     int i, n, ns, nsect, nn, ip;
+    int npe_int;  /* cg_npe returns int, not cgsize_t */
+    cgsize_t nn_npe;
     int elemcnt, elemsize, cell[9];
     int *nodemap, *types;
     cgsize_t is, ie, nelems;
@@ -808,9 +828,10 @@ static void write_element_sets (int nz, cgsize_t *sizes)
                     (nodemap[n])++;
                 }
             }
-            if (cg_npe (et, &nn) || nn == 0)
-                FATAL ("invalid element type");
-            is += nn;
+            if (cg_npe(et, &npe_int) || npe_int == 0)
+                FATAL("invalid element type");
+            nn_npe = (cgsize_t)npe_int;
+            is += nn_npe;
         }
         if (elemcnt == 0) {
             free (conn);
@@ -923,8 +944,9 @@ static void write_element_sets (int nz, cgsize_t *sizes)
                     cell[i+1] = nodemap[(int)conn[is+i]-1] - 1;
                 write_ints (fp, nn+1, cell);
             }
-            cg_npe (et, &nn);
-            is += nn;
+            cg_npe(et, &npe_int);
+            nn_npe = (cgsize_t)npe_int;
+            is += nn_npe;
         }
 
         free (conn);

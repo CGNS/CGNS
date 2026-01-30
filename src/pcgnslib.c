@@ -54,6 +54,7 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <limits.h>
 
 #include "pcgnslib.h"
 #include "cgns_header.h"
@@ -1008,16 +1009,22 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
  * \param[in]  nbndry      \PCONN_nbndry
  * \param[out] S           \CONN_S
  * \return \ier
- * \details cgp_poly_section_write() is used to write element connectivity data by multiple processes
- *          in a parallel fashion. To write the element data in parallel, first call
- *          cgp_section_write() to create an empty data node. This call is identical to
- *          cg_section_write() with \e Elements set to \e NULL (no data written). The actual
- *          element data is then written to the node in parallel using cgp_elements_write_data()
- *          where \e start and \e end specify the range of the elements to be written by a given process.
- * \note Routine only works for constant sized elements, since it is not possible to compute file
- *       offsets for variable sized elements without knowing the entire element connectivity data.
- * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is
- *       the same size as that defined in the file; no conversions are done.
+ * \details cgp_poly_section_write() creates an empty element section for variable-sized elements
+ *          (MIXED, NGON_n, NFACE_n). This function must be called collectively by all MPI processes
+ *          before writing element connectivity in parallel using cgp_poly_elements_write_data().
+ *
+ *          <b>For MIXED sections with CPEX 45 high-order elements:</b>
+ *          - Set type = MIXED
+ *          - Set maxoffset = total connectivity size (sum of all: 1 + NPE per element)
+ *          - Each element in connectivity: [ElementType_t, node1, ..., nodeN]
+ *          - High-order elements like HEXA_125 contribute 1 + 125 = 126 to maxoffset
+ *
+ *          After calling this function, each process writes its portion using:
+ *          1. cgp_poly_elements_write_data() with local offsets and connectivity
+ *
+ * \note This function creates empty ElementConnectivity and ElementStartOffset datasets.
+ * \note The maxoffset parameter specifies the total size of the connectivity array for ALL elements.
+ * \note It is the responsibility of the application to ensure cgsize_t matches the file definition.
  */
 int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end, cgsize_t maxoffset,
@@ -1058,15 +1065,27 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
  *          set to \e NULL (no data written). The actual element data is then written to the node in
  *          parallel using cgp_elements_write_data() where \e start and \e end specify the range of the
  *          elements to be written by a given process.
+ *
+ *          <b>CPEX 45 High-Order Element Support:</b>
+ *          This function fully supports CPEX 45 high-order elements (e.g., HEXA_125 with 125 nodes
+ *          per element). The HDF5 connectivity offset is calculated as:
+ *          \code
+ *            offset = (element_index - section_start) * nodes_per_element
+ *          \endcode
+ *          For example, writing elements 100-199 of HEXA_125 in a section [0, 999] writes
+ *          connectivity data at offset [12500:24999] (100 elements × 125 nodes/element).
+ *
  * \note Routine only works for constant-sized elements since it is not possible to compute file offsets
  *       for variable sized elements without knowledge of the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is the
  *       same size as that defined in the file; no conversions are done.
+ * \note Overflow protection is provided for extremely large meshes to prevent connectivity offset overflow.
  */
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, const cgsize_t *elements)
 {
-    int elemsize;
+    int npe;
+    cgsize_t elemsize;
     hid_t hid;
     cgns_section *section;
     cgsize_t rmin, rmax;
@@ -1095,9 +1114,29 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
         return CG_ERROR;
     }
 
-    if (cg_npe(section->el_type, &elemsize)) return CG_ERROR;
-    rmin = (start - section->range[0]) * elemsize + 1;
-    rmax = (end - section->range[0] + 1) * elemsize;
+    if (cg_npe(section->el_type, &npe)) return CG_ERROR;
+    elemsize = (cgsize_t)npe;
+
+    /* Calculate connectivity offsets with overflow protection
+     * For high-order elements (e.g., HEXA_125 with NPE=125), ensure
+     * offset calculations don't overflow cgsize_t (64-bit signed integer) */
+    cgsize_t elem_count = end - section->range[0] + 1;
+    cgsize_t start_offset = start - section->range[0];
+
+    if (elem_count > 0 && elemsize > 0) {
+        /* Check for potential overflow in both rmin and rmax calculations */
+        if (start_offset > LLONG_MAX / elemsize) {
+            cgi_error("Start offset too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+        if (elem_count > LLONG_MAX / elemsize) {
+            cgi_error("Element range too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+    }
+
+    rmin = start_offset * elemsize + 1;
+    rmax = elem_count * elemsize;
     type = cgi_datatype(section->connect->data_type);
 
     to_HDF_ID(section->connect->id, hid);
@@ -1112,17 +1151,54 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 /**
  * \ingroup ElementConnectivityData
  *
- * \brief Write element data in parallel.
+ * \brief Write variable-sized element connectivity data in parallel (MIXED, NGON_n, NFACE_n).
  *
  * \param[in]  fn       \FILE_fn
  * \param[in]  B        \B_Base
  * \param[in]  Z        \Z_Zone
  * \param[in]  S        \CONN_S
- * \param[in]  start    \PCONN_start
- * \param[in]  end      \PCONN_end
- * \param[in]  elements \PCONN_Elements
- * \param[in]  offsets  \PCONN_Offsets
+ * \param[in]  start    \PCONN_start (element index, 1-based)
+ * \param[in]  end      \PCONN_end (element index, 1-based)
+ * \param[in]  elements \PCONN_Elements (connectivity array for this process's elements)
+ * \param[in]  offsets  \PCONN_Offsets (local offset array, size = end-start+2)
  * \return \ier
+ *
+ * \details
+ * cgp_poly_elements_write_data() writes variable-sized element connectivity in parallel.
+ * This function supports MIXED element sections (multiple element types) and polygon sections
+ * (NGON_n, NFACE_n).
+ *
+ * <b>CPEX 45 High-Order Element Support in MIXED Sections:</b>
+ *
+ * MIXED sections can contain any combination of element types, including CPEX 45 high-order
+ * elements. Each element in the connectivity array has the format:
+ * \code
+ *   [ElementType_t, node1, node2, ..., nodeN]
+ * \endcode
+ *
+ * For high-order elements (e.g., HEXA_125), the connectivity includes all 125 nodes.
+ *
+ * <b>Example: MIXED section with HEXA_8 and HEXA_125</b>
+ * \code
+ *   // Process 0 writes elements 0-1 (one HEXA_8, one HEXA_125)
+ *   cgsize_t elements[] = {
+ *     HEXA_8, 1,2,3,4,5,6,7,8,           // Element 0: 8 nodes
+ *     HEXA_125, 9,10,11,...,133          // Element 1: 125 nodes
+ *   };
+ *   cgsize_t offsets[] = {
+ *     0,                                  // Start of element 0
+ *     9,                                  // Start of element 1 (1 type + 8 nodes)
+ *     134                                 // End (1 type + 125 nodes)
+ *   };
+ *   cgp_poly_elements_write_data(fn, B, Z, S, 0, 1, elements, offsets);
+ * \endcode
+ *
+ * The offsets array must have size (end-start+2) and contain cumulative offsets into the
+ * local connectivity array. offsets[0]=0, and offsets[i+1]-offsets[i] = 1 + NPE for element i.
+ *
+ * \note This function writes to two HDF5 datasets: ElementStartOffset and ElementConnectivity.
+ * \note The offsets parameter contains LOCAL offsets (starting from 0) for this process's elements.
+ * \note Global offsets are computed internally by reading the file's ElementStartOffset array.
  */
 int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
                             cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
@@ -1252,17 +1328,50 @@ int cgp_poly_elements_read_data_offsets(int fn, int B, int Z, int S, cgsize_t st
 /**
  * \ingroup ElementConnectivityData
  *
- * \brief Read elements data in parallel.
+ * \brief Read variable-sized element connectivity data in parallel (MIXED, NGON_n, NFACE_n).
  *
  * \param[in]  fn       \FILE_fn
  * \param[in]  B        \B_Base
  * \param[in]  Z        \Z_Zone
  * \param[in]  S        \CONN_S
- * \param[in]  start    \PCONN_start
- * \param[in]  end      \PCONN_end
- * \param[in]  offsets  \PCONN_Offsets
- * \param[out] elements \PCONN_Elements
+ * \param[in]  start    \PCONN_start (element index, 1-based)
+ * \param[in]  end      \PCONN_end (element index, 1-based)
+ * \param[in]  offsets  \PCONN_Offsets (global offset array from cgp_poly_elements_read_data_offsets)
+ * \param[out] elements \PCONN_Elements (pre-allocated buffer to receive connectivity)
  * \return \ier
+ *
+ * \details
+ * cgp_poly_elements_read_data_elements() reads variable-sized element connectivity in parallel.
+ * This function supports MIXED, NGON_n, and NFACE_n sections, including CPEX 45 high-order
+ * elements in MIXED sections.
+ *
+ * <b>Usage with MIXED sections containing CPEX 45 elements:</b>
+ * \code
+ *   // Read 2 elements (indices 0-1) from a MIXED section
+ *   cgsize_t offsets[3];  // Size = end-start+2 = 3
+ *   cgp_poly_elements_read_data_offsets(fn, B, Z, S, 0, 1, offsets);
+ *
+ *   // Allocate buffer based on offsets
+ *   cgsize_t conn_size = offsets[2] - offsets[0];  // Total connectivity size
+ *   cgsize_t *elements = malloc(conn_size * sizeof(cgsize_t));
+ *
+ *   // Read connectivity
+ *   cgp_poly_elements_read_data_elements(fn, B, Z, S, 0, 1, offsets, elements);
+ *
+ *   // Parse connectivity for each element
+ *   for (int i = 0; i < 2; i++) {
+ *     cgsize_t offset = offsets[i] - offsets[0];  // Local offset
+ *     ElementType_t type = (ElementType_t)elements[offset];
+ *     cgsize_t npe;
+ *     cg_npe(type, &npe);
+ *     cgsize_t *nodes = &elements[offset + 1];  // Node connectivity
+ *     // ... process element ...
+ *   }
+ * \endcode
+ *
+ * \note Call cgp_poly_elements_read_data_offsets() first to get the offsets array.
+ * \note The offsets array contains GLOBAL offsets from the file's ElementStartOffset dataset.
+ * \note Buffer size required: elements[offsets[end-start+1] - offsets[0]].
  */
 int cgp_poly_elements_read_data_elements(int fn, int B, int Z, int S, cgsize_t start,
 					                  cgsize_t end, const cgsize_t *offsets, cgsize_t *elements)
@@ -1330,11 +1439,24 @@ int cgp_poly_elements_read_data_elements(int fn, int B, int Z, int S, cgsize_t s
  * \param[in]  end      \PCONN_end
  * \param[out] elements \PCONN_Elements
  * \return \ier
+ * \details cgp_elements_read_data() reads element connectivity data in parallel from a section
+ *          created with cgp_section_write(). Multiple processes can read different element
+ *          ranges simultaneously, where \e start and \e end specify the element range for
+ *          each process.
+ *
+ *          <b>CPEX 45 High-Order Element Support:</b>
+ *          This function fully supports CPEX 45 high-order elements (e.g., HEXA_125 with 125 nodes
+ *          per element). The HDF5 connectivity offset is calculated identically to the write function,
+ *          ensuring read/write symmetry for parallel I/O operations.
+ *
+ * \note Routine only works for constant-sized elements.
+ * \note Overflow protection is provided for extremely large meshes.
  */
 int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, cgsize_t *elements)
 {
-    int elemsize;
+    int npe;
+    cgsize_t elemsize;
     hid_t hid;
     cgns_section *section;
     cgsize_t rmin, rmax;
@@ -1363,9 +1485,29 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
         return CG_ERROR;
     }
 
-    if (cg_npe(section->el_type, &elemsize)) return CG_ERROR;
-    rmin = (start - section->range[0]) * elemsize + 1;
-    rmax = (end - section->range[0] + 1) * elemsize;
+    if (cg_npe(section->el_type, &npe)) return CG_ERROR;
+    elemsize = (cgsize_t)npe;
+
+    /* Calculate connectivity offsets with overflow protection
+     * For high-order elements (e.g., HEXA_125 with NPE=125), ensure
+     * offset calculations don't overflow cgsize_t (64-bit signed integer) */
+    cgsize_t elem_count = end - section->range[0] + 1;
+    cgsize_t start_offset = start - section->range[0];
+
+    if (elem_count > 0 && elemsize > 0) {
+        /* Check for potential overflow in both rmin and rmax calculations */
+        if (start_offset > LLONG_MAX / elemsize) {
+            cgi_error("Start offset too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+        if (elem_count > LLONG_MAX / elemsize) {
+            cgi_error("Element range too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+    }
+
+    rmin = start_offset * elemsize + 1;
+    rmax = elem_count * elemsize;
     type = cgi_datatype(sizeof(cgsize_t) == 4 ? "I4" : "I8");
 
     to_HDF_ID(section->connect->id, hid);

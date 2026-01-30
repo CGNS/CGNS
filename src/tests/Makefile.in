@@ -30,6 +30,7 @@ CALL = \
 	test_particle$(EXE) \
 	test_general_reshape$(EXE) \
 	test_general_rind$(EXE) \
+	test_high_order$(EXE) \
 	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
@@ -40,7 +41,8 @@ CALL = \
 	test_bbox$(EXE) \
 	test_convert_elem$(EXE) \
 	test_back_comp$(EXE) \
-	test_complex$(EXE)
+	test_complex$(EXE) \
+	test_mixed_ho$(EXE)
 
 F_TESTS = \
 	cgiof_F03$(EXE) \
@@ -52,7 +54,9 @@ F_TESTS = \
 	test_family_treef$(EXE) \
 	test_bboxf$(EXE) \
 	test_particlef$(EXE) \
-	test_complexf$(EXE)
+	test_complexf$(EXE) \
+	test_high_orderf$(EXE) \
+	test_cg_npe_f$(EXE)
 
 FALL = $(F_TESTS)
 
@@ -250,6 +254,12 @@ write_test$(EXE) : write_test.c $(CGNSLIB)
 
 #----------
 
+test_high_order$(EXE) : test_high_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
 write_zones$(EXE) : write_zones.$(O) utils.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ write_zones.$(O) utils.$(O) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -272,6 +282,12 @@ test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
 
 test_complex$(EXE) : test_complex.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_complex.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_mixed_ho$(EXE) : test_mixed_ho.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_mixed_ho.c utils.$(O) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -391,6 +407,18 @@ test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
 
 test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_high_orderf$(EXE) : test_high_orderf.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_high_orderf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_cg_npe_f$(EXE) : test_cg_npe_f.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_cg_npe_f.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

@@ -227,7 +227,6 @@ int convert_elements(int cgio_num, double elem_id)
         if (strcmp(datatype, "I4") == 0) {
             int * connectivity = NULL;
             int * new_offset = NULL;
-            int nparts_in_elem;
             cgsize_t num_elem = 0;
             cgsize_t idx = 0;
             cgsize_t cur_idx = 0;
@@ -252,7 +251,10 @@ int convert_elements(int cgio_num, double elem_id)
             new_offset[0] = 0;
 
             for (idx = 0; idx < num_elem; ++idx) {
-                cg_npe(connectivity[cur_elem], &nparts_in_elem);
+                cgsize_t nparts_in_elem;
+                int npe_tmp;
+                cg_npe(connectivity[cur_elem], &npe_tmp);
+                nparts_in_elem = npe_tmp;
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem + 1;
                 cur_elem += nparts_in_elem + 1;
             }
@@ -273,7 +275,6 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t idx = 0;
             cgsize_t cur_idx = 0;
             cgsize_t cur_elem = 0;
-            int nparts_in_elem;
 
             connectivity = malloc((size_t)sizeof(cglong_t)*elem_size);
             cgio_read_all_data_type(cgio_num, connect_id, datatype, (void *)connectivity);
@@ -294,7 +295,10 @@ int convert_elements(int cgio_num, double elem_id)
             new_offset[0] = 0;
 
             for (idx = 0; idx < num_elem; ++idx) {
-                cg_npe(connectivity[cur_elem], &nparts_in_elem);
+                cgsize_t nparts_in_elem;
+                int npe_tmp;
+                cg_npe(connectivity[cur_elem], &npe_tmp);
+                nparts_in_elem = npe_tmp;
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem + 1;
                 cur_elem += nparts_in_elem + 1;
             }

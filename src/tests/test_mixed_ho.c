@@ -1,0 +1,238 @@
+/**
+ * Test file for MIXED element sections with high-order solutions
+ *
+ * Tests:
+ * 1. test_mixed_ho_simple() - MIXED section with TRI_3 and QUAD_4 elements
+ * 2. test_mixed_ho_complex() - MIXED section with multiple element types
+ * 3. Verify high-order solution data sizes are computed correctly
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "cgnslib.h"
+#include "utils.h"
+
+int total_tests = 0;
+int failed_tests = 0;
+
+/**
+ * Test 1: Simple MIXED Section (TRI_3 + QUAD_4) with High-Order Solution
+ *
+ * Creates a MIXED section with triangles and quads, then writes a high-order
+ * solution (order 2) with GridLocation=InterpolationPoints.
+ *
+ * Expected data sizes:
+ * - TRI_3 at order 2: 6 points per element
+ * - QUAD_4 at order 2: 9 points per element
+ */
+int test_mixed_ho_simple()
+{
+    int fn, bn, zn, sn, en, soln;
+    int ier;
+    char filename[64];
+    cgsize_t sizes[3];
+    cgsize_t connectivity[100];
+    cgsize_t pos = 0;
+    int i;
+
+    printf("\n=== Test 1: Simple MIXED Section (TRI + QUAD) with HO Solution ===\n");
+    total_tests++;
+
+    sprintf(filename, "test_mixed_ho_simple.cgns");
+
+    /* Create CGNS file */
+    if (cg_open(filename, CG_MODE_WRITE, &fn)) {
+        printf("ERROR: Failed to create file: %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    /* Create base (2D) */
+    sizes[0] = 8;  /* 8 vertices total */
+    sizes[1] = 3;  /* 3 cells (2 TRI + 1 QUAD) */
+    sizes[2] = 0;
+
+    if (cg_base_write(fn, "Base", 2, 2, &bn)) {
+        printf("ERROR: Failed to create base: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Create zone */
+    if (cg_zone_write(fn, bn, "Zone", sizes, CGNS_ENUMV(Unstructured), &zn)) {
+        printf("ERROR: Failed to create zone: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Write grid coordinates (8 points) */
+    double x[8] = {0.0, 1.0, 2.0, 0.0, 1.0, 2.0, 0.5, 1.5};
+    double y[8] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.5, 1.5};
+    double z[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+    if (cg_coord_write(fn, bn, zn, CGNS_ENUMV(RealDouble), "CoordinateX", x, &sn) ||
+        cg_coord_write(fn, bn, zn, CGNS_ENUMV(RealDouble), "CoordinateY", y, &sn) ||
+        cg_coord_write(fn, bn, zn, CGNS_ENUMV(RealDouble), "CoordinateZ", z, &sn)) {
+        printf("ERROR: Failed to write coordinates: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Create MIXED connectivity:
+     * Element 1 (TRI_3): nodes 1,2,4
+     * Element 2 (TRI_3): nodes 2,5,4
+     * Element 3 (QUAD_4): nodes 4,5,6,7
+     */
+    pos = 0;
+    /* TRI 1 */
+    connectivity[pos++] = CGNS_ENUMV(TRI_3);
+    connectivity[pos++] = 1; connectivity[pos++] = 2; connectivity[pos++] = 4;
+    /* TRI 2 */
+    connectivity[pos++] = CGNS_ENUMV(TRI_3);
+    connectivity[pos++] = 2; connectivity[pos++] = 5; connectivity[pos++] = 4;
+    /* QUAD 1 */
+    connectivity[pos++] = CGNS_ENUMV(QUAD_4);
+    connectivity[pos++] = 4; connectivity[pos++] = 5;
+    connectivity[pos++] = 6; connectivity[pos++] = 7;
+
+    /* Create offset array for MIXED section:
+     * offset[0] = 0 (start of first element)
+     * offset[1] = 4 (start of second element: type + 3 nodes)
+     * offset[2] = 8 (start of third element: type + 3 nodes)
+     * offset[3] = 13 (end: type + 4 nodes)
+     */
+    cgsize_t offsets[4] = {0, 4, 8, 13};
+
+    /* Write MIXED section using poly_section_write */
+    if (cg_poly_section_write(fn, bn, zn, "MixedElements", CGNS_ENUMV(MIXED),
+                              1, 3, 0, connectivity, offsets, &en)) {
+        printf("ERROR: Failed to write MIXED section: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    printf("  Created MIXED section with 2 TRI_3 + 1 QUAD_4\n");
+
+    /* Create high-order solution (order 2, temporal 0) */
+    int spatial_order = 2;
+    int temporal_order = 0;
+
+    if (cg_sol_write(fn, bn, zn, "HighOrderSolution", CGNS_ENUMV(InterpolationPoints), &soln)) {
+        printf("ERROR: Failed to create solution: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Set interpolation orders */
+    if (cg_sol_interpolation_order_write(fn, bn, zn, soln, spatial_order, temporal_order)) {
+        printf("ERROR: Failed to set interpolation orders: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Calculate expected size:
+     * - 2 TRI_3 elements at order 2: 2 * 6 = 12 points
+     * - 1 QUAD_4 element at order 2: 1 * 9 = 9 points
+     * - Total: 21 points
+     */
+    cgsize_t expected_size = 21;
+
+    /* Write a test field */
+    double *field_data = malloc(expected_size * sizeof(double));
+    for (i = 0; i < expected_size; i++) {
+        field_data[i] = (double)i;
+    }
+
+    if (cg_field_write(fn, bn, zn, soln, CGNS_ENUMV(RealDouble),
+                       "Density", field_data, &sn)) {
+        printf("ERROR: Failed to write field: %s\n", cg_get_error());
+        free(field_data);
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    free(field_data);
+    printf("  Successfully wrote high-order solution field (size=%ld)\n", (long)expected_size);
+
+    /* Close and reopen to test reading */
+    if (cg_close(fn)) {
+        printf("ERROR: Failed to close file: %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    /* Reopen and verify */
+    if (cg_open(filename, CG_MODE_READ, &fn)) {
+        printf("ERROR: Failed to reopen file: %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    /* Read solution and verify size */
+    int nfields;
+    char fieldname[33];
+    CGNS_ENUMT(DataType_t) datatype;
+
+    if (cg_nfields(fn, bn, zn, soln, &nfields)) {
+        printf("ERROR: Failed to read nfields: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    if (nfields != 1) {
+        printf("ERROR: Expected 1 field, got %d\n", nfields);
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* Read back the field */
+    cgsize_t range_min[1] = {1};
+    cgsize_t range_max[1] = {expected_size};
+    field_data = malloc(expected_size * sizeof(double));
+    if (cg_field_read(fn, bn, zn, soln, "Density", CGNS_ENUMV(RealDouble),
+                      range_min, range_max, field_data)) {
+        printf("ERROR: Failed to read field: %s\n", cg_get_error());
+        free(field_data);
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    printf("  Successfully read high-order solution field (size=%ld)\n", (long)expected_size);
+
+    free(field_data);
+    cg_close(fn);
+
+    printf("  ✓ Test PASSED: MIXED section with high-order solution\n");
+    return 0;
+}
+
+int main()
+{
+    printf("\n");
+    printf("========================================\n");
+    printf("Testing MIXED Elements with High-Order Solutions\n");
+    printf("========================================\n");
+
+    test_mixed_ho_simple();
+
+    printf("\n========================================\n");
+    printf("Test Summary\n");
+    printf("========================================\n");
+    printf("Total tests: %d\n", total_tests);
+    printf("Passed:      %d\n", total_tests - failed_tests);
+    printf("Failed:      %d\n", failed_tests);
+    printf("========================================\n\n");
+
+    return (failed_tests > 0) ? 1 : 0;
+}

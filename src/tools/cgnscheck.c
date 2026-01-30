@@ -617,7 +617,8 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
 
 static int valid_face (ZONE *z, cgsize_t elem)
 {
-    int ns, nn;
+    int ns;
+    int nn;
     cgsize_t n, ne, *pe, *po;
     CGNS_ENUMT(ElementType_t) type;
 
@@ -664,7 +665,8 @@ static int valid_face (ZONE *z, cgsize_t elem)
 
 static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 {
-    int ns, nn=0;
+    int ns;
+    int nn=0;
     cgsize_t ne, *nodes, *offsets;
     CGNS_ENUMT(ElementType_t) type;
     for (ns = 0; ns < z->nsets; ns++) {
@@ -1211,7 +1213,8 @@ static void read_zone (int nz)
     int ns, nsets, hasparent;
     cgsize_t ne, *pe, *po;
     cgsize_t se, nelem, k;
-    int nn, nf, ip, ierr;
+    int nf, ip, ierr;
+    int nn;
     cgsize_t *nodes, maxnode;
     CGNS_ENUMT(ElementType_t) type;
     ELEMSET *es;
@@ -1773,6 +1776,94 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
     error ("grid location %s is invalid", cg_GridLocationName(location));
     return 0;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
+{
+    int i;
+    int n;
+    cgsize_t datasize = 0;
+
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+
+      cg_npe_ho(set->type,spatialOrder,&n);
+      
+      datasize = datasize + (set->ie-set->is+1) * n;
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalOrder,
+                                        cgsize_t *range)
+{
+    int i, rmin, rmax,ne;
+    int n;
+    cgsize_t datasize = 0;
+
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+
+      // Get element count bellonging to this element section range
+      rmin = MAX(set->is,range[0]);
+      rmax = MIN(set->ie,range[1]);
+
+      if (rmin > rmax) continue;
+
+      // Get element count
+      ne = rmax - rmin + 1;
+
+      cg_npe_ho(set->type,spatialOrder,&n);
+      
+      datasize = datasize + ne * n;
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOrder,
+                                        cgsize_t *list, int npts)
+{
+    int p, i, rmin, rmax,ne;
+    int n;
+    cgsize_t id, datasize = 0;
+    short done;
+
+    // Loop over Points
+    for (p = 0 ; p < npts ; p++)
+    {
+      cgsize_t id = list[p];
+      done = 0;
+
+      for (i = 0 ; i < z->nsets ; i++)
+      {
+        ELEMSET *set = &z->sets[i];
+
+        if (id > set->ie || id < set->is ) continue;
+
+        done = 1;
+
+        cg_npe_ho(set->type,spatialOrder,&n);
+        
+        datasize = datasize + n;
+      }
+      
+      if (done == 0) error("Point %d from ptset PointList not found in Elements_t",id);
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
 }
 
 /*=======================================================================*/
@@ -2720,7 +2811,8 @@ static void check_coordinates (int ng)
 
 static void check_elements (void)
 {
-    int nn, ns, dim;
+    int ns, dim;
+    int nn;
     int nf, np, nint, next;
     cgsize_t is, ne, nelem, *pe, *po;
     ELEMSET *es;
@@ -3184,6 +3276,10 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
                 FileVersion >= 2300) {
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
+            }
+        case CGNS_ENUMV(InterpolationPoints):
+            if (z->type != CGNS_ENUMV(Unstructured)) {
+                error ("InterpolationPoints location is compatible only with Unstructured grids");
             }
             return location;
         default:
@@ -4378,7 +4474,7 @@ static void check_connectivity (int nzc)
 static void check_arbitrary_motion (int na)
 {
     char name[33];
-    int ierr, n, nd, id, rind[6];
+    int ierr, n, nd, ns, os, ot, id, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -4456,8 +4552,17 @@ static void check_arbitrary_motion (int na)
     if (punits == NULL) punits = z->punits;
 
     /* get grid data */
-
-    datasize = get_data_size (z, location, rind);
+    
+    /* get solution data size */
+    if (location == CGNS_ENUMV(InterpolationPoints))
+    {
+      /* Interpolation Order */
+      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+      if (ierr == CG_ERROR) error_exit("check_arbitrary_motion->cg_sol_interpolation_order_read");
+      datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0 && type != CGNS_ENUMV(DeformingGrid))
@@ -4563,7 +4668,7 @@ static void check_rigid_motion (int nr)
 static void check_discrete (int ndis)
 {
     char name[33];
-    int n, nd, id, ierr, rind[6];
+    int n, nd, ns, os, ot, id, ierr, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -4636,8 +4741,16 @@ static void check_discrete (int ndis)
     if (punits == NULL) punits = z->punits;
 
     /* get discrete data */
-
-    datasize = get_data_size (z, location, rind);
+/* get solution data size */
+    if (location == CGNS_ENUMV(InterpolationPoints))
+    {
+      /* Interpolation Order */
+      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+      if (ierr == CG_ERROR) error_exit("check_discrete->cg_sol_interpolation_order_read");
+      datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0)
@@ -4666,11 +4779,17 @@ static void check_solution (int ns)
     char name[33];
     int n, nf, id, ierr, rind[6];
     int ndim;
+    int os,ot;
+    cgsize_t ds[3];
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(GridLocation_t) location;
     ZONE *z = &Zones[cgnszone-1];
+    /* Point Set */
+    cgsize_t npts;
+    CGNS_ENUMT(PointSetType_t) ptsettype;
+    cgsize_t *ptsetlist = NULL;
 
     if (cg_sol_info (cgnsfn, cgnsbase, cgnszone, ns, name, &location))
         error_exit("cg_sol_info");
@@ -4741,11 +4860,111 @@ static void check_solution (int ns)
     }
     if (dataclass < 0) dataclass = z->dataclass;
     if (punits == NULL) punits = z->punits;
+    
+    
+    /* Interpolation Order */
+    ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+    if (ierr == CG_ERROR)
+    {
+        error_exit("cg_sol_interpolation_order_read");
+    }
+    if (ierr == CG_OK)
+    {
+        printf ("    checking solution Interpolation Order\n");
+
+        /* CPEX 0045 Section 3.2.5: Two valid GridLocation values for interpolation orders:
+         * 1. InterpolationPoints: Uniform order across entire zone
+         * 2. CellCenter: Variable order (p-adaptation) with PointRange/PointList
+         */
+        if (location != CGNS_ENUMV(InterpolationPoints) &&
+            location != CGNS_ENUMV(CellCenter))
+        {
+            error("Solution Interpolation Order requires GridLocation = InterpolationPoints "
+                  "(uniform order) or CellCenter (variable order per CPEX 0045 Section 3.2.5).");
+        }
+
+        printf ("        Spatial  Order : %d\n",os);
+        printf ("        Temporal Order : %d\n",ot);
+
+        /* Validation: Check for reasonable order values */
+        if (os < 0 || os > 100) {
+            warning(2, "Spatial order %d is outside typical range [0-100]", os);
+        }
+        if (ot < 0 || ot > 10) {
+            warning(2, "Temporal order %d is outside typical range [0-10]", ot);
+        }
+
+        /* Note: More sophisticated validation would check if these orders match
+         * a SolutionInterpolation_t node in the zone's Family_t, but that requires
+         * complex matching logic between element types and interpolation definitions.
+         * Users should ensure consistency between FlowSolution InterpolationOrders
+         * and Family SolutionInterpolation nodes manually. */
+    }
+
+    /* SIDS Consistency Check: InterpolationPoints requires interpolation definition */
+    if (location == CGNS_ENUMV(InterpolationPoints) && ierr == CG_NODE_NOT_FOUND)
+    {
+        error("GridLocation=InterpolationPoints requires InterpolationOrders to be defined. "
+              "FlowSolution at interpolation points must specify which interpolation is being used.");
+    }
+
+    /* CPEX 0045 Consistency Check: CellCenter with InterpolationOrders requires PointSet */
+    if (location == CGNS_ENUMV(CellCenter) && ierr == CG_OK)
+    {
+        /* Check will be performed below when reading PointSet */
+        /* Deferred to avoid reading PointSet twice */
+    }
+
+    /* PointSet if exists */
+    ierr = cg_sol_ptset_info(cgnsfn, cgnsbase, cgnszone,ns,&ptsettype,&npts);
+    if (ierr != CG_NODE_NOT_FOUND) {
+
+      if (ptsettype == CGNS_ENUMV(PointRange)) {
+        ptsetlist = (cgsize_t *)malloc( 2 * sizeof(cgsize_t));
+      }
+      else if (ptsettype == CGNS_ENUMV(PointList)) {
+        ptsetlist = (cgsize_t *)malloc( npts * sizeof(cgsize_t));
+      }
+      cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist);
+    }
+
+    /* CPEX 0045 Validation: CellCenter with InterpolationOrders MUST have PointSet */
+    if (location == CGNS_ENUMV(CellCenter) && os > 0)
+    {
+        int has_order;
+        int temp_os, temp_ot;
+        int ierr_order = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &temp_os, &temp_ot);
+        has_order = (ierr_order == CG_OK && (temp_os > 0 || temp_ot > 0));
+
+        if (has_order && ierr == CG_NODE_NOT_FOUND)
+        {
+            error("CPEX 0045 Section 3.2.5: Variable order solutions (GridLocation=CellCenter "
+                  "with SpatialOrder=%d or TemporalOrder=%d) require PointRange or PointList "
+                  "to specify which elements use this order.", temp_os, temp_ot);
+        }
+        else if (has_order)
+        {
+            printf ("    Variable order solution (p-adaptation):\n");
+            printf ("        PointSet Type: %s\n", cg_PointSetTypeName(ptsettype));
+            printf ("        Point Count  : %ld\n", (long)npts);
+        }
+    }
 
     /* get solution data size */
-
-    datasize = get_data_size (z, location, rind);
-
+    if (location == CGNS_ENUMV(InterpolationPoints))
+    {
+      if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
+        datasize = get_ho_data_size_range(z,os,ot,ptsetlist);
+      else if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointList) )
+        datasize = get_ho_data_size_list(z,os,ot,ptsetlist,npts);
+      else
+        datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
+    
+    if (ptsetlist) free(ptsetlist);
+    
     /* read solution data as arrays to get size */
 
     if (cg_nfields (cgnsfn, cgnsbase, cgnszone, ns, &nf))
@@ -4762,13 +4981,14 @@ static void check_solution (int ns)
             size *= dims[id];
         if (ndim != z->idim || size < 1 ||
             (datasize && size != datasize))
-            error ("bad dimension values");
+            error ("bad dimension values. required %ld, %ld given",datasize,size);
         check_quantity (n, name, dataclass, punits, 1, 6);
     }
 
     /* user data */
 
     check_user_data (dataclass, punits, 4);
+    
 }
 
 /*-----------------------------------------------------------------------*/
@@ -5669,13 +5889,104 @@ static void check_gravity (float *vector)
 
 /*-----------------------------------------------------------------------*/
 
+static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type, 
+                                        double *u, double *v, double *w)
+{
+    CGNS_ENUMT(ElementType_t) btype;
+    cg_element_basic_element_type(type,&btype);
+  
+    switch(btype)
+    {
+      case (CGNS_ENUMV(NODE)): return CG_OK;
+      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 ) return CG_ERROR;break;
+      case (CGNS_ENUMV(TRI_3)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || fabs(u[2]+1.0) > 1.e-06) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || fabs(v[2]-1.0) > 1.e-06) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(QUAD_4)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(TETRA_4)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(HEXA_8)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]+1.0) > 1.e-06 || fabs(u[5]-1.0) > 1.e-06 ||
+             fabs(u[6]-1.0) > 1.e-06 || fabs(u[7]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
+             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]+1.0) > 1.e-06 ||
+             fabs(v[6]-1.0) > 1.e-06 || fabs(v[7]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ||
+             fabs(w[6]-1.0) > 1.e-06 || fabs(w[7]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(PENTA_6)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]-1.0) > 1.e-06 || fabs(u[5]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ||
+             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(PYRA_5)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
+             fabs(v[4]) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
+      }
+      default: return CG_ERROR;
+    }
+    
+    
+    return CG_OK;
+}
+/*-----------------------------------------------------------------------*/
+
 static void check_family (int fam)
 {
     char famname[33], name[33], cad[33], *filename;
-    int ierr, i, n, nbc, ngeo, nparts;
+    int ierr, j, n,ndim, nbc, ngeo, nparts,npe;
+    int ordinal;
+    cgsize_t i;
+    int npt;
     CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(ElementType_t) etype,btype;
+    CGNS_ENUMT(InterpolationType_t) it;
     int nds, dirichlet, neumann;
     float point[3], vector[3];
+    int ninterp, os, ot;
+    double *pu,*pv,*pw,*pt;
 
     if (cg_family_read (cgnsfn, cgnsbase, fam, famname, &nbc, &ngeo))
         error_exit("cg_family_read");
@@ -5749,7 +6060,7 @@ static void check_family (int fam)
         }
     }
 
-    ierr = read_ordinal (&i);
+    ierr = read_ordinal (&ordinal);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_ordinal_read");
 
     ierr = cg_rotating_read (vector, point);
@@ -5759,8 +6070,189 @@ static void check_family (int fam)
         fflush (stdout);
         check_rotating (point, vector, BaseClass, pBaseUnits, 4);
     }
-
+    
     check_user_data (BaseClass, pBaseUnits, 2);
+    
+    if (cg_nelement_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nelement_interpolation_read");
+    
+    if (verbose) printf ("  Number ElementInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        if (cg_element_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype) )
+          error_exit("cg_element_interpolation_read");
+        if (verbose) {
+            printf ("    ElementInterpolation Name=\"%s\"\n", name);
+            printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+        }
+
+        /* Validate: Get expected size for this element type */
+        cgsize_t tmp_i;
+        cg_element_lagrange_interpolation_size(etype,&tmp_i);
+        i = tmp_i;
+        if (i <= 0) {
+            error("ElementInterpolation \"%s\": Invalid size %lld for element type %s",
+                  name, (long long)i, cg_ElementTypeName(etype));
+            continue;
+        }
+
+        /* Validate: Get actual number of points from stored data */
+        cg_npe(etype, &npt);
+        if (npt != i) {
+            error("ElementInterpolation \"%s\": Point count mismatch - expected %lld for %s, got %lld",
+                  name, (long long)i, cg_ElementTypeName(etype), (long long)npt);
+        }
+
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+
+        ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw);
+        if (ierr == CG_OK) {
+            /* Validate: Check element dimension and verify non-NULL coordinate arrays */
+            cg_element_dimension(etype, &ndim);
+            if (ndim < 1 || ndim > 3) {
+                error("ElementInterpolation \"%s\": Invalid element dimension %d for type %s",
+                      name, ndim, cg_ElementTypeName(etype));
+            }
+
+            if (verbose) 
+        {
+            printf ("    ElementInterpolation Lagrange Points Defined \n");
+            
+            /* Checking 1st order points */
+            cg_element_basic_element_type(etype,&btype);
+            
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            cg_npe(etype,&npt);
+            
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+            
+            if ( check_element_nodes_ordering(btype,pu,pv,pw) )
+              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
+        }
+        }
+        else if (ierr == CG_ERROR)
+          error_exit("cg_element_interpolation_points_read");
+        free(pu);free(pv);free(pw);
+    }
+    
+    if (cg_nsolution_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nsolution_interpolation_read");
+    
+    if (verbose) printf ("  Number SolutionInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        if (cg_solution_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype, &os, &ot,&it) )
+          error_exit("cg_solution_interpolation_read");
+        if (verbose) {
+            printf ("    SolutionInterpolation Name=\"%s\"\n", name);
+            printf ("    SolutionInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+            printf ("    SolutionInterpolation spatialOrder=%d\n", os);
+            printf ("    SolutionInterpolation temporalOrder=%d\n", ot);
+            printf ("    SolutionInterpolation InterpolationType=\"%s\"\n", cg_InterpolationTypeName(it));
+        }
+
+        /* Validate: Check InterpolationType */
+        if (it != CGNS_ENUMV(ParametricLagrange) &&
+            it != CGNS_ENUMV(ParametricMonomialsPascal) &&
+            it != CGNS_ENUMV(CartesianMonomialsPascal) &&
+            it != CGNS_ENUMV(IsoParametric)) {
+            error("SolutionInterpolation \"%s\": Invalid InterpolationType %d",
+                  name, it);
+        }
+
+        /* Validate: Check spatial and temporal orders */
+        if (os < 0) {
+            error("SolutionInterpolation \"%s\": Invalid spatialOrder %d (must be >= 0)", name, os);
+        }
+        if (ot < 0) {
+            error("SolutionInterpolation \"%s\": Invalid temporalOrder %d (must be >= 0)", name, ot);
+        }
+
+        /* Validate: Get expected size for this element type and orders */
+        cgsize_t tmp_i2;
+        cg_solution_lagrange_interpolation_size(etype,os,ot,&tmp_i2);
+        i = tmp_i2;
+        if (i <= 0) {
+            error("SolutionInterpolation \"%s\": Invalid size %lld for element type %s with orders (spatial=%d, temporal=%d)",
+                  name, (long long)i, cg_ElementTypeName(etype), os, ot);
+            continue;
+        }
+
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pt = (double*) malloc((cgsize_t) i * sizeof(double) );
+
+
+        ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw,pt);
+        if (ierr == CG_OK) {
+            /* Validate: Check element dimension */
+            cg_element_dimension(etype, &ndim);
+            if (ndim < 1 || ndim > 3) {
+                error("SolutionInterpolation \"%s\": Invalid element dimension %d for type %s",
+                      name, ndim, cg_ElementTypeName(etype));
+            }
+
+            /* Validate: For TemporalOrder=0, temporal coordinates should not be present
+             * For TemporalOrder>0, they must be present */
+            if (ot == 0) {
+                /* Note: We can't directly check if pt array has meaningful data,
+                 * but we validated this in the library already */
+            }
+
+            if (verbose) 
+        {
+            printf ("    SolutionInterpolation Lagrange Points Defined \n");
+            
+            /* Checking 1st order points */
+            cg_element_basic_element_type(etype,&btype);
+
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            cgsize_t npt_size;
+            cg_solution_lagrange_interpolation_size(btype,os,ot,&npt_size);
+            npt = (int)npt_size;
+
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+            
+            if ( check_element_nodes_ordering(btype,pu,pv,pw) != CG_OK)
+              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
+        }
+        }
+        else if (ierr == CG_ERROR)
+          error_exit("cg_solution_interpolation_points_read");
+        free(pu);free(pv);free(pw);free(pt);
+    }
+
 }
 
 /*-----------------------------------------------------------------------*/

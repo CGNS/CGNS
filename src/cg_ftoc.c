@@ -2721,16 +2721,16 @@ CGNSDLL void cg_ordinal_read_f(cgint_f *Ordinal, cgint_f *ier)
 }
 
 /*-----------------------------------------------------------------------*/
-
-CGNSDLL void cg_npe_f(CGNS_ENUMT(ElementType_t) *type,
-	cgint_f *npe, cgint_f *ier)
-{
-    int i_npe;
-
-    *ier = (cgint_f)cg_npe(*type, &i_npe);
-    *npe = (cgint_f)i_npe;
-}
-
+/* Note: cg_npe_f is now implemented directly in Fortran using ISO_C_BINDING
+ * (see cgns_f.F90 CONTAINS section) to call the C function directly,
+ * eliminating the need for a C wrapper.
+ */
+/*-----------------------------------------------------------------------*/
+/* Note: cg_element_lagrange_interpolation_size_f and
+ * cg_solution_lagrange_interpolation_size_f are now implemented
+ * directly in Fortran using ISO_C_BINDING (see cgns_f.F90 CONTAINS section)
+ * to call the C functions directly, eliminating the need for C wrappers.
+ */
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cg_is_link_f(cgint_f *path_length, cgint_f *ier)

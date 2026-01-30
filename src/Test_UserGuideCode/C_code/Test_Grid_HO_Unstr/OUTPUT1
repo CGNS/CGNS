@@ -1,0 +1,6 @@
+
+Successfully read flow solution orders (spatial and temporal) from file grid_ho_c.cgns
+  spatial  Order = 3 (should be 3)
+  temporal Order = 0 (should be 0)
+
+Program successful... ending now

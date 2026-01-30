@@ -26,14 +26,14 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 #include "cg_hashmap.h"
 
-typedef char char_33[33];
+typedef char char_33[CG_MAX_NAME_LENGTH];
 #ifdef CG_BUILD_BASESCOPE
 typedef char char_66[66]; /* 32 + '/' + 32 + '\0' */
 #else
-typedef char char_66[33]; /* 32 + '\0' (caller's malloc compat issues) */
+typedef char char_66[CG_MAX_NAME_LENGTH]; /* 32 + '\0' (caller's malloc compat issues) */
 #endif
-typedef char char_md[CG_MAX_GOTO_DEPTH*33+1]; /* ('/'+ 32)*MAX_GOTO_DEPTH + '\0' (FAMILY TREE) */
-typedef char const cchar_33[33];
+typedef char char_md[CG_MAX_GOTO_DEPTH*CG_MAX_NAME_LENGTH+1]; /* ('/'+ 32)*MAX_GOTO_DEPTH + '\0' (FAMILY TREE) */
+typedef char const cchar_33[CG_MAX_NAME_LENGTH];
 typedef cgsize_t cgsize6_t[6];
 typedef int cgint3_t[3];
 
@@ -150,6 +150,82 @@ typedef enum {
 /*
  * Internal Structures:
  */
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ * Element Properties Lookup Table (CPEX 45 High-Order Support)         *
+ * CRITICAL: Single source of truth for element properties used by both  *
+ * serial and parallel I/O. This eliminates scattered switch statements. *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef struct {
+    CGNS_ENUMT(ElementType_t) type;  /* Element type enum value */
+    const char* name;                 /* Element type name string */
+    int npe;                          /* Nodes per element */
+    int dim;                          /* Element dimension (0=node, 1=edge, 2=face, 3=volume) */
+    int nfaces;                       /* Number of faces (for 3D elements, 0 for 2D/1D) */
+    int nedges;                       /* Number of edges */
+} ElementTraits;
+
+/* Centralized element properties table - indexed by ElementType_t enum value
+ * CRITICAL: Array index MUST match enum integer value for direct lookup
+ * This table is the authoritative source for all element properties.
+ * When adding new element types, append to maintain index alignment.
+ *
+ * IMPORTANT: This is declared extern here and defined in cgnslib.c to avoid
+ * generating duplicate copies of this large const array in every translation unit.
+ * Inline accessor functions below provide fast O(1) access to table properties. */
+extern const ElementTraits cgi_element_traits[NofValidElementTypes];
+
+/* Fast accessor functions for element properties
+ * These provide O(1) lookup by using enum value as array index
+ * CRITICAL for parallel I/O offset calculations */
+
+/* Get nodes per element (NPE) - most frequently used property
+ * Returns: NPE value, or -1 if type is invalid
+ * Used by: Serial I/O, Parallel I/O, connectivity size calculations */
+static inline int cgi_element_npe(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return -1;
+    return cgi_element_traits[idx].npe;
+}
+
+/* Get element dimension (0=node, 1=edge, 2=face, 3=volume)
+ * Returns: Dimension, or -1 if type is invalid
+ * Used by: Validation, boundary condition checks */
+static inline int cgi_element_dimension(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return -1;
+    return cgi_element_traits[idx].dim;
+}
+
+/* Get number of faces for 3D elements
+ * Returns: Face count, or 0 for 2D/1D elements, -1 if invalid
+ * Used by: Boundary extraction, face-based operations */
+static inline int cgi_element_nfaces(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return -1;
+    return cgi_element_traits[idx].nfaces;
+}
+
+/* Get number of edges
+ * Returns: Edge count, or -1 if type is invalid
+ * Used by: Edge-based operations, refinement */
+static inline int cgi_element_nedges(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return -1;
+    return cgi_element_traits[idx].nedges;
+}
+
+/* Get element type name string
+ * Returns: Name string pointer, or NULL if type is invalid
+ * Used by: Error messages, debugging, user-facing output */
+static inline const char* cgi_element_name(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return NULL;
+    return cgi_element_traits[idx].name;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Note that the link information held in these structs are only needed
 ** until the CGNS file is written.  At that point the ADF link mechanism
@@ -743,6 +819,10 @@ typedef struct {            /* FlowSolution_t node          */
     cgns_units *units;      /* Dimensional Units                    */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    /* CPEX 045 */
+    int isOrderDefined;     /* Flag which defines if spatialOrder or temporalOrder are defined*/
+    int spatialOrder;       /* Spatial order of the solution        */
+    int temporalOrder;      /* temporal order of the solution       */
 } cgns_sol;
 
 typedef struct {            /* GridCoordinates_t node       */
@@ -931,6 +1011,27 @@ typedef struct {            /* FamilyBC_t node          */
     cgns_dataset *dataset;  /* ptrs to in-mem. copy of BCDataSet    */
 } cgns_fambc;
 
+/* CPEX 045 */
+typedef struct {                    /* ElementInterpolation_t Node */
+    char_33 name;                   /* name of ADF node         */
+    double id;                      /* ADF ID number (address) of node      */
+    CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
+    CGNS_ENUMT(InterpolationType_t) interpolationType; /* Interpolation type (Lagrange, Monomial, etc.) */
+    cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
+    cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
+} cgns_elementInterpolation;
+
+typedef struct {                    /* SolutionInterpolation_t Node */
+    char_33 name;                   /* name of ADF node         */
+    double id;                      /* ADF ID number (address) of node      */
+    CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
+    int spatialorder;               /* Order of the spatial interpolation */
+    int temporalorder;              /* Order of the temporal interpolation */
+    CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
+    cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
+    cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
+} cgns_solutionInterpolation;
+
 typedef struct cgns_family_s {            /* Family_t node            */
     char_33 name;           /* Family name & name of ADF node   */
     double id;              /* ADF ID number (address) of node      */
@@ -949,6 +1050,12 @@ typedef struct cgns_family_s {            /* Family_t node            */
 /* CPEX 0033 */
     int nfamname;
     cgns_famname *famname;
+/* CPEX 0045 */
+    int nelementinterpolation;
+    cgns_elementInterpolation *elementinterpolations;    
+/* CPEX 0045 */
+    int nsolutioninterpolation;
+    cgns_solutionInterpolation *solutioninterpolations;   
     /* ** FAMILY TREE ** */
     int nfamilies;
     struct cgns_family_s* family;
@@ -1225,6 +1332,7 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
 int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                       cgns_discrete **discrete);
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol);
+int cgi_read_solution_order(cgns_sol *sol);
 int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor,
                    cgns_zcoor **zcoor);
 int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zconn);
@@ -1253,10 +1361,22 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
 int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                        cgns_subreg **subreg);
 cgns_link *cgi_read_link(double node_id);
+/* CPEX 045*/
+int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation);
+int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation);
 
 CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 			 CGNS_ENUMT(GridLocation_t) location,
 			 int *rind_planes, cgsize_t *DataSize);
+
+/* CPEX 045 */
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, 
+                    cgsize_t *DataSize);
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                          const int temporalOrder, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                         const int temporalOrder, const cgsize_t *list, const cgsize_t npts, 
+                         cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);
@@ -1421,6 +1541,8 @@ void cgi_array_print(char *routine, cgns_array *array);
 cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
 			       cgsize_t nelems, const cgsize_t *connect, const cgsize_t *connect_offset);
 
+int cgi_ptset_range(cgns_ptset *ptset, cgsize_t *range_min, cgsize_t *range_max);
+
 /* free memory */
 void cgi_free_file(cgns_file *cg);
 void cgi_free_base(cgns_base *base);
@@ -1428,6 +1550,8 @@ void cgi_free_zone(cgns_zone *zone);
 void cgi_free_family(cgns_family *family);
 void cgi_free_fambc(cgns_fambc *fambc);
 void cgi_free_famname(cgns_famname *famname);
+void cgi_free_element_interpolation(cgns_elementInterpolation *einterp);
+void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp);
 void cgi_free_geo(cgns_geo *geo);
 void cgi_free_part(cgns_part *part);
 void cgi_free_zcoor(cgns_zcoor *zcoor);
