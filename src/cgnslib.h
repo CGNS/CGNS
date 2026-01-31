@@ -1402,21 +1402,21 @@ CGNSDLL int cg_zconn_set(int fn, int B, int Z, int C);
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nholes(int fn, int B, int Z, int *nholes);
-CGNSDLL int cg_hole_info(int fn, int B, int Z, int Ii, char *holename,
+CGNSDLL int cg_hole_info(int fn, int B, int Z, int J, char *holename,
 	CGNS_ENUMT(GridLocation_t) *location,  CGNS_ENUMT(PointSetType_t) *ptset_type,
 	int *nptsets, cgsize_t *npnts);
-CGNSDLL int cg_hole_read(int fn, int B, int Z, int Ii, cgsize_t *pnts);
-CGNSDLL int cg_hole_id(int fn, int B, int Z, int Ii, double *hole_id);
+CGNSDLL int cg_hole_read(int fn, int B, int Z, int J, cgsize_t *pnts);
+CGNSDLL int cg_hole_id(int fn, int B, int Z, int J, double *hole_id);
 CGNSDLL int cg_hole_write(int fn, int B, int Z, const char * holename,
 	CGNS_ENUMT(GridLocation_t) location, CGNS_ENUMT(PointSetType_t) ptset_type,
-	int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *Ii);
+	int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *J);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridConnectivity_t Nodes                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nconns(int fn, int B, int Z, int *nconns);
-CGNSDLL int cg_conn_info(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_conn_info(int file_number, int B, int Z, int J,
 	char *connectname, CGNS_ENUMT(GridLocation_t) *location,
 	CGNS_ENUMT(GridConnectivityType_t) *type,
 	CGNS_ENUMT(PointSetType_t) *ptset_type,
@@ -1425,10 +1425,10 @@ CGNSDLL int cg_conn_info(int file_number, int B, int Z, int Ii,
 	CGNS_ENUMT(PointSetType_t) *donor_ptset_type,
         CGNS_ENUMT(DataType_t) *donor_datatype,
         cgsize_t *ndata_donor);
-CGNSDLL int cg_conn_read(int file_number, int B, int Z, int Ii, cgsize_t *pnts,
+CGNSDLL int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
         CGNS_ENUMT(DataType_t) donor_datatype,
         cgsize_t *donor_data);
-CGNSDLL int cg_conn_id(int fn, int B, int Z, int Ii, double *conn_id);
+CGNSDLL int cg_conn_id(int fn, int B, int Z, int J, double *conn_id);
 CGNSDLL int cg_conn_write(int file_number, int B, int Z,
 	const char * connectname, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(GridConnectivityType_t) type,
@@ -1437,13 +1437,13 @@ CGNSDLL int cg_conn_write(int file_number, int B, int Z,
 	CGNS_ENUMT(ZoneType_t) donor_zonetype,
 	CGNS_ENUMT(PointSetType_t) donor_ptset_type,
         CGNS_ENUMT(DataType_t) donor_datatype,
-        cgsize_t ndata_donor, const cgsize_t *donor_data, int *Ii);
+        cgsize_t ndata_donor, const cgsize_t *donor_data, int *J);
 CGNSDLL int cg_conn_write_short(int file_number, int B, int Z,
 	const char * connectname, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(GridConnectivityType_t) type,
 	CGNS_ENUMT(PointSetType_t) ptset_type,
-	cgsize_t npnts, const cgsize_t * pnts, const char * donorname, int *Ii);
-CGNSDLL int cg_conn_read_short(int file_number, int B, int Z, int Ii,
+	cgsize_t npnts, const cgsize_t * pnts, const char * donorname, int *J);
+CGNSDLL int cg_conn_read_short(int file_number, int B, int Z, int J,
 	cgsize_t *pnts);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -1451,12 +1451,12 @@ CGNSDLL int cg_conn_read_short(int file_number, int B, int Z, int Ii,
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_n1to1(int fn, int B, int Z, int *n1to1);
-CGNSDLL int cg_1to1_read(int fn, int B, int Z, int Ii, char *connectname,
+CGNSDLL int cg_1to1_read(int fn, int B, int Z, int J, char *connectname,
 	char *donorname, cgsize_t *range, cgsize_t *donor_range, int *transform);
-CGNSDLL int cg_1to1_id(int fn, int B, int Z, int Ii, double *one21_id);
+CGNSDLL int cg_1to1_id(int fn, int B, int Z, int J, double *one21_id);
 CGNSDLL int cg_1to1_write(int fn, int B, int Z, const char * connectname,
 	const char * donorname, const cgsize_t * range,
-	const cgsize_t * donor_range, const int * transform, int *Ii);
+	const cgsize_t * donor_range, const int * transform, int *J);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read all GridConnectivity1to1_t Nodes of a base                  *
@@ -1636,28 +1636,28 @@ CGNSDLL int cg_bc_area_write(int file_number, int B, int Z, int BC,
  *      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_conn_periodic_read(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_conn_periodic_read(int file_number, int B, int Z, int J,
 	float *RotationCenter, float *RotationAngle, float *Translation);
-CGNSDLL int cg_conn_periodic_write(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_conn_periodic_write(int file_number, int B, int Z, int J,
 	float const *RotationCenter, float const *RotationAngle,
 	float const *Translation);
-CGNSDLL int cg_1to1_periodic_write(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
 	float const *RotationCenter, float const *RotationAngle,
 	float const *Translation);
-CGNSDLL int cg_1to1_periodic_read(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
 	float *RotationCenter, float *RotationAngle, float *Translation);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_conn_average_read(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_conn_average_read(int file_number, int B, int Z, int J,
 	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
-CGNSDLL int cg_conn_average_write(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_conn_average_write(int file_number, int B, int Z, int J,
 	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
-CGNSDLL int cg_1to1_average_write(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_1to1_average_write(int file_number, int B, int Z, int J,
 	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
-CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int Ii,
+CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int J,
         CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
