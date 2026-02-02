@@ -362,15 +362,6 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {5000, 4500, 4400, 4300, 4200,
-                     4110, 4100, 4000,
-                     3210, 3200,
-                     3140, 3130, 3110, 3100,
-                     3080, 3000,
-                     2550, 2540, 2530, 2520, 2510, 2500,
-                     2460, 2420, 2400,
-                     2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
-#define nVersions ((int)(sizeof(VersionList)/sizeof(int)))
 
 #ifdef DEBUG_HDF5_OBJECTS_CLOSE
 void objlist_status(char *tag)
@@ -754,20 +745,18 @@ int cg_version(int fn, float *version)
      /* save data */
         *version = *((float *)data);
         free(data);
-        cg->version = (int)(1000.0*(*version)+0.5);
 
-     /* To prevent round-off errors in version number for files of older or current version */
-        temp_version = cg->version;
-     /* cg->version = 0;  Commented for fwd compatibility */
-        for (vers=0; vers<nVersions; vers++) {
-            if (temp_version > (VersionList[vers]-2) &&
-                temp_version < (VersionList[vers]+2)) {
-                cg->version = VersionList[vers];
-                break;
-            }
-        }
-        if (cg->version == 0) {
-            cgi_error("Error:  Unable to determine the version number");
+     /* Convert float to integer with tolerance snapping */
+     /* Multiplies by 1000 and adds 0.5 to handle float jitter (e.g., 3.1999 -> 3200) */
+        cg->version = (int)(1000.0 * (*version) + 0.5);
+
+     /* Snap to nearest 10 to enforce format granularity (e.g., 3.212 -> 3210) */
+     /* This handles cases where the float might be slightly off due to precision */
+        cg->version = ((cg->version + 5) / 10) * 10;
+
+     /* Range validation - reject clearly invalid versions */
+        if (cg->version < 1000 || cg->version > 99990) {
+            cgi_error("Error: Invalid or unsupported CGNS version: %d (%f)", cg->version, *version);
             return CG_ERROR;
         }
 

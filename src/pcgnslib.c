@@ -1439,11 +1439,8 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
         section->parelem = CGNS_NEW(cgns_array, 1);
     }
 
-    /* Get total size across all processors */
-    cgsize_t num = end == 0 ? 0 : end - start + 1;
-    num = num < 0 ? 0 : num;
-    MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, ctx_cgio.pcg_mpi_comm);
+    /* ParentElements array must be sized to full section range */
+    cgsize_t num = section->range[1] - section->range[0] + 1;
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;
@@ -1476,7 +1473,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
 
     if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
 
-    /* ParentElements -- write data */
+    /* Calculate write range based on element numbers relative to section start */
     rmin[0] = start - section->range[0] + 1;
     rmax[0] = end - section->range[0] + 1;
     rmin[1] = 1;
@@ -1486,6 +1483,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     cg_rw_t Data;
     Data.u.wbuf = parent_data;
 
+    /* Write ParentElements data */
     to_HDF_ID(section->parelem->id, hid);
     int herr = readwrite_data_parallel(hid, type, 2, rmin, rmax, &Data, CG_PAR_WRITE);
     if (herr != CG_OK)
@@ -1625,11 +1623,8 @@ int cgp_parentelements_write_data(int fn, int B, int Z, int S, cgsize_t start,
         section->parelem = CGNS_NEW(cgns_array, 1);
     }
 
-    /* Get total size across all processors */
-    cgsize_t num = end == 0 ? 0 : end - start + 1;
-    num = num < 0 ? 0 : num;
-    MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, ctx_cgio.pcg_mpi_comm);
+    /* ParentElements array must be sized to full section range */
+    cgsize_t num = section->range[1] - section->range[0] + 1;
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;

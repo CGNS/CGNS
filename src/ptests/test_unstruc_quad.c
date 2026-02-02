@@ -342,6 +342,79 @@ int main(int argc, char* argv[]) {
     free(point_list);
   }
 
+  /* Regression test for ParentElements with non-contiguous element ranges.
+   * Tests fix for bug where ParentElements array was incorrectly sized
+   * causing data scrambling when multiple ranks wrote to different element ranges.
+   * Requires at least 4 ranks to test.
+   */
+  if (comm_size >= 4) {
+    int S_test;
+    cgsize_t test_start, test_end, test_nelem;
+    cgsize_t *parent_data = NULL;
+
+    /* Create test section with elements 101-124 (24 total, 6 per rank in 4-rank case) */
+    cgsize_t section_start = 101;
+    cgsize_t section_end = 100 + 6 * comm_size;
+
+    if (cgp_section_write(fn, B, Z, "TestSection", CGNS_ENUMV(BAR_2),
+                          section_start, section_end, 0, &S_test))
+      cgp_error_exit();
+
+    /* Each rank writes to non-contiguous ranges:
+     * Rank 0: elements 110-114 (5 elements)
+     * Rank 1: element  115     (1 element)
+     * Rank 2: elements 116-118 (3 elements)
+     * Rank 3: elements 119-121 (3 elements)
+     * ... pattern continues for more ranks
+     */
+    if (comm_rank == 0) {
+      test_start = 110;
+      test_end = 114;
+    } else if (comm_rank == 1) {
+      test_start = 115;
+      test_end = 115;
+    } else if (comm_rank == 2) {
+      test_start = 116;
+      test_end = 118;
+    } else {
+      /* For rank 3 and higher */
+      test_start = 119 + (comm_rank - 3) * 3;
+      test_end = test_start + 2;
+    }
+
+    test_nelem = test_end - test_start + 1;
+    parent_data = (cgsize_t *)malloc(test_nelem * 2 * sizeof(cgsize_t));
+
+    /* Fill with rank-specific data */
+    for (cgsize_t i = 0; i < test_nelem; i++) {
+      parent_data[2*i]   = (comm_rank + 1) * 10 + i;  /* Parent element */
+      parent_data[2*i+1] = 0;                         /* Parent face */
+    }
+
+    /* Write ParentElements */
+    if (cgp_parentelements_write_data(fn, B, Z, S_test, test_start, test_end, parent_data))
+      cgp_error_exit();
+
+    /* Read back and verify */
+    cgsize_t *read_data = (cgsize_t *)malloc(test_nelem * 2 * sizeof(cgsize_t));
+    if (cgp_parentelements_read_data(fn, B, Z, S_test, test_start, test_end, read_data))
+      cgp_error_exit();
+
+    /* Verify data */
+    for (cgsize_t i = 0; i < test_nelem * 2; i++) {
+      if (read_data[i] != parent_data[i]) {
+        printf("Rank %d: ParentElements mismatch at index %ld: expected %ld, got %ld\n",
+               comm_rank, (long)i, (long)parent_data[i], (long)read_data[i]);
+        free(parent_data);
+        free(read_data);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+      }
+    }
+
+    free(parent_data);
+    free(read_data);
+  }  /* end comm_size >= 4 */
+
   if (cgp_close(fn)) cgp_error_exit();
 
   err = MPI_Finalize();
