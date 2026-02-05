@@ -8412,7 +8412,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             cgsize_t range_min[12], range_max[12];
 
-            cgi_ptset_range(sol->ptset,range_min,range_max);
+            if (cgi_ptset_range(sol->ptset, range_min, range_max)) return CG_ERROR;
 
             if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
                               sol->temporalOrder, range_min[0], range_max[0], &dim_vals[0]) ) {
@@ -8796,13 +8796,16 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
             /* Name */
             if (cgio_get_name(cg->cgio, ids[n], name)) {
                 cg_io_error("cgio_get_name");
+                CGNS_FREE(ids);
                 return CG_ERROR;
             }
             if (strcmp(name,"InterpolationOrders")==0)
             {
                 // Delete Node ...
-                if (cgi_delete_node(sol->id,ids[n]))
-                  return CG_ERROR;
+                if (cgi_delete_node(sol->id,ids[n])) {
+                    CGNS_FREE(ids);
+                    return CG_ERROR;
+                }
             }
         }
         CGNS_FREE(ids);
@@ -16545,7 +16548,7 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
     en--;
 
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
@@ -16611,7 +16614,7 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
     en--;
 
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
@@ -16710,11 +16713,11 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
     en--;
-    
+
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
-    
+
     /* Get lagrange Points array */
     cgns_array *lpts = ei->lagrangePts;
     
@@ -17232,8 +17235,15 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     einterp->lagrangePts->data=0;
     
     einterp->lagrangePts->data = malloc( (size_t) ( nnodes * edim * sizeof(double) ) );
+    if (!einterp->lagrangePts->data) {
+        cgi_error("Error allocating %ld bytes for LagrangeControlPoints data",
+                  (long)(nnodes * edim * sizeof(double)));
+        CGNS_FREE(einterp->lagrangePts);
+        einterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
     data = (double*)einterp->lagrangePts->data;
-    
+
     // Fortran Style !!
     k = 0;
     double *array[] = {pu,pv,pw};
@@ -17775,7 +17785,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
         return CG_ERROR;
     }
     // Check Interpolation Type
-    if (INVALID_ENUM(it,NofValidElementTypes)) {
+    if (INVALID_ENUM(it,NofValidInterpolationTypes)) {
         cgi_error("Invalid solution Interpolation type.");
         return CG_ERROR;
     }
@@ -18024,8 +18034,15 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     sinterp->lagrangePts->data=0;
     
     sinterp->lagrangePts->data = malloc( (size_t) ( nnodes * (edim + (ot ? 1 : 0)) * sizeof(double) ) );
+    if (!sinterp->lagrangePts->data) {
+        cgi_error("Error allocating %ld bytes for LagrangeControlPoints data",
+                  (long)(nnodes * (edim + (ot ? 1 : 0)) * sizeof(double)));
+        CGNS_FREE(sinterp->lagrangePts);
+        sinterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
     data = (double*)sinterp->lagrangePts->data;
-    
+
     // Fortran Style !!
     k = 0;
     double *spatial[] = {pu, pv, pw};
@@ -18228,22 +18245,85 @@ int cg_element_monomial_size(CGNS_ENUMT(ElementType_t) t, cgsize_t *sz)
         return CG_ERROR;
     }
 
-    /* Infer polynomial order from number of nodes
-     * For 2D: (order+1)^2 = npe for quad, or use lookup for tri
-     * For 3D: (order+1)^3 = npe for hex, or use lookup for others
+    /* Determine polynomial order from element type and node count.
+     * Different element topologies (simplicial, tensor-product, serendipity)
+     * have different node count formulas, so we use explicit lookup.
      */
-    if (dim == 2) {
-        /* Approximate order for 2D elements */
-        order = (int)(sqrt((double)npe) + 0.5) - 1;
-    } else if (dim == 3) {
-        /* Approximate order for 3D elements */
-        order = (int)(pow((double)npe, 1.0/3.0) + 0.5) - 1;
-    } else {
-        /* 1D elements */
-        order = (int)npe - 1;
+    switch (t) {
+        /* 1D elements: order = npe - 1 */
+        case CGNS_ENUMV(BAR_2):  order = 1; break;
+        case CGNS_ENUMV(BAR_3):  order = 2; break;
+        case CGNS_ENUMV(BAR_4):  order = 3; break;
+        case CGNS_ENUMV(BAR_5):  order = 4; break;
+
+        /* 2D Triangular elements (simplicial topology) */
+        case CGNS_ENUMV(TRI_3):  order = 1; break;
+        case CGNS_ENUMV(TRI_6):  order = 2; break;
+        case CGNS_ENUMV(TRI_9):  order = 3; break;  /* incomplete cubic */
+        case CGNS_ENUMV(TRI_10): order = 3; break;  /* complete cubic */
+        case CGNS_ENUMV(TRI_12): order = 4; break;  /* incomplete quartic */
+        case CGNS_ENUMV(TRI_15): order = 4; break;  /* complete quartic */
+
+        /* 2D Quadrilateral elements (tensor-product topology) */
+        case CGNS_ENUMV(QUAD_4):     order = 1; break;
+        case CGNS_ENUMV(QUAD_8):     order = 2; break;  /* serendipity */
+        case CGNS_ENUMV(QUAD_9):     order = 2; break;  /* tensor-product */
+        case CGNS_ENUMV(QUAD_12):    order = 3; break;  /* serendipity */
+        case CGNS_ENUMV(QUAD_16):    order = 3; break;  /* tensor-product */
+        case CGNS_ENUMV(QUAD_P4_16): order = 4; break;  /* serendipity */
+        case CGNS_ENUMV(QUAD_25):    order = 4; break;  /* tensor-product */
+
+        /* 3D Tetrahedral elements (simplicial topology) */
+        case CGNS_ENUMV(TETRA_4):  order = 1; break;
+        case CGNS_ENUMV(TETRA_10): order = 2; break;
+        case CGNS_ENUMV(TETRA_16): order = 3; break;  /* incomplete */
+        case CGNS_ENUMV(TETRA_20): order = 3; break;  /* complete */
+        case CGNS_ENUMV(TETRA_22): order = 4; break;  /* incomplete */
+        case CGNS_ENUMV(TETRA_34): order = 4; break;  /* incomplete */
+        case CGNS_ENUMV(TETRA_35): order = 4; break;  /* complete */
+
+        /* 3D Pyramid elements */
+        case CGNS_ENUMV(PYRA_5):     order = 1; break;
+        case CGNS_ENUMV(PYRA_13):    order = 2; break;
+        case CGNS_ENUMV(PYRA_14):    order = 2; break;
+        case CGNS_ENUMV(PYRA_21):    order = 3; break;
+        case CGNS_ENUMV(PYRA_29):    order = 3; break;
+        case CGNS_ENUMV(PYRA_30):    order = 3; break;
+        case CGNS_ENUMV(PYRA_P4_29): order = 4; break;
+        case CGNS_ENUMV(PYRA_50):    order = 4; break;
+        case CGNS_ENUMV(PYRA_55):    order = 4; break;
+
+        /* 3D Pentahedral/Prism elements */
+        case CGNS_ENUMV(PENTA_6):  order = 1; break;
+        case CGNS_ENUMV(PENTA_15): order = 2; break;
+        case CGNS_ENUMV(PENTA_18): order = 2; break;
+        case CGNS_ENUMV(PENTA_24): order = 3; break;
+        case CGNS_ENUMV(PENTA_38): order = 3; break;
+        case CGNS_ENUMV(PENTA_40): order = 3; break;
+        case CGNS_ENUMV(PENTA_33): order = 4; break;
+        case CGNS_ENUMV(PENTA_66): order = 4; break;
+        case CGNS_ENUMV(PENTA_75): order = 4; break;
+
+        /* 3D Hexahedral elements (tensor-product topology) */
+        case CGNS_ENUMV(HEXA_8):   order = 1; break;
+        case CGNS_ENUMV(HEXA_20):  order = 2; break;  /* serendipity */
+        case CGNS_ENUMV(HEXA_27):  order = 2; break;  /* tensor-product */
+        case CGNS_ENUMV(HEXA_32):  order = 3; break;  /* serendipity */
+        case CGNS_ENUMV(HEXA_56):  order = 3; break;  /* serendipity */
+        case CGNS_ENUMV(HEXA_64):  order = 3; break;  /* tensor-product */
+        case CGNS_ENUMV(HEXA_44):  order = 4; break;  /* serendipity */
+        case CGNS_ENUMV(HEXA_98):  order = 4; break;  /* serendipity */
+        case CGNS_ENUMV(HEXA_125): order = 4; break;  /* tensor-product */
+
+        /* NODE element */
+        case CGNS_ENUMV(NODE): order = 0; break;
+
+        default:
+            cgi_error("Unknown or unsupported element type %d for monomial size calculation", t);
+            return CG_ERROR;
     }
 
-    /* Number of monomials = C(order + dim, dim) */
+    /* Number of monomials = C(order + dim, dim) using Pascal's triangle formula */
     *sz = binomial_coefficient(order + dim, dim);
 
     return CG_OK;

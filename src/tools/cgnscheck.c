@@ -1804,7 +1804,8 @@ static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
 static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalOrder,
                                         cgsize_t *range)
 {
-    int i, rmin, rmax,ne;
+    int i;
+    cgsize_t rmin, rmax, ne;
     int n;
     cgsize_t datasize = 0;
 
@@ -1835,7 +1836,8 @@ static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalO
 static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOrder,
                                         cgsize_t *list, int npts)
 {
-    int p, i, rmin, rmax,ne;
+    int p, i;
+    cgsize_t rmin, rmax, ne;
     int n;
     cgsize_t id, datasize = 0;
     short done;
@@ -3277,6 +3279,7 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
             }
+            break;
         case CGNS_ENUMV(InterpolationPoints):
             if (z->type != CGNS_ENUMV(Unstructured)) {
                 error ("InterpolationPoints location is compatible only with Unstructured grids");
@@ -4552,14 +4555,15 @@ static void check_arbitrary_motion (int na)
     if (punits == NULL) punits = z->punits;
 
     /* get grid data */
-    
+
     /* get solution data size */
     if (location == CGNS_ENUMV(InterpolationPoints))
     {
-      /* Interpolation Order */
-      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
-      if (ierr == CG_ERROR) error_exit("check_arbitrary_motion->cg_sol_interpolation_order_read");
-      datasize = get_ho_data_size(z,os,ot);
+      /* InterpolationPoints is not valid for ArbitraryGridMotion_t per CGNS SIDS.
+       * Interpolation orders are defined only for FlowSolution_t nodes. */
+      error("GridLocation=InterpolationPoints is not valid for ArbitraryGridMotion_t. "
+            "Interpolation points can only be used with FlowSolution_t nodes.");
+      datasize = 0;
     }
     else
       datasize = get_data_size (z, location, rind);
@@ -4744,10 +4748,11 @@ static void check_discrete (int ndis)
 /* get solution data size */
     if (location == CGNS_ENUMV(InterpolationPoints))
     {
-      /* Interpolation Order */
-      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
-      if (ierr == CG_ERROR) error_exit("check_discrete->cg_sol_interpolation_order_read");
-      datasize = get_ho_data_size(z,os,ot);
+      /* InterpolationPoints is not valid for DiscreteData_t per CGNS SIDS.
+       * Interpolation orders are defined only for FlowSolution_t nodes. */
+      error("GridLocation=InterpolationPoints is not valid for DiscreteData_t. "
+            "Interpolation points can only be used with FlowSolution_t nodes.");
+      datasize = 0;
     }
     else
       datasize = get_data_size (z, location, rind);

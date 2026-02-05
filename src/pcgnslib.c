@@ -1101,14 +1101,19 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    if (elements) {
-      if (start > end ||
-          start < section->range[0] ||
-          end > section->range[1]) {
+    /* Handle NULL elements pointer: no data to write (e.g., ranks with no contribution) */
+    if (!elements) {
+        return CG_OK;
+    }
+
+    /* Validate element range */
+    if (start > end ||
+        start < section->range[0] ||
+        end > section->range[1]) {
         cgi_error("Error in requested element data range.");
         return CG_ERROR;
-      }
     }
+
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
         return CG_ERROR;
@@ -1125,11 +1130,11 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 
     if (elem_count > 0 && elemsize > 0) {
         /* Check for potential overflow in both rmin and rmax calculations */
-        if (start_offset > LLONG_MAX / elemsize) {
+        if (start_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Start offset too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
-        if (elem_count > LLONG_MAX / elemsize) {
+        if (elem_count > CG_SIZE_MAX / elemsize) {
             cgi_error("Element range too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
@@ -1472,14 +1477,19 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    if (elements) { /* A processor may have nothing to read */
-      if (start > end ||
-          start < section->range[0] ||
-          end > section->range[1]) {
+    /* Handle NULL elements pointer: no data to read (e.g., ranks with no contribution) */
+    if (!elements) {
+        return CG_OK;
+    }
+
+    /* Validate element range */
+    if (start > end ||
+        start < section->range[0] ||
+        end > section->range[1]) {
         cgi_error("Error in requested element data range.");
         return CG_ERROR;
-      }
     }
+
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
         return CG_ERROR;
@@ -1496,11 +1506,11 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
 
     if (elem_count > 0 && elemsize > 0) {
         /* Check for potential overflow in both rmin and rmax calculations */
-        if (start_offset > LLONG_MAX / elemsize) {
+        if (start_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Start offset too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
-        if (elem_count > LLONG_MAX / elemsize) {
+        if (elem_count > CG_SIZE_MAX / elemsize) {
             cgi_error("Element range too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
