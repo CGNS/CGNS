@@ -16820,8 +16820,6 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
-
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
@@ -17708,8 +17706,6 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
 
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
