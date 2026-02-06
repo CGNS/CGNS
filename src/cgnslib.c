@@ -16640,6 +16640,14 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
         return CG_ERROR;
     }
 
+    /* Verify data type before casting */
+    if (strcmp(data_type, "I4") != 0) {
+        cgi_error("Invalid data type '%s' for InterpolationType_t (expected I4)", data_type);
+        CGNS_FREE(vdata);
+        CGNS_FREE(ids);
+        return CG_ERROR;
+    }
+
     /* Convert to enum */
     *it = *((int *)vdata);
     CGNS_FREE(vdata);
@@ -16737,8 +16745,14 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
     // Sanity Check
     int cdim;
     int cnpe;
-    cg_npe(ei->type,&cnpe);
-    cg_element_dimension(ei->type,&cdim);
+    if (cg_npe(ei->type,&cnpe) != CG_OK) {
+        cgi_error("Failed to get node count for element type %s", cg_ElementTypeName(ei->type));
+        return CG_ERROR;
+    }
+    if (cg_element_dimension(ei->type,&cdim) != CG_OK) {
+        cgi_error("Failed to get dimension for element type %s", cg_ElementTypeName(ei->type));
+        return CG_ERROR;
+    }
 
     if (cdim != ndim || cnpe != npe)
     {
@@ -16806,11 +16820,11 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    //if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
-    
+
     *ne = family->nelementinterpolation;
     return CG_OK;
 }
@@ -16877,7 +16891,9 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     }
 
     // Get Basic type
-    cg_element_basic_element_type(et,&type);
+    if (cg_element_basic_element_type(et,&type) != CG_OK) {
+        return CG_ERROR;
+    }
 
     // Already exists ?
     einterp = 0;
@@ -17006,7 +17022,9 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
     }
 
     // Get Basic type
-    cg_element_basic_element_type(et,&type);
+    if (cg_element_basic_element_type(et,&type) != CG_OK) {
+        return CG_ERROR;
+    }
 
     // Already exists ?
     einterp = 0;
@@ -17691,11 +17709,11 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    //if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
-    
+
     *ns = family->nsolutioninterpolation;
     return CG_OK;
 }
@@ -17789,9 +17807,11 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
         cgi_error("Invalid solution Interpolation type.");
         return CG_ERROR;
     }
-    
+
     // Get Basic type
-    cg_element_basic_element_type(et,&type);
+    if (cg_element_basic_element_type(et,&type) != CG_OK) {
+        return CG_ERROR;
+    }
 
     // Already exists ?
     sinterp = 0;
@@ -18539,8 +18559,8 @@ int cg_element_interpolation_coefficients_read(int fn, int bn, int fam, int en, 
     /* Sanity check */
     if (mcoeff->dim_vals[0] != ncoeff)
     {
-        cgi_error("Coefficient count mismatch: expected %d, got %d",
-                  ncoeff, (int)mcoeff->dim_vals[0]);
+        cgi_error("Coefficient count mismatch: expected %" PRIdCGSIZE ", got %" PRIdCGSIZE,
+                  ncoeff, mcoeff->dim_vals[0]);
         return CG_ERROR;
     }
 
@@ -18706,8 +18726,8 @@ int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn,
     /* Sanity check */
     if (mcoeff->dim_vals[0] != ncoeff)
     {
-        cgi_error("Coefficient count mismatch: expected %d, got %d",
-                  ncoeff, (int)mcoeff->dim_vals[0]);
+        cgi_error("Coefficient count mismatch: expected %" PRIdCGSIZE ", got %" PRIdCGSIZE,
+                  ncoeff, mcoeff->dim_vals[0]);
         return CG_ERROR;
     }
 
@@ -23503,8 +23523,12 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
-        else if (strcmp(node_name,"InterpolationOrders")==0)
+        else if (strcmp(node_name,"InterpolationOrders")==0) {
+            if (cgi_delete_node(parent->id, posit_id)) return CG_ERROR;
             parent->isOrderDefined = 0;
+            parent->spatialOrder = 0;
+            parent->temporalOrder = 0;
+        }
         else if (strcmp(node_name,"PointList")==0 ||
                  strcmp(node_name,"PointRange")==0)
             CGNS_DELETE_CHILD(ptset, cgi_free_ptset)

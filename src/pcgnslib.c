@@ -1101,17 +1101,13 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    /* Handle NULL elements pointer: no data to write (e.g., ranks with no contribution) */
-    if (!elements) {
-        return CG_OK;
-    }
-
-    /* Validate element range */
-    if (start > end ||
-        start < section->range[0] ||
-        end > section->range[1]) {
-        cgi_error("Error in requested element data range.");
-        return CG_ERROR;
+    if (elements) { /* A processor may have nothing to write */
+        if (start > end ||
+            start < section->range[0] ||
+            end > section->range[1]) {
+            cgi_error("Error in requested element data range.");
+            return CG_ERROR;
+        }
     }
 
     if (!IS_FIXED_SIZE(section->el_type)) {
@@ -1477,17 +1473,13 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    /* Handle NULL elements pointer: no data to read (e.g., ranks with no contribution) */
-    if (!elements) {
-        return CG_OK;
-    }
-
-    /* Validate element range */
-    if (start > end ||
-        start < section->range[0] ||
-        end > section->range[1]) {
-        cgi_error("Error in requested element data range.");
-        return CG_ERROR;
+    if (elements) { /* A processor may have nothing to read */
+        if (start > end ||
+            start < section->range[0] ||
+            end > section->range[1]) {
+            cgi_error("Error in requested element data range.");
+            return CG_ERROR;
+        }
     }
 
     if (!IS_FIXED_SIZE(section->el_type)) {

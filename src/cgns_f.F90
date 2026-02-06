@@ -735,8 +735,9 @@ MODULE cgns
 ! - Update ElementTypeName array below when adding types
 !
 ! Violation will cause silent data corruption when reading CGNS 4.x files.
+! Array sized using ElementType_MAX-1 (defined below in enum)
 
-  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)
+  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)  ! TODO: Use ElementType_MAX when enum values available at compile time
   ENUM, BIND(C)
     ENUMERATOR :: CGNS_ENUMV(ElementTypeNull) = CG_Null
     ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined)
@@ -797,6 +798,8 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(HEXA_125)
     ! *** ADD NEW ELEMENT TYPES HERE (value 57+) ***
     ! DO NOT insert above - append only to maintain backward compatibility
+    ! Sentinel value for array sizing and bounds checking
+    ENUMERATOR :: CGNS_ENUMV(ElementType_MAX) = 57
   END ENUM
 
 !DEC$if defined(BUILD_CGNS_DLL)
@@ -5587,14 +5590,15 @@ CONTAINS
     INTEGER, INTENT(IN) :: fn, B, fam, en
     INTEGER, INTENT(OUT) :: it
     INTEGER, INTENT(OUT) :: ier
-    INTEGER(C_INT) :: c_it
+    INTEGER(cgenum_t) :: c_it
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_element_interpolation_type_read(fn, bn, fam, en, it) &
           BIND(C, name="cg_element_interpolation_type_read")
-        IMPORT :: C_INT
+        USE ISO_C_BINDING
+        IMPORT :: cgenum_t
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
-        INTEGER(C_INT), INTENT(OUT) :: it
+        INTEGER(cgenum_t), INTENT(OUT) :: it
       END FUNCTION cg_element_interpolation_type_read
     END INTERFACE
     ier = INT(cg_element_interpolation_type_read(INT(fn,C_INT), INT(B,C_INT), &
