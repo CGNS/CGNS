@@ -153,3 +153,90 @@ jobs:
 #    - name: Setup tmate session
 #      if: ${{ failure() }}
 #      uses: mxschmitt/action-tmate@v3
+
+  # Test auto-detection of HDF5 transitive compression dependencies (ZLIB, libaec/SZIP).
+  # Exercises the INTERFACE_LINK_LIBRARIES introspection in CMakeLists.txt that
+  # resolves ZLIB::ZLIB and szip/libaec targets without HDF5_NEED_ZLIB/SZIP flags.
+  test-hdf5-compression-autodetect:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "zlib-only"
+            zlib: ON
+            szip: OFF
+            apt_packages: "zlib1g-dev"
+          - name: "libaec-only"
+            zlib: OFF
+            szip: ON
+            apt_packages: "libaec-dev"
+          - name: "both"
+            zlib: ON
+            szip: ON
+            apt_packages: "zlib1g-dev libaec-dev"
+
+    name: "HDF5 compression autodetect (${{ matrix.name }})"
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    steps:
+    - name: Install compression libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ matrix.apt_packages }}
+
+    - name: Get Sources
+      uses: actions/checkout@v3
+
+    # Build HDF5 from source with CMake to produce config-mode package files.
+    # CMake build generates hdf5-config.cmake with imported targets that
+    # reference ZLIB::ZLIB and/or szip-static in INTERFACE_LINK_LIBRARIES.
+    - name: Build HDF5 with CMake
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git \
+          --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+        cmake -S hdf5_src -B hdf5_build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=$HOME/hdf5 \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_STATIC_LIBS=ON \
+          -DHDF5_BUILD_TOOLS=OFF \
+          -DHDF5_BUILD_UTILS=OFF \
+          -DHDF5_BUILD_EXAMPLES=OFF \
+          -DBUILD_TESTING=OFF \
+          -DHDF5_BUILD_FORTRAN=OFF \
+          -DHDF5_BUILD_HL_LIB=OFF \
+          -DHDF5_ENABLE_PARALLEL=OFF \
+          -DHDF5_ENABLE_Z_LIB_SUPPORT=${{ matrix.zlib }} \
+          -DHDF5_ENABLE_SZIP_SUPPORT=${{ matrix.szip }} \
+          -DHDF5_ENABLE_SZIP_ENCODING=${{ matrix.szip }}
+        cmake --build hdf5_build --parallel 4
+        cmake --install hdf5_build
+      shell: bash
+
+    # Configure CGNS using HDF5_DIR (config-mode discovery).
+    # HDF5_NEED_ZLIB and HDF5_NEED_SZIP are intentionally NOT set —
+    # auto-detection from HDF5 target's INTERFACE_LINK_LIBRARIES must handle it.
+    - name: Configure CGNS
+      run: |
+        HDF5_CMAKE_DIR=$(dirname $(find $HOME/hdf5 -name "hdf5-config.cmake" | head -1))
+        echo "Using HDF5_DIR=$HDF5_CMAKE_DIR"
+        cmake -S . -B cbuild \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCGNS_BUILD_SHARED=OFF \
+          -DCGNS_ENABLE_HDF5=ON \
+          -DCGNS_ENABLE_TESTS=ON \
+          -DCGNS_ENABLE_FORTRAN=OFF \
+          -DCGNS_ENABLE_64BIT=ON \
+          -DHDF5_DIR=$HDF5_CMAKE_DIR
+      shell: bash
+
+    - name: Build CGNS
+      run: cmake --build cbuild --config Debug --parallel 4
+      shell: bash
+
+    - name: Test CGNS
+      run: |
+        cd cbuild
+        ctest -C Debug -VV --output-on-failure
+      shell: bash
