@@ -11,7 +11,7 @@ on:
 #  push:
 #  pull_request:
 env:
-  hdf5_vers: 2_0_0
+  hdf5_vers: 1_14_6
 
 # A workflow run is made up of one or more jobs that
 # can run sequentially or in parallel
