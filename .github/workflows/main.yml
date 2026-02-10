@@ -227,7 +227,7 @@ jobs:
           -DCGNS_ENABLE_HDF5=ON \
           -DCGNS_ENABLE_TESTS=ON \
           -DCGNS_ENABLE_FORTRAN=OFF \
-          -DCGNS_ENABLE_64BIT=ON \
+          -DCGNS_ENABLE_64BIT=OFF \
           -DHDF5_DIR=$HDF5_CMAKE_DIR
       shell: bash
 
