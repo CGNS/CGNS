@@ -463,7 +463,7 @@ if (CGNS_ENABLE_HDF5)
       # szip-static, sz-shared, libaec::sz, $<LINK_ONLY:szip-static>, etc.
       # Note: CMake regex does not support \b, so we use alternation instead.
       # The string is normalized with ;-delimiters so ;sz; and ;sz- always work.
-      if (_hdf5_link_str MATCHES ";szip-|;sz;|;sz-|libaec" AND NOT libaec_FOUND)
+      if (_hdf5_link_str MATCHES ";szip-|;sz;|;sz-|;libaec" AND NOT libaec_FOUND)
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
         find_package(libaec QUIET)
         if (NOT libaec_FOUND)
