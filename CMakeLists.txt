@@ -339,23 +339,39 @@ if (CGNS_ENABLE_HDF5)
     find_package(libaec QUIET)
     if (libaec_FOUND AND TARGET libaec::sz)
       # Extract library location from the imported target for legacy compatibility.
-      # Use the imported target to set SZIP_LIBRARY as a cache variable.
-      get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION)
-      if (NOT _sz_loc)
-        # Try config-specific location if generic one is not set.
-        get_target_property(_libaec_configs libaec::sz IMPORTED_CONFIGURATIONS)
-        if (_libaec_configs)
-          list(GET _libaec_configs 0 _libaec_first_config)
-          string(TOUPPER "${_libaec_first_config}" _libaec_first_config)
-          get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION_${_libaec_first_config})
+      # Try to resolve the specific config to avoid linking Release lib in Debug build.
+      get_target_property(_libaec_configs libaec::sz IMPORTED_CONFIGURATIONS)
+
+      set(_chosen_config "")
+      if (_libaec_configs)
+        # 1. Try to match the current CMAKE_BUILD_TYPE (if single-config generator)
+        if (CMAKE_BUILD_TYPE)
+          string(TOUPPER "${CMAKE_BUILD_TYPE}" _build_type_upper)
+          if (_build_type_upper IN_LIST _libaec_configs)
+            set(_chosen_config "${_build_type_upper}")
+          endif ()
         endif ()
+
+        # 2. If no match (or multi-config), fallback to the first available
+        if (NOT _chosen_config)
+          list(GET _libaec_configs 0 _chosen_config)
+        endif ()
+
+        get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION_${_chosen_config})
       endif ()
+
+      # Fallback to config-agnostic IMPORTED_LOCATION
+      if (NOT _sz_loc)
+        get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION)
+      endif ()
+
       if (_sz_loc)
         set(SZIP_LIBRARY "${_sz_loc}" CACHE FILEPATH "Path to szip library" FORCE)
       endif ()
       unset(_sz_loc)
       unset(_libaec_configs)
-      unset(_libaec_first_config)
+      unset(_chosen_config)
+      unset(_build_type_upper)
     endif ()
     # Fallback to finding the library directly
     if (NOT SZIP_LIBRARY)
