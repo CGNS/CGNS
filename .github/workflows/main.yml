@@ -162,17 +162,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: "zlib-only"
+          # CMake-built HDF5 variants
+          - name: "cmake-zlib-only"
+            hdf5_build: cmake
             zlib: ON
             szip: OFF
             apt_packages: "zlib1g-dev"
-          - name: "libaec-only"
+          - name: "cmake-libaec-only"
+            hdf5_build: cmake
             zlib: OFF
             szip: ON
             apt_packages: "libaec-dev"
-          - name: "both"
+          - name: "cmake-both"
+            hdf5_build: cmake
             zlib: ON
             szip: ON
+            apt_packages: "zlib1g-dev libaec-dev"
+          # Autotools-built HDF5 variants
+          - name: "autotools-zlib-only"
+            hdf5_build: autotools
+            zlib: ON
+            szip: OFF
+            zlib_at: "--with-zlib"
+            szip_at: "--without-szlib"
+            apt_packages: "zlib1g-dev"
+          - name: "autotools-libaec-only"
+            hdf5_build: autotools
+            zlib: OFF
+            szip: ON
+            zlib_at: "--without-zlib"
+            szip_at: "--with-szlib"
+            apt_packages: "libaec-dev"
+          - name: "autotools-both"
+            hdf5_build: autotools
+            zlib: ON
+            szip: ON
+            zlib_at: "--with-zlib"
+            szip_at: "--with-szlib"
             apt_packages: "zlib1g-dev libaec-dev"
 
     name: "HDF5 compression autodetect (${{ matrix.name }})"
@@ -192,6 +218,7 @@ jobs:
     # CMake build generates hdf5-config.cmake with imported targets that
     # reference ZLIB::ZLIB and/or szip-static in INTERFACE_LINK_LIBRARIES.
     - name: Build HDF5 with CMake
+      if: matrix.hdf5_build == 'cmake'
       run: |
         git clone https://github.com/HDFGroup/hdf5.git \
           --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
@@ -214,10 +241,34 @@ jobs:
         cmake --install hdf5_build
       shell: bash
 
-    # Configure CGNS using HDF5_DIR (config-mode discovery).
+    # Build HDF5 from source with autotools.
+    # Autotools build produces h5cc with H5BLD_LIBS that the CGNS
+    # autotools configure parses to auto-detect zlib/szip dependencies.
+    - name: Build HDF5 with autotools
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git \
+          --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+        cd hdf5_src
+        ./configure \
+          --prefix=$HOME/hdf5 \
+          --disable-shared \
+          --enable-static \
+          --disable-fortran \
+          --disable-hl \
+          --disable-tests \
+          --disable-tools \
+          --disable-parallel \
+          --disable-nonstandard-feature-float16 \
+          ${{ matrix.zlib_at }} ${{ matrix.szip_at }}
+        make -j 4 install
+      shell: bash
+
+    # Configure CGNS using HDF5_DIR (config-mode discovery) for CMake-built HDF5.
     # HDF5_NEED_ZLIB and HDF5_NEED_SZIP are intentionally NOT set —
     # auto-detection from HDF5 target's INTERFACE_LINK_LIBRARIES must handle it.
-    - name: Configure CGNS
+    - name: Configure CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
       run: |
         HDF5_CMAKE_DIR=$(dirname $(find $HOME/hdf5 -name "hdf5-config.cmake" | head -1))
         echo "Using HDF5_DIR=$HDF5_CMAKE_DIR"
@@ -231,12 +282,45 @@ jobs:
           -DHDF5_DIR=$HDF5_CMAKE_DIR
       shell: bash
 
-    - name: Build CGNS
+    - name: Build CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
       run: cmake --build cbuild --config Debug --parallel 4
       shell: bash
 
-    - name: Test CGNS
+    - name: Test CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
       run: |
         cd cbuild
         ctest -C Debug -VV --output-on-failure
+      shell: bash
+
+    # Configure CGNS using autotools for autotools-built HDF5.
+    # The configure script reads h5cc to auto-detect zlib/szip dependencies.
+    # --with-zlib and --with-szip are intentionally NOT passed to CGNS configure —
+    # auto-detection from HDF5's h5cc must handle it.
+    - name: Configure CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        export FLIBS="-Wl,--no-as-needed -ldl"
+        export LIBS="-Wl,--no-as-needed -ldl"
+        cd src
+        ./configure \
+          --with-hdf5=$HOME/hdf5 \
+          --enable-lfs \
+          --disable-shared \
+          --enable-debug
+      shell: bash
+
+    - name: Build CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        cd src
+        make -j 4
+      shell: bash
+
+    - name: Test CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        cd src
+        make test
       shell: bash
