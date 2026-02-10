@@ -301,11 +301,16 @@ jobs:
     - name: Configure CGNS (autotools)
       if: matrix.hdf5_build == 'autotools'
       run: |
+        export FC=gfortran
+        export F77=gfortran
+        export FCFLAGS="-fallow-argument-mismatch"
+        export FFLAGS="-fallow-argument-mismatch"
         export FLIBS="-Wl,--no-as-needed -ldl"
         export LIBS="-Wl,--no-as-needed -ldl"
         cd src
         ./configure \
           --with-hdf5=$HOME/hdf5 \
+          --with-fortran \
           --enable-lfs \
           --disable-shared \
           --enable-debug
