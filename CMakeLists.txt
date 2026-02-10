@@ -446,25 +446,26 @@ if (CGNS_ENABLE_HDF5)
     endif()
   endif ()
 
-  # If HDF5 needs ZLIB, a ZLIB::ZLIB target interface can pop up for hdf5
-  # Check the actual target's link interface to detect ZLIB dependency
-  if (TARGET hdf5-${CG_HDF5_LINK_TYPE})
-    get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
+  # When linking HDF5 statically, its compression dependencies (zlib, szip)
+  # must be explicitly resolved since they are not baked into a shared library.
+  # Check the actual target's link interface to detect these dependencies.
+  if (TARGET hdf5-static)
+    get_target_property(_hdf5_link_libs hdf5-static INTERFACE_LINK_LIBRARIES)
     if (_hdf5_link_libs)
       # Normalize with leading/trailing semicolons so delimited patterns always match
       set(_hdf5_link_str ";${_hdf5_link_libs};")
       # Detect ZLIB::ZLIB in link interface — matches both plain references
       # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
       if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT ZLIB_FOUND)
-        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ZLIB::ZLIB, finding ZLIB package")
+        message(STATUS "hdf5-static target requires ZLIB::ZLIB, finding ZLIB package")
         find_package(ZLIB REQUIRED)
       endif ()
       # Detect SZIP/libaec in link interface — matches target names like
-      # szip-static, sz-shared, libaec::sz, $<LINK_ONLY:szip-static>, etc.
+      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, etc.
       # Note: CMake regex does not support \b, so we use alternation instead.
       # The string is normalized with ;-delimiters so ;sz; and ;sz- always work.
       if (_hdf5_link_str MATCHES ";szip-|;sz;|;sz-|;libaec" AND NOT libaec_FOUND)
-        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
+        message(STATUS "hdf5-static target requires SZIP, finding libaec package")
         find_package(libaec QUIET)
         if (NOT libaec_FOUND)
           find_library(SZIP_LIBRARY NAMES szip sz)
