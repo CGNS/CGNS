@@ -322,8 +322,13 @@ if (CGNS_ENABLE_HDF5)
 
   set(HDF5_NEED_ZLIB "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
   if (HDF5_NEED_ZLIB)
-    # Find ZLIB package to create ZLIB::ZLIB target for modern CMake compatibility
-    find_package(ZLIB QUIET)
+    # Find ZLIB package to create ZLIB::ZLIB target for modern CMake compatibility.
+    # Use MODULE mode first since FindZLIB always creates ZLIB::ZLIB, whereas
+    # config-mode (ZLIBConfig.cmake) may export different target names.
+    find_package(ZLIB MODULE QUIET)
+    if (NOT ZLIB_FOUND)
+      find_package(ZLIB CONFIG QUIET)
+    endif ()
     # Fallback to finding the library directly if find_package failed.
     # Note: do not FATAL_ERROR here — ZLIB may be bundled with HDF5 (on any
     # platform when HDF5 is built with CMake). The auto-detection from HDF5's
@@ -345,12 +350,18 @@ if (CGNS_ENABLE_HDF5)
       # SZIP_LIBRARY must be a file path (not a target name) because downstream
       # consumers use it with native_paths(), target_link_libraries(${SZIP_LIBRARY}),
       # and other contexts that expect a path string.
-      # Try to resolve the specific config to avoid linking Release lib in Debug build.
+      # NOTE: This resolves to a single path at configure time.  On multi-config
+      # generators the build type is not known until build time, so linking the
+      # wrong configuration (e.g. Debug libaec against a Release build) can cause
+      # crashes on Windows due to C runtime mismatches.  Properly handling this
+      # would require generator expressions throughout the build system.
       get_target_property(_libaec_configs libaec::sz IMPORTED_CONFIGURATIONS)
 
       set(_chosen_config "")
       if (_libaec_configs)
-        # 1. Try to match the current CMAKE_BUILD_TYPE (if single-config generator)
+        list(LENGTH _libaec_configs _num_configs)
+
+        # 1. Try to match the current CMAKE_BUILD_TYPE (single-config generator)
         if (CMAKE_BUILD_TYPE)
           string(TOUPPER "${CMAKE_BUILD_TYPE}" _build_type_upper)
           if (_build_type_upper IN_LIST _libaec_configs)
@@ -358,12 +369,23 @@ if (CGNS_ENABLE_HDF5)
           endif ()
         endif ()
 
-        # 2. If no match (or multi-config), fallback to the first available
-        if (NOT _chosen_config)
+        # 2. Reject multi-config imports we cannot safely resolve
+        if (NOT _chosen_config AND _num_configs GREATER 1)
+          message(WARNING
+            "libaec::sz has multiple imported configurations (${_libaec_configs}) "
+            "and CMAKE_BUILD_TYPE is not set or does not match any of them. "
+            "Cannot safely choose a configuration at configure time. "
+            "Set CMAKE_BUILD_TYPE or provide a single-configuration libaec package.")
+        endif ()
+
+        # 3. Single config available — use it
+        if (NOT _chosen_config AND _num_configs EQUAL 1)
           list(GET _libaec_configs 0 _chosen_config)
         endif ()
 
-        get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION_${_chosen_config})
+        if (_chosen_config)
+          get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION_${_chosen_config})
+        endif ()
       endif ()
 
       # Fallback to config-agnostic IMPORTED_LOCATION
@@ -473,18 +495,21 @@ if (CGNS_ENABLE_HDF5)
         # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
         # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
         find_package(ZLIB MODULE QUIET)
-        if (NOT TARGET ZLIB::ZLIB)
+        if (NOT ZLIB_FOUND)
           # Fallback to config-mode in case module mode failed
-          find_package(ZLIB QUIET)
+          find_package(ZLIB CONFIG QUIET)
         endif ()
         if (NOT TARGET ZLIB::ZLIB)
-          if (ZLIB_FOUND AND ZLIB_LIBRARIES)
-            # ZLIB was found (config-mode) but without ZLIB::ZLIB — create it
-            add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
-            set_target_properties(ZLIB::ZLIB PROPERTIES
-              IMPORTED_LOCATION "${ZLIB_LIBRARIES}"
-              INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIRS}")
-          else ()
+          if (ZLIB_FOUND)
+            # ZLIB was found (config-mode) but without ZLIB::ZLIB — alias a
+            # known config-mode target so its properties are inherited correctly.
+            if (TARGET ZLIB::zlib)
+              add_library(ZLIB::ZLIB ALIAS ZLIB::zlib)
+            elseif (TARGET ZLIB::zlibstatic)
+              add_library(ZLIB::ZLIB ALIAS ZLIB::zlibstatic)
+            endif ()
+          endif ()
+          if (NOT TARGET ZLIB::ZLIB)
             message(FATAL_ERROR "hdf5-${CG_HDF5_LINK_TYPE} requires ZLIB::ZLIB but ZLIB was not found")
           endif ()
         endif ()

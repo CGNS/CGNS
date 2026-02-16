@@ -126,15 +126,17 @@ if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT)
         # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
         # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
         find_package(ZLIB MODULE QUIET)
-        if (NOT TARGET ZLIB::ZLIB)
-          find_package(ZLIB QUIET)
+        if (NOT ZLIB_FOUND)
+          find_package(ZLIB CONFIG QUIET)
         endif ()
-        if (NOT TARGET ZLIB::ZLIB AND ZLIB_FOUND AND ZLIB_LIBRARIES)
-          # ZLIB was found (config-mode) but without ZLIB::ZLIB — create it
-          add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
-          set_target_properties(ZLIB::ZLIB PROPERTIES
-            IMPORTED_LOCATION "${ZLIB_LIBRARIES}"
-            INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIRS}")
+        if (NOT TARGET ZLIB::ZLIB AND ZLIB_FOUND)
+          # ZLIB was found (config-mode) but without ZLIB::ZLIB — alias a
+          # known config-mode target so its properties are inherited correctly.
+          if (TARGET ZLIB::zlib)
+            add_library(ZLIB::ZLIB ALIAS ZLIB::zlib)
+          elseif (TARGET ZLIB::zlibstatic)
+            add_library(ZLIB::ZLIB ALIAS ZLIB::zlibstatic)
+          endif ()
         endif ()
         if (NOT TARGET ZLIB::ZLIB)
           message(FATAL_ERROR "CGNS requires ZLIB::ZLIB (via HDF5) but ZLIB was not found")
