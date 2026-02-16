@@ -122,7 +122,23 @@ if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT)
       # Detect ZLIB::ZLIB in link interface — matches both plain references
       # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
       if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
-        find_dependency(ZLIB)
+        # Try module mode first — CMake's FindZLIB always creates ZLIB::ZLIB.
+        # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
+        # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
+        find_package(ZLIB MODULE QUIET)
+        if (NOT TARGET ZLIB::ZLIB)
+          find_package(ZLIB QUIET)
+        endif ()
+        if (NOT TARGET ZLIB::ZLIB AND ZLIB_FOUND AND ZLIB_LIBRARIES)
+          # ZLIB was found (config-mode) but without ZLIB::ZLIB — create it
+          add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
+          set_target_properties(ZLIB::ZLIB PROPERTIES
+            IMPORTED_LOCATION "${ZLIB_LIBRARIES}"
+            INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIRS}")
+        endif ()
+        if (NOT TARGET ZLIB::ZLIB)
+          message(FATAL_ERROR "CGNS requires ZLIB::ZLIB (via HDF5) but ZLIB was not found")
+        endif ()
       endif ()
       # Detect SZIP/libaec in link interface — matches target names like
       # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip

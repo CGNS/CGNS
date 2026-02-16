@@ -469,7 +469,25 @@ if (CGNS_ENABLE_HDF5)
       # creating the ZLIB::ZLIB imported target that HDF5's interface requires.
       if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ZLIB::ZLIB, finding ZLIB package")
-        find_package(ZLIB REQUIRED)
+        # Try module mode first — CMake's FindZLIB always creates ZLIB::ZLIB.
+        # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
+        # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
+        find_package(ZLIB MODULE QUIET)
+        if (NOT TARGET ZLIB::ZLIB)
+          # Fallback to config-mode in case module mode failed
+          find_package(ZLIB QUIET)
+        endif ()
+        if (NOT TARGET ZLIB::ZLIB)
+          if (ZLIB_FOUND AND ZLIB_LIBRARIES)
+            # ZLIB was found (config-mode) but without ZLIB::ZLIB — create it
+            add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
+            set_target_properties(ZLIB::ZLIB PROPERTIES
+              IMPORTED_LOCATION "${ZLIB_LIBRARIES}"
+              INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIRS}")
+          else ()
+            message(FATAL_ERROR "hdf5-${CG_HDF5_LINK_TYPE} requires ZLIB::ZLIB but ZLIB was not found")
+          endif ()
+        endif ()
       endif ()
       # Detect SZIP/libaec in link interface — matches target names like
       # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip from
