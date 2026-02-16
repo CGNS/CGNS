@@ -324,12 +324,12 @@ if (CGNS_ENABLE_HDF5)
   if (HDF5_NEED_ZLIB)
     # Find ZLIB package to create ZLIB::ZLIB target for modern CMake compatibility
     find_package(ZLIB QUIET)
-    # Fallback to finding the library directly if find_package failed
+    # Fallback to finding the library directly if find_package failed.
+    # Note: do not FATAL_ERROR here — ZLIB may be bundled with HDF5 (on any
+    # platform when HDF5 is built with CMake). The auto-detection from HDF5's
+    # INTERFACE_LINK_LIBRARIES (further below) will resolve it.
     if (NOT ZLIB_FOUND)
       find_library(ZLIB_LIBRARY z)
-      if (NOT ZLIB_LIBRARY)
-        message(FATAL_ERROR "HDF5_NEED_ZLIB is ON but ZLIB was not found")
-      endif ()
     endif ()
     mark_as_advanced(CLEAR ZLIB_LIBRARY)
   else ()
