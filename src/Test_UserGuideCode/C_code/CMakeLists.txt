@@ -92,7 +92,9 @@ if (CGNS_ENABLE_TESTS)
 		set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${GROUP_NAME})
 		file(MAKE_DIRECTORY ${WORK_DIR})
 
-		# Copy OUTPUT reference files to build directory
+		# Copy OUTPUT reference files to build directory.
+		# Note: file(GLOB) is used here for data files, not sources. If new OUTPUT
+		# files are added to the source tree, re-run CMake to pick them up.
 		file(GLOB OUTPUT_FILES "${SRC_DIR}/OUTPUT*")
 		foreach(OUTPUT_FILE ${OUTPUT_FILES})
 			file(COPY ${OUTPUT_FILE} DESTINATION ${WORK_DIR})
@@ -133,7 +135,9 @@ if (CGNS_ENABLE_TESTS)
 		set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${GROUP_NAME})
 		file(MAKE_DIRECTORY ${WORK_DIR})
 
-		# Copy OUTPUT reference files to build directory
+		# Copy OUTPUT reference files to build directory.
+		# Note: file(GLOB) is used here for data files, not sources. If new OUTPUT
+		# files are added to the source tree, re-run CMake to pick them up.
 		file(GLOB OUTPUT_FILES "${SRC_DIR}/OUTPUT*")
 		foreach(OUTPUT_FILE ${OUTPUT_FILES})
 			file(COPY ${OUTPUT_FILE} DESTINATION ${WORK_DIR})

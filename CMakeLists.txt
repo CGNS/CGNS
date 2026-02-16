@@ -327,6 +327,9 @@ if (CGNS_ENABLE_HDF5)
     # Fallback to finding the library directly if find_package failed
     if (NOT ZLIB_FOUND)
       find_library(ZLIB_LIBRARY z)
+      if (NOT ZLIB_LIBRARY)
+        message(FATAL_ERROR "HDF5_NEED_ZLIB is ON but ZLIB was not found")
+      endif ()
     endif ()
     mark_as_advanced(CLEAR ZLIB_LIBRARY)
   else ()
@@ -339,6 +342,9 @@ if (CGNS_ENABLE_HDF5)
     find_package(libaec QUIET)
     if (libaec_FOUND AND TARGET libaec::sz)
       # Extract library location from the imported target for legacy compatibility.
+      # SZIP_LIBRARY must be a file path (not a target name) because downstream
+      # consumers use it with native_paths(), target_link_libraries(${SZIP_LIBRARY}),
+      # and other contexts that expect a path string.
       # Try to resolve the specific config to avoid linking Release lib in Debug build.
       get_target_property(_libaec_configs libaec::sz IMPORTED_CONFIGURATIONS)
 
@@ -463,10 +469,11 @@ if (CGNS_ENABLE_HDF5)
         find_package(ZLIB REQUIRED)
       endif ()
       # Detect SZIP/libaec in link interface — matches target names like
-      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, etc.
-      # Note: CMake regex does not support \b, so we use alternation instead.
-      # The string is normalized with ;-delimiters so ;sz; and ;sz- always work.
-      if (_hdf5_link_str MATCHES ";szip-|;sz;|;sz-|;libaec" AND NOT libaec_FOUND)
+      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip from
+      # older HDF5 installations. CMake regex does not support \b, so we use
+      # ;-delimited alternation. The string is normalized with leading/trailing
+      # semicolons so these patterns always match at element boundaries.
+      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT libaec_FOUND)
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
         find_package(libaec QUIET)
         if (NOT libaec_FOUND)

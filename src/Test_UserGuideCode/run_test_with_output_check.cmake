@@ -30,11 +30,11 @@ execute_process(
   WORKING_DIRECTORY "${WORK_DIR}"
   RESULT_VARIABLE TEST_RESULT
   OUTPUT_VARIABLE TEST_OUTPUT
-  ERROR_QUIET
+  ERROR_VARIABLE TEST_STDERR
 )
 
 if(NOT TEST_RESULT EQUAL 0)
-  message(FATAL_ERROR "Test program failed with exit code ${TEST_RESULT}")
+  message(FATAL_ERROR "Test program failed with exit code ${TEST_RESULT}\nstderr:\n${TEST_STDERR}")
 endif()
 
 # Read reference output file
@@ -46,6 +46,8 @@ file(READ "${REF_OUTPUT}" REF_CONTENT)
 
 # Function to filter output lines (remove Library lines)
 function(filter_output INPUT_STR OUTPUT_VAR)
+  # Escape semicolons before splitting so they are not treated as list separators
+  string(REPLACE ";" "\\;" INPUT_STR "${INPUT_STR}")
   # Split into lines
   string(REGEX REPLACE "\r?\n" ";" LINES "${INPUT_STR}")
 
