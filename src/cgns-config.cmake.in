@@ -106,6 +106,38 @@ if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT)
       endif()
     endif()
   endif()
+
+  # Auto-detect compression dependencies from HDF5 target's link interface.
+  # This mirrors the build-time logic in CMakeLists.txt and handles cases where:
+  # - HDF5 config-mode targets reference ZLIB::ZLIB or szip targets that need
+  #   resolution on the consumer's system
+  # - Legacy module-mode fallback targets contain raw library paths
+  # - HDF5 bundles compression libs (any platform) and provides them via its
+  #   own config-mode package
+  set(_cgns_hdf5_target "hdf5-${${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE}")
+  if (TARGET ${_cgns_hdf5_target})
+    get_target_property(_hdf5_link_libs ${_cgns_hdf5_target} INTERFACE_LINK_LIBRARIES)
+    if (_hdf5_link_libs)
+      set(_hdf5_link_str ";${_hdf5_link_libs};")
+      # Detect ZLIB::ZLIB in link interface — matches both plain references
+      # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
+      if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
+        find_dependency(ZLIB)
+      endif ()
+      # Detect SZIP/libaec in link interface — matches target names like
+      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip
+      # from older HDF5 installations.
+      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT TARGET libaec::sz)
+        find_package(libaec QUIET)
+        if (NOT libaec_FOUND)
+          find_library(SZIP_LIBRARY NAMES szip sz)
+        endif ()
+      endif ()
+    endif ()
+    unset(_hdf5_link_libs)
+    unset(_hdf5_link_str)
+  endif ()
+  unset(_cgns_hdf5_target)
 endif()
 #-----------------------------------------------------------------------------
 # Don't include targets if this file is being picked up by another

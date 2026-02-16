@@ -274,6 +274,7 @@ jobs:
         echo "Using HDF5_DIR=$HDF5_CMAKE_DIR"
         cmake -S . -B cbuild \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_INSTALL_PREFIX=$HOME/cgns_install \
           -DCGNS_BUILD_SHARED=OFF \
           -DCGNS_ENABLE_HDF5=ON \
           -DCGNS_ENABLE_TESTS=ON \
@@ -292,6 +293,49 @@ jobs:
       run: |
         cd cbuild
         ctest -C Debug -VV --output-on-failure
+      shell: bash
+
+    # Install CGNS and verify that a downstream project can consume it
+    # via find_package(cgns). This tests that cgns-config.cmake correctly
+    # resolves all transitive dependencies (HDF5, ZLIB, SZIP/libaec).
+    - name: Install CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
+      run: cmake --install cbuild
+      shell: bash
+
+    - name: Test downstream find_package(cgns)
+      if: matrix.hdf5_build == 'cmake'
+      run: |
+        mkdir -p downstream_test && cd downstream_test
+        cat > test_cgns.c << 'CEOF'
+        #include <cgnslib.h>
+        #include <stdio.h>
+        int main() {
+            printf("CGNS version: %d\n", CGNS_VERSION);
+            int fn;
+            if (cg_open("test.cgns", CG_MODE_WRITE, &fn) == CG_OK) {
+                cg_close(fn);
+                printf("Successfully created and closed a CGNS file\n");
+                return 0;
+            }
+            printf("Failed to create CGNS file\n");
+            return 1;
+        }
+        CEOF
+        cat > CMakeLists.txt << 'CMEOF'
+        cmake_minimum_required(VERSION 3.20)
+        project(test_cgns C)
+        find_package(cgns REQUIRED)
+        add_executable(test_cgns test_cgns.c)
+        target_link_libraries(test_cgns PRIVATE CGNS::cgns_static)
+        CMEOF
+        HDF5_CMAKE_DIR=$(dirname $(find $HOME/hdf5 -name "hdf5-config.cmake" | head -1))
+        cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DHDF5_DIR=$HDF5_CMAKE_DIR \
+          -Dcgns_DIR=$HOME/cgns_install/lib/cmake/cgns
+        cmake --build build --parallel 4
+        ./build/test_cgns
       shell: bash
 
     # Configure CGNS using autotools for autotools-built HDF5.
