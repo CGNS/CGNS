@@ -464,7 +464,10 @@ if (CGNS_ENABLE_HDF5)
       set(_hdf5_link_str ";${_hdf5_link_libs};")
       # Detect ZLIB::ZLIB in link interface — matches both plain references
       # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
-      if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT ZLIB_FOUND)
+      # Check for the target explicitly rather than ZLIB_FOUND — a parent project
+      # may have called find_package(ZLIB) in legacy mode (variables only) without
+      # creating the ZLIB::ZLIB imported target that HDF5's interface requires.
+      if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ZLIB::ZLIB, finding ZLIB package")
         find_package(ZLIB REQUIRED)
       endif ()
@@ -473,7 +476,8 @@ if (CGNS_ENABLE_HDF5)
       # older HDF5 installations. CMake regex does not support \b, so we use
       # ;-delimited alternation. The string is normalized with leading/trailing
       # semicolons so these patterns always match at element boundaries.
-      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT libaec_FOUND)
+      # Check for the target explicitly rather than libaec_FOUND for the same reason.
+      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT TARGET libaec::sz)
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
         find_package(libaec QUIET)
         if (NOT libaec_FOUND)
