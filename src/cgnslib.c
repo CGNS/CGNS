@@ -9701,6 +9701,7 @@ int cg_hole_read(int fn, int B, int Z, int J, cgsize_t *pnts)
 
 /**
  * \ingroup OversetHoles
+ * \internal
  *
  * \brief Get the CGIO node identifier of an overset hole
  *
@@ -10785,6 +10786,7 @@ int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
 
 /**
  * \ingroup OneToOneConnectivity
+ * \internal
  *
  * \brief Get the CGIO node identifier of a 1-to-1 interface
  *
@@ -11159,6 +11161,7 @@ int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
 
 /**
  * \ingroup BoundaryConditionType
+ * \internal
  *
  * \brief Get the CGIO node identifier of a boundary condition
  *
