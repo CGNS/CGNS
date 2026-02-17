@@ -321,16 +321,90 @@ if (CGNS_ENABLE_HDF5)
   endif ()
 
   set(HDF5_NEED_ZLIB "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
-  if(HDF5_NEED_ZLIB)
-    find_library(ZLIB_LIBRARY z)
+  if (HDF5_NEED_ZLIB)
+    # Find ZLIB package to create ZLIB::ZLIB target for modern CMake compatibility.
+    # Use MODULE mode first since FindZLIB always creates ZLIB::ZLIB, whereas
+    # config-mode (ZLIBConfig.cmake) may export different target names.
+    find_package(ZLIB MODULE QUIET)
+    if (NOT ZLIB_FOUND)
+      find_package(ZLIB CONFIG QUIET)
+    endif ()
+    # Fallback to finding the library directly if find_package failed.
+    # Note: do not FATAL_ERROR here — ZLIB may be bundled with HDF5 (on any
+    # platform when HDF5 is built with CMake). The auto-detection from HDF5's
+    # INTERFACE_LINK_LIBRARIES (further below) will resolve it.
+    if (NOT ZLIB_FOUND)
+      find_library(ZLIB_LIBRARY z)
+    endif ()
     mark_as_advanced(CLEAR ZLIB_LIBRARY)
   else ()
     mark_as_advanced(FORCE ZLIB_LIBRARY)
-  endif()
+  endif ()
 
   set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to szip?")
   if (HDF5_NEED_SZIP)
-    find_library(SZIP_LIBRARY NAMES szip sz)
+    # Try to find libaec package first for modern CMake compatibility
+    find_package(libaec QUIET)
+    if (libaec_FOUND AND TARGET libaec::sz)
+      # Extract library location from the imported target for legacy compatibility.
+      # SZIP_LIBRARY must be a file path (not a target name) because downstream
+      # consumers use it with native_paths(), target_link_libraries(${SZIP_LIBRARY}),
+      # and other contexts that expect a path string.
+      # NOTE: This resolves to a single path at configure time.  On multi-config
+      # generators the build type is not known until build time, so linking the
+      # wrong configuration (e.g. Debug libaec against a Release build) can cause
+      # crashes on Windows due to C runtime mismatches.  Properly handling this
+      # would require generator expressions throughout the build system.
+      get_target_property(_libaec_configs libaec::sz IMPORTED_CONFIGURATIONS)
+
+      set(_chosen_config "")
+      if (_libaec_configs)
+        list(LENGTH _libaec_configs _num_configs)
+
+        # 1. Try to match the current CMAKE_BUILD_TYPE (single-config generator)
+        if (CMAKE_BUILD_TYPE)
+          string(TOUPPER "${CMAKE_BUILD_TYPE}" _build_type_upper)
+          if (_build_type_upper IN_LIST _libaec_configs)
+            set(_chosen_config "${_build_type_upper}")
+          endif ()
+        endif ()
+
+        # 2. Reject multi-config imports we cannot safely resolve
+        if (NOT _chosen_config AND _num_configs GREATER 1)
+          message(WARNING
+            "libaec::sz has multiple imported configurations (${_libaec_configs}) "
+            "and CMAKE_BUILD_TYPE is not set or does not match any of them. "
+            "Cannot safely choose a configuration at configure time. "
+            "Set CMAKE_BUILD_TYPE or provide a single-configuration libaec package.")
+        endif ()
+
+        # 3. Single config available — use it
+        if (NOT _chosen_config AND _num_configs EQUAL 1)
+          list(GET _libaec_configs 0 _chosen_config)
+        endif ()
+
+        if (_chosen_config)
+          get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION_${_chosen_config})
+        endif ()
+      endif ()
+
+      # Fallback to config-agnostic IMPORTED_LOCATION
+      if (NOT _sz_loc)
+        get_target_property(_sz_loc libaec::sz IMPORTED_LOCATION)
+      endif ()
+
+      if (_sz_loc)
+        set(SZIP_LIBRARY "${_sz_loc}" CACHE FILEPATH "Path to szip library" FORCE)
+      endif ()
+      unset(_sz_loc)
+      unset(_libaec_configs)
+      unset(_chosen_config)
+      unset(_build_type_upper)
+    endif ()
+    # Fallback to finding the library directly
+    if (NOT SZIP_LIBRARY)
+      find_library(SZIP_LIBRARY NAMES szip sz)
+    endif ()
     mark_as_advanced(CLEAR SZIP_LIBRARY)
   else ()
     mark_as_advanced(FORCE SZIP_LIBRARY)
@@ -389,29 +463,74 @@ if (CGNS_ENABLE_HDF5)
     # User provided information about HDF5 requirements.
     if (HDF5_NEED_ZLIB)
       set(HDF5_ENABLE_ZLIB_SUPPORT ON)
-      # Next line is ON just not to enter the following find_package(ZLIB)
-      # It is assumed that since we are faking a modern cmake
-      # The package search for ZLIB was done earlier.
+      # HDF5_PACKAGE_EXTLIBS ON prevents the check below from calling find_package(ZLIB)
+      # since we already called it above when HDF5_NEED_ZLIB was set
       set(HDF5_PACKAGE_EXTLIBS ON)
     endif()
     if (HDF5_NEED_SZIP)
       set(HDF5_ENABLE_SZIP_SUPPORT ON)
+      # Same for SZIP - we already attempted find_package(libaec) above
       set(HDF5_PACKAGE_EXTLIBS ON)
     endif()
   endif ()
 
-  # If HDF5 needs ZLIB, but ZLIB is an external package not provided by hdf5
-  # a ZLIB dependency should be added.
-  if (TARGET hdf5-static)
-    if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
-      message(STATUS "hdf5-static target needs ZLIB through an external library")
-      find_package(ZLIB)
+  # Check the actual HDF5 target's link interface to detect compression dependencies.
+  # This inspects only the target we are actually linking against:
+  # - For hdf5-static: zlib/szip must be resolved explicitly (not baked in)
+  # - For hdf5-shared: normally no deps in interface, but handles broken configs
+  #   or Windows builds where ZLIB::ZLIB may still appear
+  if (TARGET hdf5-${CG_HDF5_LINK_TYPE})
+    get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
+    if (_hdf5_link_libs)
+      # Normalize with leading/trailing semicolons so delimited patterns always match
+      set(_hdf5_link_str ";${_hdf5_link_libs};")
+      # Detect ZLIB::ZLIB in link interface — matches both plain references
+      # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
+      # Check for the target explicitly rather than ZLIB_FOUND — a parent project
+      # may have called find_package(ZLIB) in legacy mode (variables only) without
+      # creating the ZLIB::ZLIB imported target that HDF5's interface requires.
+      if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
+        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ZLIB::ZLIB, finding ZLIB package")
+        # Try module mode first — CMake's FindZLIB always creates ZLIB::ZLIB.
+        # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
+        # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
+        find_package(ZLIB MODULE QUIET)
+        if (NOT ZLIB_FOUND)
+          # Fallback to config-mode in case module mode failed
+          find_package(ZLIB CONFIG QUIET)
+        endif ()
+        if (NOT TARGET ZLIB::ZLIB)
+          if (ZLIB_FOUND)
+            # ZLIB was found (config-mode) but without ZLIB::ZLIB — alias a
+            # known config-mode target so its properties are inherited correctly.
+            if (TARGET ZLIB::zlib)
+              add_library(ZLIB::ZLIB ALIAS ZLIB::zlib)
+            elseif (TARGET ZLIB::zlibstatic)
+              add_library(ZLIB::ZLIB ALIAS ZLIB::zlibstatic)
+            endif ()
+          endif ()
+          if (NOT TARGET ZLIB::ZLIB)
+            message(FATAL_ERROR "hdf5-${CG_HDF5_LINK_TYPE} requires ZLIB::ZLIB but ZLIB was not found")
+          endif ()
+        endif ()
+      endif ()
+      # Detect SZIP/libaec in link interface — matches target names like
+      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip from
+      # older HDF5 installations. CMake regex does not support \b, so we use
+      # ;-delimited alternation. The string is normalized with leading/trailing
+      # semicolons so these patterns always match at element boundaries.
+      # Check for the target explicitly rather than libaec_FOUND for the same reason.
+      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT TARGET libaec::sz)
+        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
+        find_package(libaec QUIET)
+        if (NOT libaec_FOUND)
+          find_library(SZIP_LIBRARY NAMES szip sz)
+        endif ()
+      endif ()
     endif ()
-    if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
-      message(STATUS "hdf5-static target needs SZIP through external libraries")
-      find_package(libaec)
-    endif()
-  endif()
+    unset(_hdf5_link_libs)
+    unset(_hdf5_link_str)
+  endif ()
 
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)

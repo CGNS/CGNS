@@ -11,7 +11,7 @@ on:
 #  push:
 #  pull_request:
 env:
-  hdf5_vers: 1_14_4
+  hdf5_vers: 1_14_6
 
 # A workflow run is made up of one or more jobs that
 # can run sequentially or in parallel
@@ -153,3 +153,223 @@ jobs:
 #    - name: Setup tmate session
 #      if: ${{ failure() }}
 #      uses: mxschmitt/action-tmate@v3
+
+  # Test auto-detection of HDF5 transitive compression dependencies (ZLIB, libaec/SZIP).
+  # Exercises the INTERFACE_LINK_LIBRARIES introspection in CMakeLists.txt that
+  # resolves ZLIB::ZLIB and szip/libaec targets without HDF5_NEED_ZLIB/SZIP flags.
+  test-hdf5-compression-autodetect:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # CMake-built HDF5 variants
+          - name: "cmake-zlib-only"
+            hdf5_build: cmake
+            zlib: ON
+            szip: OFF
+            apt_packages: "zlib1g-dev"
+          - name: "cmake-libaec-only"
+            hdf5_build: cmake
+            zlib: OFF
+            szip: ON
+            apt_packages: "libaec-dev"
+          - name: "cmake-both"
+            hdf5_build: cmake
+            zlib: ON
+            szip: ON
+            apt_packages: "zlib1g-dev libaec-dev"
+          # Autotools-built HDF5 variants
+          - name: "autotools-zlib-only"
+            hdf5_build: autotools
+            zlib: ON
+            szip: OFF
+            zlib_at: "--with-zlib"
+            szip_at: "--without-szlib"
+            apt_packages: "zlib1g-dev"
+          - name: "autotools-libaec-only"
+            hdf5_build: autotools
+            zlib: OFF
+            szip: ON
+            zlib_at: "--without-zlib"
+            szip_at: "--with-szlib"
+            apt_packages: "libaec-dev"
+          - name: "autotools-both"
+            hdf5_build: autotools
+            zlib: ON
+            szip: ON
+            zlib_at: "--with-zlib"
+            szip_at: "--with-szlib"
+            apt_packages: "zlib1g-dev libaec-dev"
+
+    name: "HDF5 compression autodetect (${{ matrix.name }})"
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    steps:
+    - name: Install compression libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ matrix.apt_packages }}
+
+    - name: Get Sources
+      uses: actions/checkout@v3
+
+    # Build HDF5 from source with CMake to produce config-mode package files.
+    # CMake build generates hdf5-config.cmake with imported targets that
+    # reference ZLIB::ZLIB and/or szip-static in INTERFACE_LINK_LIBRARIES.
+    - name: Build HDF5 with CMake
+      if: matrix.hdf5_build == 'cmake'
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git \
+          --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+        cmake -S hdf5_src -B hdf5_build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=$HOME/hdf5 \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_STATIC_LIBS=ON \
+          -DHDF5_BUILD_TOOLS=OFF \
+          -DHDF5_BUILD_UTILS=OFF \
+          -DHDF5_BUILD_EXAMPLES=OFF \
+          -DBUILD_TESTING=OFF \
+          -DHDF5_BUILD_FORTRAN=OFF \
+          -DHDF5_BUILD_HL_LIB=OFF \
+          -DHDF5_ENABLE_PARALLEL=OFF \
+          -DHDF5_ENABLE_Z_LIB_SUPPORT=${{ matrix.zlib }} \
+          -DHDF5_ENABLE_SZIP_SUPPORT=${{ matrix.szip }} \
+          -DHDF5_ENABLE_SZIP_ENCODING=${{ matrix.szip }}
+        cmake --build hdf5_build --parallel 4
+        cmake --install hdf5_build
+      shell: bash
+
+    # Build HDF5 from source with autotools.
+    # Autotools build produces h5cc with H5BLD_LIBS that the CGNS
+    # autotools configure parses to auto-detect zlib/szip dependencies.
+    - name: Build HDF5 with autotools
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git \
+          --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+        cd hdf5_src
+        ./configure \
+          --prefix=$HOME/hdf5 \
+          --disable-shared \
+          --enable-static \
+          --disable-fortran \
+          --disable-hl \
+          --disable-tests \
+          --disable-tools \
+          --disable-parallel \
+          --disable-nonstandard-feature-float16 \
+          ${{ matrix.zlib_at }} ${{ matrix.szip_at }}
+        make -j 4 install
+      shell: bash
+
+    # Configure CGNS using HDF5_DIR (config-mode discovery) for CMake-built HDF5.
+    # HDF5_NEED_ZLIB and HDF5_NEED_SZIP are intentionally NOT set —
+    # auto-detection from HDF5 target's INTERFACE_LINK_LIBRARIES must handle it.
+    - name: Configure CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
+      run: |
+        HDF5_CMAKE_DIR=$(dirname $(find $HOME/hdf5 -name "hdf5-config.cmake" | head -1))
+        echo "Using HDF5_DIR=$HDF5_CMAKE_DIR"
+        cmake -S . -B cbuild \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_INSTALL_PREFIX=$HOME/cgns_install \
+          -DCGNS_BUILD_SHARED=OFF \
+          -DCGNS_ENABLE_HDF5=ON \
+          -DCGNS_ENABLE_TESTS=ON \
+          -DCGNS_ENABLE_FORTRAN=OFF \
+          -DCGNS_ENABLE_64BIT=OFF \
+          -DHDF5_DIR=$HDF5_CMAKE_DIR
+      shell: bash
+
+    - name: Build CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
+      run: cmake --build cbuild --config Debug --parallel 4
+      shell: bash
+
+    - name: Test CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
+      run: |
+        cd cbuild
+        ctest -C Debug -VV --output-on-failure
+      shell: bash
+
+    # Install CGNS and verify that a downstream project can consume it
+    # via find_package(cgns). This tests that cgns-config.cmake correctly
+    # resolves all transitive dependencies (HDF5, ZLIB, SZIP/libaec).
+    - name: Install CGNS (CMake)
+      if: matrix.hdf5_build == 'cmake'
+      run: cmake --install cbuild
+      shell: bash
+
+    - name: Test downstream find_package(cgns)
+      if: matrix.hdf5_build == 'cmake'
+      run: |
+        mkdir -p downstream_test && cd downstream_test
+        cat > test_cgns.c << 'CEOF'
+        #include <cgnslib.h>
+        #include <stdio.h>
+        int main() {
+            printf("CGNS version: %d\n", CGNS_VERSION);
+            int fn;
+            if (cg_open("test.cgns", CG_MODE_WRITE, &fn) == CG_OK) {
+                cg_close(fn);
+                printf("Successfully created and closed a CGNS file\n");
+                return 0;
+            }
+            printf("Failed to create CGNS file\n");
+            return 1;
+        }
+        CEOF
+        cat > CMakeLists.txt << 'CMEOF'
+        cmake_minimum_required(VERSION 3.20)
+        project(test_cgns C)
+        find_package(cgns REQUIRED)
+        add_executable(test_cgns test_cgns.c)
+        target_link_libraries(test_cgns PRIVATE CGNS::cgns_static)
+        CMEOF
+        HDF5_CMAKE_DIR=$(dirname $(find $HOME/hdf5 -name "hdf5-config.cmake" | head -1))
+        cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DHDF5_DIR=$HDF5_CMAKE_DIR \
+          -Dcgns_DIR=$HOME/cgns_install/lib/cmake/cgns
+        cmake --build build --parallel 4
+        ./build/test_cgns
+      shell: bash
+
+    # Configure CGNS using autotools for autotools-built HDF5.
+    # The configure script reads h5cc to auto-detect zlib/szip dependencies.
+    # --with-zlib and --with-szip are intentionally NOT passed to CGNS configure —
+    # auto-detection from HDF5's h5cc must handle it.
+    - name: Configure CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        export FC=gfortran
+        export F77=gfortran
+        export FCFLAGS="-fallow-argument-mismatch"
+        export FFLAGS="-fallow-argument-mismatch"
+        export FLIBS="-Wl,--no-as-needed -ldl"
+        export LIBS="-Wl,--no-as-needed -ldl"
+        cd src
+        ./configure \
+          --with-hdf5=$HOME/hdf5 \
+          --with-fortran \
+          --enable-lfs \
+          --disable-shared \
+          --enable-debug
+      shell: bash
+
+    - name: Build CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        cd src
+        make -j 4
+      shell: bash
+
+    - name: Test CGNS (autotools)
+      if: matrix.hdf5_build == 'autotools'
+      run: |
+        cd src
+        make test
+      shell: bash
