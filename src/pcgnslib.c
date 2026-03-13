@@ -3266,6 +3266,11 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
     status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
                                          zone->index_dim, rmin, rmax, CG_PAR_READ);
 
+  free(dset_id);
+  free(mem_type_id);
+  free(mem_space_id);
+  free(file_space_id);
+
   return status;
 
  error:
@@ -3371,6 +3376,11 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
     Data.u.wbuf = buf;
     status =  readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
                                             zone->index_dim, rmin, rmax, CG_PAR_WRITE);
+
+    free(dset_id);
+    free(mem_type_id);
+    free(mem_space_id);
+    free(file_space_id);
 
     return status;
 
@@ -3680,6 +3690,11 @@ int cgp_particle_coord_multi_read_data(int fn, int B, int P, int *C, const cgsiz
     status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
                                            1, rmin, rmax, CG_PAR_READ);
 
+  free(dset_id);
+  free(mem_type_id);
+  free(mem_space_id);
+  free(file_space_id);
+
   return status;
 
  error:
@@ -3782,6 +3797,11 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
     Data.u.wbuf = buf;
     status =  readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
                                             1, rmin, rmax, CG_PAR_WRITE);
+
+    free(dset_id);
+    free(mem_type_id);
+    free(mem_space_id);
+    free(file_space_id);
 
     return status;
 
