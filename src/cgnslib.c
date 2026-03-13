@@ -114,6 +114,7 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <limits.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -338,64 +339,64 @@ const char * ElementTypeName[NofValidElementTypes] =
 /* Centralized element properties lookup table (defined here, declared extern in cgns_header.h)
  * Array index corresponds to ElementType_t enum value for O(1) lookup */
 const ElementTraits cgi_element_traits[NofValidElementTypes] = {
-    /* type, name, npe, dim, nfaces, nedges */
-    {CGNS_ENUMV(ElementTypeNull), "Null", 0, 0, 0, 0},
-    {CGNS_ENUMV(ElementTypeUserDefined), "UserDefined", 0, 0, 0, 0},
-    {CGNS_ENUMV(NODE), "NODE", 1, 0, 0, 0},
-    {CGNS_ENUMV(BAR_2), "BAR_2", 2, 1, 0, 1},
-    {CGNS_ENUMV(BAR_3), "BAR_3", 3, 1, 0, 1},
-    {CGNS_ENUMV(TRI_3), "TRI_3", 3, 2, 0, 3},
-    {CGNS_ENUMV(TRI_6), "TRI_6", 6, 2, 0, 3},
-    {CGNS_ENUMV(QUAD_4), "QUAD_4", 4, 2, 0, 4},
-    {CGNS_ENUMV(QUAD_8), "QUAD_8", 8, 2, 0, 4},
-    {CGNS_ENUMV(QUAD_9), "QUAD_9", 9, 2, 0, 4},
-    {CGNS_ENUMV(TETRA_4), "TETRA_4", 4, 3, 4, 6},
-    {CGNS_ENUMV(TETRA_10), "TETRA_10", 10, 3, 4, 6},
-    {CGNS_ENUMV(PYRA_5), "PYRA_5", 5, 3, 5, 8},
-    {CGNS_ENUMV(PYRA_14), "PYRA_14", 14, 3, 5, 8},
-    {CGNS_ENUMV(PENTA_6), "PENTA_6", 6, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_15), "PENTA_15", 15, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_18), "PENTA_18", 18, 3, 5, 9},
-    {CGNS_ENUMV(HEXA_8), "HEXA_8", 8, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_20), "HEXA_20", 20, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_27), "HEXA_27", 27, 3, 6, 12},
-    {CGNS_ENUMV(MIXED), "MIXED", 0, 0, 0, 0},
-    {CGNS_ENUMV(PYRA_13), "PYRA_13", 13, 3, 5, 8},
-    {CGNS_ENUMV(NGON_n), "NGON_n", 0, 2, 0, 0},
-    {CGNS_ENUMV(NFACE_n), "NFACE_n", 0, 3, 0, 0},
-    {CGNS_ENUMV(BAR_4), "BAR_4", 4, 1, 0, 1},
-    {CGNS_ENUMV(TRI_9), "TRI_9", 9, 2, 0, 3},
-    {CGNS_ENUMV(TRI_10), "TRI_10", 10, 2, 0, 3},
-    {CGNS_ENUMV(QUAD_12), "QUAD_12", 12, 2, 0, 4},
-    {CGNS_ENUMV(QUAD_16), "QUAD_16", 16, 2, 0, 4},
-    {CGNS_ENUMV(TETRA_16), "TETRA_16", 16, 3, 4, 6},
-    {CGNS_ENUMV(TETRA_20), "TETRA_20", 20, 3, 4, 6},
-    {CGNS_ENUMV(PYRA_21), "PYRA_21", 21, 3, 5, 8},
-    {CGNS_ENUMV(PYRA_29), "PYRA_29", 29, 3, 5, 8},
-    {CGNS_ENUMV(PYRA_30), "PYRA_30", 30, 3, 5, 8},
-    {CGNS_ENUMV(PENTA_24), "PENTA_24", 24, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_38), "PENTA_38", 38, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_40), "PENTA_40", 40, 3, 5, 9},
-    {CGNS_ENUMV(HEXA_32), "HEXA_32", 32, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_56), "HEXA_56", 56, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_64), "HEXA_64", 64, 3, 6, 12},
-    {CGNS_ENUMV(BAR_5), "BAR_5", 5, 1, 0, 1},
-    {CGNS_ENUMV(TRI_12), "TRI_12", 12, 2, 0, 3},
-    {CGNS_ENUMV(TRI_15), "TRI_15", 15, 2, 0, 3},
-    {CGNS_ENUMV(QUAD_P4_16), "QUAD_P4_16", 16, 2, 0, 4},
-    {CGNS_ENUMV(QUAD_25), "QUAD_25", 25, 2, 0, 4},
-    {CGNS_ENUMV(TETRA_22), "TETRA_22", 22, 3, 4, 6},
-    {CGNS_ENUMV(TETRA_34), "TETRA_34", 34, 3, 4, 6},
-    {CGNS_ENUMV(TETRA_35), "TETRA_35", 35, 3, 4, 6},
-    {CGNS_ENUMV(PYRA_P4_29), "PYRA_P4_29", 29, 3, 5, 8},
-    {CGNS_ENUMV(PYRA_50), "PYRA_50", 50, 3, 5, 8},
-    {CGNS_ENUMV(PYRA_55), "PYRA_55", 55, 3, 5, 8},
-    {CGNS_ENUMV(PENTA_33), "PENTA_33", 33, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_66), "PENTA_66", 66, 3, 5, 9},
-    {CGNS_ENUMV(PENTA_75), "PENTA_75", 75, 3, 5, 9},
-    {CGNS_ENUMV(HEXA_44), "HEXA_44", 44, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_98), "HEXA_98", 98, 3, 6, 12},
-    {CGNS_ENUMV(HEXA_125), "HEXA_125", 125, 3, 6, 12}
+    /* type, name, npe, dim, nfaces, nedges, order, basic_type */
+    {CGNS_ENUMV(ElementTypeNull), "Null", 0, 0, 0, 0, -1, CGNS_ENUMV(ElementTypeNull)},
+    {CGNS_ENUMV(ElementTypeUserDefined), "UserDefined", 0, 0, 0, 0, -1, CGNS_ENUMV(ElementTypeUserDefined)},
+    {CGNS_ENUMV(NODE), "NODE", 1, 0, 0, 0, 0, CGNS_ENUMV(NODE)},
+    {CGNS_ENUMV(BAR_2), "BAR_2", 2, 1, 0, 1, 1, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(BAR_3), "BAR_3", 3, 1, 0, 1, 2, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_3), "TRI_3", 3, 2, 0, 3, 1, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_6), "TRI_6", 6, 2, 0, 3, 2, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_4), "QUAD_4", 4, 2, 0, 4, 1, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_8), "QUAD_8", 8, 2, 0, 4, 2, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_9), "QUAD_9", 9, 2, 0, 4, 2, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_4), "TETRA_4", 4, 3, 4, 6, 1, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_10), "TETRA_10", 10, 3, 4, 6, 2, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_5), "PYRA_5", 5, 3, 5, 8, 1, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_14), "PYRA_14", 14, 3, 5, 8, 2, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_6), "PENTA_6", 6, 3, 5, 9, 1, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_15), "PENTA_15", 15, 3, 5, 9, 2, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_18), "PENTA_18", 18, 3, 5, 9, 2, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_8), "HEXA_8", 8, 3, 6, 12, 1, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_20), "HEXA_20", 20, 3, 6, 12, 2, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_27), "HEXA_27", 27, 3, 6, 12, 2, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(MIXED), "MIXED", 0, 0, 0, 0, -1, CGNS_ENUMV(MIXED)},
+    {CGNS_ENUMV(PYRA_13), "PYRA_13", 13, 3, 5, 8, 2, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(NGON_n), "NGON_n", 0, 2, 0, 0, -1, CGNS_ENUMV(NGON_n)},
+    {CGNS_ENUMV(NFACE_n), "NFACE_n", 0, 3, 0, 0, -1, CGNS_ENUMV(NFACE_n)},
+    {CGNS_ENUMV(BAR_4), "BAR_4", 4, 1, 0, 1, 3, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_9), "TRI_9", 9, 2, 0, 3, 3, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_10), "TRI_10", 10, 2, 0, 3, 3, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_12), "QUAD_12", 12, 2, 0, 4, 3, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_16), "QUAD_16", 16, 2, 0, 4, 3, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_16), "TETRA_16", 16, 3, 4, 6, 3, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_20), "TETRA_20", 20, 3, 4, 6, 3, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_21), "PYRA_21", 21, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_29), "PYRA_29", 29, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_30), "PYRA_30", 30, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_24), "PENTA_24", 24, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_38), "PENTA_38", 38, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_40), "PENTA_40", 40, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_32), "HEXA_32", 32, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_56), "HEXA_56", 56, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_64), "HEXA_64", 64, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(BAR_5), "BAR_5", 5, 1, 0, 1, 4, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_12), "TRI_12", 12, 2, 0, 3, 4, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_15), "TRI_15", 15, 2, 0, 3, 4, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_P4_16), "QUAD_P4_16", 16, 2, 0, 4, 4, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_25), "QUAD_25", 25, 2, 0, 4, 4, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_22), "TETRA_22", 22, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_34), "TETRA_34", 34, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_35), "TETRA_35", 35, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_P4_29), "PYRA_P4_29", 29, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_50), "PYRA_50", 50, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_55), "PYRA_55", 55, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_33), "PENTA_33", 33, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_66), "PENTA_66", 66, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_75), "PENTA_75", 75, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_44), "HEXA_44", 44, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_98), "HEXA_98", 98, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_125), "HEXA_125", 125, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)}
 };
 
 /* Compile-time verification that element traits table matches enum size.
@@ -17198,8 +17199,8 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     }
 
     // Nb points and dimension per Element_t
-    cg_npe(einterp->type,&nnodes);
-    cg_element_dimension(einterp->type,&edim);
+    if (cg_npe(einterp->type, &nnodes) != CG_OK) return CG_ERROR;
+    if (cg_element_dimension(einterp->type, &edim) != CG_OK) return CG_ERROR;
 
     // Check dimension and validate required pointers
     if (edim == 0) {
@@ -17611,8 +17612,8 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     /* Sanity Check */
     cgsize_t sz=0;
     int dim;
-    cg_element_dimension(es->type,&dim);
-    cg_solution_lagrange_interpolation_size(es->type,so,to,&sz);
+    if (cg_element_dimension(es->type, &dim) != CG_OK) return CG_ERROR;
+    if (cg_solution_lagrange_interpolation_size(es->type, so, to, &sz) != CG_OK) return CG_ERROR;
 
     /* Expected array dimension: spatial dimension + (1 if temporal) */
     expected_array_dim = dim + (to ? 1 : 0);
@@ -18249,94 +18250,17 @@ static cgsize_t binomial_coefficient(int n, int k)
 int cg_element_monomial_size(CGNS_ENUMT(ElementType_t) t, cgsize_t *sz)
 {
     int dim, order;
-    int npe;
 
     /* Get element dimension */
     if (cg_element_dimension(t, &dim) != CG_OK) {
         return CG_ERROR;
     }
 
-    /* Get number of nodes for this element type */
-    if (cg_npe(t, &npe) != CG_OK) {
+    /* Look up polynomial order from centralized element traits table */
+    order = cgi_element_order(t);
+    if (order < 0) {
+        cgi_error("Unknown or unsupported element type %d for monomial size calculation", t);
         return CG_ERROR;
-    }
-
-    /* Determine polynomial order from element type and node count.
-     * Different element topologies (simplicial, tensor-product, serendipity)
-     * have different node count formulas, so we use explicit lookup.
-     */
-    switch (t) {
-        /* 1D elements: order = npe - 1 */
-        case CGNS_ENUMV(BAR_2):  order = 1; break;
-        case CGNS_ENUMV(BAR_3):  order = 2; break;
-        case CGNS_ENUMV(BAR_4):  order = 3; break;
-        case CGNS_ENUMV(BAR_5):  order = 4; break;
-
-        /* 2D Triangular elements (simplicial topology) */
-        case CGNS_ENUMV(TRI_3):  order = 1; break;
-        case CGNS_ENUMV(TRI_6):  order = 2; break;
-        case CGNS_ENUMV(TRI_9):  order = 3; break;  /* incomplete cubic */
-        case CGNS_ENUMV(TRI_10): order = 3; break;  /* complete cubic */
-        case CGNS_ENUMV(TRI_12): order = 4; break;  /* incomplete quartic */
-        case CGNS_ENUMV(TRI_15): order = 4; break;  /* complete quartic */
-
-        /* 2D Quadrilateral elements (tensor-product topology) */
-        case CGNS_ENUMV(QUAD_4):     order = 1; break;
-        case CGNS_ENUMV(QUAD_8):     order = 2; break;  /* serendipity */
-        case CGNS_ENUMV(QUAD_9):     order = 2; break;  /* tensor-product */
-        case CGNS_ENUMV(QUAD_12):    order = 3; break;  /* serendipity */
-        case CGNS_ENUMV(QUAD_16):    order = 3; break;  /* tensor-product */
-        case CGNS_ENUMV(QUAD_P4_16): order = 4; break;  /* serendipity */
-        case CGNS_ENUMV(QUAD_25):    order = 4; break;  /* tensor-product */
-
-        /* 3D Tetrahedral elements (simplicial topology) */
-        case CGNS_ENUMV(TETRA_4):  order = 1; break;
-        case CGNS_ENUMV(TETRA_10): order = 2; break;
-        case CGNS_ENUMV(TETRA_16): order = 3; break;  /* incomplete */
-        case CGNS_ENUMV(TETRA_20): order = 3; break;  /* complete */
-        case CGNS_ENUMV(TETRA_22): order = 4; break;  /* incomplete */
-        case CGNS_ENUMV(TETRA_34): order = 4; break;  /* incomplete */
-        case CGNS_ENUMV(TETRA_35): order = 4; break;  /* complete */
-
-        /* 3D Pyramid elements */
-        case CGNS_ENUMV(PYRA_5):     order = 1; break;
-        case CGNS_ENUMV(PYRA_13):    order = 2; break;
-        case CGNS_ENUMV(PYRA_14):    order = 2; break;
-        case CGNS_ENUMV(PYRA_21):    order = 3; break;
-        case CGNS_ENUMV(PYRA_29):    order = 3; break;
-        case CGNS_ENUMV(PYRA_30):    order = 3; break;
-        case CGNS_ENUMV(PYRA_P4_29): order = 4; break;
-        case CGNS_ENUMV(PYRA_50):    order = 4; break;
-        case CGNS_ENUMV(PYRA_55):    order = 4; break;
-
-        /* 3D Pentahedral/Prism elements */
-        case CGNS_ENUMV(PENTA_6):  order = 1; break;
-        case CGNS_ENUMV(PENTA_15): order = 2; break;
-        case CGNS_ENUMV(PENTA_18): order = 2; break;
-        case CGNS_ENUMV(PENTA_24): order = 3; break;
-        case CGNS_ENUMV(PENTA_38): order = 3; break;
-        case CGNS_ENUMV(PENTA_40): order = 3; break;
-        case CGNS_ENUMV(PENTA_33): order = 4; break;
-        case CGNS_ENUMV(PENTA_66): order = 4; break;
-        case CGNS_ENUMV(PENTA_75): order = 4; break;
-
-        /* 3D Hexahedral elements (tensor-product topology) */
-        case CGNS_ENUMV(HEXA_8):   order = 1; break;
-        case CGNS_ENUMV(HEXA_20):  order = 2; break;  /* serendipity */
-        case CGNS_ENUMV(HEXA_27):  order = 2; break;  /* tensor-product */
-        case CGNS_ENUMV(HEXA_32):  order = 3; break;  /* serendipity */
-        case CGNS_ENUMV(HEXA_56):  order = 3; break;  /* serendipity */
-        case CGNS_ENUMV(HEXA_64):  order = 3; break;  /* tensor-product */
-        case CGNS_ENUMV(HEXA_44):  order = 4; break;  /* serendipity */
-        case CGNS_ENUMV(HEXA_98):  order = 4; break;  /* serendipity */
-        case CGNS_ENUMV(HEXA_125): order = 4; break;  /* tensor-product */
-
-        /* NODE element */
-        case CGNS_ENUMV(NODE): order = 0; break;
-
-        default:
-            cgi_error("Unknown or unsupported element type %d for monomial size calculation", t);
-            return CG_ERROR;
     }
 
     /* Number of monomials = C(order + dim, dim) using Pascal's triangle formula */
@@ -23068,65 +22992,11 @@ int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(El
         return CG_ERROR;
     }
     
-    switch(type)
-    {
-      case CGNS_ENUMV( NODE   ): *basic = type;break;
-      case CGNS_ENUMV( BAR_2  ):
-      case CGNS_ENUMV( BAR_3  ):
-      case CGNS_ENUMV( BAR_4  ):
-      case CGNS_ENUMV( BAR_5  ): *basic = CGNS_ENUMV( BAR_2  );break;
-      case CGNS_ENUMV( TRI_3  ):
-      case CGNS_ENUMV( TRI_6  ):
-      case CGNS_ENUMV( TRI_9  ):
-      case CGNS_ENUMV( TRI_10 ):
-      case CGNS_ENUMV( TRI_12 ):
-      case CGNS_ENUMV( TRI_15 ): *basic = CGNS_ENUMV( TRI_3  );break;
-      case CGNS_ENUMV( QUAD_4 ):
-      case CGNS_ENUMV( QUAD_8 ):
-      case CGNS_ENUMV( QUAD_9 ):
-      case CGNS_ENUMV( QUAD_12 ):
-      case CGNS_ENUMV( QUAD_16 ):
-      case CGNS_ENUMV( QUAD_25 ):
-      case CGNS_ENUMV( QUAD_P4_16 ): *basic = CGNS_ENUMV( QUAD_4 );break;
-      case CGNS_ENUMV( TETRA_4 ):
-      case CGNS_ENUMV( TETRA_10 ):
-      case CGNS_ENUMV( TETRA_16 ):
-      case CGNS_ENUMV( TETRA_20 ):
-      case CGNS_ENUMV( TETRA_22 ):
-      case CGNS_ENUMV( TETRA_34 ):
-      case CGNS_ENUMV( TETRA_35 ): *basic = CGNS_ENUMV( TETRA_4 );break;
-      case CGNS_ENUMV( PYRA_5 ):
-      case CGNS_ENUMV( PYRA_13 ):
-      case CGNS_ENUMV( PYRA_14 ):
-      case CGNS_ENUMV( PYRA_21 ):
-      case CGNS_ENUMV( PYRA_29 ):
-      case CGNS_ENUMV( PYRA_30 ):
-      case CGNS_ENUMV( PYRA_50 ):
-      case CGNS_ENUMV( PYRA_55 ):
-      case CGNS_ENUMV( PYRA_P4_29 ): *basic = CGNS_ENUMV( PYRA_5 );break;
-      case CGNS_ENUMV( PENTA_6 ):
-      case CGNS_ENUMV( PENTA_15 ):
-      case CGNS_ENUMV( PENTA_18 ):
-      case CGNS_ENUMV( PENTA_24 ):
-      case CGNS_ENUMV( PENTA_33 ):
-      case CGNS_ENUMV( PENTA_38 ):
-      case CGNS_ENUMV( PENTA_40 ):
-      case CGNS_ENUMV( PENTA_66 ):
-      case CGNS_ENUMV( PENTA_75 ): *basic = CGNS_ENUMV( PENTA_6 );break;
-      case CGNS_ENUMV( HEXA_8 ):
-      case CGNS_ENUMV( HEXA_20 ):
-      case CGNS_ENUMV( HEXA_27 ):
-      case CGNS_ENUMV( HEXA_32 ):
-      case CGNS_ENUMV( HEXA_44 ):
-      case CGNS_ENUMV( HEXA_56 ):
-      case CGNS_ENUMV( HEXA_64 ):
-      case CGNS_ENUMV( HEXA_98 ):
-      case CGNS_ENUMV( HEXA_125 ): *basic = CGNS_ENUMV( HEXA_8 );break;
-      default:
-      {
+    /* Look up basic type from centralized element traits table */
+    *basic = cgi_element_basic_type(type);
+    if (*basic == CGNS_ENUMV(ElementTypeNull)) {
         cgi_error("Invalid element type");
         return CG_ERROR;
-      }
     }
     
     return CG_OK;

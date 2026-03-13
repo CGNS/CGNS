@@ -158,12 +158,14 @@ typedef enum {
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef struct {
-    CGNS_ENUMT(ElementType_t) type;  /* Element type enum value */
-    const char* name;                 /* Element type name string */
-    int npe;                          /* Nodes per element */
-    int dim;                          /* Element dimension (0=node, 1=edge, 2=face, 3=volume) */
-    int nfaces;                       /* Number of faces (for 3D elements, 0 for 2D/1D) */
-    int nedges;                       /* Number of edges */
+    CGNS_ENUMT(ElementType_t) type;       /* Element type enum value */
+    const char* name;                      /* Element type name string */
+    int npe;                               /* Nodes per element */
+    int dim;                               /* Element dimension (0=node, 1=edge, 2=face, 3=volume) */
+    int nfaces;                            /* Number of faces (for 3D elements, 0 for 2D/1D) */
+    int nedges;                            /* Number of edges */
+    int order;                             /* Polynomial order (0 for NODE, -1 for non-standard) */
+    CGNS_ENUMT(ElementType_t) basic_type;  /* Basic (linear) element type for this family */
 } ElementTraits;
 
 /* Centralized element properties table - indexed by ElementType_t enum value
@@ -223,6 +225,24 @@ static inline const char* cgi_element_name(CGNS_ENUMT(ElementType_t) type) {
     int idx = (int)type;
     if (idx < 0 || idx >= NofValidElementTypes) return NULL;
     return cgi_element_traits[idx].name;
+}
+
+/* Get polynomial order for this element type
+ * Returns: Order (0 for NODE, 1-4 for standard elements), or -1 if invalid/non-standard
+ * Used by: Monomial size calculation, high-order element handling */
+static inline int cgi_element_order(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return -1;
+    return cgi_element_traits[idx].order;
+}
+
+/* Get basic (linear) element type for this element family
+ * Returns: Basic type (e.g., BAR_2 for BAR_3/BAR_4/BAR_5), or ElementTypeNull if invalid
+ * Used by: High-order element family grouping, cg_npe_ho() */
+static inline CGNS_ENUMT(ElementType_t) cgi_element_basic_type(CGNS_ENUMT(ElementType_t) type) {
+    int idx = (int)type;
+    if (idx < 0 || idx >= NofValidElementTypes) return CGNS_ENUMV(ElementTypeNull);
+    return cgi_element_traits[idx].basic_type;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
