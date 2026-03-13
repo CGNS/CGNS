@@ -3225,7 +3225,7 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
       goto error;
 
     dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
