@@ -4886,7 +4886,7 @@ CONTAINS
         F_string(i:i) = p_chars(i)
         i=i+1
       end do
-      if (i<len(F_string)) F_string(i:) = ' '
+      if (i<=len(F_string)) F_string(i:) = ' '
     end if
   end subroutine C_F_string_ptr
 
@@ -4900,7 +4900,7 @@ CONTAINS
       F_string(i:i) = C_string(i)
       i=i+1
     end do
-    if (i<len(F_string)) F_string(i:) = ' '
+    if (i<=len(F_string)) F_string(i:) = ' '
   end subroutine C_F_string_chars
 
 !DEC$if defined(BUILD_CGNS_DLL)
