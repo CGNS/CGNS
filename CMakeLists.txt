@@ -25,7 +25,7 @@ include(GNUInstallDirs)
 
 # Determine CGNS_VERSION from src/cgns_version.h for
 file (READ ${PROJECT_SOURCE_DIR}/src/cgns_version.h _cgnslib_h_contents)
-string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
+string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS_VALUE[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
     "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
 
 set(CGNS_PACKAGE "cgns")
