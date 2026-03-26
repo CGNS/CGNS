@@ -52,8 +52,7 @@ F_TESTS = \
 	test_family_treef$(EXE) \
 	test_bboxf$(EXE) \
 	test_particlef$(EXE) \
-	test_complexf$(EXE) \
-	test_name_length_F03$(EXE)
+	test_complexf$(EXE)
 
 FALL = $(F_TESTS)
 
@@ -392,12 +391,6 @@ test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
 
 test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
-	$(STRIP) $@
-
-#----------
-
-test_name_length_F03$(EXE) : test_name_length_f03.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_name_length_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

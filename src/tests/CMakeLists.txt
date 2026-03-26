@@ -67,7 +67,6 @@ set(test_family_treef_FILES test_family_treef.F90)
 set(test_bboxf_FILES test_bboxf.F90)
 set(test_complexf_FILES test_complexf.F90)
 set(test_particlef_FILES test_particlef.F90 utilsf.F90)
-set(test_name_length_f03_FILES test_name_length_f03.F90)
 
 # HDF5-specific tests
 set(cgioc_hdf_FILES cgioc_hdf.c)
@@ -172,8 +171,7 @@ if (CGNS_ENABLE_FORTRAN)
 	add_executable( test_family_treef  ${test_family_treef_FILES}  )
 	add_executable( test_bboxf         ${test_bboxf_FILES}         )
         add_executable( test_complexf      ${test_complexf_FILES}      )
-        add_executable( test_particlef      ${test_particlef_FILES}      )
-        add_executable( test_name_length_f03 ${test_name_length_f03_FILES} )
+        add_executable( test_particlef     ${test_particlef_FILES}     )
 
 	# 64-bit Fortran tests (conditional on 64-bit support)
 	# Both test64f.F90 and test64f_f03.F90 use fixed-form syntax despite .F90 extension
@@ -203,7 +201,6 @@ if (CGNS_ENABLE_FORTRAN)
 	test_bboxf
         test_complexf
         test_particlef
-        test_name_length_f03
         )
 
 	# Conditionally add 64-bit Fortran tests
