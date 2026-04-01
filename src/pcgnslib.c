@@ -3033,13 +3033,22 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
                                          cg_rw_ptr_t *data, int ndims, const cgsize_t *rmin,
                                          const cgsize_t *rmax, enum cg_par_rw rw_mode)
 {
-  /*
-   *  Needs to handle a NULL dataset. MSB
-   */
     int k, n;
     hsize_t *start, *dims;
     herr_t herr;
     hid_t plist_id;
+    int has_data = 0;
+
+    /* Check if this rank has any non-NULL data buffers */
+    if (rw_mode == CG_PAR_READ) {
+      for (k = 0; k < (int)count; k++) {
+        if (data[0].u.rbuf[k]) { has_data = 1; break; }
+      }
+    } else {
+      for (k = 0; k < (int)count; k++) {
+        if (data[0].u.wbuf[k]) { has_data = 1; break; }
+      }
+    }
 
     start = malloc(count*sizeof(hsize_t));
     dims = malloc(count*sizeof(hsize_t));
@@ -3072,9 +3081,16 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 
     /* Set the start position and size for the data write */
     /* fix dimensions due to Fortran indexing and ordering */
-    for (k = 0; k < ndims; k++) {
-        start[k] = rmin[ndims-k-1] - 1;
-        dims[k] = rmax[ndims-k-1] - start[k];
+    if (has_data) {
+      for (k = 0; k < ndims; k++) {
+          start[k] = rmin[ndims-k-1] - 1;
+          dims[k] = rmax[ndims-k-1] - start[k];
+      }
+    } else {
+      /* No data: create zero-sized memory spaces */
+      for (k = 0; k < ndims; k++) {
+          dims[k] = 0;
+      }
     }
 
     for (k = 0; k < count; k++) {
@@ -3107,17 +3123,23 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 	  return CG_ERROR;
 	}
 
-	/* Select a section of the array in the file */
-        herr = H5Sselect_hyperslab(file_space_id[k], H5S_SELECT_SET, start,
-				   NULL, dims, NULL);
-	if (herr < 0) {
-          H5Sclose(mem_space_id[k]);
-          H5Dclose(dset_id[k]);
-	  cgi_error("H5Sselect_hyperslab() failed");
-	  free(start);
-	  free(dims);
-	  return CG_ERROR;
-	}
+        if (has_data) {
+	  /* Select a section of the array in the file */
+          herr = H5Sselect_hyperslab(file_space_id[k], H5S_SELECT_SET, start,
+				     NULL, dims, NULL);
+	  if (herr < 0) {
+            H5Sclose(mem_space_id[k]);
+            H5Dclose(dset_id[k]);
+	    cgi_error("H5Sselect_hyperslab() failed");
+	    free(start);
+	    free(dims);
+	    return CG_ERROR;
+	  }
+        } else {
+          /* No data on this rank: select none so collective I/O doesn't hang */
+          H5Sselect_none(mem_space_id[k]);
+          H5Sselect_none(file_space_id[k]);
+        }
     }
 
     /* Set the access property list for data transfer */
