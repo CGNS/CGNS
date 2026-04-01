@@ -693,6 +693,7 @@ static void test_mixed_null(void)
   Data_Fx = NULL; Data_Fy = NULL; Data_Fz = NULL;
 
   /* Arrays */
+  cg_goto(fn, B, "Zone_t", Z, "end");
   cg_user_data_write("User Data");
   cg_gorel(fn, "User Data", 0, "end");
   size_1D[0] = nijk[0];
