@@ -1520,6 +1520,232 @@ int particle_multisets()
    return 0;
 }
 
+/*
+ * Test that cgp_{coord,field}_multi_{write,read}_data correctly handle
+ * NULL buffer pointers (indicating a process contributes no data).
+ * Rank 0 writes real data; rank >= 1 passes all-NULL buffers.
+ */
+static int multisets_null_buf()
+{
+  char fname[32];
+  void **buf;
+  int Cvec[3];
+  int Fvec[3];
+  int fn, B, Z, S;
+  int Cx, Cy, Cz, Fx, Fy, Fz;
+  cgsize_t nijk[3];
+  cgsize_t min, max;
+  cgsize_t k, count;
+  double *Coor_x = NULL, *Coor_y = NULL, *Coor_z = NULL;
+  double *Data_Fx = NULL, *Data_Fy = NULL, *Data_Fz = NULL;
+  int err;
+
+  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))CGP_COLLECTIVE);
+  if (err != CG_OK) {
+    printf("*FAILED* cgp_pio_mode\n");
+    cgp_error_exit();
+  }
+
+  nijk[0] = 100 * comm_size;  /* vertices */
+  nijk[1] = 100 * comm_size;  /* cells (dummy) */
+  nijk[2] = 0;
+
+  count = nijk[0] / comm_size;
+  min = count * comm_rank + 1;
+  max = count * (comm_rank + 1);
+
+  sprintf(fname, "cnullbuf_%06d.cgns", comm_size);
+
+  /* === WRITE PHASE === */
+
+  if (cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
+    printf("*FAILED* cgp_open\n");
+    cgp_error_exit();
+  }
+
+  cg_base_write(fn, "Base 1", 3, 3, &B);
+  cg_zone_write(fn, B, "Zone 1", nijk, CGNS_ENUMV(Unstructured), &Z);
+
+  cgp_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX", &Cx);
+  cgp_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY", &Cy);
+  cgp_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ", &Cz);
+
+  Cvec[0] = Cx;
+  Cvec[1] = Cy;
+  Cvec[2] = Cz;
+
+  buf = (void **)malloc(3 * sizeof(void *));
+
+  if (comm_rank == 0) {
+    Coor_x = (double *)malloc(count * sizeof(double));
+    Coor_y = (double *)malloc(count * sizeof(double));
+    Coor_z = (double *)malloc(count * sizeof(double));
+    for (k = 0; k < count; k++) {
+      Coor_x[k] = k + 1.1;
+      Coor_y[k] = k + 2.2;
+      Coor_z[k] = k + 3.3;
+    }
+    buf[0] = Coor_x;
+    buf[1] = Coor_y;
+    buf[2] = Coor_z;
+  } else {
+    buf[0] = NULL;
+    buf[1] = NULL;
+    buf[2] = NULL;
+  }
+
+  err = cgp_coord_multi_write_data(fn, B, Z, Cvec, &min, &max,
+                                   3, (const void **)buf);
+  if (err != CG_OK) {
+    if (comm_rank == 0)
+      write_test_status(FAILED, "cgp_coord_multi_write_data NULL bufs", NULL);
+    cgp_error_exit();
+  } else {
+    if (comm_rank == 0)
+      write_test_status(PASSED, "cgp_coord_multi_write_data NULL bufs", NULL);
+  }
+
+  free(buf);
+  free(Coor_x); free(Coor_y); free(Coor_z);
+
+  /* Write fields */
+  cg_sol_write(fn, B, Z, "Solution", CGNS_ENUMV(Vertex), &S);
+  cgp_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "FieldA", &Fx);
+  cgp_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "FieldB", &Fy);
+  cgp_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "FieldC", &Fz);
+
+  Fvec[0] = Fx;
+  Fvec[1] = Fy;
+  Fvec[2] = Fz;
+
+  buf = (void **)malloc(3 * sizeof(void *));
+
+  if (comm_rank == 0) {
+    Data_Fx = (double *)malloc(count * sizeof(double));
+    Data_Fy = (double *)malloc(count * sizeof(double));
+    Data_Fz = (double *)malloc(count * sizeof(double));
+    for (k = 0; k < count; k++) {
+      Data_Fx[k] = k + 10.1;
+      Data_Fy[k] = k + 20.2;
+      Data_Fz[k] = k + 30.3;
+    }
+    buf[0] = Data_Fx;
+    buf[1] = Data_Fy;
+    buf[2] = Data_Fz;
+  } else {
+    buf[0] = NULL;
+    buf[1] = NULL;
+    buf[2] = NULL;
+  }
+
+  err = cgp_field_multi_write_data(fn, B, Z, S, Fvec, &min, &max,
+                                   3, (const void **)buf);
+  if (err != CG_OK) {
+    if (comm_rank == 0)
+      write_test_status(FAILED, "cgp_field_multi_write_data NULL bufs", NULL);
+    cgp_error_exit();
+  } else {
+    if (comm_rank == 0)
+      write_test_status(PASSED, "cgp_field_multi_write_data NULL bufs", NULL);
+  }
+
+  free(buf);
+  free(Data_Fx); free(Data_Fy); free(Data_Fz);
+
+  cgp_close(fn);
+  MPI_Barrier(comm);
+
+  /* === READ PHASE === */
+
+  if (cgp_open(fname, CG_MODE_READ, &fn) != CG_OK) {
+    printf("*FAILED* cgp_open (read)\n");
+    cgp_error_exit();
+  }
+
+  /* Read coords */
+  Coor_x = NULL; Coor_y = NULL; Coor_z = NULL;
+  buf = (void **)malloc(3 * sizeof(void *));
+
+  if (comm_rank == 0) {
+    Coor_x = (double *)malloc(count * sizeof(double));
+    Coor_y = (double *)malloc(count * sizeof(double));
+    Coor_z = (double *)malloc(count * sizeof(double));
+    buf[0] = Coor_x;
+    buf[1] = Coor_y;
+    buf[2] = Coor_z;
+  } else {
+    buf[0] = NULL;
+    buf[1] = NULL;
+    buf[2] = NULL;
+  }
+
+  err = cgp_coord_multi_read_data(fn, B, Z, Cvec, &min, &max, 3, buf);
+  if (err != CG_OK) {
+    if (comm_rank == 0)
+      write_test_status(FAILED, "cgp_coord_multi_read_data NULL bufs", NULL);
+    cgp_error_exit();
+  } else {
+    if (comm_rank == 0) {
+      int ok = 1;
+      for (k = 0; k < count; k++) {
+        if (!compareValuesDouble(Coor_x[k], k + 1.1) ||
+            !compareValuesDouble(Coor_y[k], k + 2.2) ||
+            !compareValuesDouble(Coor_z[k], k + 3.3)) {
+          ok = 0; break;
+        }
+      }
+      write_test_status(ok ? PASSED : FAILED,
+          "cgp_coord_multi_read_data NULL bufs", NULL);
+    }
+  }
+
+  free(buf);
+  free(Coor_x); free(Coor_y); free(Coor_z);
+
+  /* Read fields */
+  Data_Fx = NULL; Data_Fy = NULL; Data_Fz = NULL;
+  buf = (void **)malloc(3 * sizeof(void *));
+
+  if (comm_rank == 0) {
+    Data_Fx = (double *)malloc(count * sizeof(double));
+    Data_Fy = (double *)malloc(count * sizeof(double));
+    Data_Fz = (double *)malloc(count * sizeof(double));
+    buf[0] = Data_Fx;
+    buf[1] = Data_Fy;
+    buf[2] = Data_Fz;
+  } else {
+    buf[0] = NULL;
+    buf[1] = NULL;
+    buf[2] = NULL;
+  }
+
+  err = cgp_field_multi_read_data(fn, B, Z, S, Fvec, &min, &max, 3, buf);
+  if (err != CG_OK) {
+    if (comm_rank == 0)
+      write_test_status(FAILED, "cgp_field_multi_read_data NULL bufs", NULL);
+    cgp_error_exit();
+  } else {
+    if (comm_rank == 0) {
+      int ok = 1;
+      for (k = 0; k < count; k++) {
+        if (!compareValuesDouble(Data_Fx[k], k + 10.1) ||
+            !compareValuesDouble(Data_Fy[k], k + 20.2) ||
+            !compareValuesDouble(Data_Fz[k], k + 30.3)) {
+          ok = 0; break;
+        }
+      }
+      write_test_status(ok ? PASSED : FAILED,
+          "cgp_field_multi_read_data NULL bufs", NULL);
+    }
+  }
+
+  free(buf);
+  free(Data_Fx); free(Data_Fy); free(Data_Fz);
+
+  cgp_close(fn);
+  return 0;
+}
+
 int main (int argc, char *argv[])
 {
 
@@ -1550,6 +1776,10 @@ int main (int argc, char *argv[])
   strcpy(test_str,"Multi-sets API Testing");
   if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
   multisets();
+
+  strcpy(test_str,"Multi-sets NULL Buffer Testing");
+  if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
+  multisets_null_buf();
 
   strcpy(test_str,"Particle Parallel I/O Testing");
   if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
