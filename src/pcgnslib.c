@@ -3246,12 +3246,18 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
       }
     }
 
+    int has_data = 0;
+    for (n = 0; n < nsets; n++) {
+      if (buf[n]) { has_data = 1; break; }
+    }
     for (n = 0; n < zone->index_dim; n++) {
       dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
         zcoor->rind_planes[2*n+1];
-      if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-        cgi_error("Invalid index ranges.");
-        goto error;
+      if (has_data) {
+        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+          cgi_error("Invalid index ranges.");
+          goto error;
+        }
       }
     }
 
@@ -3357,13 +3363,19 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
       }
     }
 
+    int has_data = 0;
+    for (n = 0; n < nsets; n++) {
+      if (buf[n]) { has_data = 1; break; }
+    }
     for (n = 0; n < zone->index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
+      if (has_data) {
         if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-            cgi_error("Invalid index ranges.");
-            goto error;
+          cgi_error("Invalid index ranges.");
+          goto error;
         }
+      }
     }
 
     for (n = 0; n < nsets; n++) {
@@ -3460,12 +3472,14 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
       if (field==0) goto error;
 
       /* verify that range requested does not exceed range stored */
-      for (m = 0; m < field->data_dim; m++) {
-        if (rmin[m] > rmax[m] ||
+      if (buf[n]) {
+        for (m = 0; m < field->data_dim; m++) {
+          if (rmin[m] > rmax[m] ||
             rmax[m] > field->dim_vals[m] ||
             rmin[m] < 1) {
-	  cgi_error("Invalid range of data requested");
-	  goto error;
+            cgi_error("Invalid range of data requested");
+            goto error;
+          }
         }
       }
 
@@ -3561,12 +3575,14 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
     if (field==0) goto error;
 
     /* verify that range requested does not exceed range stored */
-    for (m = 0; m < field->data_dim; m++) {
-      if (rmin[m] > rmax[m] ||
-	  rmax[m] > field->dim_vals[m] ||
-	  rmin[m] < 1) {
-	cgi_error("Invalid range of data requested");
-	goto error;
+    if (buf[n]) {
+      for (m = 0; m < field->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+          rmax[m] > field->dim_vals[m] ||
+          rmin[m] < 1) {
+          cgi_error("Invalid range of data requested");
+          goto error;
+        }
       }
     }
 
