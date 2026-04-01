@@ -3711,11 +3711,16 @@ int cgp_particle_coord_multi_read_data(int fn, int B, int P, int *C, const cgsiz
 
     dims = pzone->nparticles;
 
-    if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
-       cgi_error("Invalid index ranges.");
-       goto error;
+    int has_data = 0;
+    for (n = 0; n < nsets; n++) {
+      if (buf[n]) { has_data = 1; break; }
     }
-
+    if (has_data) {
+      if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
+         cgi_error("Invalid index ranges.");
+         goto error;
+      }
+    }
 
     for (n = 0; n < nsets; n++) {
       mem_type_id[n] = cgi_datatype(pcoor->coord[C[n]-1].data_type);
@@ -3820,9 +3825,16 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
     }
 
     dims = pzone->nparticles;
-    if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
-       cgi_error("Invalid index ranges.");
-       goto error;
+
+    int has_data = 0;
+    for (n = 0; n < nsets; n++) {
+      if (buf[n]) { has_data = 1; break; }
+    }
+    if (has_data) {
+      if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
+         cgi_error("Invalid index ranges.");
+         goto error;
+      }
     }
 
     for (n = 0; n < nsets; n++) {
@@ -3920,12 +3932,14 @@ int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
       if (field==0) goto error;
 
       /* verify that range requested does not exceed range stored */
-      for (m = 0; m < field->data_dim; m++) {
-        if (rmin[m] > rmax[m] ||
-            rmax[m] > field->dim_vals[m] ||
-            rmin[m] < 1) {
-     cgi_error("Invalid range of data requested");
-     goto error;
+      if (buf[n]) {
+        for (m = 0; m < field->data_dim; m++) {
+          if (rmin[m] > rmax[m] ||
+              rmax[m] > field->dim_vals[m] ||
+              rmin[m] < 1) {
+            cgi_error("Invalid range of data requested");
+            goto error;
+          }
         }
       }
 
@@ -4021,12 +4035,14 @@ int cgp_particle_field_multi_read_data(int fn, int B, int P, int S, int *F,
     if (field==0) goto error;
 
     /* verify that range requested does not exceed range stored */
-    for (m = 0; m < field->data_dim; m++) {
-      if (rmin[m] > rmax[m] ||
-     rmax[m] > field->dim_vals[m] ||
-     rmin[m] < 1) {
-   cgi_error("Invalid range of data requested");
-   goto error;
+    if (buf[n]) {
+      for (m = 0; m < field->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+	    rmax[m] > field->dim_vals[m] ||
+	    rmin[m] < 1) {
+	  cgi_error("Invalid range of data requested");
+	  goto error;
+        }
       }
     }
 
@@ -4116,12 +4132,14 @@ int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
     array = cgi_array_address(CG_MODE_READ, 0, A[n], "dummy", &have_dup, &ierr);
     if (array == NULL) goto error;
 
-    for (m = 0; m < array->data_dim; m++) {
-      if (rmin[m] > rmax[m] ||
-	  rmax[m] > array->dim_vals[m] ||
-	  rmin[m] < 1) {
-	cgi_error("Invalid range of data requested");
-	goto error;
+    if (buf[n]) {
+      for (m = 0; m < array->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+	    rmax[m] > array->dim_vals[m] ||
+	    rmin[m] < 1) {
+	  cgi_error("Invalid range of data requested");
+	  goto error;
+        }
       }
     }
 
@@ -4213,12 +4231,14 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
     array = cgi_array_address(CG_MODE_READ, 0, A[n], "dummy", &have_dup, &ierr);
     if (array == NULL) goto error;
 
-    for (m = 0; m < array->data_dim; m++) {
-      if (rmin[m] > rmax[m] ||
-	  rmax[m] > array->dim_vals[m] ||
-	  rmin[m] < 1) {
-	cgi_error("Invalid range of data requested");
-	goto error;
+    if (buf[n]) {
+      for (m = 0; m < array->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+	    rmax[m] > array->dim_vals[m] ||
+	    rmin[m] < 1) {
+	  cgi_error("Invalid range of data requested");
+	  goto error;
+        }
       }
     }
 

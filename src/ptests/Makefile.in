@@ -14,6 +14,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 #----------
 
 CALL =	pcgns_ctest$(EXE) \
+	test_multisets$(EXE) \
 	cexample$(EXE) \
 	benchmark$(EXE) \
 	benchmark_hdf5$(EXE) \
@@ -116,6 +117,12 @@ test : $(TESTS)
 
 pcgns_ctest$(EXE) : pcgns_ctest.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ pcgns_ctest.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_multisets$(EXE) : test_multisets.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_multisets.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

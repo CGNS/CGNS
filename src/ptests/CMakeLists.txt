@@ -31,6 +31,7 @@ endif ()
 
 set(C_PTESTS_LIST
 	pcgns_ctest
+	test_multisets
 	cexample
 	benchmark
 	benchmark_hdf5
