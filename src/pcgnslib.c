@@ -3037,18 +3037,6 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
     hsize_t *start, *dims;
     herr_t herr;
     hid_t plist_id;
-    int has_data = 0;
-
-    /* Check if this rank has any non-NULL data buffers */
-    if (rw_mode == CG_PAR_READ) {
-      for (k = 0; k < (int)count; k++) {
-        if (data[0].u.rbuf[k]) { has_data = 1; break; }
-      }
-    } else {
-      for (k = 0; k < (int)count; k++) {
-        if (data[0].u.wbuf[k]) { has_data = 1; break; }
-      }
-    }
 
     start = malloc(count*sizeof(hsize_t));
     dims = malloc(count*sizeof(hsize_t));
@@ -3081,19 +3069,17 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 
     /* Set the start position and size for the data write */
     /* fix dimensions due to Fortran indexing and ordering */
-    if (has_data) {
-      for (k = 0; k < ndims; k++) {
-          start[k] = rmin[ndims-k-1] - 1;
-          dims[k] = rmax[ndims-k-1] - start[k];
-      }
-    } else {
-      /* No data: create zero-sized memory spaces */
-      for (k = 0; k < ndims; k++) {
-          dims[k] = 0;
-      }
+    for (k = 0; k < ndims; k++) {
+        start[k] = rmin[ndims-k-1] - 1;
+        dims[k] = rmax[ndims-k-1] - start[k];
     }
 
     for (k = 0; k < count; k++) {
+        /* Per-dataset NULL check: a single call may have a mix of valid and NULL buffers */
+        int has_data_k = (rw_mode == CG_PAR_READ) ?
+                         (data[0].u.rbuf[k] != NULL) :
+                         (data[0].u.wbuf[k] != NULL);
+
 	/* Create a shape for the data in memory */
         mem_space_id[k] = H5Screate_simple(ndims, dims, NULL);
         if (mem_space_id[k] < 0) {
@@ -3123,7 +3109,7 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 	  return CG_ERROR;
 	}
 
-        if (has_data) {
+        if (has_data_k) {
 	  /* Select a section of the array in the file */
           herr = H5Sselect_hyperslab(file_space_id[k], H5S_SELECT_SET, start,
 				     NULL, dims, NULL);
@@ -3136,7 +3122,7 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 	    return CG_ERROR;
 	  }
         } else {
-          /* No data on this rank: select none so collective I/O doesn't hang */
+          /* No data for this dataset on this rank: select none so collective I/O proceeds */
           H5Sselect_none(mem_space_id[k]);
           H5Sselect_none(file_space_id[k]);
         }

@@ -609,8 +609,8 @@ static void test_mixed_null(void)
   cgsize_t min, max, k, count;
   double *Coor_x = NULL, *Coor_y = NULL, *Coor_z = NULL;
   double *Data_Fx = NULL, *Data_Fy = NULL, *Data_Fz = NULL;
-  double *Array_r = NULL;
-  int    *Array_i = NULL;
+  double   *Array_r = NULL;
+  cgsize_t *Array_i = NULL;
   int null_rank = comm_size - 1;
   int err;
 
@@ -698,16 +698,20 @@ static void test_mixed_null(void)
   cg_gorel(fn, "User Data", 0, "end");
   size_1D[0] = nijk[0];
   cgp_array_write("ArrayR", CGNS_ENUMV(RealDouble), 1, size_1D, &Ar);
-  cgp_array_write("ArrayI", CGNS_ENUMV(Integer),    1, size_1D, &Ai);
+#if CG_BUILD_64BIT
+  cgp_array_write("ArrayI", CGNS_ENUMV(LongInteger), 1, size_1D, &Ai);
+#else
+  cgp_array_write("ArrayI", CGNS_ENUMV(Integer),     1, size_1D, &Ai);
+#endif
   Avec[0] = Ai; Avec[1] = Ar;
 
   buf = (void **)malloc(2 * sizeof(void *));
   if (comm_rank != null_rank) {
-    Array_r = (double *)malloc(count * sizeof(double));
-    Array_i = (int    *)malloc(count * sizeof(int));
+    Array_r = (double   *)malloc(count * sizeof(double));
+    Array_i = (cgsize_t *)malloc(count * sizeof(cgsize_t));
     for (k = 0; k < count; k++) {
       Array_r[k] = comm_rank * count + k + 1.001;
-      Array_i[k] = (int)(comm_rank * count + k + 1);
+      Array_i[k] = comm_rank * count + k + 1;
     }
     buf[0] = Array_i; buf[1] = Array_r;
   } else {
@@ -806,8 +810,8 @@ static void test_mixed_null(void)
 
   buf = (void **)malloc(2 * sizeof(void *));
   if (comm_rank != null_rank) {
-    Array_r = (double *)malloc(count * sizeof(double));
-    Array_i = (int    *)malloc(count * sizeof(int));
+    Array_r = (double   *)malloc(count * sizeof(double));
+    Array_i = (cgsize_t *)malloc(count * sizeof(cgsize_t));
     buf[0] = Array_r; buf[1] = Array_i;
   } else {
     buf[0] = NULL; buf[1] = NULL;
@@ -823,7 +827,7 @@ static void test_mixed_null(void)
     int ok = 1;
     for (k = 0; k < count; k++) {
       if (!compareValuesDouble(Array_r[k], comm_rank * count + k + 1.001) ||
-          Array_i[k] != (int)(comm_rank * count + k + 1)) {
+          Array_i[k] != comm_rank * count + k + 1) {
         ok = 0; break;
       }
     }
