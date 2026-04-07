@@ -63,10 +63,7 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 5000
-#define CGNS_DOTVERS 5.00
-#define CGNS_COMPATVERSION 2540
-#define CGNS_COMPATDOTVERS 2.54
+#include "cgns_version.h"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      modes for cgns file                                              *

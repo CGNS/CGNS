@@ -17204,7 +17204,7 @@ int cg_particle_governing_write(CGNS_ENUMT(ParticleGoverningEquationsType_t) Par
  *                                 LinearSpringDashpot, Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
  *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
  *                                 KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
- *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
  *                                 CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei,
  *                                 TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
  *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere,
@@ -17249,7 +17249,7 @@ int cg_particle_model_read(const char *ModelLabel, CGNS_ENUMT(ParticleModelType_
  *                                 Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
  *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
  *                                 KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
- *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
  *                                 CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei,
  *                                 TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
  *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere,

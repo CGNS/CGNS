@@ -717,6 +717,7 @@ install (TARGETS ${install_targets}
 # Set the install path of the header files
 set(headers
   cgnslib.h
+  cgns_version.h
   cgns_io.h
   cgnswin_f.h
   ${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
