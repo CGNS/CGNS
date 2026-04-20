@@ -840,9 +840,11 @@ typedef struct {            /* FlowSolution_t node          */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
     /* CPEX 045 */
-    int isOrderDefined;     /* Flag which defines if spatialOrder or temporalOrder are defined*/
-    int spatialOrder;       /* Spatial order of the solution        */
-    int temporalOrder;      /* temporal order of the solution       */
+    /* InterpolationOrders is considered present iff spatialOrder >= 0.
+     * spatialOrder == -1 is the sentinel for "no InterpolationOrders child node".
+     * temporalOrder defaults to 0 (spec §3.2.5 default). */
+    int spatialOrder;
+    int temporalOrder;
 } cgns_sol;
 
 typedef struct {            /* GridCoordinates_t node       */
@@ -1035,10 +1037,9 @@ typedef struct {            /* FamilyBC_t node          */
 typedef struct {                    /* ElementInterpolation_t Node */
     char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
-    CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
-    CGNS_ENUMT(InterpolationType_t) interpolationType; /* Interpolation type (Lagrange, Monomial, etc.) */
-    cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
-    cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
+    CGNS_ENUMT(ElementType_t) type; /* basic element type this block overrides */
+    cgns_array *lagrangePts;        /* optional LagrangeControlPoints; NULL -> use standard layout (isoparametric) */
+    cgns_array *monomialCoeff;      /* optional MonomialCoefficients; NULL -> none */
 } cgns_elementInterpolation;
 
 typedef struct {                    /* SolutionInterpolation_t Node */

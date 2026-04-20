@@ -40,6 +40,9 @@ static int LibraryVersion = CGNS_VERSION;
 static int verbose = 0;
 static int nwarn = 0, nerr = 0, totwarn = 0;
 static int dowarn = 3, doerr = 1;
+/* Strict CPEX-0045 validation: promotes soft-checks to hard errors.
+ * Enabled with -s on the command line. */
+static int strict_cpex45 = 0;
 static int cgnsfn, cgnsbase, cgnszone, cgnsparticle;
 
 static int CellDim, PhyDim;
@@ -145,7 +148,7 @@ static CGNSNAME *ParticleCoordinate;
 
 /* command line options */
 
-static char options[] = "vVuUw:e";
+static char options[] = "vVuUw:es";
 
 static char *usgmsg[] = {
     "usage  : cgnscheck [options] CGNSfile [CGNSoutfile]",
@@ -156,6 +159,7 @@ static char *usgmsg[] = {
     "   -U        : update CGNS file to CGNS Library Version only",
     "   -w<level> : warning level output (0 to 3)",
     "   -e        : don't print error",
+    "   -s        : strict CPEX-0045 high-order validation",
     NULL
 };
 
@@ -4891,19 +4895,36 @@ static void check_solution (int ns)
         printf ("        Spatial  Order : %d\n",os);
         printf ("        Temporal Order : %d\n",ot);
 
-        /* Validation: Check for reasonable order values */
+        /* Validation: order values.
+         * Default (non-strict) range matches the prior behavior: warn only
+         * on clearly invalid values (negative or far-out). Strict mode (-s)
+         * also flags os==0 (constant interpolation) as an error since a
+         * SolutionInterpolation_t block with SpatialOrder=0 does not
+         * correspond to any valid Lagrange function space in Table 1. */
         if (os < 0 || os > 100) {
-            warning(2, "Spatial order %d is outside typical range [0-100]", os);
+            if (strict_cpex45)
+                error("Spatial order %d outside valid range [1-100]", os);
+            else
+                warning(2, "Spatial order %d is outside typical range [0-100]", os);
+        } else if (strict_cpex45 && os == 0) {
+            error("Spatial order 0 is not a valid Lagrange basis (strict CPEX-0045).");
         }
         if (ot < 0 || ot > 10) {
-            warning(2, "Temporal order %d is outside typical range [0-10]", ot);
+            if (strict_cpex45)
+                error("Temporal order %d outside valid range [0-10]", ot);
+            else
+                warning(2, "Temporal order %d is outside typical range [0-10]", ot);
         }
 
-        /* Note: More sophisticated validation would check if these orders match
-         * a SolutionInterpolation_t node in the zone's Family_t, but that requires
-         * complex matching logic between element types and interpolation definitions.
-         * Users should ensure consistency between FlowSolution InterpolationOrders
-         * and Family SolutionInterpolation nodes manually. */
+        /* Full cross-check against Family_t SolutionInterpolation_t (matching
+         * (element_type, os, ot) triplet per CPEX-0045 §4.3) requires walking
+         * the family tree and element sections. In strict mode, remind the
+         * user to verify this manually; otherwise stay silent. */
+        if (strict_cpex45) {
+            warning(1, "Strict mode: verify a SolutionInterpolation_t block "
+                       "exists in the zone's Family_t with (basic_element_type, "
+                       "spatialOrder=%d, temporalOrder=%d).", os, ot);
+        }
     }
 
     /* SIDS Consistency Check: InterpolationPoints requires interpolation definition */
@@ -7434,6 +7455,9 @@ int main (int argc, char *argv[])
                 break;
             case 'e':
                 doerr = 0;
+                break;
+            case 's':
+                strict_cpex45 = 1;
                 break;
         }
     }

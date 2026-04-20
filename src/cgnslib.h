@@ -1217,6 +1217,15 @@ CGNSDLL int cg_multifam_write(const char *name, const char *family);
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ElementInterpolation_t Nodes                      *
  *                     (CPEX 045)                                        *
+ *                                                                       *
+ *  Per CPEX-0045 §3.1.3, Cartesian modal interpolation applies only to  *
+ *  solutions. Accordingly, ElementInterpolation_t carries no explicit   *
+ *  InterpolationType child: the type is implied by which optional       *
+ *  children are present (LagrangeControlPoints -> ParametricLagrange,   *
+ *  MonomialCoefficients -> ParametricMonomialsPascal, neither ->        *
+ *  IsoParametric). There is therefore no public API that can attach     *
+ *  CartesianMonomialsPascal to a mesh element, and                       *
+ *  cg_element_interpolation_type_read() never returns it.               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
@@ -1467,6 +1476,23 @@ CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 	const cgsize_t *pnts, int *S);
 
+/*
+ * CPEX-0045 §3.2.5 vs §5.3 storage note
+ * --------------------------------------
+ * The text of the CPEX-0045 proposal shows the FlowSolution_t interpolation
+ * orders in two complementary forms:
+ *   (a) §3.2.5 enumerates "int SpatialOrder; int TemporalOrder;" as scalar
+ *       fields of FlowSolution_t itself.
+ *   (b) §5.3 ("Extension to the SIDS file mapping") specifies a single
+ *       IndexArray_t child named "InterpolationOrders" with dim = 2,
+ *       values = [spatialOrder, temporalOrder].
+ * This implementation follows (b) as the normative file layout: the
+ * cg_sol_interpolation_order_{read,write}() pair reads/writes the
+ * IndexArray_t child. Form (a) is treated as the in-SIDS-prose convenience
+ * description of that same data. If a future clarification from the CGNS
+ * Steering Committee requires form (a) as an additional on-disk encoding,
+ * these functions must be extended; existing callers will be unaffected.
+ */
 CGNSDLL int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
                                             int *spatialOrder, int *temporalOrder);
 

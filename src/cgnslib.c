@@ -8315,9 +8315,8 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     strcpy(sol->name,solname);
     sol->location = location;
     
-    /* initialize solution order */
-    sol->isOrderDefined = 0;
-    sol->spatialOrder  = 1;
+    /* initialize solution order: -1 means "no InterpolationOrders child" */
+    sol->spatialOrder  = -1;
     sol->temporalOrder = 0;
 
     index_dim = zone->index_dim;
@@ -8380,7 +8379,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (!sol->isOrderDefined)
+            if (sol->spatialOrder < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution requires definition of interpolationOrders");
                 return CG_ERROR;
@@ -8639,6 +8638,19 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  * node. The interpolation orders must be set for element-based solutions
  * (GridLocation = CellCenter or other element-based locations).
  *
+ * \par Precedence relative to SolutionInterpolation_t (CPEX-0045 §4.3):
+ * The per-zone InterpolationOrders pair and the per-family
+ * SolutionInterpolation_t triplet (element_type, spatialOrder, temporalOrder)
+ * play complementary roles. The zone-level orders identify *which*
+ * SolutionInterpolation_t block in the zone's Family_t describes the
+ * interpolation basis (via the (element_type, spatialOrder, temporalOrder)
+ * key, with the element_type falling back from the actual section tag
+ * (e.g. TETRA_10) to the basic tag (TETRA_4) when no exact match is found).
+ * The InterpolationOrders pair here therefore *selects* a family-level
+ * basis; it does not override its order values. A SolutionInterpolation_t
+ * block whose orders disagree with a FlowSolution_t's InterpolationOrders
+ * is a file-level inconsistency and cgnscheck reports it.
+ *
  * Spatial order:
  * - order = 1: Linear interpolation (2 nodes per direction)
  * - order = 2: Quadratic interpolation (3 nodes per direction)
@@ -8673,7 +8685,7 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     *spatialOrder  = 0;
     *temporalOrder = 0;
 
-    if (sol->isOrderDefined == 0) return CG_NODE_NOT_FOUND;
+    if (sol->spatialOrder < 0) return CG_NODE_NOT_FOUND;
 
     /* CPEX 0045 Section 3.2.5: Two use cases for interpolation orders:
      * 1. GridLocation = InterpolationPoints: Uniform order across entire zone
@@ -8715,6 +8727,14 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
  * The InterpolationOrders array contains [spatialOrder, temporalOrder]:
  * - spatialOrder: Polynomial degree for spatial interpolation
  * - temporalOrder: Polynomial degree for temporal interpolation (0 = none)
+ *
+ * \par Relationship to family-level SolutionInterpolation_t (CPEX-0045 §4.3):
+ * The orders written here form the lookup key into the zone's Family_t
+ * SolutionInterpolation_t blocks: pair (element_type, spatialOrder,
+ * temporalOrder) — with element_type taken from the section's basic type
+ * when no exact match exists. Keep the two in sync: if the family does
+ * not carry a matching SolutionInterpolation_t, cgnscheck will flag the
+ * file.
  *
  * Typical usage:
  * 1. Create FlowSolution_t with element-based GridLocation
@@ -8784,7 +8804,7 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
         return CG_ERROR;
     }
 
-    sol->isOrderDefined = 1;
+    /* spatialOrder >= 0 marks "InterpolationOrders present". */
     sol->spatialOrder = spatialOrder;
     sol->temporalOrder= temporalOrder;
     
@@ -9298,7 +9318,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (!sol->isOrderDefined)
+            if (sol->spatialOrder < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution field requires definition of interpolationOrders first");
                 return CG_ERROR;
@@ -16601,11 +16621,7 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
                                        CGNS_ENUMT(InterpolationType_t)* it)
 {
     cgns_family *family;
-    int n, ndim;
-    double *ids;
-    char_33 name, data_type;
-    void *vdata;
-    cgsize_t dim_vals;
+    cgns_elementInterpolation *ei;
 
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
@@ -16618,41 +16634,22 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
     if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
     en--;
 
-    cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+    ei = &family->elementinterpolations[en];
 
-    /* Check if InterpolationType_t node exists */
-    if (cgi_get_nodes(ei->id, "InterpolationType_t", &n, &ids)) return CG_ERROR;
-
-    if (n == 0) {
-        /* No InterpolationType_t node found - return NODE_NOT_FOUND */
-        return CG_NODE_NOT_FOUND;
+    /* CPEX-0045 §3.2.2 leaves no explicit InterpolationType child on
+     * ElementInterpolation_t: the type is derived from which optional
+     * children are present.
+     *   LagrangeControlPoints present  -> ParametricLagrange
+     *   MonomialCoefficients present   -> ParametricMonomialsPascal
+     *   neither                        -> IsoParametric (standard layout)
+     */
+    if (ei->lagrangePts != NULL) {
+        *it = CGNS_ENUMV(ParametricLagrange);
+    } else if (ei->monomialCoeff != NULL) {
+        *it = CGNS_ENUMV(ParametricMonomialsPascal);
+    } else {
+        *it = CGNS_ENUMV(IsoParametric);
     }
-
-    if (n > 1) {
-        cgi_error("Multiple InterpolationType_t nodes found under ElementInterpolation_t '%s'", ei->name);
-        CGNS_FREE(ids);
-        return CG_ERROR;
-    }
-
-    /* Read the InterpolationType_t value */
-    if (cgi_read_node(ids[0], name, data_type, &ndim, &dim_vals, &vdata, READ_DATA)) {
-        cgi_error("Error reading InterpolationType_t");
-        CGNS_FREE(ids);
-        return CG_ERROR;
-    }
-
-    /* Verify data type before casting */
-    if (strcmp(data_type, "I4") != 0) {
-        cgi_error("Invalid data type '%s' for InterpolationType_t (expected I4)", data_type);
-        CGNS_FREE(vdata);
-        CGNS_FREE(ids);
-        return CG_ERROR;
-    }
-
-    /* Convert to enum */
-    *it = *((int *)vdata);
-    CGNS_FREE(vdata);
-    CGNS_FREE(ids);
 
     return CG_OK;
 }
@@ -16861,9 +16858,7 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
 int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_name,
                                    CGNS_ENUMT(ElementType_t) et, int *en)
 {
-    int n,nnodes;
-    double *ids;
-    double dummy_id;
+    int n;
     int array[1];
     cgsize_t dim_vals;
     cgns_family *family;
@@ -16894,7 +16889,10 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
         return CG_ERROR;
     }
 
-    // Already exists ?
+    /* Uniqueness is per exact element tag: the tag encodes the polynomial
+     * order (e.g. QUAD_9 differs from QUAD_4), unlike SolutionInterpolation_t
+     * which pairs a basic tag with an explicit order. */
+    (void)type;
     einterp = 0;
     for (n = 0 ; n<family->nelementinterpolation ; n++)
     {
@@ -16902,7 +16900,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
 
         if (tmpinterp->type == et )
         {
-            if (cg->mode==CG_MODE_WRITE) 
+            if (cg->mode==CG_MODE_WRITE)
             {
                 cgi_error("ElementInterpolation_t already defined under Family_t.");
                 return CG_ERROR;
@@ -16915,7 +16913,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
                 einterp = tmpinterp;
                 *en = n+1;
                 break;
-              
+
             }
             else
             {
@@ -16924,7 +16922,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
             }
         }
     }
-    
+
     // Create New ?
     if (!einterp)
     {
@@ -16937,14 +16935,14 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
         family->nelementinterpolation++;
         *en = family->nelementinterpolation;
     }
-    
+
     memset(einterp,0,sizeof(cgns_elementInterpolation));
     strcpy(einterp->name,node_name);
     einterp->type = et;
 
     // Write node
     dim_vals = 1;
-    array[0] = et;
+    array[0] = (int)et;
     if (cgi_new_node(family->id, einterp->name, "ElementInterpolation_t",
                          &einterp->id, "I4", 1, &dim_vals, &array[0]))
             return CG_ERROR;
@@ -16994,7 +16992,6 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
                                    CGNS_ENUMT(ElementType_t) et, int *en)
 {
     int n;
-    double dummy_id;
     int array[1];
     cgsize_t dim_vals;
     cgns_family *family;
@@ -17025,7 +17022,8 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
         return CG_ERROR;
     }
 
-    // Already exists ?
+    /* Uniqueness is per exact element tag (the tag encodes polynomial order). */
+    (void)type;
     einterp = 0;
     for (n = 0 ; n<family->nelementinterpolation ; n++)
     {
@@ -17072,20 +17070,16 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
     memset(einterp,0,sizeof(cgns_elementInterpolation));
     strcpy(einterp->name,node_name);
     einterp->type = et;
-    einterp->interpolationType = CGNS_ENUMV( IsoParametric );
 
-    // Write ElementInterpolation_t node
+    /* Write ElementInterpolation_t node. Per CPEX-0045 §3.2.2 the payload is
+     * a single ElementType_t integer; LagrangeControlPoints (if any) is added
+     * as a child by cg_element_interpolation_points_write. Absence of a
+     * LagrangeControlPoints child means "use standard layout" (isoparametric).
+     */
     dim_vals = 1;
-    array[0] = et;
+    array[0] = (int)et;
     if (cgi_new_node(family->id, einterp->name, "ElementInterpolation_t",
                          &einterp->id, "I4", 1, &dim_vals, &array[0]))
-            return CG_ERROR;
-
-    // Write InterpolationType_t node (IsoParametric)
-    dim_vals = 1;
-    array[0] = (int)CGNS_ENUMV( IsoParametric );
-    if (cgi_new_node(einterp->id, "InterpolationType", "InterpolationType_t",
-                         &dummy_id, "I4", 1, &dim_vals, &array[0]))
             return CG_ERROR;
 
     return CG_OK;
@@ -17190,11 +17184,14 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
 
     einterp = &family->elementinterpolations[en];
 
-    /* Reject writing control points to isoparametric interpolation nodes */
-    if (einterp->interpolationType == CGNS_ENUMV(IsoParametric)) {
-        cgi_error("Cannot write LagrangeControlPoints to an IsoParametric "
-                  "ElementInterpolation_t node '%s'. IsoParametric interpolation "
-                  "uses the grid coordinates directly.", einterp->name);
+    /* Reject a second LagrangeControlPoints write. A node created by
+     * cg_element_isoparametric_write has no LagrangePoints and is considered
+     * "isoparametric" per CPEX-0045 §3.2.2 (LagrangePoints is optional;
+     * absence means standard layout). */
+    if (einterp->lagrangePts != NULL) {
+        cgi_error("LagrangeControlPoints already written for "
+                  "ElementInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", einterp->name);
         return CG_ERROR;
     }
 
@@ -17993,11 +17990,23 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     sinterp = &family->solutioninterpolations[sn];
     ot = sinterp->temporalorder;
     os = sinterp->spatialorder;
-    
+
+    /* CPEX-0045: LagrangeControlPoints only make sense for nodal (Lagrange)
+     * or IsoParametric interpolation. Modal (Parametric/Cartesian monomials)
+     * interpolants are described by MonomialCoefficients. */
+    if (sinterp->interpolationName == CGNS_ENUMV(ParametricMonomialsPascal) ||
+        sinterp->interpolationName == CGNS_ENUMV(CartesianMonomialsPascal)) {
+        cgi_error("LagrangeControlPoints cannot be written to a SolutionInterpolation_t "
+                  "node whose InterpolationType is %s; use "
+                  "cg_solution_interpolation_coefficients_write() instead.",
+                  cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+
     // Nb points and dimension per Element_t
     if ( cg_solution_lagrange_interpolation_size(sinterp->type,os,ot,&nnodes)) {
          return CG_ERROR;
-    } 
+    }
     if ( cg_element_dimension(sinterp->type,&edim)) {
          return CG_ERROR;
     }
@@ -18376,11 +18385,12 @@ int cg_element_interpolation_coefficients_write(int fn, int bn, int fam, int en,
 
     einterp = &family->elementinterpolations[en];
 
-    /* Reject writing coefficients to isoparametric interpolation nodes */
-    if (einterp->interpolationType == CGNS_ENUMV(IsoParametric)) {
-        cgi_error("Cannot write MonomialCoefficients to an IsoParametric "
-                  "ElementInterpolation_t node '%s'. IsoParametric interpolation "
-                  "uses the grid coordinates directly.", einterp->name);
+    /* Reject a second MonomialCoefficients write (see note in the Lagrange
+     * counterpart above). */
+    if (einterp->monomialCoeff != NULL) {
+        cgi_error("MonomialCoefficients already written for "
+                  "ElementInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", einterp->name);
         return CG_ERROR;
     }
 
@@ -23391,8 +23401,7 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
         else if (strcmp(node_name,"InterpolationOrders")==0) {
             if (cgi_delete_node(parent->id, posit_id)) return CG_ERROR;
-            parent->isOrderDefined = 0;
-            parent->spatialOrder = 0;
+            parent->spatialOrder = -1;
             parent->temporalOrder = 0;
         }
         else if (strcmp(node_name,"PointList")==0 ||

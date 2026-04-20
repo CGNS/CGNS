@@ -63,3 +63,38 @@ CTestTestfile.cmake
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
+
+# In-tree build & configuration artifacts (CMake and autotools)
+build/
+src/_build/
+src/html/
+src/xml/
+src/doxygen/_build/
+src/doxygen/cgns.config
+src/cgnsconfig.h
+src/cg_hash_types.h
+src/cgnsBuild.defs
+src/config.log
+src/config.status
+src/make.defs
+src/cgnstools/cgconfig
+src/cgnstools/make.defs
+
+# Doxygen/Sphinx build outputs that get generated in-tree
+src/doxygen/conf.py
+src/doxygen/conf.py.bk
+src/doxygen/index.rst
+src/doxygen/index.rst.bk
+src/doxygen/make.bat
+
+# Timing output from running the test suites in-tree
+**/CGNS_timing.txt
+src/tests/data/out
+
+# In-tree built tool binaries (autotools build drops them in src/tools/)
+src/tools/cgnscheck
+src/tools/cgnscompress
+src/tools/cgnsconvert
+src/tools/cgnsdiff
+src/tools/cgnslist
+src/tools/cgnsnames

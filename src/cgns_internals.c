@@ -1861,7 +1861,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* Determine data size (HO solution case) */
         if ( sol[0][s].location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (!sol[0][s].isOrderDefined)
+            if (sol[0][s].spatialOrder < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution requires interpolationOrders");
                 return CG_ERROR;
@@ -2019,9 +2019,8 @@ int cgi_read_solution_order(cgns_sol *sol)
     char_33 temp_name,data_type;
     
     
-    // Set default values
-    sol->isOrderDefined= 0;
-    sol->spatialOrder  = 1;
+    // Set default values: spatialOrder<0 means "no InterpolationOrders child"
+    sol->spatialOrder  = -1;
     sol->temporalOrder = 0;
     
     /* spatial and temporal orders IndexArray_t */
@@ -2046,7 +2045,7 @@ int cgi_read_solution_order(cgns_sol *sol)
                 if (dim_vals[0] != 2) return CG_ERROR;
                 
                 edata = (int*)vdata;
-                sol->isOrderDefined= 1;
+                /* spatialOrder >= 0 implies InterpolationOrders was present. */
                 sol->spatialOrder  = edata[0];
                 sol->temporalOrder = edata[1];
             }
@@ -17392,7 +17391,8 @@ void cgi_free_sol(cgns_sol *sol)
         cgi_free_ptset(sol->ptset);
         CGNS_FREE(sol->ptset);
     }
-    sol->isOrderDefined = 0;
+    sol->spatialOrder = -1;
+    sol->temporalOrder = 0;
 }
 
 void cgi_free_1to1(cgns_1to1 *one21)

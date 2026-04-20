@@ -63,6 +63,7 @@ set(test_error_handling_FILES test_error_handling.c)
 set(test_serendipity_FILES test_serendipity.c utils.c)
 set(test_isoparametric_FILES test_isoparametric.c utils.c)
 set(test_mixed_ho_FILES test_mixed_ho.c utils.c)
+set(test_variable_order_FILES test_variable_order.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -128,6 +129,7 @@ add_executable( test_error_handling  ${test_error_handling_FILES}  )
 add_executable( test_serendipity     ${test_serendipity_FILES}     )
 add_executable( test_isoparametric   ${test_isoparametric_FILES}   )
 add_executable( test_mixed_ho        ${test_mixed_ho_FILES}        )
+add_executable( test_variable_order  ${test_variable_order_FILES}  )
 #
 set(C_TESTS_LIST
 	cgioc
@@ -165,7 +167,8 @@ set(C_TESTS_LIST
         test_error_handling
         test_serendipity
         test_isoparametric
-        test_mixed_ho)
+        test_mixed_ho
+        test_variable_order)
 
 # Conditionally add HDF5-specific tests
 if (CGNS_ENABLE_HDF5)
