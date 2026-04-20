@@ -343,6 +343,99 @@ int test_hexa27_isoparametric()
     return 0;
 }
 
+/*
+ * Test 3: IsoParametric type for SolutionInterpolation_t
+ *
+ * Verifies that a SolutionInterpolation_t node with InterpolationType=IsoParametric
+ * round-trips correctly and has no LagrangeControlPoints child.
+ */
+int test_sol_isoparametric()
+{
+    int fn, bn, fam, sn;
+    char name[33];
+    CGNS_ENUMT(ElementType_t) et;
+    CGNS_ENUMT(InterpolationType_t) it;
+    int os, ot, ier;
+    const char *fname = "test_sol_isoparam.cgns";
+    double dummy_u[4], dummy_v[4];
+
+    printf("\n=== Test 3: SolutionInterpolation_t IsoParametric ===\n");
+    total_tests++;
+
+    /* --- Write --- */
+    if (cg_open(fname, CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 3, 3, &bn) ||
+        cg_family_write(fn, bn, "SolFamily", &fam)) {
+        printf("ERROR (setup): %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    if (cg_solution_interpolation_write(fn, bn, fam, "QUAD4_IsoParam",
+                                        CGNS_ENUMV(QUAD_4), 1, 0,
+                                        CGNS_ENUMV(IsoParametric), &sn)) {
+        printf("ERROR: cg_solution_interpolation_write: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    cg_close(fn);
+
+    /* --- Read back --- */
+    if (cg_open(fname, CG_MODE_READ, &fn)) {
+        printf("ERROR: reopen: %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    if (cg_solution_interpolation_read(fn, bn, fam, 1, name, &et, &os, &ot, &it)) {
+        printf("ERROR: cg_solution_interpolation_read: %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    printf("  Name=%s  ElementType=%s  Orders=(%d,%d)  InterpolationType=%s\n",
+           name, cg_ElementTypeName(et), os, ot, cg_InterpolationTypeName(it));
+
+    if (it != CGNS_ENUMV(IsoParametric)) {
+        printf("ERROR: InterpolationType mismatch: expected IsoParametric, got %s\n",
+               cg_InterpolationTypeName(it));
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    if (et != CGNS_ENUMV(QUAD_4)) {
+        printf("ERROR: ElementType mismatch: expected QUAD_4, got %s\n",
+               cg_ElementTypeName(et));
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    if (os != 1 || ot != 0) {
+        printf("ERROR: Orders mismatch: expected (1,0), got (%d,%d)\n", os, ot);
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+
+    /* No LagrangeControlPoints should exist for IsoParametric */
+    ier = cg_solution_interpolation_points_read(fn, bn, fam, 1,
+                                                dummy_u, dummy_v, NULL, NULL);
+    if (ier != CG_NODE_NOT_FOUND) {
+        printf("ERROR: IsoParametric SolutionInterpolation_t should have no "
+               "LagrangeControlPoints\n");
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    printf("  Verified: No LagrangeControlPoints (expected for IsoParametric)\n");
+
+    cg_close(fn);
+    printf("Test 3 PASSED: SolutionInterpolation_t IsoParametric\n");
+    return 0;
+}
+
 int main()
 {
     printf("========================================\n");
@@ -353,6 +446,7 @@ int main()
     // Run all tests
     test_quad9_isoparametric();
     test_hexa27_isoparametric();
+    test_sol_isoparametric();
 
     // Summary
     printf("\n========================================\n");
