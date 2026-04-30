@@ -49,6 +49,9 @@ set(C_PTESTS_LIST
 set(pcgns_ctest_FILES pcgns_ctest.c)
 add_executable(pcgns_ctest ${pcgns_ctest_FILES})
 
+set(test_multisets_FILES test_multisets.c)
+add_executable(test_multisets ${test_multisets_FILES})
+
 set(cexample_FILES cexample.c)
 add_executable(cexample ${cexample_FILES})
 
