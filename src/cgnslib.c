@@ -366,7 +366,7 @@ int file_number_offset = 0;
  * Minor Version: Divide by 100, then take the modulo 10.
  * Patch Version: Divide by 10, then take the modulo 10.
 */
-int VersionList[] = {4510, 4500, 4400, 4300, 4200,
+int VersionList[] = {4520, 4510, 4500, 4400, 4300, 4200,
                      4110, 4100, 4000,
                      3210, 3200,
                      3140, 3130, 3110, 3100,
