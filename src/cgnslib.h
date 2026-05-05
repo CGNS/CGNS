@@ -1018,6 +1018,23 @@ typedef enum {
 extern CGNSDLL const char * InterpolationTypeName[NofValidInterpolationTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)          *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef enum {
+  CGNS_ENUMV( LagrangeControlPointDistributionNull )         = CG_Null,
+  CGNS_ENUMV( LagrangeControlPointDistributionUserDefined )  = CG_UserDefined,
+  CGNS_ENUMV( GaussLobattoLegendre )                         = 2,
+  CGNS_ENUMV( Equidistant )                                  = 3,
+  CGNS_ENUMV( GaussLegendre )                                = 4,
+  CGNS_ENUMV( WarpAndBlend )                                 = 5
+} CGNS_ENUMT( LagrangeControlPointDistribution_t );
+
+#define NofValidLagrangeControlPointDistributions 6
+
+extern CGNSDLL const char * LagrangeControlPointDistributionName[NofValidLagrangeControlPointDistributions];
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Arbitrary Grid Motion types                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -1142,6 +1159,7 @@ CGNSDLL const char *cg_BCTypeName(CGNS_ENUMT( BCType_t ) type);
 CGNSDLL const char *cg_DataTypeName(CGNS_ENUMT( DataType_t ) type);
 CGNSDLL const char *cg_ElementTypeName(CGNS_ENUMT( ElementType_t ) type);
 CGNSDLL const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t ) type);
+CGNSDLL const char *cg_LagrangeControlPointDistributionName(CGNS_ENUMT( LagrangeControlPointDistribution_t ) type);
 CGNSDLL const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t ) type);
 CGNSDLL const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t ) type);
 CGNSDLL const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t ) type);
@@ -1294,6 +1312,28 @@ CGNSDLL int cg_element_interpolation_coefficients_read(int fn, int bn, int fam, 
 CGNSDLL int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff);
 
 CGNSDLL int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn, double *coeff);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)       *
+ *                                                                       *
+ *  When the InterpolationType is ParametricLagrange, the parametric-    *
+ *  space distribution of the control points should be recorded as a    *
+ *  Character DataArray_t named "LagrangeControlPointDistribution"       *
+ *  child of the ElementInterpolation_t / SolutionInterpolation_t node.  *
+ *  The read entry returns CG_NODE_NOT_FOUND if the attribute is absent. *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
+                                                        CGNS_ENUMT(LagrangeControlPointDistribution_t) dist);
+
+CGNSDLL int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
+                                                       CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist);
+
+CGNSDLL int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn,
+                                                         CGNS_ENUMT(LagrangeControlPointDistribution_t) dist);
+
+CGNSDLL int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
+                                                        CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *

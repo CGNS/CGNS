@@ -4787,13 +4787,15 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
 
      /* DataArray_t:
      Required: none
-     Optional: LagrangeControlPoints, MonomialCoefficients
+     Optional: LagrangeControlPoints, MonomialCoefficients,
+               LagrangeControlPointDistribution (CPEX-0045 §3.1.2)
       */
     nnod = 0;
     eltinterpolation->lagrangePts = 0;
     eltinterpolation->monomialCoeff = 0;
+    eltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 2) return CG_ERROR;
+    if (nnod > 3) return CG_ERROR;
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
@@ -4843,9 +4845,24 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
                 return CG_ERROR;
             }
         }
+     /* LagrangeControlPointDistribution (Character DataArray_t) */
+        else if (strcmp(temp_name,"LagrangeControlPointDistribution")==0) {
+            eltinterpolation->lagrangeDist = CGNS_NEW(cgns_array, 1);
+            eltinterpolation->lagrangeDist[0].id = id[i];
+            eltinterpolation->lagrangeDist[0].link = cgi_read_link(id[i]);
+            eltinterpolation->lagrangeDist[0].in_link = 0;
+            if (cgi_read_array(&eltinterpolation->lagrangeDist[0],
+                "LagrangeControlPointDistribution", eltinterpolation->id)) return CG_ERROR;
+
+            if (strcmp(eltinterpolation->lagrangeDist[0].data_type,"C1")) {
+                cgi_error("Error: Datatype %s not supported for %s (expected C1)",
+                eltinterpolation->lagrangeDist[0].data_type, temp_name);
+                return CG_ERROR;
+            }
+        }
         else
         {
-            cgi_error("Invalid DataArray_t node '%s' for ElementInterpolation_t node (expected 'LagrangeControlPoints' or 'MonomialCoefficients').", temp_name);
+            cgi_error("Invalid DataArray_t node '%s' for ElementInterpolation_t node (expected 'LagrangeControlPoints', 'MonomialCoefficients', or 'LagrangeControlPointDistribution').", temp_name);
             return CG_ERROR;
         }
     }   /* loop through DataArray_t */
@@ -4932,13 +4949,15 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     
      /* DataArray_t:
      Required: none
-     Optional: LagrangeControlPoints, MonomialCoefficients
+     Optional: LagrangeControlPoints, MonomialCoefficients,
+               LagrangeControlPointDistribution (CPEX-0045 §3.1.2)
       */
     nnod = 0;
     sltinterpolation->lagrangePts = 0;
     sltinterpolation->monomialCoeff = 0;
+    sltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 2) return CG_ERROR;
+    if (nnod > 3) return CG_ERROR;
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
@@ -4986,9 +5005,24 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
                 return CG_ERROR;
             }
         }
+     /* LagrangeControlPointDistribution (Character DataArray_t) */
+        else if (strcmp(temp_name,"LagrangeControlPointDistribution")==0) {
+            sltinterpolation->lagrangeDist = CGNS_NEW(cgns_array, 1);
+            sltinterpolation->lagrangeDist->id = id[i];
+            sltinterpolation->lagrangeDist->link = cgi_read_link(id[i]);
+            sltinterpolation->lagrangeDist->in_link = 0;
+            if (cgi_read_array(sltinterpolation->lagrangeDist,
+                "LagrangeControlPointDistribution", sltinterpolation->id)) return CG_ERROR;
+
+            if (strcmp(sltinterpolation->lagrangeDist->data_type,"C1")) {
+                cgi_error("Error: Datatype %s not supported for %s (expected C1)",
+                sltinterpolation->lagrangeDist->data_type, temp_name);
+                return CG_ERROR;
+            }
+        }
         else
         {
-            cgi_error("Invalid DataArray_t node '%s' for SolutionInterpolation_t node (expected 'LagrangeControlPoints' or 'MonomialCoefficients').", temp_name);
+            cgi_error("Invalid DataArray_t node '%s' for SolutionInterpolation_t node (expected 'LagrangeControlPoints', 'MonomialCoefficients', or 'LagrangeControlPointDistribution').", temp_name);
             return CG_ERROR;
         }
     }   /* loop through DataArray_t */
@@ -17231,6 +17265,11 @@ void cgi_free_element_interpolation(cgns_elementInterpolation *einterp)
       CGNS_FREE(einterp->monomialCoeff);
     }
     einterp->monomialCoeff = 0;
+    if (einterp->lagrangeDist) {
+      CGNS_FREE(einterp->lagrangeDist->data);
+      CGNS_FREE(einterp->lagrangeDist);
+    }
+    einterp->lagrangeDist = 0;
 }
 
 void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
@@ -17246,6 +17285,11 @@ void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
       CGNS_FREE(sinterp->monomialCoeff);
     }
     sinterp->monomialCoeff = 0;
+    if (sinterp->lagrangeDist) {
+      CGNS_FREE(sinterp->lagrangeDist->data);
+      CGNS_FREE(sinterp->lagrangeDist);
+    }
+    sinterp->lagrangeDist = 0;
     sinterp->type = CGNS_ENUMV(ElementTypeNull);
     sinterp->interpolationName = CGNS_ENUMV(InterpolationTypeNull);
 }

@@ -1040,6 +1040,7 @@ typedef struct {                    /* ElementInterpolation_t Node */
     CGNS_ENUMT(ElementType_t) type; /* basic element type this block overrides */
     cgns_array *lagrangePts;        /* optional LagrangeControlPoints; NULL -> use standard layout (isoparametric) */
     cgns_array *monomialCoeff;      /* optional MonomialCoefficients; NULL -> none */
+    cgns_array *lagrangeDist;       /* optional LagrangeControlPointDistribution (Character DataArray_t); NULL -> unspecified */
 } cgns_elementInterpolation;
 
 typedef struct {                    /* SolutionInterpolation_t Node */
@@ -1051,6 +1052,7 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
     cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
+    cgns_array *lagrangeDist;       /* optional LagrangeControlPointDistribution (Character DataArray_t); NULL -> unspecified */
 } cgns_solutionInterpolation;
 
 typedef struct cgns_family_s {            /* Family_t node            */

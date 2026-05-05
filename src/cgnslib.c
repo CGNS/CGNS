@@ -420,6 +420,11 @@ const char * InterpolationTypeName[NofValidInterpolationTypes] =
      "ParametricLagrange", "ParametricMonomialsPascal",
      "CartesianMonomialsPascal", "IsoParametric"
     };
+const char * LagrangeControlPointDistributionName[NofValidLagrangeControlPointDistributions] =
+    {"Null", "UserDefined",
+     "GaussLobattoLegendre", "Equidistant",
+     "GaussLegendre", "WarpAndBlend"
+    };
 const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes] =
     {"Null", "UserDefined",
      "NonDeformingGrid", "DeformingGrid"
@@ -1389,6 +1394,11 @@ const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t )  type
 const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t )  type)
 {
     return cg_get_name(NofValidInterpolationTypes,InterpolationTypeName,(int)type);
+}
+const char *cg_LagrangeControlPointDistributionName(CGNS_ENUMT( LagrangeControlPointDistribution_t ) type)
+{
+    return cg_get_name(NofValidLagrangeControlPointDistributions,
+                       LagrangeControlPointDistributionName,(int)type);
 }
 const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t )  type)
 {
@@ -17857,7 +17867,8 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     sinterp->type = type;
     sinterp->spatialorder = os;
     sinterp->temporalorder= ot;
-    
+    sinterp->interpolationName = it;
+
     // Write SolutionInterpolation_t node
     dim_vals = 3;
     array[0] = (int)type;
@@ -18674,6 +18685,250 @@ int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn,
     }
 
     return CG_OK;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+static int cgi_validate_distribution(CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+{
+    if (dist <= CGNS_ENUMV(LagrangeControlPointDistributionUserDefined) ||
+        dist >= NofValidLagrangeControlPointDistributions) {
+        cgi_error("Invalid LagrangeControlPointDistribution value %d", (int)dist);
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
+                                       CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+{
+    const char *name_str;
+    cgsize_t length;
+    cgns_array *arr;
+
+    name_str = cg_LagrangeControlPointDistributionName(dist);
+    if (name_str == 0) return CG_ERROR;
+    length = (cgsize_t)strlen(name_str);
+
+    /* Replace any pre-existing node */
+    if (*out_arr) {
+        cgi_delete_node(parent_id, (*out_arr)->id);
+        if ((*out_arr)->data) free((*out_arr)->data);
+        CGNS_FREE(*out_arr);
+        *out_arr = 0;
+    }
+
+    arr = CGNS_NEW(cgns_array, 1);
+    memset(arr, 0, sizeof(cgns_array));
+    strcpy(arr->name, "LagrangeControlPointDistribution");
+    strcpy(arr->data_type, "C1");
+    arr->data_dim = 1;
+    arr->dim_vals[0] = length;
+    arr->data = malloc((size_t)(length + 1));
+    if (!arr->data) {
+        cgi_error("Error allocating LagrangeControlPointDistribution data");
+        CGNS_FREE(arr);
+        return CG_ERROR;
+    }
+    memcpy(arr->data, name_str, (size_t)length);
+    ((char *)arr->data)[length] = '\0';
+
+    if (cgi_new_node(parent_id, arr->name, "DataArray_t", &arr->id,
+                     arr->data_type, arr->data_dim, arr->dim_vals, arr->data)) {
+        free(arr->data);
+        CGNS_FREE(arr);
+        return CG_ERROR;
+    }
+    *out_arr = arr;
+    return CG_OK;
+}
+
+static int cgi_read_distribution_value(const cgns_array *arr,
+                                       CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+{
+    char buf[64];
+    cgsize_t len;
+    int i;
+
+    if (!arr || !arr->data) {
+        cgi_error("LagrangeControlPointDistribution data not loaded");
+        return CG_ERROR;
+    }
+    len = arr->dim_vals[0];
+    if (len <= 0 || len >= (cgsize_t)sizeof(buf)) {
+        cgi_error("LagrangeControlPointDistribution string length %" PRIdCGSIZE " out of range", len);
+        return CG_ERROR;
+    }
+    memcpy(buf, arr->data, (size_t)len);
+    buf[len] = '\0';
+
+    for (i = 0; i < NofValidLagrangeControlPointDistributions; i++) {
+        if (strcmp(buf, LagrangeControlPointDistributionName[i]) == 0) {
+            *dist = (CGNS_ENUMT(LagrangeControlPointDistribution_t))i;
+            return CG_OK;
+        }
+    }
+    *dist = CGNS_ENUMV(LagrangeControlPointDistributionUserDefined);
+    cgi_warning("Unknown LagrangeControlPointDistribution value '%s'", buf);
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Write LagrangeControlPointDistribution attribute on an
+ *        ElementInterpolation_t node (CPEX-0045 §3.1.2).
+ *
+ * Records the parametric-space distribution of the Lagrange control points
+ * as a Character DataArray_t named "LagrangeControlPointDistribution".
+ * The node must already have LagrangeControlPoints written; otherwise the
+ * attribute is meaningless and the call is rejected.
+ */
+int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
+                                                CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+{
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) {
+        cgi_error("Invalid element interpolation index (%d/%d)",
+                  en, family->nelementinterpolation);
+        return CG_ERROR;
+    }
+    einterp = &family->elementinterpolations[en - 1];
+
+    if (einterp->lagrangePts == 0) {
+        cgi_error("Cannot attach LagrangeControlPointDistribution: ElementInterpolation_t '%s' "
+                  "has no LagrangeControlPoints (interpolation type is not ParametricLagrange).",
+                  einterp->name);
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_distribution(dist)) return CG_ERROR;
+    return cgi_write_distribution_node(einterp->id, &einterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Read LagrangeControlPointDistribution attribute from an
+ *        ElementInterpolation_t node.
+ *
+ * Returns CG_NODE_NOT_FOUND if the attribute is absent.  Strict CPEX-0045
+ * conformance requires the attribute when the interpolation type is
+ * ParametricLagrange; cgnscheck enforces that.
+ */
+int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
+                                               CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+{
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+
+    if (!dist) {
+        cgi_error("NULL output pointer");
+        return CG_ERROR;
+    }
+    *dist = CGNS_ENUMV(LagrangeControlPointDistributionNull);
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) {
+        cgi_error("Invalid element interpolation index (%d/%d)",
+                  en, family->nelementinterpolation);
+        return CG_ERROR;
+    }
+    einterp = &family->elementinterpolations[en - 1];
+
+    if (einterp->lagrangeDist == 0) return CG_NODE_NOT_FOUND;
+
+    return cgi_read_distribution_value(einterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Write LagrangeControlPointDistribution attribute on a
+ *        SolutionInterpolation_t node (CPEX-0045 §3.1.2).
+ *
+ * The interpolation type must be ParametricLagrange.
+ */
+int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn,
+                                                 CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+{
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (sn > family->nsolutioninterpolation || sn <= 0) {
+        cgi_error("Invalid solution interpolation index (%d/%d)",
+                  sn, family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+    sinterp = &family->solutioninterpolations[sn - 1];
+
+    if (sinterp->interpolationName != CGNS_ENUMV(ParametricLagrange)) {
+        cgi_error("LagrangeControlPointDistribution is only valid for "
+                  "InterpolationType=ParametricLagrange (node '%s' has %s).",
+                  sinterp->name,
+                  cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_distribution(dist)) return CG_ERROR;
+    return cgi_write_distribution_node(sinterp->id, &sinterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Read LagrangeControlPointDistribution attribute from a
+ *        SolutionInterpolation_t node.
+ */
+int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
+                                                CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+{
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+
+    if (!dist) {
+        cgi_error("NULL output pointer");
+        return CG_ERROR;
+    }
+    *dist = CGNS_ENUMV(LagrangeControlPointDistributionNull);
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (sn > family->nsolutioninterpolation || sn <= 0) {
+        cgi_error("Invalid solution interpolation index (%d/%d)",
+                  sn, family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+    sinterp = &family->solutioninterpolations[sn - 1];
+
+    if (sinterp->lagrangeDist == 0) return CG_NODE_NOT_FOUND;
+
+    return cgi_read_distribution_value(sinterp->lagrangeDist, dist);
 }
 
 /*----------------------------------------------------------------------*/

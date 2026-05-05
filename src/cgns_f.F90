@@ -851,6 +851,23 @@ MODULE cgns
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)        *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  CHARACTER(LEN=MAX_LEN) :: LagrangeControlPointDistributionName(0:5)
+  ENUM, BIND(C)
+      ENUMERATOR :: CGNS_ENUMV(LagrangeControlPointDistributionNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(LagrangeControlPointDistributionUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(GaussLobattoLegendre)
+      ENUMERATOR :: CGNS_ENUMV(Equidistant)
+      ENUMERATOR :: CGNS_ENUMV(GaussLegendre)
+      ENUMERATOR :: CGNS_ENUMV(WarpAndBlend)
+  END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: LagrangeControlPointDistributionName
+!DEC$endif
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: ArbitraryGridMotionTypeName(0:3)
@@ -1099,6 +1116,14 @@ MODULE cgns
   DATA InterpolationTypeName / 'Null','UserDefined', &
        'ParametricLagrange', 'ParametricMonomialsPascal', &
        'CartesianMonomialsPascal', 'IsoParametric' /
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Lagrange Control-Point Distributions                          *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+  DATA LagrangeControlPointDistributionName / 'Null','UserDefined', &
+       'GaussLobattoLegendre', 'Equidistant', &
+       'GaussLegendre', 'WarpAndBlend' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
@@ -5581,6 +5606,98 @@ CONTAINS
     ier = INT(cg_solution_interpolation_points_write(INT(fn,C_INT), INT(B,C_INT), &
               INT(fam,C_INT), INT(sn,C_INT), pu, pv, pw, pt))
   END SUBROUTINE cg_solution_interpolation_points_write_f
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_distribution_write_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_distribution_write_f(fn, B, fam, en, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    INTEGER(cgenum_t), INTENT(IN) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_distribution_write(fn, bn, fam, en, dist) &
+          BIND(C, name="cg_element_interpolation_distribution_write")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: dist
+      END FUNCTION cg_element_interpolation_distribution_write
+    END INTERFACE
+    ier = INT(cg_element_interpolation_distribution_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), dist))
+  END SUBROUTINE cg_element_interpolation_distribution_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_distribution_read_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_distribution_read_f(fn, B, fam, en, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    INTEGER(cgenum_t), INTENT(OUT) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_dist
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_distribution_read(fn, bn, fam, en, dist) &
+          BIND(C, name="cg_element_interpolation_distribution_read")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        INTEGER(cgenum_t), INTENT(OUT) :: dist
+      END FUNCTION cg_element_interpolation_distribution_read
+    END INTERFACE
+    ier = INT(cg_element_interpolation_distribution_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), c_dist))
+    dist = c_dist
+  END SUBROUTINE cg_element_interpolation_distribution_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_distribution_write_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_distribution_write_f(fn, B, fam, sn, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER(cgenum_t), INTENT(IN) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_distribution_write(fn, bn, fam, sn, dist) &
+          BIND(C, name="cg_solution_interpolation_distribution_write")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: dist
+      END FUNCTION cg_solution_interpolation_distribution_write
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_distribution_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), dist))
+  END SUBROUTINE cg_solution_interpolation_distribution_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_distribution_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_distribution_read_f(fn, B, fam, sn, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER(cgenum_t), INTENT(OUT) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_dist
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_distribution_read(fn, bn, fam, sn, dist) &
+          BIND(C, name="cg_solution_interpolation_distribution_read")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(cgenum_t), INTENT(OUT) :: dist
+      END FUNCTION cg_solution_interpolation_distribution_read
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_distribution_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), c_dist))
+    dist = c_dist
+  END SUBROUTINE cg_solution_interpolation_distribution_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_type_read_f

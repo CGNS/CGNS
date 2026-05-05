@@ -6101,14 +6101,42 @@ static void check_family (int fam)
     
     if (cg_nelement_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
         error_exit("cg_nelement_interpolation_read");
-    
+
     if (verbose) printf ("  Number ElementInterpolation=%d\n", ninterp);
     for (n = 1; n <= ninterp; n++) {
+        CGNS_ENUMT(InterpolationType_t) eit;
+        CGNS_ENUMT(LagrangeControlPointDistribution_t) edist;
+        int dist_ierr;
         if (cg_element_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype) )
           error_exit("cg_element_interpolation_read");
         if (verbose) {
             printf ("    ElementInterpolation Name=\"%s\"\n", name);
             printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+        }
+
+        /* CPEX-0045 §3.1.2: when the implied InterpolationType is
+         * ParametricLagrange, LagrangeControlPointDistribution should be
+         * present.  Strict mode promotes the warning to an error. */
+        if (cg_element_interpolation_type_read(cgnsfn, cgnsbase, fam, n, &eit))
+            error_exit("cg_element_interpolation_type_read");
+        if (eit == CGNS_ENUMV(ParametricLagrange)) {
+            dist_ierr = cg_element_interpolation_distribution_read(cgnsfn, cgnsbase,
+                                                                   fam, n, &edist);
+            if (dist_ierr == CG_NODE_NOT_FOUND) {
+                if (strict_cpex45)
+                    error("ElementInterpolation \"%s\": LagrangeControlPointDistribution "
+                          "missing (required by strict CPEX-0045 for ParametricLagrange).",
+                          name);
+                else
+                    warning(1, "ElementInterpolation \"%s\": LagrangeControlPointDistribution "
+                            "is absent; readers will have to assume a default distribution.",
+                            name);
+            } else if (dist_ierr != CG_OK) {
+                error_exit("cg_element_interpolation_distribution_read");
+            } else if (verbose) {
+                printf ("    ElementInterpolation Distribution=\"%s\"\n",
+                        cg_LagrangeControlPointDistributionName(edist));
+            }
         }
 
         /* Validate: Get expected size for this element type */
@@ -6199,6 +6227,30 @@ static void check_family (int fam)
             it != CGNS_ENUMV(IsoParametric)) {
             error("SolutionInterpolation \"%s\": Invalid InterpolationType %d",
                   name, it);
+        }
+
+        /* CPEX-0045 §3.1.2: LagrangeControlPointDistribution must be
+         * recorded for ParametricLagrange solutions to be unambiguous.
+         * Warn in default mode; error in strict mode. */
+        if (it == CGNS_ENUMV(ParametricLagrange)) {
+            CGNS_ENUMT(LagrangeControlPointDistribution_t) sdist;
+            int sdist_ierr = cg_solution_interpolation_distribution_read(cgnsfn,
+                                cgnsbase, fam, n, &sdist);
+            if (sdist_ierr == CG_NODE_NOT_FOUND) {
+                if (strict_cpex45)
+                    error("SolutionInterpolation \"%s\": LagrangeControlPointDistribution "
+                          "missing (required by strict CPEX-0045 for ParametricLagrange).",
+                          name);
+                else
+                    warning(1, "SolutionInterpolation \"%s\": LagrangeControlPointDistribution "
+                            "is absent; readers will have to assume a default distribution.",
+                            name);
+            } else if (sdist_ierr != CG_OK) {
+                error_exit("cg_solution_interpolation_distribution_read");
+            } else if (verbose) {
+                printf ("    SolutionInterpolation Distribution=\"%s\"\n",
+                        cg_LagrangeControlPointDistributionName(sdist));
+            }
         }
 
         /* Validate: Check spatial and temporal orders */
