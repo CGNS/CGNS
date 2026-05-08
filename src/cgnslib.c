@@ -8697,15 +8697,15 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
 
     if (sol->spatialOrder < 0) return CG_NODE_NOT_FOUND;
 
-    /* CPEX 0045 Section 3.2.5: Two use cases for interpolation orders:
-     * 1. GridLocation = InterpolationPoints: Uniform order across entire zone
-     * 2. GridLocation = CellCenter: Variable order (p-adaptation) with PointRange/PointList
+    /* CPEX-0045 v3 §3.1.3: high-order FlowSolution_t nodes use
+     * GridLocation = InterpolationPoints. CellCenter is accepted for
+     * backward compatibility with files written under earlier drafts.
      */
     if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
         sol->location != CGNS_ENUMV(CellCenter))
     {
         cgi_error("Solution interpolation order requires GridLocation = "
-                  "InterpolationPoints (uniform order) or CellCenter (variable order).");
+                  "InterpolationPoints.");
         return CG_ERROR;
     }
 
@@ -8777,27 +8777,29 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
 
-    /* CPEX 0045 Section 3.2.5: Two use cases for interpolation orders:
-     * 1. GridLocation = InterpolationPoints: Uniform order across entire zone
-     * 2. GridLocation = CellCenter: Variable order (p-adaptation) with PointRange/PointList
+    /* CPEX-0045 v3 §3.1.3: high-order FlowSolution_t nodes use
+     * GridLocation = InterpolationPoints in both cases:
+     *   - Uniform order: no PointRange/PointList; block covers the whole zone.
+     *   - Variable order: PointRange/PointList lists element indices.
+     * GridLocation = CellCenter is accepted for backward compatibility with
+     * files written under earlier drafts; cgnscheck strict CPEX-0045 mode
+     * flags it as non-conformant.
      */
     if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
         sol->location != CGNS_ENUMV(CellCenter))
     {
         cgi_error("Solution interpolation order requires GridLocation = "
-                  "InterpolationPoints (uniform order) or CellCenter (variable order).");
+                  "InterpolationPoints.");
         return CG_ERROR;
     }
 
-    /* For variable order solutions (CellCenter), PointRange or PointList must be specified */
-    if (sol->location == CGNS_ENUMV(CellCenter))
+    /* Variable-order subsets require a PointRange/PointList regardless of
+     * which GridLocation is used. */
+    if (sol->ptset != NULL && sol->ptset->npts == 0)
     {
-        if (sol->ptset == NULL || sol->ptset->npts == 0)
-        {
-            cgi_error("Variable order solutions (GridLocation=CellCenter) require "
-                      "PointRange or PointList to specify element subset.");
-            return CG_ERROR;
-        }
+        cgi_error("Variable-order solutions require PointRange or PointList "
+                  "to specify element subset.");
+        return CG_ERROR;
     }
 
     // Check values
@@ -8848,6 +8850,189 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     if (cgi_new_node(sol->id, "InterpolationOrders", "IndexArray_t",
                          &dummy_id, "I4", 1, &dim_vals, &array[0]))
             return CG_ERROR;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX-0045 v3 §3.3.1: per-element characteristic length h^e for       */
+/* Cartesian modal interpolation. Stored as a 1D R8 DataArray_t named   */
+/* "CharacteristicLength" under the parent FlowSolution_t.              */
+
+static int cgi_find_sol_array(cgns_sol *sol, const char *name,
+                              double *node_id_out, cgsize_t *length_out)
+{
+    int nnodes;
+    double *ids = NULL;
+    int n, dim;
+    char_33 nname;
+    char_33 dtype;
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
+    int found = 0;
+    double match_id = 0;
+    cgsize_t match_len = 0;
+    char_33 match_dtype;
+    int match_dim = 0;
+    cgsize_t match_dimvals[CGIO_MAX_DIMENSIONS];
+    int i;
+
+    if (cgi_get_nodes(sol->id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, name) == 0) {
+            if (cgio_get_data_type(cg->cgio, ids[n], dtype)) {
+                cg_io_error("cgio_get_data_type");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            if (cgio_get_dimensions(cg->cgio, ids[n], &dim, dim_vals)) {
+                cg_io_error("cgio_get_dimensions");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            match_id  = ids[n];
+            match_dim = dim;
+            for (i = 0; i < dim; i++) match_dimvals[i] = dim_vals[i];
+            strcpy(match_dtype, dtype);
+            match_len = (dim >= 1) ? dim_vals[0] : 0;
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (!found) return CG_NODE_NOT_FOUND;
+    if (strcmp(match_dtype, "R8") != 0 || match_dim != 1) {
+        cgi_error("\"%s\" must be a 1-D R8 array", name);
+        return CG_ERROR;
+    }
+    *node_id_out = match_id;
+    *length_out  = match_len;
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Read the per-element characteristic length \f$h^e\f$ from a FlowSolution_t.
+ *
+ * Reads the \texttt{CharacteristicLength} \texttt{DataArray\_t} child of a
+ * FlowSolution_t node. Required when the associated SolutionInterpolation_t
+ * uses \texttt{CartesianMonomialsPascal} interpolation (CPEX-0045 v3 §3.3.1).
+ *
+ * \param[in]  fn          CGNS file index number
+ * \param[in]  B           Base index number (1-based)
+ * \param[in]  Z           Zone index number (1-based)
+ * \param[in]  S           FlowSolution index (1-based)
+ * \param[out] numElements Number of \f$h^e\f$ entries (one per element covered)
+ * \param[out] h_e         Characteristic-length array (allocated by caller)
+ * \return     CG_OK on success, CG_NODE_NOT_FOUND if the array is absent,
+ *             CG_ERROR otherwise.
+ *
+ * Typical usage: call once with \c h_e==NULL to obtain \c numElements, then
+ * allocate and call again to read the data.
+ */
+int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
+                                      cgsize_t *numElements, double *h_e)
+{
+    cgns_sol *sol;
+    double node_id;
+    cgsize_t length;
+    int ierr;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    ierr = cgi_find_sol_array(sol, "CharacteristicLength", &node_id, &length);
+    if (ierr == CG_NODE_NOT_FOUND) {
+        if (numElements) *numElements = 0;
+        return CG_NODE_NOT_FOUND;
+    }
+    if (ierr) return CG_ERROR;
+
+    if (numElements) *numElements = length;
+    if (h_e == NULL) return CG_OK;          /* size-only query */
+
+    if (cgio_read_all_data_type(cg->cgio, node_id, "R8", (void *)h_e)) {
+        cg_io_error("cgio_read_all_data_type");
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Write the per-element characteristic length \f$h^e\f$ on a FlowSolution_t.
+ *
+ * Writes a \texttt{CharacteristicLength} \texttt{DataArray\_t} child of the
+ * FlowSolution_t node (R8, 1-D, length \c numElements). Required when the
+ * associated SolutionInterpolation_t uses \texttt{CartesianMonomialsPascal}.
+ * If the child already exists and the file is open in CG_MODE_MODIFY, it is
+ * replaced; in CG_MODE_WRITE a duplicate write returns CG_ERROR.
+ */
+int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
+                                       cgsize_t numElements, const double *h_e)
+{
+    cgns_sol *sol;
+    cgsize_t dim_vals;
+    int nnodes;
+    double *ids = NULL;
+    double dummy_id;
+    int n;
+    char_33 nname;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    if (h_e == NULL) {
+        cgi_error("CharacteristicLength: h_e pointer must not be NULL");
+        return CG_ERROR;
+    }
+
+    /* Replace any existing CharacteristicLength child. */
+    if (cgi_get_nodes(sol->id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            if (cg->mode == CG_MODE_WRITE) {
+                cgi_error("CharacteristicLength already written for this "
+                          "FlowSolution_t. Open the file in CG_MODE_MODIFY "
+                          "to replace.");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            if (cgi_delete_node(sol->id, ids[n])) {
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    dim_vals = numElements;
+    if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
+                     &dummy_id, "R8", 1, &dim_vals, (void *)h_e))
+        return CG_ERROR;
 
     return CG_OK;
 }

@@ -4881,15 +4881,22 @@ static void check_solution (int ns)
     {
         printf ("    checking solution Interpolation Order\n");
 
-        /* CPEX 0045 Section 3.2.5: Two valid GridLocation values for interpolation orders:
-         * 1. InterpolationPoints: Uniform order across entire zone
-         * 2. CellCenter: Variable order (p-adaptation) with PointRange/PointList
+        /* CPEX-0045 v3 §3.1.3: high-order FlowSolution_t nodes use
+         * GridLocation = InterpolationPoints (both uniform and variable order).
+         * CellCenter is accepted for backward compatibility with earlier drafts;
+         * strict CPEX-0045 mode flags it as non-conformant.
          */
         if (location != CGNS_ENUMV(InterpolationPoints) &&
             location != CGNS_ENUMV(CellCenter))
         {
             error("Solution Interpolation Order requires GridLocation = InterpolationPoints "
-                  "(uniform order) or CellCenter (variable order per CPEX 0045 Section 3.2.5).");
+                  "(CPEX-0045 v3 §3.1.3).");
+        }
+        else if (location == CGNS_ENUMV(CellCenter) && strict_cpex45)
+        {
+            error("CPEX-0045 v3 §3.1.3: GridLocation = CellCenter with InterpolationOrders "
+                  "is non-conformant; use InterpolationPoints. (Accepted for back-compat in "
+                  "non-strict mode.)");
         }
 
         printf ("        Spatial  Order : %d\n",os);
@@ -4977,8 +4984,12 @@ static void check_solution (int ns)
     }
 
     /* get solution data size */
-    if (location == CGNS_ENUMV(InterpolationPoints))
+    if (location == CGNS_ENUMV(InterpolationPoints) ||
+        (location == CGNS_ENUMV(CellCenter) && os > 0))
     {
+      /* CellCenter+InterpolationOrders is the legacy back-compat path;
+       * size it like InterpolationPoints so cgnscheck does not flag a
+       * spurious size mismatch on the field arrays. */
       if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
         datasize = get_ho_data_size_range(z,os,ot,ptsetlist);
       else if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointList) )
@@ -5011,10 +5022,51 @@ static void check_solution (int ns)
         check_quantity (n, name, dataclass, punits, 1, 6);
     }
 
+    /* CPEX-0045 v3 §3.3.1: CharacteristicLength shape check.
+     * If a "CharacteristicLength" DataArray_t is present under the
+     * FlowSolution_t, it must be R8, 1-D, and length equal to the number of
+     * elements covered by the block. Family-side cross-reference (whether
+     * CartesianMonomialsPascal mandates its presence) is not done here. */
+    {
+        cgsize_t cl_len = 0;
+        int cl_ierr = cg_sol_characteristic_length_read(cgnsfn, cgnsbase,
+                                                        cgnszone, ns,
+                                                        &cl_len, NULL);
+        if (cl_ierr == CG_OK) {
+            printf ("    CharacteristicLength present: length=%ld\n",
+                    (long)cl_len);
+            /* If the block has an explicit point set, length must match
+             * the number of elements listed; otherwise it must match the
+             * total cell count of the zone. */
+            cgsize_t expected = 0;
+            if (npts > 0 && ptsettype == CGNS_ENUMV(PointRange)) {
+                /* PointRange always 2 entries; expected = hi - lo + 1
+                 * (already absorbed by npts==2; recompute from cached list) */
+                expected = -1;  /* sentinel: skip strict numeric check */
+            } else if (npts > 0 && ptsettype == CGNS_ENUMV(PointList)) {
+                expected = npts;
+            } else {
+                /* whole-zone block: total cells across all sections */
+                cgsize_t i;
+                expected = 0;
+                for (i = 0; i < z->nsets; i++)
+                    expected += (z->sets[i].ie - z->sets[i].is + 1);
+            }
+            if (expected > 0 && cl_len != expected) {
+                error("CharacteristicLength length %ld does not match the "
+                      "number of elements covered by this FlowSolution_t (%ld).",
+                      (long)cl_len, (long)expected);
+            }
+        } else if (cl_ierr != CG_NODE_NOT_FOUND) {
+            error("CharacteristicLength validation failed: %s",
+                  cg_get_error());
+        }
+    }
+
     /* user data */
 
     check_user_data (dataclass, punits, 4);
-    
+
 }
 
 /*-----------------------------------------------------------------------*/

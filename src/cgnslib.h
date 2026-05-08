@@ -1540,6 +1540,21 @@ CGNSDLL int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
 CGNSDLL int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
                                              int spatialOrder, int  temporalOrder);
 
+/* CPEX-0045 v3 §3.3.1: per-element characteristic length h^e for
+ * Cartesian modal interpolation. Stored as a 1-D R8 DataArray_t named
+ * "CharacteristicLength" under the parent FlowSolution_t. Required when the
+ * associated SolutionInterpolation_t uses CartesianMonomialsPascal.
+ *
+ * cg_sol_characteristic_length_read returns CG_NODE_NOT_FOUND when the array
+ * is absent (with *numElements set to 0). Pass h_e == NULL to query the size
+ * only; allocate and pass a non-NULL pointer to read the data.
+ */
+CGNSDLL int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
+                                              cgsize_t *numElements, double *h_e);
+
+CGNSDLL int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
+                                               cgsize_t numElements, const double *h_e);
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
