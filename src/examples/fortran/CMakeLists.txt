@@ -93,21 +93,6 @@ endforeach()
 
 # Add CTest integration for regression testing
 if (CGNS_ENABLE_TESTS)
-  # Copy OUTPUT reference files to build directory
-  foreach(ENTRY ${EXAMPLE_PROGRAMS})
-    # Parse directory name
-    string(REPLACE "|" ";" ENTRY_PARTS ${ENTRY})
-    list(GET ENTRY_PARTS 0 DIR_AND_PROGRAMS)
-    string(REPLACE ":" ";" DIR_PARTS ${DIR_AND_PROGRAMS})
-    list(GET DIR_PARTS 0 DIR)
-
-    # Copy OUTPUT reference file if it exists
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/OUTPUT")
-      file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/OUTPUT"
-           DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${DIR}")
-    endif()
-  endforeach()
-
   # Add individual test for each example directory
   foreach(ENTRY ${EXAMPLE_PROGRAMS})
     # Parse "directory:program1,program2,...|write_prog|read_prog"
@@ -138,8 +123,9 @@ if (CGNS_ENABLE_TESTS)
       set(READ_EXE "")
     endif()
 
-    # Reference OUTPUT file path
-    set(REF_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${DIR}/OUTPUT")
+    # Reference OUTPUT file path — read directly from source tree so edits
+    # take effect without re-running CMake
+    set(REF_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/OUTPUT")
 
     # Work directory for test execution
     set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${DIR}")

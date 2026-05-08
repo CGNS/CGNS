@@ -10341,6 +10341,19 @@ int cg_hole_read(int fn, int B, int Z, int J, cgsize_t *pnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup OversetHoles
+ * \internal
+ *
+ * \brief Get the CGIO node identifier of an overset hole
+ *
+ * \param[in]  fn      \FILE_fn
+ * \param[in]  B       \B_Base
+ * \param[in]  Z       \Z_Zone
+ * \param[in]  J       Overset hole index number, where 1 ≤ J ≤ nholes.
+ * \param[out] hole_id CGIO node identifier for the overset hole.
+ * \return \ier
+ */
 int cg_hole_id(int fn, int B, int Z, int J, double *hole_id)
 {
     cgns_hole *hole;
@@ -11413,6 +11426,19 @@ int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
     return CG_OK;
 }
 
+/**
+ * \ingroup OneToOneConnectivity
+ * \internal
+ *
+ * \brief Get the CGIO node identifier of a 1-to-1 interface
+ *
+ * \param[in]  fn       \FILE_fn
+ * \param[in]  B        \B_Base
+ * \param[in]  Z        \Z_Zone
+ * \param[in]  J        Interface index number, where 1 ≤ J ≤ n1to1.
+ * \param[out] one21_id CGIO node identifier for the 1-to-1 interface.
+ * \return \ier
+ */
 int cg_1to1_id(int fn, int B, int Z, int J, double *one21_id)
 {
     cgns_1to1 *one21;
@@ -11775,6 +11801,19 @@ int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ * \internal
+ *
+ * \brief Get the CGIO node identifier of a boundary condition
+ *
+ * \param[in]  fn      \FILE_fn
+ * \param[in]  B       \B_Base
+ * \param[in]  Z       \Z_Zone
+ * \param[in]  BC      \BC
+ * \param[out] boco_id CGIO node identifier for the boundary condition.
+ * \return \ier
+ */
 int cg_boco_id(int fn, int B, int Z, int BC, double *boco_id)
 {
     cgns_boco *boco;
@@ -20204,7 +20243,7 @@ int cg_particle_governing_write(CGNS_ENUMT(ParticleGoverningEquationsType_t) Par
  *                                 LinearSpringDashpot, Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
  *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
  *                                 KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
- *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
  *                                 CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei,
  *                                 TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
  *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere,
@@ -20249,7 +20288,7 @@ int cg_particle_model_read(const char *ModelLabel, CGNS_ENUMT(ParticleModelType_
  *                                 Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
  *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
  *                                 KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
- *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers, Ergun,
  *                                 CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei,
  *                                 TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
  *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere,

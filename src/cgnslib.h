@@ -45,11 +45,7 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 5000
-#define CGNS_DOTVERS 5.00
-
-#define CGNS_COMPATVERSION 2540
-#define CGNS_COMPATDOTVERS 2.54
+#include "cgns_version.h"
 
 #include "cgnstypes.h"
 
@@ -625,7 +621,7 @@ typedef enum {
 ** ParticleBreakupModel_t: KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
 **    KelvinHelmholtzRayleighTaylor, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
 **
-** ParticleForceModel_t: Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers,
+** ParticleForceModel_t: Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers,
 **     Ergun, CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah,
 **     SyamlalOBrien, SaffmanMei, TennetiGargSubramaniam, Tomiyama, Stokes,
 **     StokesCunningham, WenYu

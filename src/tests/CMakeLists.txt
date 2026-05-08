@@ -209,10 +209,10 @@ if (CGNS_ENABLE_FORTRAN)
 	# Both test64f.F90 and test64f_f03.F90 use fixed-form syntax despite .F90 extension
 	if (CGNS_ENABLE_64BIT)
 	  add_executable( test64f ${test64f_FILES} )
-	  set_source_files_properties(test64f.F90 PROPERTIES Fortran_FORMAT FIXED)
+	  set_source_files_properties(${test64f_FILES} PROPERTIES Fortran_FORMAT FIXED)
 
 	  add_executable( test64f_f03 ${test64f_f03_FILES} )
-	  set_source_files_properties(test64f_f03.F90 PROPERTIES Fortran_FORMAT FIXED)
+	  set_source_files_properties(${test64f_f03_FILES} PROPERTIES Fortran_FORMAT FIXED)
 	endif()
 #	if (NOT CGNS_ENABLE_64BIT)
 # Don't build the F77 source because they will fail if ENABLE_64BIT is used

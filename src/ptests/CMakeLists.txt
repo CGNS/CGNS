@@ -31,6 +31,7 @@ endif ()
 
 set(C_PTESTS_LIST
 	pcgns_ctest
+	test_multisets
 	cexample
 	benchmark
 	benchmark_hdf5
@@ -109,7 +110,7 @@ if (CGNS_ENABLE_TESTS)
     if (DEFINED PTEST_NPROCS_${TEST_NAME})
       set(NPROCS ${PTEST_NPROCS_${TEST_NAME}})
     else()
-      set(NPROCS 2)
+      set(NPROCS 4)
     endif()
 
     add_test(NAME test-${TEST_NAME}

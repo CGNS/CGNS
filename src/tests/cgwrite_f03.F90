@@ -318,6 +318,66 @@ PROGRAM write_cgns_1
   CALL cg_close_f(cg, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
+  ! *** test C_F_string_chars off-by-one with max-length zone name
+  ! A name of exactly 31 chars in a 32-char buffer triggers the boundary
+  ! where the old i<len(F_string) check failed to space-pad position 32.
+  zonename = '1234567890123456789012345678901'  ! 31 chars
+  size(:) = (/3, 3, 3, 2, 2, 2, 0, 0, 0/)
+
+  CALL cg_open_f('cgname31.cgns', CG_MODE_WRITE, cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_base_write_f(cg, 'Base', cell_dim, phys_dim, base_no, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_zone_write_f(cg, base_no, zonename, size, &
+       CGNS_ENUMV(Structured), zone_no, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_close_f(cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  CALL cg_open_f('cgname31.cgns', CG_MODE_READ, cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  donorname = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'  ! poison before read
+  CALL cg_zone_read_f(cg, 1, 1, donorname, size, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  IF (LEN_TRIM(donorname) .NE. 31) THEN
+    PRINT *, 'ERROR: 31-char zone name length =', LEN_TRIM(donorname)
+    CALL cg_error_exit_f
+  END IF
+  IF (TRIM(donorname) .NE. TRIM(zonename)) THEN
+    PRINT *, 'ERROR: 31-char zone name mismatch'
+    CALL cg_error_exit_f
+  END IF
+  CALL cg_close_f(cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  ! *** test full 32-char zone name (no padding needed)
+  zonename = '12345678901234567890123456789012'  ! 32 chars
+  CALL cg_open_f('cgname32.cgns', CG_MODE_WRITE, cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_base_write_f(cg, 'Base', cell_dim, phys_dim, base_no, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_zone_write_f(cg, base_no, zonename, size, &
+       CGNS_ENUMV(Structured), zone_no, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  CALL cg_close_f(cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  CALL cg_open_f('cgname32.cgns', CG_MODE_READ, cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  donorname = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'  ! poison before read
+  CALL cg_zone_read_f(cg, 1, 1, donorname, size, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  IF (LEN_TRIM(donorname) .NE. 32) THEN
+    PRINT *, 'ERROR: 32-char zone name length =', LEN_TRIM(donorname)
+    CALL cg_error_exit_f
+  END IF
+  IF (donorname .NE. zonename) THEN
+    PRINT *, 'ERROR: 32-char zone name mismatch'
+    CALL cg_error_exit_f
+  END IF
+  CALL cg_close_f(cg, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
 #if CG_BUILD_HDF5
   ! **************************
   ! Test cg_configure options

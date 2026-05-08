@@ -36,11 +36,11 @@ execute_process(
   WORKING_DIRECTORY "${WORK_DIR}"
   RESULT_VARIABLE WRITE_RESULT
   OUTPUT_QUIET
-  ERROR_QUIET
+  ERROR_VARIABLE WRITE_STDERR
 )
 
 if(NOT WRITE_RESULT EQUAL 0)
-  message(FATAL_ERROR "Write program failed with exit code ${WRITE_RESULT}")
+  message(FATAL_ERROR "Write program failed with exit code ${WRITE_RESULT}\nstderr:\n${WRITE_STDERR}")
 endif()
 
 # Execute read program and capture output
@@ -50,11 +50,11 @@ execute_process(
   WORKING_DIRECTORY "${WORK_DIR}"
   RESULT_VARIABLE READ_RESULT
   OUTPUT_VARIABLE READ_OUTPUT
-  ERROR_QUIET
+  ERROR_VARIABLE READ_STDERR
 )
 
 if(NOT READ_RESULT EQUAL 0)
-  message(FATAL_ERROR "Read program failed with exit code ${READ_RESULT}")
+  message(FATAL_ERROR "Read program failed with exit code ${READ_RESULT}\nstderr:\n${READ_STDERR}")
 endif()
 
 # Read reference output file
@@ -66,6 +66,8 @@ file(READ "${REF_OUTPUT}" REF_CONTENT)
 
 # Function to filter output lines (remove Library, DonorDatatype, datatype= lines)
 function(filter_output INPUT_STR OUTPUT_VAR)
+  # Escape semicolons before splitting so they are not treated as list separators
+  string(REPLACE ";" "\\;" INPUT_STR "${INPUT_STR}")
   # Split into lines
   string(REGEX REPLACE "\r?\n" ";" LINES "${INPUT_STR}")
 

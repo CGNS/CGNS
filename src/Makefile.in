@@ -123,6 +123,7 @@ install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnstypes_f03.h $(INCLUDEDIR)/cgnstypes_f03.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
+	$(INSTALL_DATA) cgns_version.h $(INCLUDEDIR)/cgns_version.h
 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)/cgnswin_f.h
 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)/cgns_io.h
 	$(INSTALL_DATA) cgnsconfig.h $(INCLUDEDIR)/cgnsconfig.h
@@ -181,6 +182,7 @@ uninstall :
 	-$(RM) $(INCLUDEDIR)/cgnstypes.h
 	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
 	-$(RM) $(INCLUDEDIR)/cgnslib.h
+	-$(RM) $(INCLUDEDIR)/cgns_version.h
 	-$(RM) $(INCLUDEDIR)/cgnswin_f.h
 	-$(RM) $(INCLUDEDIR)/cgns_io.h
 	-$(RM) $(INCLUDEDIR)/cgnsconfig.h
@@ -234,7 +236,7 @@ $(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
 $(OBJDIR)/cgns_f.$(O) : cgns_f.F90 cgnstypes_f.h
 	$(F77) $(FOPTS_MOD) $(COOUT)$@ -c cgns_f.F90
 
-cgnslib.h : cgnstypes.h
+cgnslib.h : cgnstypes.h cgns_version.h
 cgns_header.h : cgnstypes.h
 cgns_io.h : cgnstypes.h
 

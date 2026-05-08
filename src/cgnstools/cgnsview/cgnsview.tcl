@@ -2062,7 +2062,9 @@ proc find_again {} {
 proc file_stats {} {
   global ProgData
   set ProgData(file,size) "[file size $ProgData(file,name)] bytes"
-  set ProgData(file,type) [CGNSfile $ProgData(file)]
+  if {![info exists ProgData(file,type)] || $ProgData(file,type) == ""} {
+    set ProgData(file,type) [CGNSfile $ProgData(file)]
+  }
   set ProgData(file,vers) [CGIOversion]
   if [file writable $ProgData(file,name)] {
     set ProgData(file,mode) "read/write"
@@ -2237,6 +2239,7 @@ proc file_load {{inpfile ""}} {
     set ProgData(file,dir) $dir
   }
   set ProgData(file) $inpfile
+  set ProgData(file,type) $type
   file_stats
   TreeDelete $ProgData(tree) /
   build_tree

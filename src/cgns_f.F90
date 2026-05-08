@@ -41,6 +41,12 @@ MODULE cgns
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
+#include "cgns_version.h"
+! Undef the public macros so they do not collide with the PARAMETER names below
+#undef CGNS_VERSION
+#undef CGNS_DOTVERS
+#undef CGNS_COMPATVERSION
+#undef CGNS_COMPATDOTVERS
 
 !These definitions are needed for Windows DLLs
 !DEC$ IF DEFINED(WINNT)
@@ -205,7 +211,7 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_ERROR           = 1
   INTEGER(C_INT), PARAMETER :: CG_NODE_NOT_FOUND  = 2
   INTEGER(C_INT), PARAMETER :: CG_INCORRECT_PATH  = 3
-  INTEGER(C_INT), PARAMETER :: CG_CG_NO_INDEX_DIM = 4
+  INTEGER(C_INT), PARAMETER :: CG_NO_INDEX_DIM    = 4
 
   !* legacy code support
   INTEGER(C_INT) ALL_OK, ERROR, NODE_NOT_FOUND, INCORRECT_PATH
@@ -219,7 +225,7 @@ MODULE cgns
 !DEC$ATTRIBUTES DLLEXPORT :: CG_ERROR
 !DEC$ATTRIBUTES DLLEXPORT :: CG_NODE_NOT_FOUND
 !DEC$ATTRIBUTES DLLEXPORT :: CG_INCORRECT_PATH
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CG_NO_INDEX_DIM
+!DEC$ATTRIBUTES DLLEXPORT :: CG_NO_INDEX_DIM
 !DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -252,6 +258,26 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_ZERO = 0
   INTEGER(C_INT), PARAMETER :: CG_CONFIG_RIND_CORE = 1
 
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Max goto depth (found in cgnslib.h)                            *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  INTEGER(C_INT), PARAMETER :: CG_MAX_GOTO_DEPTH = 20
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      HDF5 dataset storage layout (found in cgnslib.h)               *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  INTEGER(C_INT), PARAMETER :: CG_CONTIGUOUS = 0
+  INTEGER(C_INT), PARAMETER :: CG_COMPACT    = 1
+  INTEGER(C_INT), PARAMETER :: CG_CHUNKED    = 2
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      CGNS version constants (from cgns_version.h)                   *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  INTEGER, PARAMETER :: CGNS_VERSION       = CGNS_VERSION_VALUE
+  REAL,    PARAMETER :: CGNS_DOTVERS       = CGNS_DOTVERS_VALUE
+  INTEGER, PARAMETER :: CGNS_COMPATVERSION = CGNS_COMPATVERSION_VALUE
+  REAL,    PARAMETER :: CGNS_COMPATDOTVERS = CGNS_COMPATDOTVERS_VALUE
+
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_ERROR
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_COMPRESS
@@ -276,6 +302,17 @@ MODULE cgns
 
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_ZERO
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_CORE
+
+!DEC$ATTRIBUTES DLLEXPORT :: CG_MAX_GOTO_DEPTH
+
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONTIGUOUS
+!DEC$ATTRIBUTES DLLEXPORT :: CG_COMPACT
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CHUNKED
+
+!DEC$ATTRIBUTES DLLEXPORT :: CGNS_VERSION
+!DEC$ATTRIBUTES DLLEXPORT :: CGNS_DOTVERS
+!DEC$ATTRIBUTES DLLEXPORT :: CGNS_COMPATVERSION
+!DEC$ATTRIBUTES DLLEXPORT :: CGNS_COMPATDOTVERS
 !DEC$endif
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -466,7 +503,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Governing Equations and Physical Models Types                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  CHARACTER(LEN=MAX_LEN) :: GoverningEquationsTypeName(0:7)
+  CHARACTER(LEN=MAX_LEN) :: GoverningEquationsTypeName(0:8)
   ENUM, BIND(C)
     ENUMERATOR :: CGNS_ENUMV(GoverningEquationsNull)        = CG_Null
     ENUMERATOR :: CGNS_ENUMV(GoverningEquationsUserDefined) = CG_UserDefined
@@ -476,6 +513,7 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(NSTurbulent)                   = 5
     ENUMERATOR :: CGNS_ENUMV(NSLaminarIncompressible)       = 6
     ENUMERATOR :: CGNS_ENUMV(NSTurbulentIncompressible)     = 7
+    ENUMERATOR :: CGNS_ENUMV(LatticeBoltzmann)              = 8
   END ENUM
 
 !DEC$if defined(BUILD_CGNS_DLL)
@@ -579,7 +617,7 @@ MODULE cgns
 !** ParticleBreakupModel_t: KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
 !**    KelvinHelmholtzRayleighTaylor, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
 !**
-!** ParticleForceModel_t: Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers,
+!** ParticleForceModel_t: Sphere, NonSphere, Tracer, BeetstraVanDerHoefKuipers,
 !**     Ergun, CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah,
 !**     SyamlalOBrien, SaffmanMei, TennetiGargSubramaniam, Tomiyama, Stokes,
 !**     StokesCunningham, WenYu
@@ -618,7 +656,7 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(PilchErdman)                            = 23
     ENUMERATOR :: CGNS_ENUMV(ReitzDiwakar)                           = 24
     ENUMERATOR :: CGNS_ENUMV(Sphere)                                 = 25
-    ENUMERATOR :: CGNS_ENUMV(NonShpere)                              = 26
+    ENUMERATOR :: CGNS_ENUMV(NonSphere)                              = 26
     ENUMERATOR :: CGNS_ENUMV(Tracer)                                 = 27
     ENUMERATOR :: CGNS_ENUMV(BeetstraVanDerHoefKuipers)              = 28
     ENUMERATOR :: CGNS_ENUMV(Ergun)                                  = 29
@@ -1003,7 +1041,8 @@ MODULE cgns
 
   DATA GoverningEquationsTypeName / 'Null','UserDefined', &
     'FullPotential','Euler', 'NSLaminar', 'NSTurbulent', &
-    'NSLaminarIncompressible', 'NSTurbulentIncompressible'/
+    'NSLaminarIncompressible', 'NSTurbulentIncompressible', &
+    'LatticeBoltzmann'/
 
   DATA ModelTypeName / 'Null','UserDefined', &
     'Ideal','VanderWaals', 'Constant','PowerLaw', &
@@ -1031,7 +1070,7 @@ MODULE cgns
     'HertzKuwabaraKono', 'ORourke', 'Stochastic', 'NonStochastic', &
     'NTC', 'KelvinHelmholtz', 'KelvinHelmholtzACT', 'RayleighTaylor', &
     'KelvinHelmholtzRayleighTaylor', 'ReitzKHRT', 'TAB', 'ETAB', &
-    'LISA', 'SHF', 'PilchErdman', 'ReitzDiwakar', 'Sphere', 'NonShpere', &
+    'LISA', 'SHF', 'PilchErdman', 'ReitzDiwakar', 'Sphere', 'NonSphere', &
     'Tracer', 'BeetstraVanDerHoefKuipers', 'Ergun', 'CliftGrace', &
     'Gidaspow', 'HaiderLevenspiel', 'PlessisMasliyah', &
     'SyamlalOBrien', 'SaffmanMei', 'TennetiGargSubramaniam', 'Tomiyama', &
@@ -4947,7 +4986,7 @@ CONTAINS
         F_string(i:i) = p_chars(i)
         i=i+1
       end do
-      if (i<len(F_string)) F_string(i:) = ' '
+      if (i<=len(F_string)) F_string(i:) = ' '
     end if
   end subroutine C_F_string_ptr
 
@@ -4961,7 +5000,7 @@ CONTAINS
       F_string(i:i) = C_string(i)
       i=i+1
     end do
-    if (i<len(F_string)) F_string(i:) = ' '
+    if (i<=len(F_string)) F_string(i:) = ' '
   end subroutine C_F_string_chars
 
 !DEC$if defined(BUILD_CGNS_DLL)
