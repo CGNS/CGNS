@@ -8397,7 +8397,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialOrder,
                                 sol->temporalOrder, dim_vals) ) {
-              cgi_warning("Unable to retrieve solution datasize for High Order solution");
+              cgi_error("Unable to retrieve solution datasize for High Order solution");
               return CG_ERROR;
             }
 
@@ -8426,7 +8426,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
                               sol->temporalOrder, range_min[0], range_max[0], &dim_vals[0]) ) {
-              cgi_warning("Unable to retrieve solution datasize for High Order solution from PointRange");
+              cgi_error("Unable to retrieve solution datasize for High Order solution from PointRange");
               return CG_ERROR;
             }
           }
@@ -8437,7 +8437,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                                     sol->ptset->npts * zone->index_dim, pnts);
 
             if (ret == CG_ERROR) {
-              cgi_warning("Unable to read PointList for solution %s",sol->name);
+              cgi_error("Unable to read PointList for solution %s",sol->name);
               CGNS_FREE(pnts);
               return CG_ERROR;
             }
@@ -8445,7 +8445,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
             if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialOrder,
                                     sol->temporalOrder, pnts,
                                     sol->ptset->npts, &dim_vals[0]) ) {
-              cgi_warning("Unable to retrieve solution datasize for High Order solution from PointList");
+              cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
               CGNS_FREE(pnts);
               return CG_ERROR;
             }
@@ -16888,6 +16888,30 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
     return CG_OK;
 }
 
+/* Unpack interleaved flat array (U0,V0,W0,T0, U1,...) into separate column arrays.
+ * Pass pt=NULL for element interpolation (no temporal dimension). */
+static void cgi_unpack_lagrange(int npe, int dim, double *const *spatial,
+                                double *pt, const double *flat)
+{
+    int i, j, k = 0;
+    for (i = 0; i < npe; i++) {
+        for (j = 0; j < dim; j++) { if (spatial[j]) spatial[j][i] = flat[k]; k++; }
+        if (pt) pt[i] = flat[k++];
+    }
+}
+
+/* Pack separate column arrays into interleaved flat array (U0,V0,W0,T0, U1,...).
+ * Pass pt=NULL for element interpolation (no temporal dimension). */
+static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
+                              const double *pt, double *flat)
+{
+    int i, j, k = 0;
+    for (i = 0; i < npe; i++) {
+        for (j = 0; j < dim; j++) { if (spatial[j]) flat[k] = spatial[j][i]; k++; }
+        if (pt) flat[k++] = pt[i];
+    }
+}
+
 /**
  * \ingroup ElementInterpolation
  * \brief Read Lagrange control points for element interpolation
@@ -16942,7 +16966,6 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
 int cg_element_interpolation_points_read(int fn, int bn, int fam, int en , 
                                   double *pu, double *pv, double *pw)
 {
-    int i, j, k;
     cgns_family *family;
 
     cg = cgi_get_file(fn);
@@ -17013,20 +17036,11 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
         return CG_ERROR;
     }
 
-    /* Copy data */
-    double *data = (double *)lpts->data;
-    // Fortran Style !!
-    k = 0;
-    double *array[] = {pu,pv,pw};
-    for(i = 0; i < npe ; i++)
-      for(j = 0; j < ndim ; j++)
-      {
-        if (array[j]) array[j][i] = data[k];
-        k++;
-      }
-    
+    /* Unpack interleaved flat array into separate coordinate columns */
+    double *cols_r[] = {pu, pv, pw};
+    cgi_unpack_lagrange(npe, ndim, cols_r, NULL, (const double *)lpts->data);
+
     return CG_OK;
-    
 }
 
 /**
@@ -17391,7 +17405,6 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
 int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
                                            double *pu, double *pv, double *pw)
 {
-    int i, j, k;
     int n, edim;
     int nnodes;
     double *ids, *data;
@@ -17492,17 +17505,11 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     }
     data = (double*)einterp->lagrangePts->data;
 
-    // Fortran Style !!
-    k = 0;
-    double *array[] = {pu,pv,pw};
-    for(i = 0; i < nnodes ; i++)
-      for(j = 0; j < edim ; j++)
-      {
-        if (array[j]) data[k] = array[j][i];
-        k++;
-      }
-    
-     /* write to disk */
+    /* Pack separate coordinate columns into interleaved flat array */
+    double *cols_w[] = {pu, pv, pw};
+    cgi_pack_lagrange(nnodes, edim, cols_w, NULL, data);
+
+    /* write to disk */
     if (cgi_new_node(einterp->id, einterp->lagrangePts->name, "DataArray_t", &einterp->lagrangePts->id,
         einterp->lagrangePts->data_type, einterp->lagrangePts->data_dim, einterp->lagrangePts->dim_vals,
         einterp->lagrangePts->data)) {
@@ -17803,7 +17810,6 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
 int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
                                           double *pu, double *pv, double *pw, double *pt)
 {
-    int i,j,k;
     cgns_family *family;
 
     cg = cgi_get_file(fn);
@@ -17890,20 +17896,11 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
         return CG_ERROR;
     }
 
-    double *data = (double *)lpts->data;
-    /* Fortran column-major interleaved layout: U0,V0,T0, U1,V1,T1, ... */
-    k = 0;
-    double *spatial[] = {pu, pv, pw};
+    /* Unpack interleaved flat array into separate coordinate columns */
+    double *s_cols_r[] = {pu, pv, pw};
+    cgi_unpack_lagrange(npe, dim, s_cols_r, (to > 0 ? pt : NULL),
+                        (const double *)lpts->data);
 
-    for (i = 0; i < npe; i++) {
-        for (j = 0; j < dim; j++) {
-            if (spatial[j]) spatial[j][i] = data[k];
-            k++;
-        }
-        if (to && pt)
-            pt[i] = data[k++];
-    }
-    
     return CG_OK;
 }
 
@@ -18187,7 +18184,6 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
                                            double *pu, double *pv, double *pw,
                                            double *pt)
 {
-    int i,j,k;
     int ot,os,n,edim;
     cgsize_t nnodes;
     double *ids, *data;
@@ -18295,20 +18291,11 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     }
     data = (double*)sinterp->lagrangePts->data;
 
-    /* Fortran column-major interleaved layout: U0,V0,T0, U1,V1,T1, ... */
-    k = 0;
-    double *spatial[] = {pu, pv, pw};
+    /* Pack separate coordinate columns into interleaved flat array */
+    double *s_cols_w[] = {pu, pv, pw};
+    cgi_pack_lagrange(nnodes, edim, s_cols_w, (ot > 0 ? pt : NULL), data);
 
-    for (i = 0; i < nnodes; i++) {
-        for (j = 0; j < edim; j++) {
-            if (spatial[j]) data[k] = spatial[j][i];
-            k++;
-        }
-        if (ot && pt)
-            data[k++] = pt[i];
-    }
-    
-     /* write to disk */
+    /* write to disk */
     if (cgi_new_node(sinterp->id, sinterp->lagrangePts->name, "DataArray_t", &sinterp->lagrangePts->id,
                      sinterp->lagrangePts->data_type, sinterp->lagrangePts->data_dim, sinterp->lagrangePts->dim_vals,
                      sinterp->lagrangePts->data)) {

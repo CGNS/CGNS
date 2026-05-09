@@ -28,6 +28,11 @@
 
 #define USE_MID_NODES
 
+/* Tolerance for validating parametric coordinates against the standard reference
+ * element (corners at ±1 or 0/1 depending on element type). All checks in
+ * check_element_nodes_ordering() and compareValuesFloat() use this value. */
+#define CG_HO_PARAM_COORD_TOL 1.e-06
+
 #if CG_SIZEOF_SIZE == 32
 #define CG_ABS abs
 #else
@@ -860,7 +865,7 @@ static FACE *new_face (int nnodes, cgsize_t *nodes)
 static int compareValuesFloat(float val1, float val2) {
 
   int ret = 1;
-  if (fabs((double)val1 - (double)val2) > 1e-6) {
+  if (fabs((double)val1 - (double)val2) > CG_HO_PARAM_COORD_TOL) {
     ret = 0;
   }
   return ret;
@@ -1794,12 +1799,11 @@ static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
     {
       ELEMSET *set = &z->sets[i];
 
-      cg_npe_ho(set->type,spatialOrder,&n);
-      
+      if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
       datasize = datasize + (set->ie-set->is+1) * n;
     }
     datasize = datasize * (temporalOrder+1);
-    
+
     return datasize;
 }
 
@@ -1826,8 +1830,7 @@ static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalO
       // Get element count
       ne = rmax - rmin + 1;
 
-      cg_npe_ho(set->type,spatialOrder,&n);
-      
+      if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
       datasize = datasize + ne * n;
     }
     datasize = datasize * (temporalOrder+1);
@@ -1860,8 +1863,7 @@ static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOr
 
         done = 1;
 
-        cg_npe_ho(set->type,spatialOrder,&n);
-        
+        if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
         datasize = datasize + n;
       }
       
@@ -4996,10 +4998,15 @@ static void check_solution (int ns)
         datasize = get_ho_data_size_list(z,os,ot,ptsetlist,npts);
       else
         datasize = get_ho_data_size(z,os,ot);
+      if (datasize < 0) {
+        if (ptsetlist) free(ptsetlist);
+        error("could not compute high-order data size for solution \"%s\"", name);
+        return;
+      }
     }
     else
       datasize = get_data_size (z, location, rind);
-    
+
     if (ptsetlist) free(ptsetlist);
     
     /* read solution data as arrays to get size */
@@ -5976,71 +5983,71 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
     switch(btype)
     {
       case (CGNS_ENUMV(NODE)): return CG_OK;
-      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 ) return CG_ERROR;break;
+      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;break;
       case (CGNS_ENUMV(TRI_3)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || fabs(u[2]+1.0) > 1.e-06) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || fabs(v[2]-1.0) > 1.e-06) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL) return CG_ERROR;
           break;
       }
       case (CGNS_ENUMV(QUAD_4)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
-             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
-             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
           break;
       }
       case (CGNS_ENUMV(TETRA_4)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
-             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
-             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
-             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
           break;
       }
       case (CGNS_ENUMV(HEXA_8)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
-             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
-             fabs(u[4]+1.0) > 1.e-06 || fabs(u[5]-1.0) > 1.e-06 ||
-             fabs(u[6]-1.0) > 1.e-06 || fabs(u[7]+1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
-             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
-             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]+1.0) > 1.e-06 ||
-             fabs(v[6]-1.0) > 1.e-06 || fabs(v[7]-1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
-             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
-             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ||
-             fabs(w[6]-1.0) > 1.e-06 || fabs(w[7]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[5]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[7]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[5]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[7]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[5]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[7]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
           break;
       }
       case (CGNS_ENUMV(PENTA_6)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
-             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
-             fabs(u[4]-1.0) > 1.e-06 || fabs(u[5]+1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
-             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ||
-             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]-1.0) > 1.e-06 ) return CG_ERROR;
-          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
-             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ||
-             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[5]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[5]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[5]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
           break;
       }
       case (CGNS_ENUMV(PYRA_5)): 
       {
-          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
-             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
-             fabs(u[4]) > 1.e-06 ) return CG_ERROR;
-          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
-             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
-             fabs(v[4]) > 1.e-06 ) return CG_ERROR;
-          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
-             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
-             fabs(w[4]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
           break;
       }
       default: return CG_ERROR;
@@ -6315,7 +6322,12 @@ static void check_family (int fam)
 
         /* Validate: Get expected size for this element type and orders */
         cgsize_t tmp_i2;
-        cg_solution_lagrange_interpolation_size(etype,os,ot,&tmp_i2);
+        if (cg_solution_lagrange_interpolation_size(etype, os, ot, &tmp_i2) != CG_OK) {
+            error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size failed "
+                  "for element type %s with orders (spatial=%d, temporal=%d)",
+                  name, cg_ElementTypeName(etype), os, ot);
+            continue;
+        }
         i = tmp_i2;
         if (i <= 0) {
             error("SolutionInterpolation \"%s\": Invalid size %lld for element type %s with orders (spatial=%d, temporal=%d)",

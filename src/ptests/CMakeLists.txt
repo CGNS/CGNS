@@ -126,4 +126,5 @@ if (CGNS_ENABLE_TESTS)
                      ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
     endforeach()
   endif ()
+
 endif ()

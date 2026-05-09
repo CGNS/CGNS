@@ -87,66 +87,23 @@ set(test64c_FILES test64c.c utils.c)
 set(test64f_FILES test64f.F90)
 set(test64f_f03_FILES test64f_f03.F90)
 
-# Build each test
-add_executable( cgioc                ${cgioc_FILES}                )
-add_executable( dbtest               ${dbtest_FILES}               )
-add_executable( elemtest             ${elemtest_FILES}             )
-add_executable( open_cgns            ${open_cgns_FILES}            )
-add_executable( ser_benchmark_hdf5   ${ser_benchmark_hdf5_FILES}   )
-add_executable( test_core_vfd        ${test_core_vfd_FILES}        )
-add_executable( test_exts            ${test_exts_FILES}            )
-add_executable( test_goto            ${test_goto_FILES}            )
-add_executable( test_partial         ${test_partial_FILES}         )
-add_executable( test_ver31           ${test_ver31_FILES}           )
-add_executable( test_multifam        ${test_multifam_FILES}        )
-add_executable( test_general_rind    ${test_general_rind_FILES}    )
-add_executable( test_general_reshape ${test_general_reshape_FILES} )
-add_executable( write_array          ${write_array_FILES}          )
-add_executable( write_bcdata         ${write_bcdata_FILES}         )
-add_executable( write_links          ${write_links_FILES}          )
-add_executable( write_rind           ${write_rind_FILES}           )
-add_executable( write_test           ${write_test_FILES}           )
-add_executable( write_zones          ${write_zones_FILES}          )
-foreach(HO_TEST ${HO_TESTS})
+# Build all C tests whose sources are listed in ${name}_FILES variables above.
+set(C_TESTS_LIST
+    cgioc dbtest elemtest open_cgns ser_benchmark_hdf5
+    test_core_vfd test_exts test_goto test_partial test_ver31
+    test_multifam test_general_rind test_general_reshape
+    write_array write_bcdata write_links write_rind write_test write_zones
+    test_family_tree test_bbox test_complex test_convert_elem
+    test_back_comp test_particle test_error_handling test_variable_order
+)
+foreach(t IN LISTS C_TESTS_LIST)
+    add_executable(${t} ${${t}_FILES})
+endforeach()
+
+# High-order tests share utils.c and do not use the _FILES variable pattern.
+foreach(HO_TEST IN LISTS HO_TESTS)
     add_executable(${HO_TEST} ${HO_TEST}.c utils.c)
 endforeach()
-add_executable( test_family_tree     ${test_family_tree_FILES}     )
-add_executable( test_bbox            ${test_bbox_FILES}            )
-add_executable( test_complex         ${test_complex_FILES}         )
-add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
-add_executable( test_back_comp       ${test_back_comp_FILES}       )
-add_executable( test_particle        ${test_particle_FILES}        )
-add_executable( test_error_handling  ${test_error_handling_FILES}  )
-add_executable( test_variable_order  ${test_variable_order_FILES}  )
-#
-set(C_TESTS_LIST
-	cgioc
-	dbtest
-	elemtest
-	open_cgns
-	ser_benchmark_hdf5
-	test_core_vfd        
-	test_exts            
-	test_goto            
-	test_partial         
-	test_ver31           
-	test_multifam        
-	test_general_rind    
-	test_general_reshape 
-	write_array          
-	write_bcdata         
-	write_links          
-	write_rind           
-	write_test           
-	write_zones
-	test_family_tree
-	test_bbox
-	test_complex
-        test_convert_elem
-        test_back_comp
-        test_particle
-        test_error_handling
-        test_variable_order)
 list(APPEND C_TESTS_LIST ${HO_TESTS})
 
 # Conditionally add HDF5-specific tests
@@ -256,5 +213,6 @@ if (CGNS_ENABLE_TESTS)
           "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
       endif()
     endforeach()
+
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)

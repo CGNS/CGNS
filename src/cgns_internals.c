@@ -67,6 +67,12 @@ extern int HDF5storage_type;
 int Idim;           /* current IndexDimension          */
 int Cdim;           /* current CellDimension           */
 int Pdim;           /* current PhysicalDimension           */
+/* NOTE: CurrentZonePtr follows the same file-scope global convention as CurrentDim and
+ * CurrentZoneType (both pre-existing). It is set once per cgi_read_zone() call and used
+ * only within that same sequential read pass. Unlike the scalar/array globals it carries
+ * a dangling-pointer risk if a zone struct is ever freed mid-read; ensure zone lifetime
+ * spans the entire read pass before touching this. Not thread-safe by design (matches the
+ * rest of this layer). */
 cgns_zone *CurrentZonePtr; /* current Zone structure pointer */
 cgsize_t CurrentDim[9]; /* current vertex, cell & bnd zone size*/
 cgsize_t CurrentParticleSize; /* current size of ParticleZone_t node */
@@ -8063,7 +8069,7 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
     
     if (!zone->nsections)
     {
-      cgi_warning("Zone requires Element_t nodes for high-order DataSize calculation.\n");
+      cgi_error("Zone requires Element_t nodes for high-order DataSize calculation.");
       return CG_NODE_NOT_FOUND;
     }
     
@@ -8121,7 +8127,7 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
     
     if (!zone->nsections) 
     {
-      cgi_warning("Zone needs to have Element_t nodes for cgi_ho_datasize_range !\n");
+      cgi_error("Zone requires Element_t nodes for cgi_ho_datasize_range.");
       return CG_NODE_NOT_FOUND;
     }
     
@@ -8193,7 +8199,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
 
     if (!zone->nsections)
     {
-      cgi_warning("Zone needs to have Element_t nodes for cgi_ho_datasize_list !\n");
+      cgi_error("Zone requires Element_t nodes for cgi_ho_datasize_list.");
       return CG_NODE_NOT_FOUND;
     }
 

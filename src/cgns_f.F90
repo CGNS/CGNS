@@ -773,9 +773,12 @@ MODULE cgns
 ! - Update ElementTypeName array below when adding types
 !
 ! Violation will cause silent data corruption when reading CGNS 4.x files.
-! Array sized using ElementType_MAX-1 (defined below in enum)
+! Array sized using CGNS_ElementType_MAX_val below (must match ElementType_MAX enum = 57).
+! A named PARAMETER is required because Fortran array bounds cannot use ENUM constants
+! (ENUM/BIND(C) values have kind C_INT which is not guaranteed to be the default integer kind).
 
-  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)  ! TODO: Use ElementType_MAX when enum values available at compile time
+  INTEGER, PARAMETER :: CGNS_ElementType_MAX_val = 57
+  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:CGNS_ElementType_MAX_val-1)
   ENUM, BIND(C)
     ENUMERATOR :: CGNS_ENUMV(ElementTypeNull) = CG_Null
     ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined)
