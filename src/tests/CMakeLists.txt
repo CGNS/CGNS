@@ -47,22 +47,17 @@ set(write_links_FILES write_links.c utils.c)
 set(write_rind_FILES write_rind.c)
 set(write_test_FILES write_test.c)
 set(write_zones_FILES write_zones.c utils.c)
-set(test_high_order_FILES test_high_order.c utils.c)
-set(test_hexa_order2_FILES test_hexa_order2.c utils.c)
-set(test_3d_elements_FILES test_3d_elements.c utils.c)
-set(test_high_order_quad_FILES test_high_order_quad.c utils.c)
-set(test_high_order_hexa_FILES test_high_order_hexa.c utils.c)
+set(HO_TESTS
+    test_high_order test_hexa_order2 test_3d_elements
+    test_high_order_quad test_high_order_hexa test_modal_interpolation
+    test_spacetime test_serendipity test_isoparametric test_mixed_ho
+)
 set(test_family_tree_FILES test_family_tree.c)
 set(test_complex_FILES test_complex.c)
 set(test_convert_elem_FILES test_convert_elem.c)
 set(test_back_comp_FILES test_back_comp.c)
 set(test_particle_FILES test_particle.c)
-set(test_modal_interpolation_FILES test_modal_interpolation.c utils.c)
-set(test_spacetime_FILES test_spacetime.c utils.c)
 set(test_error_handling_FILES test_error_handling.c)
-set(test_serendipity_FILES test_serendipity.c utils.c)
-set(test_isoparametric_FILES test_isoparametric.c utils.c)
-set(test_mixed_ho_FILES test_mixed_ho.c utils.c)
 set(test_variable_order_FILES test_variable_order.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
@@ -112,23 +107,16 @@ add_executable( write_links          ${write_links_FILES}          )
 add_executable( write_rind           ${write_rind_FILES}           )
 add_executable( write_test           ${write_test_FILES}           )
 add_executable( write_zones          ${write_zones_FILES}          )
-add_executable( test_high_order      ${test_high_order_FILES}      )
-add_executable( test_hexa_order2     ${test_hexa_order2_FILES}     )
-add_executable( test_3d_elements     ${test_3d_elements_FILES}     )
-add_executable( test_high_order_quad ${test_high_order_quad_FILES} )
-add_executable( test_high_order_hexa ${test_high_order_hexa_FILES} )
+foreach(HO_TEST ${HO_TESTS})
+    add_executable(${HO_TEST} ${HO_TEST}.c utils.c)
+endforeach()
 add_executable( test_family_tree     ${test_family_tree_FILES}     )
 add_executable( test_bbox            ${test_bbox_FILES}            )
 add_executable( test_complex         ${test_complex_FILES}         )
 add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
 add_executable( test_back_comp       ${test_back_comp_FILES}       )
 add_executable( test_particle        ${test_particle_FILES}        )
-add_executable( test_modal_interpolation ${test_modal_interpolation_FILES} )
-add_executable( test_spacetime       ${test_spacetime_FILES}       )
 add_executable( test_error_handling  ${test_error_handling_FILES}  )
-add_executable( test_serendipity     ${test_serendipity_FILES}     )
-add_executable( test_isoparametric   ${test_isoparametric_FILES}   )
-add_executable( test_mixed_ho        ${test_mixed_ho_FILES}        )
 add_executable( test_variable_order  ${test_variable_order_FILES}  )
 #
 set(C_TESTS_LIST
@@ -151,24 +139,15 @@ set(C_TESTS_LIST
 	write_rind           
 	write_test           
 	write_zones
-        test_high_order
-        test_hexa_order2
-        test_3d_elements
-        test_high_order_quad
-        test_high_order_hexa
-	test_family_tree     
-	test_bbox            
+	test_family_tree
+	test_bbox
 	test_complex
         test_convert_elem
         test_back_comp
         test_particle
-        test_modal_interpolation
-        test_spacetime
         test_error_handling
-        test_serendipity
-        test_isoparametric
-        test_mixed_ho
         test_variable_order)
+list(APPEND C_TESTS_LIST ${HO_TESTS})
 
 # Conditionally add HDF5-specific tests
 if (CGNS_ENABLE_HDF5)

@@ -17256,17 +17256,17 @@ void cgi_free_element_interpolation(cgns_elementInterpolation *einterp)
 {
     einterp->name[0] = 0;
     if (einterp->lagrangePts) {
-      CGNS_FREE(einterp->lagrangePts->data);
+      cgi_free_array(einterp->lagrangePts);
       CGNS_FREE(einterp->lagrangePts);
     }
     einterp->lagrangePts = 0;
     if (einterp->monomialCoeff) {
-      CGNS_FREE(einterp->monomialCoeff->data);
+      cgi_free_array(einterp->monomialCoeff);
       CGNS_FREE(einterp->monomialCoeff);
     }
     einterp->monomialCoeff = 0;
     if (einterp->lagrangeDist) {
-      CGNS_FREE(einterp->lagrangeDist->data);
+      cgi_free_array(einterp->lagrangeDist);
       CGNS_FREE(einterp->lagrangeDist);
     }
     einterp->lagrangeDist = 0;
@@ -17276,17 +17276,17 @@ void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
 {
     sinterp->name[0] = 0;
     if (sinterp->lagrangePts) {
-      CGNS_FREE(sinterp->lagrangePts->data);
+      cgi_free_array(sinterp->lagrangePts);
       CGNS_FREE(sinterp->lagrangePts);
     }
     sinterp->lagrangePts = 0;
     if (sinterp->monomialCoeff) {
-      CGNS_FREE(sinterp->monomialCoeff->data);
+      cgi_free_array(sinterp->monomialCoeff);
       CGNS_FREE(sinterp->monomialCoeff);
     }
     sinterp->monomialCoeff = 0;
     if (sinterp->lagrangeDist) {
-      CGNS_FREE(sinterp->lagrangeDist->data);
+      cgi_free_array(sinterp->lagrangeDist);
       CGNS_FREE(sinterp->lagrangeDist);
     }
     sinterp->lagrangeDist = 0;

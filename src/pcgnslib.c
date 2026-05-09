@@ -1121,23 +1121,23 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     /* Calculate connectivity offsets with overflow protection
      * For high-order elements (e.g., HEXA_125 with NPE=125), ensure
      * offset calculations don't overflow cgsize_t (64-bit signed integer) */
-    cgsize_t elem_count = end - section->range[0] + 1;
+    cgsize_t global_end_offset = end - section->range[0] + 1;  /* 1-based end index within section */
     cgsize_t start_offset = start - section->range[0];
 
-    if (elem_count > 0 && elemsize > 0) {
+    if (global_end_offset > 0 && elemsize > 0) {
         /* Check for potential overflow in both rmin and rmax calculations */
         if (start_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Start offset too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
-        if (elem_count > CG_SIZE_MAX / elemsize) {
+        if (global_end_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Element range too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
     }
 
     rmin = start_offset * elemsize + 1;
-    rmax = elem_count * elemsize;
+    rmax = global_end_offset * elemsize;
     type = cgi_datatype(section->connect->data_type);
 
     to_HDF_ID(section->connect->id, hid);
@@ -1493,23 +1493,23 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     /* Calculate connectivity offsets with overflow protection
      * For high-order elements (e.g., HEXA_125 with NPE=125), ensure
      * offset calculations don't overflow cgsize_t (64-bit signed integer) */
-    cgsize_t elem_count = end - section->range[0] + 1;
+    cgsize_t global_end_offset = end - section->range[0] + 1;  /* 1-based end index within section */
     cgsize_t start_offset = start - section->range[0];
 
-    if (elem_count > 0 && elemsize > 0) {
+    if (global_end_offset > 0 && elemsize > 0) {
         /* Check for potential overflow in both rmin and rmax calculations */
         if (start_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Start offset too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
-        if (elem_count > CG_SIZE_MAX / elemsize) {
+        if (global_end_offset > CG_SIZE_MAX / elemsize) {
             cgi_error("Element range too large: would overflow connectivity offset calculation");
             return CG_ERROR;
         }
     }
 
     rmin = start_offset * elemsize + 1;
-    rmax = elem_count * elemsize;
+    rmax = global_end_offset * elemsize;
     type = cgi_datatype(sizeof(cgsize_t) == 4 ? "I4" : "I8");
 
     to_HDF_ID(section->connect->id, hid);

@@ -17891,26 +17891,17 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     }
 
     double *data = (double *)lpts->data;
-    // Fortran Style !!
+    /* Fortran column-major interleaved layout: U0,V0,T0, U1,V1,T1, ... */
     k = 0;
     double *spatial[] = {pu, pv, pw};
 
-    // Read spatial coordinates
-    for(i = 0; i < npe ; i++)
-      for(j = 0; j < dim ; j++)
-      {
-        if (spatial[j]) spatial[j][i] = data[k];
-        k++;
-      }
-
-    // Read temporal coordinate if present
-    if (to && pt)
-    {
-      for(i = 0; i < npe ; i++)
-      {
-        pt[i] = data[k];
-        k++;
-      }
+    for (i = 0; i < npe; i++) {
+        for (j = 0; j < dim; j++) {
+            if (spatial[j]) spatial[j][i] = data[k];
+            k++;
+        }
+        if (to && pt)
+            pt[i] = data[k++];
     }
     
     return CG_OK;
@@ -18304,26 +18295,17 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     }
     data = (double*)sinterp->lagrangePts->data;
 
-    // Fortran Style !!
+    /* Fortran column-major interleaved layout: U0,V0,T0, U1,V1,T1, ... */
     k = 0;
     double *spatial[] = {pu, pv, pw};
 
-    // Write spatial coordinates
-    for(i = 0; i < nnodes ; i++)
-      for(j = 0; j < edim ; j++)
-      {
-        if (spatial[j]) data[k] = spatial[j][i];
-        k++;
-      }
-
-    // Write temporal coordinate if present
-    if (ot && pt)
-    {
-      for(i = 0; i < nnodes ; i++)
-      {
-        data[k] = pt[i];
-        k++;
-      }
+    for (i = 0; i < nnodes; i++) {
+        for (j = 0; j < edim; j++) {
+            if (spatial[j]) data[k] = spatial[j][i];
+            k++;
+        }
+        if (ot && pt)
+            data[k++] = pt[i];
     }
     
      /* write to disk */
