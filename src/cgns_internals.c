@@ -8120,27 +8120,27 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
                           const int temporalOrder, const cgsize_t imin, const cgsize_t imax,
                           cgsize_t *DataSize)
 {
-    int i,j, ne;
+    int i, ne;
     int npe;
-    
+
     if (!zone) return CG_ERROR;
-    
-    if (!zone->nsections) 
+
+    if (!zone->nsections)
     {
       cgi_error("Zone requires Element_t nodes for cgi_ho_datasize_range.");
       return CG_NODE_NOT_FOUND;
     }
-    
+
     /* Check ZoneType */
-    if ( zone->type != CGNS_ENUMV( Unstructured) ) 
+    if ( zone->type != CGNS_ENUMV( Unstructured) )
     {
       cgi_error("Zone needs to be Unstructured !\n");
       return CG_ERROR;
     }
-   
+
     /* Unstructured zones are 1D, so DataSize is a pointer to a single value */
-    DataSize[0] = 0;
-    
+    *DataSize = 0;
+
     // Loop over Sections
     for (i = 0 ; i < zone->nsections ; i++)
     {
@@ -8159,7 +8159,7 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
             if (cgi_ho_datasize_mixed_range(section, spatialOrder, rmin, rmax, &mixed_size) != CG_OK) {
                 return CG_ERROR;
             }
-            for (j = 0 ; j < id_dim ; j++) DataSize[j] += mixed_size;
+            *DataSize += mixed_size;
         } else {
             // Uniform section: simple calculation
             // Get element count
@@ -8171,11 +8171,11 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
                 return CG_ERROR;
             }
 
-            for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] + ne*npe;
+            *DataSize += ne * npe;
         }
     }
     // Temporal Order
-    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
+    *DataSize *= (temporalOrder + 1);
     return CG_OK;
 }
 
@@ -8192,7 +8192,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
                          const int temporalOrder, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize)
 {
-    int i, j;
+    int i;
     cgsize_t *sorted_list = NULL;
 
     if (!zone) return CG_ERROR;
@@ -8211,7 +8211,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
     }
 
     /* Unstructured zones are 1D, so DataSize is a pointer to a single value */
-    DataSize[0] = 0;
+    *DataSize = 0;
 
     /* OPTIMIZATION:
      * 1. Copy and sort the requested list to allow sequential processing.
@@ -8293,7 +8293,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
                                   cg_ElementTypeName(elem_type), spatialOrder);
                         return CG_ERROR;
                     }
-                    for (j = 0; j < id_dim; j++) DataSize[j] += ho_npe;
+                    *DataSize += ho_npe;
 
                     list_idx++; /* Move to next request */
                 }
@@ -8326,7 +8326,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
             /* Iterate through sorted list - can optimize with binary search for range start/end */
             for(p = 0; p < npts; p++) {
                 if (sorted_list[p] >= sect_start && sorted_list[p] <= sect_end) {
-                    for (j = 0; j < id_dim; j++) DataSize[j] += ho_npe;
+                    *DataSize += ho_npe;
                 }
             }
         }
@@ -8335,7 +8335,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
     CGNS_FREE(sorted_list);
 
     /* Temporal Order */
-    for (j = 0; j < id_dim; j++) DataSize[j] = DataSize[j] * (temporalOrder + 1);
+    *DataSize *= (temporalOrder + 1);
 
     return CG_OK;
 }
