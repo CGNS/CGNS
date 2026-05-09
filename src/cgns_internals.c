@@ -1878,11 +1878,13 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             
             if ( ret == CG_ERROR) return CG_ERROR;
             if ( ret == CG_NODE_NOT_FOUND ) checksize = 0;
-            
-            /* add rinds */
-            for (j=0; j<Idim; j++) DataSize[j] = DataSize[j] 
-                                               + sol[0][s].rind_planes[2*j] 
-                                               + sol[0][s].rind_planes[2*j+1];
+
+            /* add rinds (only when DataSize was actually computed) */
+            if (checksize) {
+                for (j=0; j<Idim; j++) DataSize[j] = DataSize[j]
+                                                   + sol[0][s].rind_planes[2*j]
+                                                   + sol[0][s].rind_planes[2*j+1];
+            }
             
         }
         else {
@@ -1910,7 +1912,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
               
               // Override based on range
               if (sol[0][s].ptset->type == CGNS_ENUMV(PointRange)) {
-                cgsize_t range_min[12], range_max[12];
+                cgsize_t range_min[12] = {0}, range_max[12] = {0};
                 
                 if (cgi_ptset_range(sol[0][s].ptset,range_min,range_max)) {
                     return CG_ERROR;
