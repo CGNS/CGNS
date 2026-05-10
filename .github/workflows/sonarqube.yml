@@ -1,105 +1,52 @@
 name: SonarQube Analysis
 on:
-  push:
-    branches:
-      - develop
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["SonarQube Build"]
+    types: [completed]
 
 env:
   BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
-  hdf5_vers: 1_14_4
 
 jobs:
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    # Only run on push events or PRs from the same repository (not forks)
-    # Forks cannot access secrets, so this prevents the workflow from failing
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    # Only scan when the build succeeded
+    if: github.event.workflow_run.conclusion == 'success'
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: https://sonarcloud.io
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at triggering commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Install system dependencies
+      - name: Download SonarQube artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sonarqube-artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Set SonarQube analysis parameters
         run: |
-          sudo apt update
-          sudo apt-get install -y openmpi-bin openmpi-common mpi-default-dev python3-pip
-          sudo apt-get install -y libxmu-dev tk-dev tcl-dev
-          sudo apt-get install -y libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
-          # Install newer gcovr via pip to support latest gcov format
-          pip3 install --upgrade gcovr
-          echo "CC=mpicc" >> $GITHUB_ENV
-          echo "FC=mpif90" >> $GITHUB_ENV
-          echo "F77=mpif90" >> $GITHUB_ENV
-          echo "FLIBS=-Wl,--no-as-needed -ldl" >> $GITHUB_ENV
-          echo "LIBS=-Wl,--no-as-needed -ldl" >> $GITHUB_ENV
-          echo "FCFLAGS=-D DISABLE_CGNS109" >> $GITHUB_ENV
-
-      - name: Install HDF5
-        run: |
-          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
-          export HOME_DIR=$(echo ~)
-          cd hdf5_${{ env.hdf5_vers }}
-          ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
-            --disable-tests --disable-tools \
-            --prefix=$HOME_DIR/hdf5 --disable-nonstandard-feature-float16 \
-            --enable-parallel
-          make -j 8 install
-        shell: bash
-
-      - name: Install SonarQube Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6
-
-      - name: Configure and Build with Build Wrapper
-        run: |
-          export HOME_DIR=$(echo ~)
-          mkdir cbuild
-          cd cbuild
-          # 1. Run CMake configuration
-          cmake \
-            -D CGNS_ENABLE_FORTRAN:BOOL=OFF \
-            -D CMAKE_PREFIX_PATH=$HOME_DIR/hdf5 \
-            -D CGNS_ENABLE_HDF5:BOOL=ON \
-            -D HDF5_NEED_ZLIB:BOOL=OFF \
-            -D HDF5_NEED_SZIP:BOOL=OFF \
-            -D CGNS_BUILD_CGNSTOOLS:BOOL=ON \
-            -D CGNS_ENABLE_LEGACY:BOOL=ON \
-            -D CGNS_ENABLE_64BIT:BOOL=OFF \
-            -D CMAKE_C_COMPILER:PATH=$CC \
-            -D CMAKE_C_FLAGS:STRING="$CFLAGS --coverage" \
-            -D CMAKE_EXE_LINKER_FLAGS:STRING="--coverage" \
-            -D CMAKE_BUILD_TYPE:STRING="Debug" \
-            -D CGNS_ENABLE_TESTS:BOOL=ON \
-            -D CGNS_ENABLE_PARALLEL:BOOL=ON \
-            -D CGNS_ENABLE_LFS:BOOL=ON \
-            -D CMAKE_INSTALL_PREFIX:PATH="./" \
-            ..
-          # 2. Build the project (still wrapped by the command above)
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} \
-            cmake --build . --config "Debug" --parallel 8
-        shell: bash
-
-      - name: Run Tests and Generate Coverage
-        run: |
-          cd cbuild
-          ctest .
-          # Generate SonarQube-compatible XML coverage report
-          # Use --exclude-unreachable-branches and --exclude-throw-branches to avoid false negatives
-          gcovr -r .. --sonarqube --exclude-unreachable-branches --exclude-throw-branches > coverage.xml
-        shell: bash
+          if [ -f pr_number.txt ]; then
+            echo "SONAR_EXTRA_ARGS=-Dsonar.pullrequest.key=$(cat pr_number.txt) \
+              -Dsonar.pullrequest.branch=$(cat pr_head_ref.txt) \
+              -Dsonar.pullrequest.base=$(cat pr_base_ref.txt)" >> $GITHUB_ENV
+          else
+            echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
+          fi
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
-            -Dsonar.branch.name=${{ github.ref_name }}
+            ${{ env.SONAR_EXTRA_ARGS }}
             -Dsonar.cfamily.compile-commands=cbuild/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
+            -Dsonar.coverageReportPaths=cbuild/coverage.xml
