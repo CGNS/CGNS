@@ -8898,7 +8898,7 @@ static int cgi_find_sol_array(cgns_sol *sol, const char *name,
             match_id  = ids[n];
             match_dim = dim;
             for (i = 0; i < dim; i++) match_dimvals[i] = dim_vals[i];
-            strcpy(match_dtype, dtype);
+            snprintf(match_dtype, sizeof(match_dtype), "%s", dtype);
             match_len = (dim >= 1) ? dim_vals[0] : 0;
             found = 1;
             break;
@@ -16809,7 +16809,7 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
 
     /* Set Name */
-    strcpy(node_name,ei->name);
+    snprintf(node_name, CG_MAX_NAME_LENGTH, "%s", ei->name);
 
     /* Set Element Type */
     *et = ei->type;
@@ -17185,7 +17185,7 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     }
 
     memset(einterp,0,sizeof(cgns_elementInterpolation));
-    strcpy(einterp->name,node_name);
+    snprintf(einterp->name, sizeof(einterp->name), "%s", node_name);
     einterp->type = et;
 
     // Write node
@@ -17316,7 +17316,7 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
     }
 
     memset(einterp,0,sizeof(cgns_elementInterpolation));
-    strcpy(einterp->name,node_name);
+    snprintf(einterp->name, sizeof(einterp->name), "%s", node_name);
     einterp->type = et;
 
     /* Write ElementInterpolation_t node. Per CPEX-0045 §3.2.2 the payload is
@@ -17480,8 +17480,8 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     memset(einterp->lagrangePts, 0, sizeof(cgns_array));
     
     /* Save data */
-    strcpy(einterp->lagrangePts->name, "LagrangeControlPoints");
-    strcpy(einterp->lagrangePts->data_type, "R8");
+    snprintf(einterp->lagrangePts->name, sizeof(einterp->lagrangePts->name), "%s", "LagrangeControlPoints");
+    snprintf(einterp->lagrangePts->data_type, sizeof(einterp->lagrangePts->data_type), "%s", "R8");
     einterp->lagrangePts->data_dim = 2;
     einterp->lagrangePts->dim_vals[0] = edim;
     einterp->lagrangePts->dim_vals[1] = nnodes;
@@ -17721,7 +17721,7 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
     
     /* Get Name */
-    strcpy(node_name,es->name);
+    snprintf(node_name, CG_MAX_NAME_LENGTH, "%s", es->name);
     
     /* Get Element Type */
     // cg_element_basic_element_type(es->type,et); // What to choose ??
@@ -18075,7 +18075,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     
     // Fill internal structure
     memset(sinterp,0,sizeof(cgns_solutionInterpolation));
-    strcpy(sinterp->name,node_name);
+    snprintf(sinterp->name, sizeof(sinterp->name), "%s", node_name);
     sinterp->type = type;
     sinterp->spatialorder = os;
     sinterp->temporalorder= ot;
@@ -18266,8 +18266,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     memset(sinterp->lagrangePts, 0, sizeof(cgns_array));
     
     /* Save data */
-    strcpy(sinterp->lagrangePts->name, "LagrangeControlPoints");
-    strcpy(sinterp->lagrangePts->data_type, "R8");
+    snprintf(sinterp->lagrangePts->name, sizeof(sinterp->lagrangePts->name), "%s", "LagrangeControlPoints");
+    snprintf(sinterp->lagrangePts->data_type, sizeof(sinterp->lagrangePts->data_type), "%s", "R8");
     sinterp->lagrangePts->data_dim = 2;
     sinterp->lagrangePts->dim_vals[0] = edim + (ot ? 1 : 0);
     sinterp->lagrangePts->dim_vals[1] = nnodes;
@@ -18915,8 +18915,8 @@ static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
 
     arr = CGNS_NEW(cgns_array, 1);
     memset(arr, 0, sizeof(cgns_array));
-    strcpy(arr->name, "LagrangeControlPointDistribution");
-    strcpy(arr->data_type, "C1");
+    snprintf(arr->name, sizeof(arr->name), "%s", "LagrangeControlPointDistribution");
+    snprintf(arr->data_type, sizeof(arr->data_type), "%s", "C1");
     arr->data_dim = 1;
     arr->dim_vals[0] = length;
     arr->data = malloc((size_t)(length + 1));

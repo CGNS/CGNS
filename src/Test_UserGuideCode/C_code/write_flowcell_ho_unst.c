@@ -52,7 +52,7 @@ int main()
 /* we know there is only one family (real working code would check!) */
     index_family=1;
 /* define flow solution node name (user can give any name) */
-    strcpy(solname,"FlowSolution");
+    snprintf(solname, sizeof(solname), "%s", "FlowSolution");
 /* create flow solution node */
     if (cg_sol_write(index_file,index_base,index_zone,solname,CGNS_ENUMV(InterpolationPoints),&index_flow)) cg_error_exit();
 /* add Corresponding spatial and temporal order --> 3rd and 0th order */

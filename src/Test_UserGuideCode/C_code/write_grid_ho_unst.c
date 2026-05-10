@@ -90,12 +90,12 @@ int main()
 /* open CGNS file for write */
     if (cg_open("grid_ho_c.cgns",CG_MODE_WRITE,&index_file)) cg_error_exit();
 /* create base (user can give any name) */
-    strcpy(basename,"Base");
+    snprintf(basename, sizeof(basename), "%s", "Base");
     icelldim=2;
     iphysdim=2;
     cg_base_write(index_file,basename,icelldim,iphysdim,&index_base);
 /* define zone name (user can give any name) */
-    strcpy(zonename,"Zone  1");
+    snprintf(zonename, sizeof(zonename), "%s", "Zone  1");
 /* vertex size */
     isize[0][0]=ni*nj;
 /* cell size */
