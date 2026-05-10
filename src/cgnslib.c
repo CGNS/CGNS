@@ -17497,8 +17497,8 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     
     einterp->lagrangePts->data = malloc( (size_t)nnodes * edim * sizeof(double) );
     if (!einterp->lagrangePts->data) {
-        cgi_error("Error allocating %zu bytes for LagrangeControlPoints data",
-                  (size_t)nnodes * edim * sizeof(double));
+        cgi_error("Error allocating %" PRIdCGSIZE " bytes for LagrangeControlPoints data",
+                  (cgsize_t)((size_t)nnodes * edim * sizeof(double)));
         CGNS_FREE(einterp->lagrangePts);
         einterp->lagrangePts = 0;
         return CG_ERROR;
@@ -18283,8 +18283,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     
     sinterp->lagrangePts->data = malloc( (size_t)nnodes * (edim + (ot ? 1 : 0)) * sizeof(double) );
     if (!sinterp->lagrangePts->data) {
-        cgi_error("Error allocating %zu bytes for LagrangeControlPoints data",
-                  (size_t)nnodes * (edim + (ot ? 1 : 0)) * sizeof(double));
+        cgi_error("Error allocating %" PRIdCGSIZE " bytes for LagrangeControlPoints data",
+                  (cgsize_t)((size_t)nnodes * (edim + (ot ? 1 : 0)) * sizeof(double)));
         CGNS_FREE(sinterp->lagrangePts);
         sinterp->lagrangePts = 0;
         return CG_ERROR;
