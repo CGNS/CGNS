@@ -2,11 +2,12 @@ name: cgns
 
 # Controls when the action will run. 
 #Triggers the workflow on push or pull requests.
-on: 
+on:
   push:
     branches: [ develop, master ]
   pull_request:
     branches: [ develop, master ]
+  workflow_dispatch:
 #on: 
 #  push:
 #  pull_request:

@@ -41,6 +41,14 @@ jobs:
             echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
           fi
 
+      - name: Set SonarQube analysis parameters
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "SONAR_EXTRA_ARGS=-Dsonar.pullrequest.key=${{ github.event.pull_request.number }} -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+          else
+            echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=${{ github.ref_name }}" >> $GITHUB_ENV
+          fi
+
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:

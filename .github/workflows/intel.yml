@@ -5,11 +5,12 @@
 name: Intel
 permissions: read-all
 
-on: 
+on:
   push:
     branches: [ develop, master ]
   pull_request:
     branches: [ develop, master ]
+  workflow_dispatch:
 
 env:
   # Update urls accordingly for oneapi found at:
