@@ -16,8 +16,8 @@ env:
   # Update urls accordingly for oneapi found at:
   # https://github.com/oneapi-src/oneapi-ci/blob/master/.github/workflows/build_all.yml
   SHORTGEN: "vs17"
-  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae29263e-38b9-4d43-86c3-376d6e0668e7/intel-oneapi-base-toolkit-2025.0.1.47_offline.exe
-  WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe
+  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372_offline.exe
+  WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/3a871580-f839-46ed-aeae-685084127279/intel-oneapi-hpc-toolkit-2025.3.0.378_offline.exe
   LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/dfc4a434-838c-4450-a6fe-2fa903b75aa7/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh
   LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh
   LINUX_AIKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/491d5c2a-67fe-48d0-884f-6aecd88f5d8a/ai-tools-2025.0.0.75_offline.sh
@@ -30,11 +30,11 @@ env:
   LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
   LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
   LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
-  CACHE_NUMBER: 5
-  SAMPLES_TAG: 2025.0.0
+  CACHE_NUMBER: 6
+  SAMPLES_TAG: 2025.3.0
   AI_SAMPLES_TAG: 2025.0.0
-  COMPILER_VERSION: 2025.0.4
-  TBB_VERSION: 2022.0.0
+  COMPILER_VERSION: 2025.3.0
+  TBB_VERSION: 2022.3.0
   VS_VER: vs2022
 
 jobs:
@@ -143,30 +143,270 @@ jobs:
       shell: bash
       run: .github/workflows/scripts/cache_exclude_windows.sh
 
+  build_windows_parallel:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Core Dependencies
+      run: |
+        choco install -y ninja
+    - name: cache install
+      id: cache-install
+      uses: actions/cache@v4
+      with:
+        path: |
+            C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
+            C:\Program Files (x86)\Intel\oneAPI\compiler
+            C:\Program Files (x86)\Intel\oneAPI\mpi
+        key: install-parallel-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-intel.oneapi.win.mpi.devel-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
+    - name: install Intel Kit
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      run: .github/workflows/scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS:intel.oneapi.win.mpi.devel
+    - name: Build and Install HDF5 develop with Parallel Support
+      shell: pwsh
+      run: |
+          # Setup Intel environment
+          $intelPath = "C:\Program Files (x86)\Intel\oneAPI\compiler\"
+          $latestVersions = Get-ChildItem -Path $intelPath -Name | Where-Object { $_ -notmatch 'latest' } | Sort-Object
+          $INTEL_LATEST_VERSION = $latestVersions
+          $Env:INTEL_VARS_BAT="C:\Program Files (x86)\Intel\oneAPI\compiler\${INTEL_LATEST_VERSION}\env\vars.bat"
+          & $Env:comspec "/C" '"%INTEL_VARS_BAT%" > nul && pwsh -C "Get-ChildItem env: | Select-Object name,value | ConvertTo-Json"' | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
 
-#  build_linux_cpp_fortran:
-#    runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: bash
-#    steps:
-#    - uses: actions/checkout@v3
-#    - name: cache install
-#      id: cache-install
-#      uses: actions/cache@v4
-#      with:
-#        path: |
-#          /opt/intel/oneapi/compiler
-#        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_linux.sh') }}
-#
-#    - name: install
-#      if: steps.cache-install.outputs.cache-hit != 'true'
-#      run: .github/workflows/scripts/install_linux.sh $LINUX_HPCKIT_URL
-#    - name: build
-#      run: .github/workflows/scripts/build_linux.sh c++ $SAMPLES_TAG
-#    - name: build fortran
-#      run: .github/workflows/scripts/build_linux.sh fortran $SAMPLES_TAG
-#
-#    - name: exclude unused files from cache
-#      if: steps.cache-install.outputs.cache-hit != 'true'
-#      run: .github/workflows/scripts/cache_exclude_linux.sh
+          # Setup Intel MPI environment
+          $mpiVarsPath = "C:\Program Files (x86)\Intel\oneAPI\mpi\latest\env\vars.bat"
+          if (Test-Path $mpiVarsPath) {
+            & $Env:comspec "/C" "call `"$mpiVarsPath`" > nul && pwsh -C `"Get-ChildItem env: | Select-Object name,value | ConvertTo-Json`"" | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+          }
+
+          git clone --depth 1 --branch hdf5_2_0_0 https://github.com/HDFGroup/hdf5.git hdf5-src
+          New-Item -ItemType Directory -Path "hdf5-build" -Force
+          cd hdf5-build
+
+          & cmake -G "Ninja" `
+            -D CMAKE_BUILD_TYPE:STRING=Release `
+            -D CMAKE_C_COMPILER=icx `
+            -D CMAKE_Fortran_COMPILER=ifx `
+            -D BUILD_SHARED_LIBS:BOOL=ON `
+            -D BUILD_TESTING:BOOL=OFF `
+            -D HDF5_BUILD_TOOLS:BOOL=OFF `
+            -D HDF5_BUILD_EXAMPLES:BOOL=OFF `
+            -D HDF5_ENABLE_PARALLEL:BOOL=ON `
+            -D HDF5_BUILD_FORTRAN:BOOL=ON `
+            -D CMAKE_INSTALL_PREFIX:PATH="C:\Program Files\HDF_Group\HDF5\develop" `
+            ..\hdf5-src
+
+          & cmake --build . --config Release --parallel 4
+          & cmake --install . --config Release
+    - name: Configure and Build CGNS with Parallel Support
+      shell: pwsh
+      run: |
+          # Setup Intel environment
+          $intelPath = "C:\Program Files (x86)\Intel\oneAPI\compiler\"
+          $latestVersions = Get-ChildItem -Path $intelPath -Name | Where-Object { $_ -notmatch 'latest' } | Sort-Object
+          $INTEL_LATEST_VERSION = $latestVersions
+          $Env:INTEL_VARS_BAT="C:\Program Files (x86)\Intel\oneAPI\compiler\${INTEL_LATEST_VERSION}\env\vars.bat"
+          & $Env:comspec "/C" '"%INTEL_VARS_BAT%" > nul && pwsh -C "Get-ChildItem env: | Select-Object name,value | ConvertTo-Json"' | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+
+          # Setup Intel MPI environment
+          $mpiVarsPath = "C:\Program Files (x86)\Intel\oneAPI\mpi\latest\env\vars.bat"
+          if (Test-Path $mpiVarsPath) {
+            & $Env:comspec "/C" "call `"$mpiVarsPath`" > nul && pwsh -C `"Get-ChildItem env: | Select-Object name,value | ConvertTo-Json`"" | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+          }
+
+          $CGNS_SRC="$pwd"
+          mkdir ../CGNS_BUILD
+          cd ../CGNS_BUILD
+          $Env:HDF5_DIR="C:\Program Files\HDF_Group\HDF5\develop\cmake"
+          $Env:HDF5_ROOT="C:\Program Files\HDF_Group\HDF5\develop"
+          $Env:CC="icx"
+          $Env:FC="ifx"
+          $Env:CXX="icx"
+          & cmake -G "Ninja" `
+           -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON `
+           -D CGNS_ENABLE_64BIT:BOOL=ON `
+           -D CMAKE_BUILD_TYPE:STRING=Release `
+           -D CMAKE_C_COMPILER=icx `
+           -D CMAKE_Fortran_COMPILER=ifx `
+           -D CGNS_ENABLE_HDF5:BOOL=ON `
+           -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\develop\cmake" `
+           -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\develop\cmake" `
+           -D HDF5_NEED_MPI:BOOL=ON `
+           -D CGNS_ENABLE_PARALLEL:BOOL=ON `
+           -D CGNS_ENABLE_TESTS:BOOL=ON `
+           -D CGNS_ENABLE_LFS:BOOL=ON `
+           -D MPIEXEC_PREFLAGS:STRING="-localonly" `
+           -D MPIEXEC:STRING="mpiexec" `
+           -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF `
+           -D CGNS_ENABLE_SCOPING:BOOL=OFF `
+           -D CGNS_ENABLE_FORTRAN:BOOL=ON `
+           -D CMAKE_INSTALL_PREFIX:PATH='.' `
+           $CGNS_SRC
+          & cmake --build . --config Release
+    - name: Test CGNS
+      shell: pwsh
+      run: |
+          # Setup Intel environment
+          $intelPath = "C:\Program Files (x86)\Intel\oneAPI\compiler\"
+          $latestVersions = Get-ChildItem -Path $intelPath -Name | Where-Object { $_ -notmatch 'latest' } | Sort-Object
+          $INTEL_LATEST_VERSION = $latestVersions
+          $Env:INTEL_VARS_BAT="C:\Program Files (x86)\Intel\oneAPI\compiler\${INTEL_LATEST_VERSION}\env\vars.bat"
+          & $Env:comspec "/C" '"%INTEL_VARS_BAT%" > nul && pwsh -C "Get-ChildItem env: | Select-Object name,value | ConvertTo-Json"' | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+
+          # Setup Intel MPI environment
+          $mpiVarsPath = "C:\Program Files (x86)\Intel\oneAPI\mpi\latest\env\vars.bat"
+          if (Test-Path $mpiVarsPath) {
+            & $Env:comspec "/C" "call `"$mpiVarsPath`" > nul && pwsh -C `"Get-ChildItem env: | Select-Object name,value | ConvertTo-Json`"" | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+          }
+
+          $Env:PATH = "$pwd\..\CGNS_BUILD\src;C:\Program Files\HDF_Group\HDF5\develop\bin;$Env:PATH"
+          cd ../CGNS_BUILD
+          & ctest -C Release --output-on-failure
+    - name: exclude unused files from cache
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      shell: bash
+      run: .github/workflows/scripts/cache_exclude_windows.sh
+
+  build_linux_cpp_fortran:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add Intel oneAPI APT repository
+      run: |
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor \
+          | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+          | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt-get update
+
+    - name: Install Intel oneAPI compilers
+      run: |
+        sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp intel-oneapi-compiler-fortran
+
+    - name: Set up Intel oneAPI environment
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        LATEST=$(ls /opt/intel/oneapi/compiler/ | grep -v latest | sort | tail -1)
+        echo "/opt/intel/oneapi/compiler/$LATEST/bin" >> $GITHUB_PATH
+        echo "LD_LIBRARY_PATH=/opt/intel/oneapi/compiler/$LATEST/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+
+    - name: Build HDF5 with Intel compilers
+      run: |
+        git clone --depth 1 --branch hdf5_2_0_0 https://github.com/HDFGroup/hdf5.git hdf5-src
+        cmake -S hdf5-src -B hdf5-build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=icx \
+          -DCMAKE_Fortran_COMPILER=ifx \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_TESTING=OFF \
+          -DHDF5_BUILD_TOOLS=OFF \
+          -DHDF5_BUILD_EXAMPLES=OFF \
+          -DHDF5_ENABLE_PARALLEL=OFF \
+          -DHDF5_BUILD_FORTRAN=ON \
+          -DCMAKE_INSTALL_PREFIX=$HOME/hdf5
+        cmake --build hdf5-build --parallel 4
+        cmake --install hdf5-build
+
+    - name: Configure CGNS
+      run: |
+        cmake -S . -B cgns-build \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_C_COMPILER=icx \
+          -DCMAKE_Fortran_COMPILER=ifx \
+          -DCGNS_BUILD_SHARED=ON \
+          -DCGNS_USE_SHARED=ON \
+          -DCGNS_ENABLE_64BIT=ON \
+          -DCGNS_ENABLE_HDF5=ON \
+          -DCMAKE_PREFIX_PATH=$HOME/hdf5 \
+          -DCGNS_ENABLE_TESTS=ON \
+          -DCGNS_ENABLE_FORTRAN=ON \
+          -DCGNS_ENABLE_PARALLEL=OFF \
+          -DCGNS_BUILD_CGNSTOOLS=OFF \
+          -DCGNS_ENABLE_SCOPING=OFF \
+          -DCGNS_ENABLE_LFS=OFF
+
+    - name: Build CGNS
+      run: cmake --build cgns-build --parallel 4
+
+    - name: Test CGNS
+      run: |
+        cd cgns-build
+        ctest --output-on-failure
+
+  build_linux_parallel:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add Intel oneAPI APT repository
+      run: |
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor \
+          | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+          | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt-get update
+
+    - name: Install Intel oneAPI compilers and MPI
+      run: |
+        sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp intel-oneapi-compiler-fortran intel-oneapi-mpi-devel
+
+    - name: Set up Intel oneAPI environment
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        LATEST=$(ls /opt/intel/oneapi/compiler/ | grep -v latest | sort | tail -1)
+        echo "/opt/intel/oneapi/compiler/$LATEST/bin" >> $GITHUB_PATH
+        echo "/opt/intel/oneapi/mpi/latest/bin" >> $GITHUB_PATH
+        echo "/opt/intel/oneapi/mpi/latest/libfabric/bin" >> $GITHUB_PATH
+        echo "LD_LIBRARY_PATH=/opt/intel/oneapi/compiler/$LATEST/lib:/opt/intel/oneapi/mpi/latest/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        echo "I_MPI_ROOT=/opt/intel/oneapi/mpi/latest" >> $GITHUB_ENV
+        echo "I_MPI_FABRICS=shm" >> $GITHUB_ENV
+
+    - name: Build and Install HDF5 with Intel compilers and MPI
+      run: |
+        git clone --depth 1 --branch hdf5_2_0_0 https://github.com/HDFGroup/hdf5.git hdf5-src
+        cmake -S hdf5-src -B hdf5-build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=mpiicx \
+          -DCMAKE_Fortran_COMPILER=mpiifx \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_TESTING=OFF \
+          -DHDF5_BUILD_TOOLS=OFF \
+          -DHDF5_BUILD_EXAMPLES=OFF \
+          -DHDF5_ENABLE_PARALLEL=ON \
+          -DHDF5_BUILD_FORTRAN=ON \
+          -DCMAKE_INSTALL_PREFIX=$HOME/hdf5
+        cmake --build hdf5-build --parallel 4
+        cmake --install hdf5-build
+
+    - name: Configure CGNS
+      run: |
+        cmake -S . -B cgns-build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=mpiicx \
+          -DCMAKE_Fortran_COMPILER=mpiifx \
+          -DCGNS_BUILD_SHARED=ON \
+          -DCGNS_USE_SHARED=ON \
+          -DCGNS_ENABLE_64BIT=ON \
+          -DCGNS_ENABLE_HDF5=ON \
+          -DCMAKE_PREFIX_PATH=$HOME/hdf5 \
+          -DHDF5_NEED_MPI=ON \
+          -DCGNS_ENABLE_TESTS=ON \
+          -DCGNS_ENABLE_FORTRAN=ON \
+          -DCGNS_ENABLE_PARALLEL=ON \
+          -DCGNS_BUILD_CGNSTOOLS=OFF \
+          -DCGNS_ENABLE_SCOPING=OFF \
+          -DCGNS_ENABLE_LFS=ON \
+          -DMPIEXEC=mpiexec
+
+    - name: Build CGNS
+      run: cmake --build cgns-build --parallel 4
+
+    - name: Test CGNS
+      run: |
+        cd cgns-build
+        ctest --output-on-failure

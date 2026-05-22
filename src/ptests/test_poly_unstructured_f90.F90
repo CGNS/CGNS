@@ -61,7 +61,7 @@ PROGRAM test_poly_unstructured_f
   INTEGER(cgsize_t) :: local_size(1)
   INTEGER(cgsize_t) :: sizes(3)
   INTEGER(cgsize_t), ALLOCATABLE :: offsets_sizes(:)
-  INTEGER(cgsize_t), ALLOCATABLE :: cells(:), offsets(:)
+  INTEGER(cgsize_t), ALLOCATABLE, TARGET :: cells(:), offsets(:)
   INTEGER(cgsize_t) :: size_read
   INTEGER(cgsize_t), ALLOCATABLE, TARGET :: cells_read(:), offsets_read(:)
 
@@ -237,7 +237,7 @@ PROGRAM test_poly_unstructured_f
 
     start = cellOnProcStart + 1
     end = cellOnProcEnd
-    CALL cgp_poly_elements_write_data_f(F, B, Z, S, start, end, cells, offsets, ierr)
+    CALL cgp_poly_elements_write_data_f(F, B, Z, S, start, end, C_LOC(cells(1)), C_LOC(offsets(1)), ierr)
     IF(ierr.NE.CG_OK)THEN
        WRITE(ichr1,'(I1.1)') iZone
        IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_poly_elements_write_data_f, Zone "//ichr1)

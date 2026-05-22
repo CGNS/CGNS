@@ -262,7 +262,7 @@ CONTAINS
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! Disable with gfortran, GCC Bugzilla - Bug 99982
-#ifndef __GFORTRAN__ 
+#ifndef __GFORTRAN__
   ! test cg_configure_f
   value = MPI_COMM_SELF
   CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, C_LOC(value), ierr)
@@ -274,6 +274,10 @@ CONTAINS
      CALL cgp_close_f(F,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   ENDIF
+  ! Reset HDF5 MPI communicator back to MPI_COMM_WORLD for subsequent parallel calls
+  value = MPI_COMM_WORLD
+  CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, C_LOC(value), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 #endif
 
 END SUBROUTINE general_ptests
@@ -1172,7 +1176,7 @@ SUBROUTINE particle()
   DO k = 1, count
      IF(.NOT. check_eq(Coor_x(k), commrank*count + k + 1.1d0) .OR. &
           .NOT. check_eq(Coor_y(k), Coor_x(k) + 0.1d0) .OR. &
-          .NOT. check_eq(Coor_z_float(k), REAL(Coor_y(k) + 0.1))) THEN
+          .NOT. check_eq(Coor_z_float(k), REAL(Coor_y(k) + 0.1d0))) THEN
         IF(commrank == 0) CALL write_test_status(FAILED, "Check cgp_particle_coord_read_data values")
         CALL cgp_error_exit_f()
      END IF
