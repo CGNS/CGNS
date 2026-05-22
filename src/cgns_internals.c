@@ -73,7 +73,7 @@ int Pdim;           /* current PhysicalDimension           */
  * a dangling-pointer risk if a zone struct is ever freed mid-read; ensure zone lifetime
  * spans the entire read pass before touching this. Not thread-safe by design (matches the
  * rest of this layer). */
-cgns_zone *CurrentZonePtr; /* current Zone structure pointer */
+/* CurrentZonePtr removed: zone is now passed explicitly to cgi_read_sol */
 cgsize_t CurrentDim[9]; /* current vertex, cell & bnd zone size*/
 cgsize_t CurrentParticleSize; /* current size of ParticleZone_t node */
 CGNS_ENUMT( ZoneType_t ) CurrentZoneType;     /* current zone type               */
@@ -117,8 +117,7 @@ int cgi_read()
     int b;
     double *id;
     
-    /* initialize Global Pointers */
-    CurrentZonePtr = NULL;
+    /* initialize global state */
 
     /* Retrieve the Root Node ID from the open file handle (cg->cgio) */
     if (cgio_get_root_id(cg->cgio, &cg->rootid)) {
@@ -629,9 +628,7 @@ int cgi_read_zone(cgns_zone *zone)
      /* save Global Variables */
     for (n=0; n<Idim*3; n++) CurrentDim[n] = zone->nijk[n];
     CurrentZoneType = zone->type;
-    CurrentZonePtr  = zone;
-
-     /* verify data */
+    /* verify data */
     if (zone->type==CGNS_ENUMV(Structured)) {
         for (n=0; n<zone->index_dim; n++) {
             if (zone->nijk[n] <=0 || zone->nijk[n]!=zone->nijk[n+Idim]+1) {
@@ -693,7 +690,7 @@ int cgi_read_zone(cgns_zone *zone)
     }
 
      /* FlowSolution_t */
-    if (cgi_read_sol(in_link, zone->id, &zone->nsols, &zone->sol))
+    if (cgi_read_sol(in_link, zone->id, &zone->nsols, &zone->sol, zone))
         return CG_ERROR;
 
      /* ZoneGridConnectivity_t */
@@ -1825,7 +1822,8 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     return CG_OK;
 }
 
-int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
+int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
+                 const cgns_zone *zone)
 {
     double *id, *idf;
     int s, z, n, j, linked;
@@ -1873,7 +1871,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 return CG_ERROR;
             }
             
-            int ret = cgi_ho_datasize(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+            int ret = cgi_ho_datasize(Idim,zone,sol[0][s].spatialOrder,
                                 sol[0][s].temporalOrder, DataSize);
             
             if ( ret == CG_ERROR) return CG_ERROR;
@@ -1903,7 +1901,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 return CG_ERROR;
             }
             DataCount = sol[0][s].ptset->size_of_patch;
-
+            sol[0][s].ho_ptset_datasize = -1;
 
             /* CPEX 045 */
             if ( sol[0][s].location == CGNS_ENUMV(InterpolationPoints) ) {
@@ -1918,8 +1916,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
-                                  sol[0][s].temporalOrder, range_min[0], 
+                ret = cgi_ho_datasize_range(Idim,zone,sol[0][s].spatialOrder,
+                                  sol[0][s].temporalOrder, range_min[0],
                                   range_max[0], &DataCount);
               }
               // Override based on list
@@ -1934,7 +1932,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                   return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_list(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                ret = cgi_ho_datasize_list(Idim,zone,sol[0][s].spatialOrder,
                                   sol[0][s].temporalOrder, pnts,
                                   sol[0][s].ptset->npts, &DataCount);
                 
@@ -1943,6 +1941,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
               
               if (ret == CG_ERROR) return CG_ERROR;
               if (ret == CG_NODE_NOT_FOUND) checksize = 0;
+              else sol[0][s].ho_ptset_datasize = DataCount; /* cache for write path */
             }
         }
 
@@ -2045,17 +2044,32 @@ int cgi_read_solution_order(cgns_sol *sol)
       
             if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
             if (strcmp(temp_name, "InterpolationOrders")==0) {
-                
-                if (strcmp(data_type,"I4")) return CG_ERROR;
-                
-                /* Check dimension */
-                if (ndim != 1) return CG_ERROR;
-                if (dim_vals[0] != 2) return CG_ERROR;
-                
+                if (strcmp(data_type,"I4")) {
+                    cgi_error("InterpolationOrders in FlowSolution '%s': expected I4 data type, got %s",
+                              sol->name, data_type);
+                    if (vdata) CGNS_FREE(vdata);
+                    CGNS_FREE(idf);
+                    return CG_ERROR;
+                }
+                if (ndim != 1) {
+                    cgi_error("InterpolationOrders in FlowSolution '%s': expected ndim=1, got %d",
+                              sol->name, ndim);
+                    if (vdata) CGNS_FREE(vdata);
+                    CGNS_FREE(idf);
+                    return CG_ERROR;
+                }
+                if (dim_vals[0] != 2) {
+                    cgi_error("InterpolationOrders in FlowSolution '%s': expected 2 values, got %"PRIdCGSIZE,
+                              sol->name, dim_vals[0]);
+                    if (vdata) CGNS_FREE(vdata);
+                    CGNS_FREE(idf);
+                    return CG_ERROR;
+                }
                 edata = (int*)vdata;
                 /* spatialOrder >= 0 implies InterpolationOrders was present. */
                 sol->spatialOrder  = edata[0];
                 sol->temporalOrder = edata[1];
+                CGNS_FREE(vdata);
             }
         }
         CGNS_FREE(idf);
@@ -4792,6 +4806,12 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     }
     edata = (int *)vdata;
     eltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
+    CGNS_FREE(vdata);
+    if (INVALID_ENUM(eltinterpolation->type, NofValidElementTypes)) {
+        cgi_error("Invalid element type %d in ElementInterpolation_t node '%s'",
+                  (int)eltinterpolation->type, eltinterpolation->name);
+        return CG_ERROR;
+    }
 
      /* DataArray_t:
      Required: none
@@ -4803,7 +4823,11 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     eltinterpolation->monomialCoeff = 0;
     eltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 3) return CG_ERROR;
+    if (nnod > 3) {
+        cgi_error("Too many DataArray_t nodes (%d, max 3) under ElementInterpolation_t '%s'",
+                  nnod, eltinterpolation->name);
+        return CG_ERROR;
+    }
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
@@ -4923,6 +4947,12 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
     sltinterpolation->spatialorder = edata[1];
     sltinterpolation->temporalorder = edata[2];
+    CGNS_FREE(vdata);
+    if (INVALID_ENUM(sltinterpolation->type, NofValidElementTypes)) {
+        cgi_error("Invalid element type %d in SolutionInterpolation_t node '%s'",
+                  (int)sltinterpolation->type, sltinterpolation->name);
+        return CG_ERROR;
+    }
 
      /* InterpolationType_t:
      Required: InterpolationType
@@ -4947,6 +4977,13 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             }
             edata = (int *)vdata;
             sltinterpolation->interpolationName = (CGNS_ENUMT(InterpolationType_t))edata[0];
+            CGNS_FREE(vdata);
+            if (INVALID_ENUM(sltinterpolation->interpolationName, NofValidInterpolationTypes)) {
+                cgi_error("Invalid interpolation type %d in SolutionInterpolation_t node '%s'",
+                          (int)sltinterpolation->interpolationName, sltinterpolation->name);
+                CGNS_FREE(id);
+                return CG_ERROR;
+            }
         }
         else {
             cgi_error("Only 'InterpolationType' named node of type InterpolationType_t allowed for SolutionInterpolation_t node.");
@@ -4965,7 +5002,11 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     sltinterpolation->monomialCoeff = 0;
     sltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 3) return CG_ERROR;
+    if (nnod > 3) {
+        cgi_error("Too many DataArray_t nodes (%d, max 3) under SolutionInterpolation_t '%s'",
+                  nnod, sltinterpolation->name);
+        return CG_ERROR;
+    }
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
@@ -7928,6 +7969,7 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize
     /* Get connectivity - use cached if available, otherwise read from file */
     if (section->connect && section->connect->data) {
         connect = (const cgsize_t *)section->connect->data;
+        conn_size = section->connect->dim_vals[0];
     } else {
         /* Need to read connectivity from file */
         if (!section->connect) {
@@ -7952,6 +7994,13 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize
 
     /* Iterate through MIXED connectivity */
     for (ne = 0; ne < nelems; ne++) {
+        /* Bounds check before reading element type tag */
+        if (pos >= conn_size) {
+            if (needs_free) CGNS_FREE((void*)connect);
+            cgi_error("MIXED section '%s' connectivity truncated at element %"PRIdCGSIZE,
+                      section->name, ne);
+            return CG_ERROR;
+        }
         /* Extract element type from connectivity */
         elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
 
@@ -7973,6 +8022,12 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize
             return CG_ERROR;
         }
         pos += base_npe;
+        if (pos > conn_size) {
+            if (needs_free) CGNS_FREE((void*)connect);
+            cgi_error("MIXED section '%s' connectivity overrun after element %"PRIdCGSIZE,
+                      section->name, ne);
+            return CG_ERROR;
+        }
     }
 
     if (needs_free) CGNS_FREE((void*)connect);
@@ -8009,6 +8064,7 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
     /* Get connectivity */
     if (section->connect && section->connect->data) {
         connect = (const cgsize_t *)section->connect->data;
+        conn_size = section->connect->dim_vals[0];
     } else {
         if (!section->connect) {
             cgi_error("MIXED section '%s' has no connectivity data", section->name);
@@ -8032,6 +8088,12 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
 
     /* Iterate through ALL elements, but only accumulate size for those in range */
     for (elem_idx = 0; elem_idx < nelems_section; elem_idx++) {
+        if (pos >= conn_size) {
+            if (needs_free) CGNS_FREE((void*)connect);
+            cgi_error("MIXED section '%s' connectivity truncated at element %"PRIdCGSIZE,
+                      section->name, elem_idx);
+            return CG_ERROR;
+        }
         elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
 
         /* Check if this element is within the requested range */
@@ -8053,6 +8115,12 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
             return CG_ERROR;
         }
         pos += base_npe;
+        if (pos > conn_size) {
+            if (needs_free) CGNS_FREE((void*)connect);
+            cgi_error("MIXED section '%s' connectivity overrun after element %"PRIdCGSIZE,
+                      section->name, elem_idx);
+            return CG_ERROR;
+        }
 
         /* Early exit if we've passed the range */
         if (elem_idx > last_elem_offset) break;
@@ -8244,16 +8312,18 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
             cgsize_t list_idx = 0;
 
             /* 1. LOAD CONNECTIVITY ONCE */
+            cgsize_t conn_size_list;
             if (section->connect && section->connect->data) {
                 connect = (const cgsize_t *)section->connect->data;
+                conn_size_list = section->connect->dim_vals[0];
             } else {
-                cgsize_t conn_size;
                 if (!section->connect) {
                     CGNS_FREE(sorted_list);
                     cgi_error("MIXED section '%s' has no connectivity data", section->name);
                     return CG_ERROR;
                 }
-                conn_size = section->connect->dim_vals[0];
+                conn_size_list = section->connect->dim_vals[0];
+                cgsize_t conn_size = conn_size_list;
                 connect_buf = CGNS_NEW(cgsize_t, conn_size);
                 if (!connect_buf) {
                     CGNS_FREE(sorted_list);
@@ -8279,6 +8349,14 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
                 /* If we've exhausted the list or passed the section range, stop processing this section */
                 if (list_idx >= npts || sorted_list[list_idx] > sect_end) break;
 
+                /* Bounds check before reading element type tag */
+                if (pos >= conn_size_list) {
+                    if (connect_buf) CGNS_FREE(connect_buf);
+                    CGNS_FREE(sorted_list);
+                    cgi_error("MIXED section '%s' connectivity truncated at element %"PRIdCGSIZE,
+                              section->name, current_elem_id - sect_start);
+                    return CG_ERROR;
+                }
                 /* Get element info from stream */
                 CGNS_ENUMT(ElementType_t) elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
                 int base_npe;
@@ -8309,6 +8387,13 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
                     return CG_ERROR;
                 }
                 pos += base_npe;
+                if (pos > conn_size_list) {
+                    if (connect_buf) CGNS_FREE(connect_buf);
+                    CGNS_FREE(sorted_list);
+                    cgi_error("MIXED section '%s' connectivity overrun after element %"PRIdCGSIZE,
+                              section->name, current_elem_id - sect_start);
+                    return CG_ERROR;
+                }
             }
 
             if (connect_buf) CGNS_FREE(connect_buf);
@@ -17445,6 +17530,7 @@ void cgi_free_sol(cgns_sol *sol)
     }
     sol->spatialOrder = -1;
     sol->temporalOrder = 0;
+    sol->ho_ptset_datasize = -1;
 }
 
 void cgi_free_1to1(cgns_1to1 *one21)

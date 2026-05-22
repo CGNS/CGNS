@@ -4956,9 +4956,17 @@ static void check_solution (int ns)
 
       if (ptsettype == CGNS_ENUMV(PointRange)) {
         ptsetlist = (cgsize_t *)malloc( 2 * sizeof(cgsize_t));
+        if (!ptsetlist) {
+            error("memory allocation failed for PointRange ptsetlist");
+            return;
+        }
       }
       else if (ptsettype == CGNS_ENUMV(PointList)) {
         ptsetlist = (cgsize_t *)malloc( npts * sizeof(cgsize_t));
+        if (!ptsetlist && npts > 0) {
+            error("memory allocation failed for PointList ptsetlist of size %"PRIdCGSIZE, npts);
+            return;
+        }
       }
       cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist);
     }

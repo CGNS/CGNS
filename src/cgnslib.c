@@ -8326,8 +8326,9 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     sol->location = location;
     
     /* initialize solution order: -1 means "no InterpolationOrders child" */
-    sol->spatialOrder  = -1;
-    sol->temporalOrder = 0;
+    sol->spatialOrder       = -1;
+    sol->temporalOrder      = 0;
+    sol->ho_ptset_datasize  = -1;
 
     index_dim = zone->index_dim;
     sol->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
@@ -8431,25 +8432,31 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
             }
           }
           else if (sol->ptset->type == CGNS_ENUMV(PointList)) {
-            cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts);
+            /* Use cached size if already computed to avoid repeated disk reads. */
+            if (sol->ho_ptset_datasize >= 0) {
+              dim_vals[0] = sol->ho_ptset_datasize;
+            } else {
+              cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts);
 
-            ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
-                                    sol->ptset->npts * zone->index_dim, pnts);
+              ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
+                                      sol->ptset->npts * zone->index_dim, pnts);
 
-            if (ret == CG_ERROR) {
-              cgi_error("Unable to read PointList for solution %s",sol->name);
+              if (ret == CG_ERROR) {
+                cgi_error("Unable to read PointList for solution %s",sol->name);
+                CGNS_FREE(pnts);
+                return CG_ERROR;
+              }
+
+              if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialOrder,
+                                      sol->temporalOrder, pnts,
+                                      sol->ptset->npts, &dim_vals[0]) ) {
+                cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
+                CGNS_FREE(pnts);
+                return CG_ERROR;
+              }
               CGNS_FREE(pnts);
-              return CG_ERROR;
+              sol->ho_ptset_datasize = dim_vals[0]; /* cache for subsequent field writes */
             }
-
-            if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialOrder,
-                                    sol->temporalOrder, pnts,
-                                    sol->ptset->npts, &dim_vals[0]) ) {
-              cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
-              CGNS_FREE(pnts);
-              return CG_ERROR;
-            }
-            CGNS_FREE(pnts);
           }
         }
     }
@@ -8784,6 +8791,10 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
      * GridLocation = CellCenter is accepted for backward compatibility with
      * files written under earlier drafts; cgnscheck strict CPEX-0045 mode
      * flags it as non-conformant.
+     *
+     * DEPRECATION: CellCenter fallback will be removed in a future release
+     * once the Steering Committee finalises the v3 spec. New code should
+     * always write GridLocation = InterpolationPoints.
      */
     if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
         sol->location != CGNS_ENUMV(CellCenter))
@@ -16803,7 +16814,7 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
     en--;
 
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
@@ -16865,7 +16876,7 @@ int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
     en--;
 
     ei = &family->elementinterpolations[en];
@@ -16963,7 +16974,30 @@ static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
  * free(pu); free(pv);
  * \endcode
  */
-int cg_element_interpolation_points_read(int fn, int bn, int fam, int en , 
+/* Validate that spatial coordinate pointer arguments satisfy dimensionality constraints.
+ * Shared by cg_element_interpolation_points_read and cg_solution_interpolation_points_read. */
+static int cgi_validate_spatial_ptrs(int dim, CGNS_ENUMT(ElementType_t) type,
+                                      const double *pu, const double *pv, const double *pw)
+{
+    if (!pu) {
+        cgi_error("pu parameter cannot be NULL for element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 1 && !pv) {
+        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 2 && !pw) {
+        cgi_error("pw parameter cannot be NULL for 3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
                                   double *pu, double *pv, double *pw)
 {
     cgns_family *family;
@@ -16976,7 +17010,7 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en > family->nelementinterpolation || en <= 0) return CG_ERROR;
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
     en--;
 
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
@@ -17019,22 +17053,7 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
         return CG_ERROR;
     }
 
-    /* NULL pointer validation with clear error messages */
-    if (!pu) {
-        cgi_error("pu parameter cannot be NULL for element type %s",
-                  cg_ElementTypeName(ei->type));
-        return CG_ERROR;
-    }
-    if (cdim > 1 && !pv) {
-        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
-                  cg_ElementTypeName(ei->type));
-        return CG_ERROR;
-    }
-    if (cdim > 2 && !pw) {
-        cgi_error("pw parameter cannot be NULL for 3D element type %s",
-                  cg_ElementTypeName(ei->type));
-        return CG_ERROR;
-    }
+    if (cgi_validate_spatial_ptrs(cdim, ei->type, pu, pv, pw)) return CG_ERROR;
 
     /* Unpack interleaved flat array into separate coordinate columns */
     double *cols_r[] = {pu, pv, pw};
@@ -17236,101 +17255,13 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
  * // InterpolationOrders can optionally be set separately
  * \endcode
  */
+/* Per CPEX-0045 §3.2.2, absence of a LagrangeControlPoints child implies
+ * isoparametric layout. The on-disk node structure is therefore identical to
+ * a plain ElementInterpolation_t node, so this function is a direct alias. */
 int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_name,
                                    CGNS_ENUMT(ElementType_t) et, int *en)
 {
-    int n;
-    int array[1];
-    cgsize_t dim_vals;
-    cgns_family *family;
-    cgns_elementInterpolation *einterp, *tmpinterp;
-    CGNS_ENUMT(ElementType_t) type;
-
-    *en = -1;
-
-    cg = cgi_get_file(fn);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-
-    if (cgi_check_strlen(node_name)) return CG_ERROR;
-
-    family = cgi_get_family(cg, bn, fam);
-    if (family==0) return CG_ERROR;
-
-    // Check Element Type
-    if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
-        cgi_error("Invalid element type %s for writing isoparametric interpolation %s",
-                  cg_ElementTypeName(et),node_name);
-        return CG_ERROR;
-    }
-
-    // Get Basic type
-    if (cg_element_basic_element_type(et,&type) != CG_OK) {
-        return CG_ERROR;
-    }
-
-    /* Uniqueness is per exact element tag (the tag encodes polynomial order). */
-    (void)type;
-    einterp = 0;
-    for (n = 0 ; n<family->nelementinterpolation ; n++)
-    {
-        tmpinterp = &family->elementinterpolations[n];
-
-        if (tmpinterp->type == et )
-        {
-            if (cg->mode==CG_MODE_WRITE)
-            {
-                cgi_error("ElementInterpolation_t already defined under Family_t.");
-                return CG_ERROR;
-            }
-            // Modify existing ?
-            else if ( cg->mode==CG_MODE_MODIFY )
-            {
-                if(cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
-                cgi_free_element_interpolation(tmpinterp);
-                einterp = tmpinterp;
-                *en = n+1;
-                break;
-
-            }
-            else
-            {
-                cgi_error("Only one ElementInterpolation_t node allowed per ElementType_t !\n");
-                return CG_ERROR;
-            }
-        }
-    }
-
-    // Create New ?
-    if (!einterp)
-    {
-        if (family->nelementinterpolation == 0) {
-            family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation+1);
-        } else {
-            family->elementinterpolations = CGNS_RENEW(cgns_elementInterpolation, family->nelementinterpolation+1, family->elementinterpolations);
-        }
-        einterp = &(family->elementinterpolations[family->nelementinterpolation]);
-        family->nelementinterpolation++;
-        *en = family->nelementinterpolation;
-    }
-
-    memset(einterp,0,sizeof(cgns_elementInterpolation));
-    snprintf(einterp->name, sizeof(einterp->name), "%s", node_name);
-    einterp->type = et;
-
-    /* Write ElementInterpolation_t node. Per CPEX-0045 §3.2.2 the payload is
-     * a single ElementType_t integer; LagrangeControlPoints (if any) is added
-     * as a child by cg_element_interpolation_points_write. Absence of a
-     * LagrangeControlPoints child means "use standard layout" (isoparametric).
-     */
-    dim_vals = 1;
-    array[0] = (int)et;
-    if (cgi_new_node(family->id, einterp->name, "ElementInterpolation_t",
-                         &einterp->id, "I4", 1, &dim_vals, &array[0]))
-            return CG_ERROR;
-
-    return CG_OK;
+    return cg_element_interpolation_write(fn, bn, fam, node_name, et, en);
 }
 
 /**
@@ -17715,7 +17646,7 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
     
-    if (sn > family->nsolutioninterpolation || sn <= 0 ) return CG_ERROR;
+    if (sn > family->nsolutioninterpolation || sn <= 0) { cgi_error("Solution interpolation index %d out of range (1-%d)", sn, family->nsolutioninterpolation); return CG_ERROR; }
     sn--;
     
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
@@ -17820,7 +17751,7 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
     
-    if (sn > family->nsolutioninterpolation || sn <= 0) return CG_ERROR;
+    if (sn > family->nsolutioninterpolation || sn <= 0) { cgi_error("Solution interpolation index %d out of range (1-%d)", sn, family->nsolutioninterpolation); return CG_ERROR; }
     sn--;
     
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
@@ -17874,22 +17805,7 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
         return CG_ERROR;
     }
 
-    /* NULL pointer validation with clear error messages */
-    if (!pu) {
-        cgi_error("pu parameter cannot be NULL for element type %s",
-                  cg_ElementTypeName(es->type));
-        return CG_ERROR;
-    }
-    if (dim > 1 && !pv) {
-        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
-                  cg_ElementTypeName(es->type));
-        return CG_ERROR;
-    }
-    if (dim > 2 && !pw) {
-        cgi_error("pw parameter cannot be NULL for 3D element type %s",
-                  cg_ElementTypeName(es->type));
-        return CG_ERROR;
-    }
+    if (cgi_validate_spatial_ptrs(dim, es->type, pu, pv, pw)) return CG_ERROR;
     if (to && !pt) {
         cgi_error("pt parameter cannot be NULL when TemporalOrder = %d (space-time interpolation)",
                   to);
@@ -18516,6 +18432,16 @@ int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsiz
 {
     int dim;
     cgsize_t spatial_coeffs;
+
+    /* Guard against integer overflow in binomial_coefficient(os + dim, dim).
+     * A malicious/corrupted file supplying os ~ INT_MAX would make os+dim wrap
+     * negative, returning a small coefficient and causing a later out-of-bounds
+     * write.  CG_MAX_ORDER (1000) is far beyond any practical polynomial order. */
+    if (os < 0 || os > CG_MAX_ORDER || ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Interpolation orders (os=%d, ot=%d) out of valid range [0, %d]",
+                  os, ot, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
 
     /* Get element dimension */
     if (cg_element_dimension(t, &dim) != CG_OK) {

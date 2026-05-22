@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -254,8 +255,36 @@ int test_out_of_range_orders(void)
     }
     else
     {
-        printf("  ⚠ Very high order (100) accepted - no upper limit validation\n");
-        printf("    This may be intentional to support arbitrary order polynomials\n");
+        printf("  NOTE: order 100 accepted - within CG_MAX_ORDER limit\n");
+    }
+
+    /* INT_MAX spatial order via cg_solution_monomial_size: must not silently overflow
+     * binomial_coefficient(os + dim, dim).  A malicious or corrupted file providing
+     * os=INT_MAX makes os+dim wrap negative, binomial_coefficient returns 1, and a
+     * subsequent write can overflow the tiny allocation.  Verify the guard fires. */
+    {
+        cgsize_t msize;
+        printf("Testing INT_MAX spatial order in cg_solution_monomial_size (overflow guard)...\n");
+        result = cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), INT_MAX, 0, &msize);
+        if (result == CG_OK)
+        {
+            fprintf(stderr, "ERROR: INT_MAX spatial order must be rejected by "
+                    "cg_solution_monomial_size (overflow risk)\n");
+            cg_close(cgfile);
+            return 1;
+        }
+        printf("INT_MAX spatial order correctly rejected (error code: %d)\n", result);
+
+        printf("Testing INT_MAX temporal order in cg_solution_monomial_size (overflow guard)...\n");
+        result = cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), 2, INT_MAX, &msize);
+        if (result == CG_OK)
+        {
+            fprintf(stderr, "ERROR: INT_MAX temporal order must be rejected by "
+                    "cg_solution_monomial_size (overflow risk)\n");
+            cg_close(cgfile);
+            return 1;
+        }
+        printf("INT_MAX temporal order correctly rejected (error code: %d)\n", result);
     }
 
     printf("\nTesting negative temporal order...\n");

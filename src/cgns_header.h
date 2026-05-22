@@ -845,6 +845,9 @@ typedef struct {            /* FlowSolution_t node          */
      * temporalOrder defaults to 0 (spec §3.2.5 default). */
     int spatialOrder;
     int temporalOrder;
+    /* Cached high-order data count for PointList ptset (-1 = not yet computed).
+     * Avoids repeated disk reads of PointList + connectivity in cgi_sol_size. */
+    cgsize_t ho_ptset_datasize;
 } cgns_sol;
 
 typedef struct {            /* GridCoordinates_t node       */
@@ -1354,7 +1357,8 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
                       cgns_integral **integral);
 int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                       cgns_discrete **discrete);
-int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol);
+int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
+                 const cgns_zone *zone);
 int cgi_read_solution_order(cgns_sol *sol);
 int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor,
                    cgns_zcoor **zcoor);

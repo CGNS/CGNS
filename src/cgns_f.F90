@@ -776,6 +776,11 @@ MODULE cgns
 ! Array sized using CGNS_ElementType_MAX_val below (must match ElementType_MAX enum = 57).
 ! A named PARAMETER is required because Fortran array bounds cannot use ENUM constants
 ! (ENUM/BIND(C) values have kind C_INT which is not guaranteed to be the default integer kind).
+!
+! IMPORTANT: CGNS_ElementType_MAX_val MUST equal ElementType_MAX in cgnslib.h (currently 57).
+! When adding new element types to the C enum, increment both this value AND
+! NofValidElementTypes in cgnslib.h simultaneously, or the ElementTypeName array will
+! be mis-sized and accesses will silently read out-of-bounds data.
 
   INTEGER, PARAMETER :: CGNS_ElementType_MAX_val = 57
   CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:CGNS_ElementType_MAX_val-1)
@@ -5425,6 +5430,7 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=33, KIND=C_CHAR) :: c_name
     INTEGER(cgenum_t) :: c_etype
+    INTEGER :: i_nul
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_element_interpolation_read(fn, bn, fam, en, name, etype) &
           BIND(C, name="cg_element_interpolation_read")
@@ -5437,7 +5443,9 @@ CONTAINS
     END INTERFACE
     ier = INT(cg_element_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
               INT(fam,C_INT), INT(en,C_INT), c_name, c_etype))
-    name = c_name(1:INDEX(c_name,C_NULL_CHAR)-1)
+    i_nul = INDEX(c_name, C_NULL_CHAR)
+    IF (i_nul <= 0) i_nul = LEN(c_name) + 1
+    name = c_name(1:i_nul-1)
     etype = c_etype
   END SUBROUTINE cg_element_interpolation_read_f
 
@@ -5553,6 +5561,7 @@ CONTAINS
     CHARACTER(LEN=33, KIND=C_CHAR) :: c_name
     INTEGER(cgenum_t) :: c_etype, c_it
     INTEGER(C_INT) :: c_os, c_ot
+    INTEGER :: i_nul
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_solution_interpolation_read(fn, bn, fam, sn, name, etype, os, ot, it) &
           BIND(C, name="cg_solution_interpolation_read")
@@ -5567,7 +5576,9 @@ CONTAINS
     END INTERFACE
     ier = INT(cg_solution_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
               INT(fam,C_INT), INT(sn,C_INT), c_name, c_etype, c_os, c_ot, c_it))
-    name = c_name(1:INDEX(c_name,C_NULL_CHAR)-1)
+    i_nul = INDEX(c_name, C_NULL_CHAR)
+    IF (i_nul <= 0) i_nul = LEN(c_name) + 1
+    name = c_name(1:i_nul-1)
     etype = c_etype
     os = INT(c_os)
     ot = INT(c_ot)
