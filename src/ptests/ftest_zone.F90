@@ -3,6 +3,7 @@ PROGRAM ftest_zone
 
   USE cgns
   USE mpi
+  USE ISO_C_BINDING
   
   IMPLICIT NONE
 
@@ -18,11 +19,11 @@ PROGRAM ftest_zone
   INTEGER fieldnum, arraynum
   INTEGER xnum, ynum, znum, i, j, k, l, m
   INTEGER(cgsize_t) sizes(3,3)
-  INTEGER(cgsize_t) qsizes(5),minarrrange(5),maxarrrange(5)
+  INTEGER(cgsize_t), TARGET :: qsizes(5),minarrrange(5),maxarrrange(5)
   CHARACTER*11 zonename,tempzonename,fieldname
   DOUBLE PRECISION starttime, endtime
-  DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:,:,:,:) :: q
-  DOUBLE PRECISION  tempq(5,5,5,5,5)
+  DOUBLE PRECISION, ALLOCATABLE, TARGET, DIMENSION(:,:,:,:,:,:) :: q
+  DOUBLE PRECISION, TARGET :: tempq(5,5,5,5,5)
 
 
   CALL MPI_INIT(ierr)
@@ -190,8 +191,8 @@ PROGRAM ftest_zone
         WRITE(*,*) 'cg_goto_f error'
         CALL cg_error_print_f()
      END IF
-     CALL cgp_array_write_data_f(arraynum,minarrrange,maxarrrange, &
-          q(:,:,:,:,:,blocknum),ierr)
+     CALL cgp_array_write_data_f(arraynum,C_LOC(minarrrange(1)),C_LOC(maxarrrange(1)), &
+          C_LOC(q(1,1,1,1,1,blocknum)),ierr)
      IF(ierr .NE. CG_OK) THEN
         WRITE(*,*) 'q cgp_array_write_data_f error',ierr
         CALL cg_error_print_f()
@@ -226,8 +227,8 @@ PROGRAM ftest_zone
         WRITE(*,*) 'cg_goto_f error'
         CALL cg_error_print_f()
      END IF
-     CALL cgp_array_read_data_f(arraynum,minarrrange,maxarrrange, &
-          tempq(:,:,:,:,:),ierr)
+     CALL cgp_array_read_data_f(arraynum,C_LOC(minarrrange(1)),C_LOC(maxarrrange(1)), &
+          C_LOC(tempq(1,1,1,1,1)),ierr)
      IF(ierr .NE. CG_OK) THEN
         WRITE(*,*) 'q cgp_array_read_data_f error'
         CALL cg_error_print_f()

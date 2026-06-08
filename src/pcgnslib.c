@@ -2839,10 +2839,18 @@ int cgp_array_write(const char *ArrayName, CGNS_ENUMT(DataType_t) DataType,
  * \brief Write array data in parallel.
  *
  * \param[in]  A    \PARR_A
- * \param[in]  rmin \PARR_range_min
- * \param[in]  rmax \PARR_range_max
- * \param[in]  data \PARR_data
+ * \param[in]  rmin \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  data \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_array_write_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three:
+ *       \code call cgp_array_write_data_f(A, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_array_write_data_f(A, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_array_write_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, const void *data)
@@ -2980,10 +2988,18 @@ int cgp_array_general_write_data(int A,
  * \brief Read array data in parallel.
  *
  * \param[in]  A    \PARR_A
- * \param[in]  rmin \PARR_range_min
- * \param[in]  rmax \PARR_range_max
- * \param[in]  data \PARR_data
+ * \param[in]  rmin \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] data \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_array_read_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three:
+ *       \code call cgp_array_read_data_f(A, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_array_read_data_f(A, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_array_read_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, void *data)

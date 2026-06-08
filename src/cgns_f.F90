@@ -3156,9 +3156,10 @@ MODULE cgns
 ! TYPE(C_PTR), VALUE for all pointer arguments.  Callers must use C_LOC(array)
 ! for data and C_NULL_PTR when a rank contributes no data.
 !
-!   cgp_coord_write_data_f  / cgp_coord_read_data_f
-!   cgp_field_write_data_f  / cgp_field_read_data_f
-!   cgp_elements_write_data_f  / cgp_elements_read_data_f
+!   cgp_coord_write_data_f    / cgp_coord_read_data_f
+!   cgp_field_write_data_f    / cgp_field_read_data_f
+!   cgp_elements_write_data_f / cgp_elements_read_data_f
+!   cgp_array_write_data_f    / cgp_array_read_data_f
 !
     SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
       TYPE,start,END, nbndry, S, ier) !BIND(C, NAME="cgp_section_write_f")
@@ -4312,6 +4313,30 @@ MODULE cgns
        TYPE(C_PTR)   , VALUE :: rmax
        TYPE(C_PTR)   , VALUE :: field_ptr
      END FUNCTION cgp_field_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) &
+          BIND(C, NAME="cgp_array_write_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: A
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: data
+     END FUNCTION cgp_array_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) &
+          BIND(C, NAME="cgp_array_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: A
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: data
+     END FUNCTION cgp_array_read_data
   END INTERFACE
 
   INTERFACE
@@ -8526,6 +8551,30 @@ CONTAINS
            INT(F, C_INT), rmin, rmax, field_ptr))
 
     END SUBROUTINE cgp_field_read_data_f
+
+    SUBROUTINE cgp_array_write_data_f(A, rmin, rmax, data, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: A
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: data
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_array_write_data(INT(A, C_INT), rmin, rmax, data))
+
+    END SUBROUTINE cgp_array_write_data_f
+
+    SUBROUTINE cgp_array_read_data_f(A, rmin, rmax, data, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: A
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: data
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_array_read_data(INT(A, C_INT), rmin, rmax, data))
+
+    END SUBROUTINE cgp_array_read_data_f
 
     SUBROUTINE cgp_poly_elements_read_data_offsets_f(fn, B, Z, S, start, end, offsets, ier)
       INTEGER, INTENT(IN) :: fn

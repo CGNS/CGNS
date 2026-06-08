@@ -3399,24 +3399,6 @@ CGNSDLL void FMNAME(cgp_array_write_f, CGP_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cgp_array_write_data_f, CGP_ARRAY_WRITE_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_array_write_data((int)*A, rmin, rmax, data);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_array_read_data((int)*A, rmin, rmax, data);
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void cgp_error_exit_f()
 {
     cgp_error_exit();

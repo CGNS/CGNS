@@ -528,12 +528,12 @@ PROGRAM benchmark_hdf5_f90
         CALL cgp_error_exit_f()
      ENDIF
   ELSE
-     CALL cgp_array_write_data_f(Ai,vmin(1),vmax(1),Array_i, err)
+     CALL cgp_array_write_data_f(Ai,C_LOC(vmin(1)),C_LOC(vmax(1)),C_LOC(Array_i(1)), err)
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_array_write_data_f  (Array_Ai)'
         CALL cgp_error_exit_f()
      ENDIF
-     CALL cgp_array_write_data_f(Ar,vmin(1),vmax(1),Array_r, err)
+     CALL cgp_array_write_data_f(Ar,C_LOC(vmin(1)),C_LOC(vmax(1)),C_LOC(Array_r(1)), err)
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_array_write_data_f (Array_Ar)'
         CALL cgp_error_exit_f()
@@ -829,12 +829,12 @@ PROGRAM benchmark_hdf5_f90
         CALL cgp_error_exit_f()
      ENDIF
   ELSE
-     CALL cgp_array_read_data_f(Ar, vmin(1), vmax(1), Array_r, err)
+     CALL cgp_array_read_data_f(Ar, C_LOC(vmin(1)), C_LOC(vmax(1)), C_LOC(Array_r(1)), err)
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_field_read_data (Array_r)'
         CALL cgp_error_exit_f()
      ENDIF
-     CALL cgp_array_read_data_f(Ai, vmin(1), vmax(1), Array_i, err)
+     CALL cgp_array_read_data_f(Ai, C_LOC(vmin(1)), C_LOC(vmax(1)), C_LOC(Array_i(1)), err)
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_field_read_data (Array_i)'
         CALL cgp_error_exit_f()

@@ -155,7 +155,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- write the array data in parallel
-  CALL cgp_array_write_data_f(A, start, END, fd, ierr)
+  CALL cgp_array_write_data_f(A, C_LOC(start), C_LOC(END), C_LOC(fd(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 !---- close the file and terminate MPI
   CALL cgp_close_f(F, ierr)

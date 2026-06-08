@@ -51,6 +51,7 @@ New Features
       TYPE(C_PTR) arguments instead of Fortran arrays (CGNS 5.0):
         cgp_coord_write_data_f    / cgp_coord_read_data_f
         cgp_field_write_data_f    / cgp_field_read_data_f
+        cgp_array_write_data_f    / cgp_array_read_data_f
         cgp_elements_write_data_f / cgp_elements_read_data_f
 
       For cgp_coord_*_data_f and cgp_field_*_data_f, the rmin, rmax,
@@ -127,6 +128,7 @@ New Features
       ---------------------------------------------------------------
       cgp_coord_write/read_data_f             rmin, rmax, data -> TYPE(C_PTR)
       cgp_field_write/read_data_f             rmin, rmax, data -> TYPE(C_PTR)
+      cgp_array_write/read_data_f             rmin, rmax, data -> TYPE(C_PTR)
       cgp_elements_write/read_data_f          elements -> TYPE(C_PTR)
       cgp_ptlist_write/read_data_f            data -> TYPE(C_PTR)
       cgp_parentelements_read_data_f          data -> TYPE(C_PTR)

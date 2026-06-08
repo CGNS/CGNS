@@ -154,11 +154,11 @@ CONTAINS
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_goto_f(F,B,ierr,'Zone_t',Z,'UserDefinedData_t',1,'end')
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_data_f(Ax,start,END,dx,ierr)
+        CALL cgp_array_write_data_f(Ax,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_data_f(Ay,start,END,dy,ierr)
+        CALL cgp_array_write_data_f(Ay,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_data_f(Az,start,END,dz,ierr)
+        CALL cgp_array_write_data_f(Az,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
@@ -235,11 +235,11 @@ CONTAINS
      ts = MPI_WTIME()
      CALL cg_goto_f(F,B,ierr,'Zone_t',Z,'UserDefinedData_t',1,'end')
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_array_read_data_f(1,start,END,dx,ierr)
+     CALL cgp_array_read_data_f(1,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_array_read_data_f(2,start,END,dy,ierr)
+     CALL cgp_array_read_data_f(2,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_array_read_data_f(3,start,END,dz,ierr)
+     CALL cgp_array_read_data_f(3,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
