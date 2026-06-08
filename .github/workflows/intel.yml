@@ -16,10 +16,8 @@ env:
   # Update urls accordingly for oneapi found at:
   # https://github.com/oneapi-src/oneapi-ci/blob/master/.github/workflows/build_all.yml
   SHORTGEN: "vs17"
-  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372_offline.exe
-  WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/3a871580-f839-46ed-aeae-685084127279/intel-oneapi-hpc-toolkit-2025.3.0.378_offline.exe
-  LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/dfc4a434-838c-4450-a6fe-2fa903b75aa7/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh
-  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh
+  WINDOWS_TOOLKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/bae85ab1-cfcd-4251-8d42-a0c27949ea33/intel-oneapi-toolkit-2026.0.0.193_offline.exe
+  LINUX_TOOLKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/71180075-e4e3-4c6f-bbbb-19017ed0cf7d/intel-oneapi-toolkit-2026.0.0.198_offline.sh
   LINUX_AIKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/491d5c2a-67fe-48d0-884f-6aecd88f5d8a/ai-tools-2025.0.0.75_offline.sh
   WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common
   WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
@@ -30,11 +28,11 @@ env:
   LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
   LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
   LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
-  CACHE_NUMBER: 6
-  SAMPLES_TAG: 2025.3.0
+  CACHE_NUMBER: 12
+  SAMPLES_TAG: master
   AI_SAMPLES_TAG: 2025.0.0
-  COMPILER_VERSION: 2025.3.0
-  TBB_VERSION: 2022.3.0
+  COMPILER_VERSION: 2026.0
+  TBB_VERSION: 2023.0
   VS_VER: vs2022
 
 jobs:
@@ -56,10 +54,10 @@ jobs:
         path: |
             C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
             C:\Program Files (x86)\Intel\oneAPI\compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
+        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_TOOLKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
     - name: install Intel Kit
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: .github/workflows/scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
+      run: .github/workflows/scripts/install_windows.bat $WINDOWS_TOOLKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
     - name: install HDF5
       shell: pwsh
       run: |
@@ -161,10 +159,10 @@ jobs:
             C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
             C:\Program Files (x86)\Intel\oneAPI\compiler
             C:\Program Files (x86)\Intel\oneAPI\mpi
-        key: install-parallel-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-intel.oneapi.win.mpi.devel-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
+        key: install-parallel-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_TOOLKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-intel.oneapi.win.mpi.devel-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
     - name: install Intel Kit
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: .github/workflows/scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS:intel.oneapi.win.mpi.devel
+      run: .github/workflows/scripts/install_windows.bat $WINDOWS_TOOLKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS:intel.oneapi.win.mpi.devel
     - name: Build and Install HDF5 develop with Parallel Support
       shell: pwsh
       run: |
