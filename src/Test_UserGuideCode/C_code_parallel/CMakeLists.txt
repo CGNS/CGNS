@@ -46,3 +46,17 @@ foreach (example ${examples})
            COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
            ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${example}> ${MPIEXEC_POSTFLAGS})
 endforeach (example ${examples})
+
+# Tests depend on prerequisite files created by earlier tests
+set_tests_properties(test-write_flowcentrind_str_parinzone PROPERTIES
+  DEPENDS test-write_grid_str_parinzone)
+set_tests_properties(test-write_flowcentrind_str_paroverzone PROPERTIES
+  DEPENDS test-write_grid_str_paroverzone)
+set_tests_properties(test-read_grid_str_parinzone PROPERTIES
+  DEPENDS test-write_grid_str_parinzone)
+set_tests_properties(test-read_grid_str_paroverzone PROPERTIES
+  DEPENDS test-write_grid_str_paroverzone)
+set_tests_properties(test-read_flowcentrind_str_parinzone PROPERTIES
+  DEPENDS "test-write_grid_str_parinzone;test-write_flowcentrind_str_parinzone")
+set_tests_properties(test-read_flowcentrind_str_paroverzone PROPERTIES
+  DEPENDS "test-write_grid_str_paroverzone;test-write_flowcentrind_str_paroverzone")

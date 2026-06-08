@@ -23,11 +23,11 @@ CONTAINS
   INTEGER i, nb, nz, nerrs
   INTEGER ierr, F, B, Z, E, S
   INTEGER Cx, Cy, Cz, Fx, Fy, Fz, Ax, Ay, Az
-  INTEGER(cgsize_t) sizes(3), start, END, n, j
+  INTEGER(cgsize_t), TARGET :: sizes(3), start, END, n, j
   INTEGER(cgsize_t), PARAMETER :: start_1 = 1
   REAL*8 ts, te, tt, dsize
-  REAL*8 dx(totcnt), dy(totcnt), dz(totcnt)
-  INTEGER(cgsize_t), ALLOCATABLE, DIMENSION(:) :: ie
+  REAL*8, TARGET :: dx(totcnt), dy(totcnt), dz(totcnt)
+  INTEGER(cgsize_t), ALLOCATABLE, TARGET, DIMENSION(:) :: ie
   CHARACTER*32 name
   CHARACTER*11 piomode(2)
   INTEGER :: istat
@@ -138,19 +138,19 @@ CONTAINS
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         ts = MPI_WTIME()
 
-        CALL cgp_coord_write_data_f(F,B,Z,Cx,start,END,dx,ierr)
+        CALL cgp_coord_write_data_f(F,B,Z,Cx,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_coord_write_data_f(F,B,Z,Cy,start,END,dy,ierr)
+        CALL cgp_coord_write_data_f(F,B,Z,Cy,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_coord_write_data_f(F,B,Z,Cz,start,END,dz,ierr)
+        CALL cgp_coord_write_data_f(F,B,Z,Cz,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_elements_write_data_f(F,B,Z,E,start,END,ie,ierr)
+        CALL cgp_elements_write_data_f(F,B,Z,E,start,END,C_LOC(ie(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_data_f(F,B,Z,S,Fx,start,END,dx,ierr)
+        CALL cgp_field_write_data_f(F,B,Z,S,Fx,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_data_f(F,B,Z,S,Fy,start,END,dy,ierr)
+        CALL cgp_field_write_data_f(F,B,Z,S,Fy,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_data_f(F,B,Z,S,Fz,start,END,dz,ierr)
+        CALL cgp_field_write_data_f(F,B,Z,S,Fz,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_goto_f(F,B,ierr,'Zone_t',Z,'UserDefinedData_t',1,'end')
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -186,13 +186,13 @@ CONTAINS
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
 
-     CALL cgp_coord_read_data_f(F,B,Z,1,start,END,dx,ierr)
+     CALL cgp_coord_read_data_f(F,B,Z,1,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_coord_read_data_f(F,B,Z,2,start,END,dy,ierr)
+     CALL cgp_coord_read_data_f(F,B,Z,2,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_coord_read_data_f(F,B,Z,3,start,END,dz,ierr)
+     CALL cgp_coord_read_data_f(F,B,Z,3,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_elements_read_data_f(F,B,Z,E,start,END,ie,ierr)
+     CALL cgp_elements_read_data_f(F,B,Z,E,start,END,C_LOC(ie(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
@@ -214,11 +214,11 @@ CONTAINS
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
 
-     CALL cgp_field_read_data_f(F,B,Z,S,1,start,END,dx,ierr)
+     CALL cgp_field_read_data_f(F,B,Z,S,1,C_LOC(start),C_LOC(END),C_LOC(dx(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_field_read_data_f(F,B,Z,S,2,start,END,dy,ierr)
+     CALL cgp_field_read_data_f(F,B,Z,S,2,C_LOC(start),C_LOC(END),C_LOC(dy(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_field_read_data_f(F,B,Z,S,3,start,END,dz,ierr)
+     CALL cgp_field_read_data_f(F,B,Z,S,3,C_LOC(start),C_LOC(END),C_LOC(dz(1)),ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
@@ -315,7 +315,7 @@ SUBROUTINE multisets()
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Array_r
   INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE, TARGET :: Array_i
   INTEGER(CGSIZE_T) :: start, iend, emin, emax
-  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE :: elements
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE, TARGET :: elements
   CHARACTER(LEN=32) :: fname, name
   CHARACTER(LEN=180) :: bname, zname
   INTEGER :: indx_null
@@ -453,7 +453,7 @@ SUBROUTINE multisets()
   emin = count*commrank+1
   emax = count*(commrank+1)
 
-  CALL cgp_elements_write_data_f(fn, B, Z, S, emin, emax, elements,err)
+  CALL cgp_elements_write_data_f(fn, B, Z, S, emin, emax, C_LOC(elements(1)),err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_elements_write_data_f")
      CALL cgp_error_exit_f()
@@ -723,7 +723,7 @@ SUBROUTINE multisets()
   emin = count*commrank+1
   emax = count*(commrank+1)
 
-  CALL cgp_elements_read_data_f(fn, B, Z, S, emin, emax, elements, err)
+  CALL cgp_elements_read_data_f(fn, B, Z, S, emin, emax, C_LOC(elements(1)), err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_elements_read_data_f", "( Reading elements)")
      CALL cgp_error_exit_f()

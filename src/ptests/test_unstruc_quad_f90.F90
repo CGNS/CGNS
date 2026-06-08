@@ -132,39 +132,35 @@ PROGRAM test_unstruc_quad_f
 
 
 !---- write the coordinate data in parallel
-  CALL cgp_coord_write_data_f(F, B, Z, Cx, rmin, rmax, fx, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cy, rmin, rmax, fy, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(rmin), C_LOC(rmax), C_LOC(fy(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cz, rmin, rmax, fz, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-! Test F03 coord API (re-write same data via TYPE(C_PTR))
-  CALL cgp_coord_write_cptr_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(rmin), C_LOC(rmax), C_LOC(fz(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-! Test no-data path for coord _cptr_data_f: rank 0 passes C_NULL_PTR for all
-! three TYPE(C_PTR) args, verifying that rmin/rmax are not examined when data
-! is NULL (all ranks must still participate in the collective call).
+! Test no-data path: rank 0 passes C_NULL_PTR, verifying rmin/rmax are not
+! examined when data is NULL (all ranks still participate in the collective).
   IF (comm_rank .EQ. 0) THEN
-    CALL cgp_coord_write_cptr_data_f(F, B, Z, Cx, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
   ELSE
-    CALL cgp_coord_write_cptr_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-!---- create a solution node and write field data via _cptr_data_f
+!---- create a solution node and write field data in parallel
   CALL cg_sol_write_f(F, B, Z, 'Solution', CGNS_ENUMV(Vertex), Sol, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_field_write_f(F, B, Z, Sol, CGNS_ENUMV(RealDouble), 'FieldX', Fld, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_field_write_cptr_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-! Test no-data path for field _cptr_data_f: rank 0 passes C_NULL_PTR for data.
+! Test no-data path: rank 0 passes C_NULL_PTR for data.
   IF (comm_rank .EQ. 0) THEN
-    CALL cgp_field_write_cptr_data_f(F, B, Z, Sol, Fld, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
+    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
   ELSE
-    CALL cgp_field_write_cptr_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
@@ -191,18 +187,15 @@ PROGRAM test_unstruc_quad_f
   PRINT *, comm_rank, ":", nelem, ":", emin(1), ":", emax(1)
 
 !---- write the element connectivity in parallel
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-! Test F03 elements API (re-write same data via TYPE(C_PTR))
-  CALL cgp_elements_write_cptr_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-! Test no-data path for elements _cptr_data_f: rank 0 passes C_NULL_PTR;
-! start/end are ignored by the C layer when elements is NULL.
+! Test no-data path: rank 0 passes C_NULL_PTR; start/end are ignored by
+! the C layer when elements is NULL.
   IF (comm_rank .EQ. 0) THEN
-    CALL cgp_elements_write_cptr_data_f(F, B, Z, S_elements, emin(1), emax(1), C_NULL_PTR, ierr)
+    CALL cgp_elements_write_data_f(F, B, Z, S_elements, emin(1), emax(1), C_NULL_PTR, ierr)
   ELSE
-    CALL cgp_elements_write_cptr_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
+    CALL cgp_elements_write_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
   END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
@@ -233,7 +226,7 @@ PROGRAM test_unstruc_quad_f
     elements(2*(k-1)+1) = 2*(comm_rank*3+(k-1))+1
     elements(2*(k-1)+2) = 2*(comm_rank*3+(k-1))+3
   ENDDO
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   n_boco_elems = end-start+1
@@ -298,7 +291,7 @@ PROGRAM test_unstruc_quad_f
     elements(2*(k-1)+1) = 2*(comm_rank*3+(k-1))+1
     elements(2*(k-1)+2) = 2*(comm_rank*3+(k-1))+3
   ENDDO
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! left BC
@@ -331,12 +324,10 @@ PROGRAM test_unstruc_quad_f
   IF (comm_rank .EQ. 0) THEN
     elements(1) = 1
     elements(2) = 2
-    el_ptr => elements
+    CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   ELSE
-    el_ptr => NULL()
-  ENDIF
-
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), el_ptr, ierr)
+    CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_NULL_PTR, ierr)
+  END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   n_boco_elems = 1
@@ -464,21 +455,18 @@ PROGRAM test_unstruc_quad_f
   enddo
   
 
-! Test cgp_elements_read_data_f and _cptr_data_f variant
+!---- read element connectivity in parallel
   emin(1) = comm_rank * nelem + 1
   emax(1) = emin(1) + nelem - 1
-  CALL cgp_elements_read_data_f(F, B, Z, S_elements, emin(1), emax(1), elements, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-! Test F03 API with C_LOC
-  CALL cgp_elements_read_cptr_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  CALL cgp_elements_read_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-! Test F03 coord read API
-  CALL cgp_coord_read_cptr_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+!---- read coordinate data in parallel
+  CALL cgp_coord_read_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-! Test F03 field read API (Sol=1, Fld=1 as written above)
-  CALL cgp_field_read_cptr_data_f(F, B, Z, 1, 1, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+!---- read field data in parallel (Sol=1, Fld=1 as written above)
+  CALL cgp_field_read_data_f(F, B, Z, 1, 1, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- close the file and terminate MPI

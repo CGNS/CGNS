@@ -3151,26 +3151,14 @@ MODULE cgns
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cgp_coord_write_f
 
-! The following legacy parallel data APIs use cg_ftoc.c shims instead of
-! BIND(C) interfaces.  A Fortran MODULE INTERFACE cannot be provided because:
+! The following parallel data APIs are implemented as module subroutines in
+! the CONTAINS section (not as BIND(C) interfaces here) because they use
+! TYPE(C_PTR), VALUE for all pointer arguments.  Callers must use C_LOC(array)
+! for data and C_NULL_PTR when a rank contributes no data.
 !
 !   cgp_coord_write_data_f  / cgp_coord_read_data_f
 !   cgp_field_write_data_f  / cgp_field_read_data_f
-!     - The C functions accept "void *" for the data buffer, which has no
-!       Fortran equivalent in a single-typed assumed-size dummy argument.
-!       The cg_ftoc.c shim passes the address through without type checking.
-!
 !   cgp_elements_write_data_f  / cgp_elements_read_data_f
-!     - Although the C signature uses "cgsize_t *", the established
-!       no-data convention (start=0, end=0 with any buffer) relies on the
-!       shim passing the pointer through blindly.  A BIND(C) wrapper would
-!       need to call C_LOC on the dummy array, which is undefined behaviour
-!       when the caller passes an unallocated/disassociated array for the
-!       no-data case.
-!
-! All six are deprecated.  New code should use the corresponding _cptr_data_f
-! variants (cgp_coord_write_cptr_data_f, etc.) which take TYPE(C_PTR)
-! arguments and avoid undefined behaviour entirely.
 !
     SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
       TYPE,start,END, nbndry, S, ier) !BIND(C, NAME="cgp_section_write_f")
@@ -3303,20 +3291,8 @@ MODULE cgns
 
 #endif
 
-! The following legacy APIs use cg_ftoc.c shims instead of BIND(C)
-! interfaces because they cannot be expressed as conforming Fortran
-! module interfaces:
-!
-! APIs with "void *" data buffers (no single Fortran type matches):
-!   cgp_coord_write_data_f  / cgp_coord_read_data_f
-!   cgp_field_write_data_f  / cgp_field_read_data_f
-!   cgp_array_write_data_f  / cgp_array_read_data_f
-!
-! APIs with the start=0/end=0 no-data sentinel convention:
-!   cgp_elements_write_data_f  / cgp_elements_read_data_f
-!     A BIND(C) wrapper would call C_LOC on the assumed-size dummy
-!     argument, which is undefined behaviour when the caller passes
-!     an unallocated or disassociated array for the no-data case.
+! The following APIs use cg_ftoc.c shims instead of BIND(C) interfaces
+! because they cannot be expressed as conforming Fortran module interfaces:
 !
 ! APIs with Fortran CHARACTER string arguments requiring conversion:
 !   cgp_open_f, cg_base_write_f, cg_zone_write_f, cg_base_read_f,
@@ -3327,10 +3303,6 @@ MODULE cgns
 ! APIs with simple scalar arguments (kept in cg_ftoc.c for consistency):
 !   cgp_pio_mode_f, cgp_close_f, cgp_error_exit_f,
 !   cgp_queue_set_f, cgp_queue_flush_f
-!
-! The data APIs above are deprecated.  New code should use the _cptr_data_f
-! variants (e.g. cgp_coord_write_cptr_data_f) which take TYPE(C_PTR)
-! arguments and avoid undefined behaviour.
 !
 #if HAVE_FORTRAN_2008TS
     ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
@@ -8457,7 +8429,7 @@ CONTAINS
 
     END SUBROUTINE cgp_parentelements_read_data_f
 
-    SUBROUTINE cgp_elements_write_cptr_data_f(fn, B, Z, S, start, end, elements, ier)
+    SUBROUTINE cgp_elements_write_data_f(fn, B, Z, S, start, end, elements, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8471,9 +8443,9 @@ CONTAINS
       ier = INT(cgp_elements_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
            start, end, elements))
 
-    END SUBROUTINE cgp_elements_write_cptr_data_f
+    END SUBROUTINE cgp_elements_write_data_f
 
-    SUBROUTINE cgp_elements_read_cptr_data_f(fn, B, Z, S, start, end, elements, ier)
+    SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, end, elements, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8487,9 +8459,9 @@ CONTAINS
       ier = INT(cgp_elements_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
            start, end, elements))
 
-    END SUBROUTINE cgp_elements_read_cptr_data_f
+    END SUBROUTINE cgp_elements_read_data_f
 
-    SUBROUTINE cgp_coord_write_cptr_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
+    SUBROUTINE cgp_coord_write_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8503,9 +8475,9 @@ CONTAINS
       ier = INT(cgp_coord_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(C, C_INT), &
            rmin, rmax, coord_array))
 
-    END SUBROUTINE cgp_coord_write_cptr_data_f
+    END SUBROUTINE cgp_coord_write_data_f
 
-    SUBROUTINE cgp_coord_read_cptr_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
+    SUBROUTINE cgp_coord_read_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8519,9 +8491,9 @@ CONTAINS
       ier = INT(cgp_coord_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(C, C_INT), &
            rmin, rmax, coord_array))
 
-    END SUBROUTINE cgp_coord_read_cptr_data_f
+    END SUBROUTINE cgp_coord_read_data_f
 
-    SUBROUTINE cgp_field_write_cptr_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
+    SUBROUTINE cgp_field_write_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8536,9 +8508,9 @@ CONTAINS
       ier = INT(cgp_field_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
            INT(F, C_INT), rmin, rmax, field_ptr))
 
-    END SUBROUTINE cgp_field_write_cptr_data_f
+    END SUBROUTINE cgp_field_write_data_f
 
-    SUBROUTINE cgp_field_read_cptr_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
+    SUBROUTINE cgp_field_read_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8553,7 +8525,7 @@ CONTAINS
       ier = INT(cgp_field_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
            INT(F, C_INT), rmin, rmax, field_ptr))
 
-    END SUBROUTINE cgp_field_read_cptr_data_f
+    END SUBROUTINE cgp_field_read_data_f
 
     SUBROUTINE cgp_poly_elements_read_data_offsets_f(fn, B, Z, S, start, end, offsets, ier)
       INTEGER, INTENT(IN) :: fn

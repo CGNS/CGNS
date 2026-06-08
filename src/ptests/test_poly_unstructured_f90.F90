@@ -55,7 +55,7 @@ PROGRAM test_poly_unstructured_f
   INTEGER(cgsize_t) :: nodeOnProcEnd
   INTEGER(cgsize_t) :: nbCellWrite
   INTEGER(cgsize_t) :: nbNodeWrite
-  INTEGER(cgsize_t) :: start, end
+  INTEGER(cgsize_t), TARGET :: start, end
   INTEGER(C_INT64_T) :: start_l, end_l, nb_read
   INTEGER(cgsize_t) :: iNode, jNode, iCell, jCell, i, j, k
   INTEGER(cgsize_t) :: local_size(1)
@@ -65,7 +65,7 @@ PROGRAM test_poly_unstructured_f
   INTEGER(cgsize_t) :: size_read
   INTEGER(cgsize_t), ALLOCATABLE, TARGET :: cells_read(:), offsets_read(:)
 
-  REAL(dp), ALLOCATABLE :: nodeX(:), nodeY(:), nodeZ(:)
+  REAL(dp), ALLOCATABLE, TARGET :: nodeX(:), nodeY(:), nodeZ(:)
   REAL(dp) :: spacing
 
   CHARACTER(len=10) :: cZone
@@ -217,11 +217,11 @@ PROGRAM test_poly_unstructured_f
     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
     CALL cgp_coord_write_f(F, B, Z, CGNS_ENUMV(RealDouble), 'CoordinateZ', Cz, ierr)
     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-    CALL cgp_coord_write_data_f(F, B, Z, Cx, start, end, nodeX, ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(start), C_LOC(end), C_LOC(nodeX(1)), ierr)
     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-    CALL cgp_coord_write_data_f(F, B, Z, Cy, start, end, nodeY, ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(start), C_LOC(end), C_LOC(nodeY(1)), ierr)
     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-    CALL cgp_coord_write_data_f(F, B, Z, Cz, start, end, nodeZ, ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(start), C_LOC(end), C_LOC(nodeZ(1)), ierr)
     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
     ! create element node
@@ -279,11 +279,11 @@ PROGRAM test_poly_unstructured_f
      start = nodeOnProcStart + 1
      end   = nodeOnProcEnd
   
-     CALL cgp_coord_read_data_f(F, B, iZone, Cx, start, end, nodeX, ierr)
+     CALL cgp_coord_read_data_f(F, B, iZone, Cx, C_LOC(start), C_LOC(end), C_LOC(nodeX(1)), ierr)
      IF (ierr /= CG_OK) CALL cgp_error_exit_f
-     CALL cgp_coord_read_data_f(F, B, iZone, Cy, start, end, nodeY, ierr)
+     CALL cgp_coord_read_data_f(F, B, iZone, Cy, C_LOC(start), C_LOC(end), C_LOC(nodeY(1)), ierr)
      IF (ierr /= CG_OK) CALL cgp_error_exit_f
-     CALL cgp_coord_read_data_f(F, B, iZone, Cz, start, end, nodeZ, ierr)
+     CALL cgp_coord_read_data_f(F, B, iZone, Cz, C_LOC(start), C_LOC(end), C_LOC(nodeZ(1)), ierr)
      IF (ierr /= CG_OK) CALL cgp_error_exit_f
 
      count = 1
