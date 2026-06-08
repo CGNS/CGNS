@@ -24,7 +24,7 @@
         stop
       endif
 
-      call cg_open_f('test64.cgns',CG_MODE_WRITE,cgfile,ier)
+      call cg_open_f('test64f_f03.cgns',CG_MODE_WRITE,cgfile,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
       cdim = 3
@@ -67,7 +67,7 @@
 
       if (dotest.eq.0) goto 100
 
-      call cg_open_f('test64.cgns',CG_MODE_READ,cgfile,ier)
+      call cg_open_f('test64f_f03.cgns',CG_MODE_READ,cgfile,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
       cgbase = 1
