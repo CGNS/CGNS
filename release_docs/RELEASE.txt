@@ -47,34 +47,46 @@ New Features
 
     Fortran Library:
     ----------------
-    - New Fortran 2003 parallel data APIs that use TYPE(C_PTR) arguments:
-      cgp_elements_write_cptr_data_f, cgp_elements_read_cptr_data_f,
-      cgp_coord_write_cptr_data_f, cgp_coord_read_cptr_data_f,
-      cgp_field_write_cptr_data_f, cgp_field_read_cptr_data_f.
-      These replace the legacy _f wrappers which relied on cg_ftoc.c shims
-      and could not safely express the C NULL convention in Fortran.
-      Pass C_LOC(array) for data or C_NULL_PTR when a rank contributes
-      no data.  Example:
-        call cgp_elements_write_cptr_data_f(fn, B, Z, S, start, end, &
-             C_LOC(elements(1)), ier)
-        call cgp_elements_write_cptr_data_f(fn, B, Z, S, 0, 0, &
-             C_NULL_PTR, ier)            ! rank has no data
+    - BREAKING: The following Fortran parallel data APIs now take
+      TYPE(C_PTR) arguments instead of Fortran arrays (CGNS 5.0):
+        cgp_coord_write_data_f    / cgp_coord_read_data_f
+        cgp_field_write_data_f    / cgp_field_read_data_f
+        cgp_elements_write_data_f / cgp_elements_read_data_f
 
-    - The legacy parallel data wrappers cgp_elements_write_data_f,
-      cgp_elements_read_data_f, cgp_coord_write_data_f,
-      cgp_coord_read_data_f, cgp_field_write_data_f, and
-      cgp_field_read_data_f are now deprecated.  They remain available
-      for backward compatibility (including the start=0/end=0 no-data
-      convention) but will be removed in a future release.
-      New code should use the _cptr_data_f variants above.
+      For cgp_coord_*_data_f and cgp_field_*_data_f, the rmin, rmax,
+      and data buffer arguments are all TYPE(C_PTR).
+      For cgp_elements_*_data_f, only the elements buffer is TYPE(C_PTR);
+      the start and end range arguments remain INTEGER(CGSIZE_T).
+
+      Callers must add the TARGET attribute to any array passed via C_LOC,
+      use C_LOC(array) to pass data, and C_NULL_PTR when a rank
+      contributes no data.  Examples:
+
+        ! Coordinate write — rmin, rmax, and data are all TYPE(C_PTR)
+        INTEGER(CGSIZE_T), DIMENSION(1), TARGET :: rmin, rmax
+        REAL(C_DOUBLE), ALLOCATABLE, TARGET :: coords(:)
+        call cgp_coord_write_data_f(fn, B, Z, C, &
+             C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(coords(1)), ier)
+        ! Rank contributes no data:
+        call cgp_coord_write_data_f(fn, B, Z, C, &
+             C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier)
+
+        ! Elements write — start/end are INTEGER, elements is TYPE(C_PTR)
+        INTEGER(CGSIZE_T), ALLOCATABLE, TARGET :: elements(:)
+        call cgp_elements_write_data_f(fn, B, Z, S, start, end, &
+             C_LOC(elements(1)), ier)
+        ! Rank contributes no data:
+        call cgp_elements_write_data_f(fn, B, Z, S, start, end, &
+             C_NULL_PTR, ier)
+
+      The old convention of passing start=0/end=0 with a dummy array to
+      indicate no-data is no longer supported for these six APIs.
 
     - BREAKING: cgp_ptlist_write_data_f, cgp_ptlist_read_data_f,
       cgp_parentelements_read_data_f, and cgp_poly_elements_write_data_f
-      now accept only TYPE(C_PTR) for the data argument(s).  The previous
-      Fortran array overload has been removed because it allowed passing an
-      unallocated/disassociated array for the no-data case, which is
-      undefined behaviour.  Callers must now pass C_LOC(array) for data,
-      or C_NULL_PTR when the rank contributes no data.  Examples:
+      now accept only TYPE(C_PTR) for the data argument(s).  Callers must
+      pass C_LOC(array) for data, or C_NULL_PTR when the rank contributes
+      no data.  Examples:
         call cgp_parentelements_read_data_f(fn, B, Z, S, start, end, &
              C_LOC(parentelements(1)), ier)
         call cgp_parentelements_read_data_f(fn, B, Z, S, 0, 0, &
@@ -85,9 +97,8 @@ New Features
              C_NULL_PTR, C_NULL_PTR, ier) ! rank has no data
 
     - BREAKING: cgp_parent_data_write_f now accepts only TYPE(C_PTR) for
-      the parents argument.  The previous Fortran array overload has been
-      removed.  Callers must now pass C_LOC(array) for data, or C_NULL_PTR
-      when the rank contributes no data.
+      the parents argument.  Callers must pass C_LOC(array) for data, or
+      C_NULL_PTR when the rank contributes no data.
         call cgp_parent_data_write_f(fn, B, Z, S, rmin, rmax, &
              C_LOC(parents(1)), ier)
         call cgp_parent_data_write_f(fn, B, Z, S, 0, 0, C_NULL_PTR, ier)
@@ -100,23 +111,27 @@ New Features
       CGNS Fortran DLL must be relinked against the new DLL.
 
     Migration notes — Fortran parallel data API:
-    The underlying motivation for the _cptr_data_f changes is that Fortran
-    has no standard-conforming way to pass a C NULL pointer through an
-    assumed-size (DIMENSION(*)) dummy argument.  The CGNS 3.4 convention
-    of setting start=0/end=0 worked via cg_ftoc.c shims but was undefined
-    behaviour per the Fortran standard.  The new _cptr_data_f variants
-    accept TYPE(C_PTR) and eliminate the undefined behaviour.  Deprecated
-    Group 1 wrappers remain so existing code does not require immediate
-    migration.
+    Fortran has no standard-conforming way to pass a C NULL pointer through
+    an assumed-size (DIMENSION(*)) dummy argument.  The CGNS 4.x convention
+    of setting start=0/end=0 with a dummy array relied on undefined
+    behaviour per the Fortran standard.  In CGNS 5.0 all parallel data APIs
+    accept TYPE(C_PTR) directly, eliminating the undefined behaviour.
+    Required migration steps:
+      1. Add TARGET to any local array passed to these routines.
+      2. Replace raw array arguments with C_LOC(array(first_element)).
+      3. Replace the start=0/end=0 no-data idiom with C_NULL_PTR.
 
-    Summary of Fortran parallel API changes:
+    Summary of Fortran parallel API breaking changes:
 
-      API group                               Breakage    No-data path
+      API                                     Change
       ---------------------------------------------------------------
-      Legacy _f (elements, coord, field)      None        start=0, end=0
-      New _cptr_data_f (same APIs)            New API     C_NULL_PTR
-      ptlist, parentelements, poly _f         Breaking    C_NULL_PTR
-      parent_data_write_f                     Breaking    C_NULL_PTR
+      cgp_coord_write/read_data_f             rmin, rmax, data -> TYPE(C_PTR)
+      cgp_field_write/read_data_f             rmin, rmax, data -> TYPE(C_PTR)
+      cgp_elements_write/read_data_f          elements -> TYPE(C_PTR)
+      cgp_ptlist_write/read_data_f            data -> TYPE(C_PTR)
+      cgp_parentelements_read_data_f          data -> TYPE(C_PTR)
+      cgp_poly_elements_write_data_f          elements, offsets -> TYPE(C_PTR)
+      cgp_parent_data_write_f                 parents -> TYPE(C_PTR)
 
     Tools:
     ------
