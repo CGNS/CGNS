@@ -16,7 +16,12 @@
 #ifndef CGNS_VERSION_H
 #define CGNS_VERSION_H
 
-#define CGNS_VERSION_VALUE       5000
+#define CGNS_VERSION_MAJOR       5
+#define CGNS_VERSION_MINOR       0
+
+/* Derived from MAJOR/MINOR — do not edit directly. */
+#define CGNS_VERSION_VALUE       (CGNS_VERSION_MAJOR * 1000 + CGNS_VERSION_MINOR * 10)
+/* Kept as a literal; parsed by CMakeLists.txt regex for the project version. */
 #define CGNS_DOTVERS_VALUE       5.00
 #define CGNS_COMPATVERSION_VALUE 2540
 #define CGNS_COMPATDOTVERS_VALUE 2.54
@@ -25,5 +30,25 @@
 #define CGNS_DOTVERS       CGNS_DOTVERS_VALUE
 #define CGNS_COMPATVERSION CGNS_COMPATVERSION_VALUE
 #define CGNS_COMPATDOTVERS CGNS_COMPATDOTVERS_VALUE
+
+/* Version comparison macros — valid in both C and preprocessed Fortran (.F90).
+ * ABI changes only occur at minor-version boundaries, so major.minor is
+ * sufficient for all compatibility guards.
+ *
+ * Example (Fortran):
+ *   #include "cgns_version.h"
+ *   #if CGNS_VERSION_GE(5,0)
+ *     call cgp_coord_write_data_f(fn,B,Z,C, C_LOC(rmin(1)),C_LOC(rmax(1)),C_LOC(buf(1)),ier)
+ *   #else
+ *     call cgp_coord_write_data_f(fn,B,Z,C, rmin,rmax,buf,ier)
+ *   #endif
+ */
+#define CGNS_VERSION_GE(maj, min) \
+    ((CGNS_VERSION_MAJOR > (maj)) || \
+     (CGNS_VERSION_MAJOR == (maj) && CGNS_VERSION_MINOR >= (min)))
+
+#define CGNS_VERSION_LE(maj, min) \
+    ((CGNS_VERSION_MAJOR < (maj)) || \
+     (CGNS_VERSION_MAJOR == (maj) && CGNS_VERSION_MINOR <= (min)))
 
 #endif
