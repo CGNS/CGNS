@@ -38,50 +38,7 @@
 #define NUM_NODES  10
 
 #if defined(_WIN32)
-
-static wchar_t *utf8_to_wide(const char *utf8)
-{
-    int len = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, NULL, 0);
-    if (len <= 0) return NULL;
-    wchar_t *wide = (wchar_t *)malloc(len * sizeof(wchar_t));
-    if (wide == NULL) { errno = ENOMEM; return NULL; }
-    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, len) == 0) {
-        free(wide);
-        return NULL;
-    }
-    return wide;
-}
-
-static int utf8_mkdir(const char *path)
-{
-    wchar_t *wpath = utf8_to_wide(path);
-    int ret;
-    if (wpath == NULL) { errno = ENOMEM; return -1; }
-    ret = _wmkdir(wpath);
-    free(wpath);
-    return ret;
-}
-
-static int utf8_unlink(const char *path)
-{
-    wchar_t *wpath = utf8_to_wide(path);
-    int ret;
-    if (wpath == NULL) { errno = ENOMEM; return -1; }
-    ret = _wunlink(wpath);
-    free(wpath);
-    return ret;
-}
-
-static int utf8_rmdir(const char *path)
-{
-    wchar_t *wpath = utf8_to_wide(path);
-    int ret;
-    if (wpath == NULL) { errno = ENOMEM; return -1; }
-    ret = _wrmdir(wpath);
-    free(wpath);
-    return ret;
-}
-
+# include "utils_unicode_win.h"
 # define MKDIR(d)       utf8_mkdir(d)
 # define UTF8_UNLINK(f) utf8_unlink(f)
 # define UTF8_RMDIR(d)  utf8_rmdir(d)

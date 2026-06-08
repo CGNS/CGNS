@@ -132,11 +132,11 @@ PROGRAM test_unstruc_quad_f
 
 
 !---- write the coordinate data in parallel
-  CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(rmin), C_LOC(rmax), C_LOC(fy(1)), ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fy(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(rmin), C_LOC(rmax), C_LOC(fz(1)), ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fz(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! Test no-data path: rank 0 passes C_NULL_PTR, verifying rmin/rmax are not
@@ -144,7 +144,7 @@ PROGRAM test_unstruc_quad_f
   IF (comm_rank .EQ. 0) THEN
     CALL cgp_coord_write_data_f(F, B, Z, Cx, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
   ELSE
-    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
@@ -153,14 +153,14 @@ PROGRAM test_unstruc_quad_f
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_field_write_f(F, B, Z, Sol, CGNS_ENUMV(RealDouble), 'FieldX', Fld, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! Test no-data path: rank 0 passes C_NULL_PTR for data.
   IF (comm_rank .EQ. 0) THEN
     CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
   ELSE
-    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
@@ -462,11 +462,11 @@ PROGRAM test_unstruc_quad_f
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- read coordinate data in parallel
-  CALL cgp_coord_read_data_f(F, B, Z, Cx, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_coord_read_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- read field data in parallel (Sol=1, Fld=1 as written above)
-  CALL cgp_field_read_data_f(F, B, Z, 1, 1, C_LOC(rmin), C_LOC(rmax), C_LOC(fx(1)), ierr)
+  CALL cgp_field_read_data_f(F, B, Z, 1, 1, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- close the file and terminate MPI

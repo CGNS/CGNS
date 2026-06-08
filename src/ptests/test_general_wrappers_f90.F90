@@ -112,11 +112,11 @@ PROGRAM test_general_wrappers
   m_numdim = 1
   m_type = CGNS_ENUMV(RealDouble)
 
-  data_ptr = C_LOC(coords_data)
+  data_ptr = C_LOC(coords_data(1))
 
   CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -135,11 +135,11 @@ PROGRAM test_general_wrappers
   CALL cgp_field_write_f(fn, B, Z, S, CGNS_ENUMV(RealDouble), 'Density', F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
-  data_ptr = C_LOC(field_data)
+  data_ptr = C_LOC(field_data(1))
 
   CALL cgp_field_general_write_data_f(fn, B, Z, S, F, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -165,11 +165,11 @@ PROGRAM test_general_wrappers
   CALL cgp_array_write_f('TestArray', CGNS_ENUMV(RealDouble), 1, sizes(1:1), A, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
-  data_ptr = C_LOC(array_data)
+  data_ptr = C_LOC(array_data(1))
 
   CALL cgp_array_general_write_data_f(A, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -192,11 +192,11 @@ PROGRAM test_general_wrappers
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   read_data = 0.0_C_DOUBLE
-  data_ptr = C_LOC(read_data)
+  data_ptr = C_LOC(read_data(1))
 
   CALL cgp_coord_general_read_data_f(fn, 1, 1, 1, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -221,11 +221,11 @@ PROGRAM test_general_wrappers
   IF (commrank .EQ. 0) PRINT *, 'Testing cgp_field_general_read_data_f...'
 
   read_data = 0.0_C_DOUBLE
-  data_ptr = C_LOC(read_data)
+  data_ptr = C_LOC(read_data(1))
 
   CALL cgp_field_general_read_data_f(fn, 1, 1, 1, 1, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -252,11 +252,11 @@ PROGRAM test_general_wrappers
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   read_data = 0.0_C_DOUBLE
-  data_ptr = C_LOC(read_data)
+  data_ptr = C_LOC(read_data(1))
 
   CALL cgp_array_general_read_data_f(1, &
-       C_LOC(f_rmin), C_LOC(f_rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
+       C_LOC(f_rmin(1)), C_LOC(f_rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
        data_ptr, ierr)
 
   IF (ierr .NE. CG_OK) THEN
@@ -406,9 +406,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(xcoord), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(xcoord(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D X coordinate'
      test_passed = 0
@@ -419,9 +419,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(ycoord), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(ycoord(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D Y coordinate'
      test_passed = 0
@@ -432,9 +432,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   CALL cgp_coord_general_write_data_f(fn, B, Z, C, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(zcoord), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(zcoord(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_write_data_f for 3D Z coordinate'
      test_passed = 0
@@ -449,9 +449,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   CALL cgp_field_general_write_data_f(fn, B, Z, S, F, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(density), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(density(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_field_general_write_data_f for 3D density field'
      test_passed = 0
@@ -468,9 +468,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f()
 
   CALL cgp_coord_general_read_data_f(fn, 1, 1, 1, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(xread), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(xread(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D X coordinate'
      test_passed = 0
@@ -478,9 +478,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   END IF
 
   CALL cgp_coord_general_read_data_f(fn, 1, 1, 2, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(yread), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(yread(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D Y coordinate'
      test_passed = 0
@@ -488,9 +488,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   END IF
 
   CALL cgp_coord_general_read_data_f(fn, 1, 1, 3, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(zread), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(zread(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_coord_general_read_data_f for 3D Z coordinate'
      test_passed = 0
@@ -498,9 +498,9 @@ SUBROUTINE test_3d_arrays(commrank, commsize, test_passed)
   END IF
 
   CALL cgp_field_general_read_data_f(fn, 1, 1, 1, 1, &
-       C_LOC(rmin), C_LOC(rmax), &
-       m_type, m_numdim, C_LOC(m_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), &
-       C_LOC(dread), ierr)
+       C_LOC(rmin(1)), C_LOC(rmax(1)), &
+       m_type, m_numdim, C_LOC(m_dimvals(1)), C_LOC(m_rmin(1)), C_LOC(m_rmax(1)), &
+       C_LOC(dread(1,1,1)), ierr)
   IF (ierr .NE. CG_OK) THEN
      PRINT *, 'FAILED: cgp_field_general_read_data_f for 3D density field'
      test_passed = 0
