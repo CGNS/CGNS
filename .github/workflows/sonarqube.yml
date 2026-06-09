@@ -57,7 +57,7 @@ jobs:
         shell: bash
 
       - name: Install SonarQube Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v6
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v8
 
       - name: Configure and Build with Build Wrapper
         run: |
@@ -106,7 +106,7 @@ jobs:
           fi
 
       - name: Run SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
