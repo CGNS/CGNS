@@ -42,7 +42,7 @@ jobs:
       run:
         shell: bash
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Install Core Dependencies
       run: |
         choco install -y make
@@ -147,7 +147,7 @@ jobs:
       run:
         shell: bash
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Install Core Dependencies
       run: |
         choco install -y ninja
@@ -270,7 +270,7 @@ jobs:
   build_linux_cpp_fortran:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Add Intel oneAPI APT repository
       run: |
@@ -338,7 +338,7 @@ jobs:
   build_linux_parallel:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Add Intel oneAPI APT repository
       run: |

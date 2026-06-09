@@ -44,7 +44,7 @@ jobs:
           echo "MPIEXEC=$mpiexec_cmd" >> $GITHUB_ENV
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         
 ##################################
 # INSTALL HDF5
