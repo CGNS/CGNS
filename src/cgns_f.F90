@@ -3151,29 +3151,16 @@ MODULE cgns
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cgp_coord_write_f
 
-!!$    SUBROUTINE cgp_coord_write_data_f(fn, B, Z, C,
-!!$     CGSIZE_T *rmin, CGSIZE_T *rmax, void *data, ier) BIND(C, NAME="")
-!!$
-!!$ INTEGER :: fn
-!!$ INTEGER :: B
-!!$ INTEGER :: Z
-!!$ INTEGER :: C,
-!!$ INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *DATA,
-!!$ INTEGER, INTENT(OUT) :: ier
-!!$END SUBROUTINE cgp_coord_write_data_f
-
-!!$   !!$           SUBROUTINE cgp_coord_read_data_f(
-!!$     fn, B, Z, C,
-!!$     CGSIZE_T *rmin, CGSIZE_T *rmax, void *data, ier) BIND(C, NAME="")
-!!$
-!!$     INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: C,
-!!$     INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$
+! The following parallel data APIs are implemented as module subroutines in
+! the CONTAINS section (not as BIND(C) interfaces here) because they use
+! TYPE(C_PTR), VALUE for all pointer arguments.  Callers must use C_LOC(array)
+! for data and C_NULL_PTR when a rank contributes no data.
+!
+!   cgp_coord_write_data_f    / cgp_coord_read_data_f
+!   cgp_field_write_data_f    / cgp_field_read_data_f
+!   cgp_elements_write_data_f / cgp_elements_read_data_f
+!   cgp_array_write_data_f    / cgp_array_read_data_f
+!
     SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
       TYPE,start,END, nbndry, S, ier) !BIND(C, NAME="cgp_section_write_f")
       IMPORT :: cgenum_t, cgsize_t, c_char
@@ -3190,36 +3177,7 @@ MODULE cgns
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cgp_section_write_f
 
-!!$!!$     SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, CGSIZE_T *start, &
-!!$          CGSIZE_T *END, CGSIZE_T *elements, ier) BIND(C, NAME="cgp_elements_write_data_f")
-!!$       IMPORT :: cgsize_t
-!!$       IMPLICIT NONE
-!!$       IMPLICIT NONE
-!!$       INTEGER, INTENT(IN) :: fn
-!!$       INTEGER, INTENT(IN) :: B
-!!$       INTEGER, INTENT(IN) :: Z
-!!$       INTEGER, INTENT(IN) :: S
-!!$       INTEGER(CGSIZE_T), INTENT(IN)  :: start
-!!$       INTEGER(CGSIZE_T), INTENT(IN)  :: end
-!!$       INTEGER(CGSIZE_T) , INTENT(IN) :: elements
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgp_elements_write_data_f
-!!$
-!!$
-!!$!!$     SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
-!!$          end, elements, ier) BIND(C, NAME="cgp_elements_read_data_f")
-!!$       IMPORT :: cgsize_t
-!!$       IMPLICIT NONE
-!!$       INTEGER, INTENT(IN) :: fn
-!!$       INTEGER, INTENT(IN) :: B
-!!$       INTEGER, INTENT(IN) :: Z
-!!$       INTEGER, INTENT(IN) :: S
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: start
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: end
-!!$       INTEGER(CGSIZE_T) :: elements
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgp_elements_read_data_f
-!!$
+
     SUBROUTINE cgp_field_write_f(fn, B, Z, S, TYPE, fieldname, F, ier)! BIND(C, NAME="cgp_field_write_f")
       IMPORT :: cgenum_t, c_char
       IMPLICIT NONE
@@ -3334,232 +3292,19 @@ MODULE cgns
 
 #endif
 
-    !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-    !*      INTERFACES FOR THE C FUNCTIONS                                 *
-    !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name="cgp_open")
-!!$       IMPORT :: c_int, c_char
-!!$       IMPLICIT NONE
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: filename
-!!$       INTEGER(C_INT), INTENT(IN), VALUE  :: mode
-!!$       INTEGER(C_INT), INTENT(OUT) :: fn
-!!$     END FUNCTION cgp_open
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name="cgp_pio_mode")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
-!!$     END FUNCTION cgp_pio_mode
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name="cg_base_write")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: basename
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: cell_dim
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: phys_dim
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: B
-!!$     END FUNCTION cg_base_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name="cg_zone_write")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
-!!$       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN)  :: nijk
-!!$       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: itype
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: Z
-!!$     END FUNCTION cg_zone_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name="cg_base_read")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: basename
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: cell_dim
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: phys_dim
-!!$     END FUNCTION cg_base_read
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name="cg_zone_read")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: zonename
-!!$       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT)  :: nijk
-!!$     END FUNCTION cg_zone_read
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name="cgp_coord_write")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: coordname
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: C
-!!$     END FUNCTION cgp_coord_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name="cgp_coord_write_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: coords
-!!$     END FUNCTION cgp_coord_write_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name="cgp_field_write")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: fieldname
-!!$       INTEGER(C_INT)   , INTENT(OUT)  :: F
-!!$     END FUNCTION cgp_field_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name="cgp_field_write_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: data
-!!$     END FUNCTION cgp_field_write_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name="cgp_field_read_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: data
-!!$     END FUNCTION cgp_field_read_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name="cgp_coord_read_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: coords
-!!$     END FUNCTION cgp_coord_read_data
-!!$!!$
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name="cgp_section_write")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: sectionname
-!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: nbndry
-!!$       INTEGER(C_INT)   , INTENT(OUT) :: S
-!!$     END FUNCTION cgp_section_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name="cgp_array_write")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
-!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
-!!$       INTEGER(CGSIZE_T), DIMENSION(1:DataDimension), INTENT(IN) :: DimensionVector
-!!$       INTEGER(C_INT)   , INTENT(OUT) :: A
-!!$     END FUNCTION cgp_array_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name="cgp_array_write_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: data
-!!$     END FUNCTION cgp_array_write_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name="cgp_elements_write_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emin
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emax
-!!$       TYPE(C_PTR), VALUE :: elements
-!!$     END FUNCTION cgp_elements_write_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name="cgp_elements_read_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
-!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
-!!$       TYPE(C_PTR), VALUE :: elements
-!!$     END FUNCTION cgp_elements_read_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name="cgp_array_read_data")
-!!$       USE ISO_C_BINDING
-!!$       IMPORT :: CGSIZE_T
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-!!$       TYPE(C_PTR), VALUE :: data
-!!$     END FUNCTION cgp_array_read_data
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name="cg_sol_write")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: solname
-!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: location
-!!$       INTEGER(C_INT)   , INTENT(OUT) :: S
-!!$     END FUNCTION cg_sol_write
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name="cgp_error_exit")
-!!$       USE ISO_C_BINDING
-!!$     END FUNCTION cgp_error_exit
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name="cgp_close")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT), INTENT(IN), VALUE :: fn
-!!$     END FUNCTION cgp_close
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name="cgp_queue_set")
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT), INTENT(IN), VALUE :: use_queue
-!!$     END FUNCTION cgp_queue_set
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name="cgp_queue_flush")
-!!$       USE ISO_C_BINDING
-!!$     END FUNCTION cgp_queue_flush
-!!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name="cg_user_data_write")
-!!$       USE ISO_C_BINDING
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
-!!$     END FUNCTION cg_user_data_write
-!!$
+! The following APIs use cg_ftoc.c shims instead of BIND(C) interfaces
+! because they cannot be expressed as conforming Fortran module interfaces:
+!
+! APIs with Fortran CHARACTER string arguments requiring conversion:
+!   cgp_open_f, cg_base_write_f, cg_zone_write_f, cg_base_read_f,
+!   cg_zone_read_f, cgp_coord_write_f, cgp_field_write_f,
+!   cgp_section_write_f, cgp_array_write_f, cg_sol_write_f,
+!   cg_user_data_write_f
+!
+! APIs with simple scalar arguments (kept in cg_ftoc.c for consistency):
+!   cgp_pio_mode_f, cgp_close_f, cgp_error_exit_f,
+!   cgp_queue_set_f, cgp_queue_flush_f
+!
 #if HAVE_FORTRAN_2008TS
     ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
     ! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
@@ -3724,6 +3469,16 @@ MODULE cgns
      MODULE PROCEDURE cgp_particle_field_multi_read_data_f1
   END INTERFACE
   PRIVATE cgp_particle_field_multi_read_data_f0, cgp_particle_field_multi_read_data_f1
+
+
+! cgp_ptlist_write_data_f, cgp_ptlist_read_data_f, and
+! cgp_parentelements_read_data_f now accept only TYPE(C_PTR) for the
+! data argument (breaking change in CGNS 5.0).
+! The previous array overload (_f_data) allowed passing a Fortran array
+! for the no-data case, which was undefined behaviour when the array was
+! unallocated or disassociated.  Callers must now use C_LOC(array) for
+! data, or C_NULL_PTR when the rank contributes no data.
+
 
 #endif
 
@@ -4469,7 +4224,124 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     INTEGER(C_INT) FUNCTION  cgp_parent_data_write(file_number, B, Z, S, rmin, rmax, parents) BIND(C, NAME="cgp_parent_data_write")
+     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn, B, Z, S, start, end, elements) &
+          BIND(C, NAME="cgp_elements_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT)   , VALUE :: fn
+       INTEGER(C_INT)   , VALUE :: B
+       INTEGER(C_INT)   , VALUE :: Z
+       INTEGER(C_INT)   , VALUE :: S
+       INTEGER(CGSIZE_T), VALUE :: start
+       INTEGER(CGSIZE_T), VALUE :: end
+       TYPE(C_PTR)      , VALUE :: elements
+     END FUNCTION cgp_elements_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn, B, Z, S, start, end, elements) &
+          BIND(C, NAME="cgp_elements_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT)   , VALUE :: fn
+       INTEGER(C_INT)   , VALUE :: B
+       INTEGER(C_INT)   , VALUE :: Z
+       INTEGER(C_INT)   , VALUE :: S
+       INTEGER(CGSIZE_T), VALUE :: start
+       INTEGER(CGSIZE_T), VALUE :: end
+       TYPE(C_PTR)      , VALUE :: elements
+     END FUNCTION cgp_elements_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coord_array) &
+          BIND(C, NAME="cgp_coord_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: C
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: coord_array
+     END FUNCTION cgp_coord_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coord_array) &
+          BIND(C, NAME="cgp_coord_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: C
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: coord_array
+     END FUNCTION cgp_coord_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, field_ptr) &
+          BIND(C, NAME="cgp_field_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: field_ptr
+     END FUNCTION cgp_field_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, field_ptr) &
+          BIND(C, NAME="cgp_field_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: field_ptr
+     END FUNCTION cgp_field_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) &
+          BIND(C, NAME="cgp_array_write_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: A
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: data
+     END FUNCTION cgp_array_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) &
+          BIND(C, NAME="cgp_array_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: A
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       TYPE(C_PTR)   , VALUE :: data
+     END FUNCTION cgp_array_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_parent_data_write(file_number, B, Z, S, rmin, rmax, parents) &
+          BIND(C, NAME="cgp_parent_data_write")
        IMPORT :: C_INT, C_PTR, CGSIZE_T
        IMPLICIT NONE
        INTEGER(C_INT), VALUE :: file_number
@@ -4481,6 +4353,42 @@ MODULE cgns
        TYPE(C_PTR)      , VALUE :: parents
      END FUNCTION cgp_parent_data_write
   END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_parentelements_read_data(fn, B, Z, S, start, end, parentelements) &
+          BIND(C, NAME="cgp_parentelements_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(CGSIZE_T), VALUE :: start
+       INTEGER(CGSIZE_T), VALUE :: end
+       TYPE(C_PTR)      , VALUE :: parentelements
+     END FUNCTION cgp_parentelements_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_poly_elements_write_data(fn, B, Z, S, start, end, elements, offsets) &
+          BIND(C, NAME="cgp_poly_elements_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT)   , VALUE :: fn
+       INTEGER(C_INT)   , VALUE :: B
+       INTEGER(C_INT)   , VALUE :: Z
+       INTEGER(C_INT)   , VALUE :: S
+       INTEGER(CGSIZE_T), VALUE :: start
+       INTEGER(CGSIZE_T), VALUE :: end
+       TYPE(C_PTR)      , VALUE :: elements
+       TYPE(C_PTR)      , VALUE :: offsets
+     END FUNCTION cgp_poly_elements_write_data
+  END INTERFACE
+
+! cgp_poly_elements_write_data_f now accepts only TYPE(C_PTR) for the
+! elements and offsets arguments (breaking change in CGNS 5.0).
+! Callers must use C_LOC(array) for data, or C_NULL_PTR when the rank
+! contributes no data.
 
 #endif
 
@@ -4535,54 +4443,26 @@ CONTAINS
 
   END SUBROUTINE cgp_poly_section_write_f
 
-  SUBROUTINE cgp_poly_elements_write_data_f(fn, B , Z, S, start, end, elements, offsets, ier)
+  SUBROUTINE cgp_poly_elements_write_data_f(fn, B, Z, S, start, end, elements, offsets, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
     INTEGER, INTENT(IN) :: B
     INTEGER, INTENT(IN) :: Z
     INTEGER, INTENT(IN) :: S
-    INTEGER(cgsize_t), INTENT(IN) :: start
-    INTEGER(cgsize_t), INTENT(IN) :: end
-    INTEGER(cgsize_t), INTENT(IN), TARGET :: elements(:)
-    INTEGER(cgsize_t), INTENT(IN), TARGET :: offsets(:)
+    INTEGER(CGSIZE_T), INTENT(IN) :: start
+    INTEGER(CGSIZE_T), INTENT(IN) :: end
+    TYPE(C_PTR)       , VALUE :: elements
+    TYPE(C_PTR)       , VALUE :: offsets
     INTEGER, INTENT(OUT) :: ier
 
-    TYPE(c_ptr) :: c_elements
-    TYPE(c_ptr) :: c_offsets
-
-    INTERFACE
-      INTEGER(c_int) FUNCTION cgp_poly_elements_write_data(fn, B , Z, S, start, end, elements, offsets) &
-        BIND(C, name="cgp_poly_elements_write_data")
-        IMPORT :: c_int, c_ptr, cgsize_t
-        IMPLICIT NONE
-        INTEGER(c_int), VALUE :: fn
-        INTEGER(c_int), VALUE :: B
-        INTEGER(c_int), VALUE :: Z
-        INTEGER(c_int), VALUE :: S
-        INTEGER(cgsize_t), VALUE :: start
-        INTEGER(cgsize_t), VALUE :: end
-        TYPE(c_ptr), VALUE :: elements
-        TYPE(c_ptr), VALUE :: offsets
-      END FUNCTION cgp_poly_elements_write_data
-    END INTERFACE
-
-    c_elements = C_NULL_PTR
-    c_offsets  = C_NULL_PTR
-    IF (end >= start) THEN
-      c_elements = C_LOC(elements)
-      c_offsets  = C_LOC(offsets)
-    END IF
-    ier = INT(cgp_poly_elements_write_data(INT(fn, c_int), INT(B, c_int), INT(Z, c_int), INT(S, c_int), start, end, &
-      c_elements, c_offsets))
+    ier = INT(cgp_poly_elements_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+      start, end, elements, offsets))
 
   END SUBROUTINE cgp_poly_elements_write_data_f
 
 #endif
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_open_f
-!DEC$endif
   SUBROUTINE cg_open_f(filename, mode, fn, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename
@@ -4597,9 +4477,6 @@ CONTAINS
   END SUBROUTINE cg_open_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_is_cgns_f
-!DEC$endif
   SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename
@@ -4613,9 +4490,6 @@ CONTAINS
   END SUBROUTINE cg_is_cgns_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_version_f
-!DEC$endif
   SUBROUTINE cg_version_f(fn, FileVersion, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4635,9 +4509,6 @@ CONTAINS
   END SUBROUTINE cg_version_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_precision_f
-!DEC$endif
   SUBROUTINE cg_precision_f(fn, PRECISION, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4658,9 +4529,6 @@ CONTAINS
   END SUBROUTINE cg_precision_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_close_f
-!DEC$endif
   SUBROUTINE cg_close_f(fn, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4676,9 +4544,6 @@ CONTAINS
   END SUBROUTINE cg_close_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_save_as_f
-!DEC$endif
   SUBROUTINE cg_save_as_f(fn, filename, file_type, follow_links, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4704,9 +4569,6 @@ CONTAINS
   END SUBROUTINE cg_save_as_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_set_file_type_f
-!DEC$endif
   SUBROUTINE cg_set_file_type_f(ft, ier)
     IMPLICIT NONE
     INTEGER :: ft
@@ -4722,9 +4584,6 @@ CONTAINS
   END SUBROUTINE cg_set_file_type_f
 
 !> @ingroup CGNSFile
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_file_type_f
-!DEC$endif
   SUBROUTINE cg_get_file_type_f(fn, ft, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4743,9 +4602,6 @@ CONTAINS
     ft = INT(i_ft)
   END SUBROUTINE cg_get_file_type_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_set_compress_f
-!DEC$endif
   SUBROUTINE cg_set_compress_f(cmpr, ier)
     IMPLICIT NONE
     INTEGER :: cmpr
@@ -4760,9 +4616,6 @@ CONTAINS
     ier = INT(cg_set_compress(INT(cmpr)))
   END SUBROUTINE cg_set_compress_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_compress_f
-!DEC$endif
   SUBROUTINE cg_get_compress_f(cmpr, ier)
     INTEGER :: cmpr
     INTEGER(C_INT) :: i_cmpr
@@ -4778,9 +4631,6 @@ CONTAINS
     cmpr = INT(i_cmpr)
   END SUBROUTINE cg_get_compress_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_set_path_f
-!DEC$endif
   SUBROUTINE cg_set_path_f(pathname, ier)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -4798,9 +4648,6 @@ CONTAINS
     ier = INT(cg_set_path(c_name))
   END SUBROUTINE cg_set_path_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_add_path_f
-!DEC$endif
   SUBROUTINE cg_add_path_f(pathname, ier)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -4818,9 +4665,6 @@ CONTAINS
     ier = INT(cg_add_path(c_name))
   END SUBROUTINE cg_add_path_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_cgio_f
-!DEC$endif
   SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4839,9 +4683,6 @@ CONTAINS
     cgio_num = INT(i_cgio_num)
   END SUBROUTINE cg_get_cgio_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_root_id_f
-!DEC$endif
   SUBROUTINE cg_root_id_f(fn, rootid, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4858,9 +4699,6 @@ CONTAINS
     ier = INT(cg_root_id(INT(fn, C_INT), rootid))
   END SUBROUTINE cg_root_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_set_rind_zero_f
-!DEC$endif
   SUBROUTINE cg_set_rind_zero_f(ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: ier
@@ -4869,9 +4707,6 @@ CONTAINS
     call cg_configure_f(CG_CONFIG_RIND_INDEX, C_LOC(value), ier)
   END SUBROUTINE cg_set_rind_zero_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_set_rind_core_f
-!DEC$endif
   SUBROUTINE cg_set_rind_core_f(ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: ier
@@ -4885,9 +4720,6 @@ CONTAINS
   !      Read and write CGNSBase_t Nodes
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nbases_f
-!DEC$endif
   SUBROUTINE cg_nbases_f(fn, nbases, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -4942,9 +4774,6 @@ CONTAINS
     if (i<=len(F_string)) F_string(i:) = ' '
   end subroutine C_F_string_chars
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_read_f
-!DEC$endif
   SUBROUTINE cg_base_read_f(fn, B, basename, cell_dim, phys_dim, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -4977,9 +4806,6 @@ CONTAINS
 
   END SUBROUTINE cg_base_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_id_f
-!DEC$endif
   SUBROUTINE cg_base_id_f(fn, B, base_id, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -4999,9 +4825,6 @@ CONTAINS
     ier = INT(cg_base_id(INT(fn, C_INT), INT(B, C_INT), base_id))
   END SUBROUTINE cg_base_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_write_f
-!DEC$endif
   SUBROUTINE cg_base_write_f(fn, basename, cell_dim, phys_dim, B, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5032,9 +4855,6 @@ CONTAINS
 
   END SUBROUTINE cg_base_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_cell_dim_f
-!DEC$endif
   SUBROUTINE cg_cell_dim_f(fn, B, dim, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5063,9 +4883,6 @@ CONTAINS
   !      Read and write Zone_t Nodes
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nzones_f
-!DEC$endif
   SUBROUTINE cg_nzones_f(fn, B, nzones, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -5090,9 +4907,6 @@ CONTAINS
 
   END SUBROUTINE cg_nzones_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_type_f
-!DEC$endif
   SUBROUTINE cg_zone_type_f(fn, B, Z, type, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -5116,9 +4930,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_type_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_read_f
-!DEC$endif
   SUBROUTINE cg_zone_read_f(fn, B, Z, zonename, size, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5147,9 +4958,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_id_f
-!DEC$endif
   SUBROUTINE cg_zone_id_f(fn, B, Z, zone_id, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5173,9 +4981,6 @@ CONTAINS
   END SUBROUTINE cg_zone_id_f
 
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_write_f
-!DEC$endif
   SUBROUTINE cg_zone_write_f(fn, B, zonename, size, TYPE, Z, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5208,9 +5013,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_index_dim_f
-!DEC$endif
   SUBROUTINE cg_index_dim_f(fn, B, Z, dim, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5239,9 +5041,6 @@ CONTAINS
 !      Read and write Family_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nfamilies_f
-!DEC$endif
   SUBROUTINE cg_nfamilies_f(fn, B, nfamilies, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5262,9 +5061,6 @@ CONTAINS
     nfamilies = INT(i_nfamilies)
   END SUBROUTINE cg_nfamilies_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_read_f
-!DEC$endif
   SUBROUTINE cg_family_read_f(fn, B, F, family_name, nboco, ngeos, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5296,9 +5092,6 @@ CONTAINS
     ngeos = INT(i_ngeos)
   END SUBROUTINE cg_family_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_write_f
-!DEC$endif
   SUBROUTINE cg_family_write_f(fn, B, family_name, F, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5323,9 +5116,6 @@ CONTAINS
     F = INT(i_F)
   END SUBROUTINE cg_family_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nfamily_names_f
-!DEC$endif
   SUBROUTINE cg_nfamily_names_f(fn, B, F, nnames, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5348,9 +5138,6 @@ CONTAINS
     nnames = INT(i_nnames)
   END SUBROUTINE cg_nfamily_names_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_name_read_f
-!DEC$endif
   SUBROUTINE cg_family_name_read_f(fn, B, F, N, name, family, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5380,9 +5167,6 @@ CONTAINS
     CALL C_F_string_chars(c_family, family)
   END SUBROUTINE cg_family_name_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_name_write_f
-!DEC$endif
   SUBROUTINE cg_family_name_write_f(fn, B, F, name, family, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5409,9 +5193,6 @@ CONTAINS
     ier = INT(cg_family_name_write(INT(fn, C_INT), INT(B, C_INT),  INT(F, C_INT), c_name, c_family))
   END SUBROUTINE cg_family_name_write_f
   
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_nfamilies_f
-!DEC$endif
   SUBROUTINE cg_node_nfamilies_f(nfamilies, ier)
     IMPLICIT NONE
     INTEGER :: nfamilies
@@ -5428,9 +5209,6 @@ CONTAINS
     nfamilies = INT(i_nfamilies)
   END SUBROUTINE cg_node_nfamilies_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_read_f
-!DEC$endif
   SUBROUTINE cg_node_family_read_f(F, family_name, nboco, ngeos, ier)
     IMPLICIT NONE
     INTEGER :: F
@@ -5458,9 +5236,6 @@ CONTAINS
     ngeos = INT(i_ngeos)
   END SUBROUTINE cg_node_family_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_write_f
-!DEC$endif
   SUBROUTINE cg_node_family_write_f(family_name, F, ier)
     IMPLICIT NONE
     CHARACTER(*) :: family_name
@@ -5481,9 +5256,6 @@ CONTAINS
     F = INT(i_F)
   END SUBROUTINE cg_node_family_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_nfamily_names_f
-!DEC$endif
   SUBROUTINE cg_node_nfamily_names_f(nnames, ier)
     IMPLICIT NONE
     INTEGER :: nnames
@@ -5501,9 +5273,6 @@ CONTAINS
     nnames = INT(i_nnames)
   END SUBROUTINE cg_node_nfamily_names_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_name_read_f
-!DEC$endif
   SUBROUTINE cg_node_family_name_read_f(N, name, family, ier)
     IMPLICIT NONE
     INTEGER :: N
@@ -5527,9 +5296,6 @@ CONTAINS
     CALL C_F_string_chars(c_family, family)
   END SUBROUTINE cg_node_family_name_read_f
   
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_name_write_f
-!DEC$endif
   SUBROUTINE cg_node_family_name_write_f(name, family, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: name
@@ -5554,9 +5320,6 @@ CONTAINS
 !      Read and write FamBC_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_fambc_read_f
-!DEC$endif
   SUBROUTINE cg_fambc_read_f(fn, B, F, BC, fambc_name, bocotype, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5584,9 +5347,6 @@ CONTAINS
     CALL C_F_string_chars(c_name, fambc_name)
   END SUBROUTINE cg_fambc_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_fambc_write_f
-!DEC$endif
   SUBROUTINE cg_fambc_write_f(fn, B, F, fambc_name, bocotype, BC, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5615,9 +5375,6 @@ CONTAINS
     BC = INT(i_BC)
   END SUBROUTINE cg_fambc_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_fambc_read_f
-!DEC$endif
   SUBROUTINE cg_node_fambc_read_f(BC, fambc_name, bocotype, ier)
     IMPLICIT NONE
     INTEGER :: BC
@@ -5640,9 +5397,6 @@ CONTAINS
     CALL C_F_string_chars(c_name, fambc_name)
   END SUBROUTINE cg_node_fambc_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_fambc_write_f
-!DEC$endif
   SUBROUTINE cg_node_fambc_write_f(fambc_name, bocotype, BC, ier)
     IMPLICIT NONE
     CHARACTER(*) :: fambc_name
@@ -5669,9 +5423,6 @@ CONTAINS
 !      Read and write GeometryReference_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_geo_read_f
-!DEC$endif
   SUBROUTINE cg_geo_read_f(fn, B, F, G, geo_name, geo_file, CAD_name, npart, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5698,7 +5449,7 @@ CONTAINS
         CHARACTER(KIND=C_CHAR, LEN=1), DIMENSION(*), intent(OUT) :: geo_name
         TYPE(C_PTR), intent(OUT) :: geo_file
         CHARACTER(KIND=C_CHAR, LEN=1), DIMENSION(*), intent(OUT) :: CAD_name
-        INTEGER(C_INT) , intent(IN) :: npart
+        INTEGER(C_INT) , intent(OUT) :: npart
       end function cg_geo_read
     END INTERFACE
 
@@ -5711,9 +5462,6 @@ CONTAINS
     call C_F_string_chars(c_CAD_name, CAD_name)
   end subroutine cg_geo_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_geo_write_f
-!DEC$endif
   SUBROUTINE cg_geo_write_f(fn, B, F, geo_name, geo_file, CAD_name, G, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5747,9 +5495,6 @@ CONTAINS
     G = INT(i_G)
   end subroutine cg_geo_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_geo_read_f
-!DEC$endif
   SUBROUTINE cg_node_geo_read_f(G, geo_name, geo_file, CAD_name, npart, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5770,7 +5515,7 @@ CONTAINS
         CHARACTER(KIND=C_CHAR, LEN=1), DIMENSION(*), intent(OUT) :: geo_name
         TYPE(C_PTR), INTENT(OUT) :: geo_file
         CHARACTER(KIND=C_CHAR, LEN=1), DIMENSION(*), intent(OUT) :: CAD_name
-        INTEGER(C_INT) , intent(IN) :: npart
+        INTEGER(C_INT) , intent(OUT) :: npart
       end function cg_node_geo_read
     END INTERFACE
 
@@ -5782,9 +5527,6 @@ CONTAINS
     call C_F_string_chars(c_CAD_name, CAD_name)
   end subroutine cg_node_geo_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_geo_write_f
-!DEC$endif
   SUBROUTINE cg_node_geo_write_f(geo_name, geo_file, CAD_name, G, ier)
     IMPLICIT NONE
     CHARACTER(*) :: geo_name
@@ -5817,9 +5559,6 @@ CONTAINS
 !      Read and write GeometryEntity_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_part_read_f
-!DEC$endif
   SUBROUTINE cg_part_read_f(fn, B, F, G, P, part_name, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5847,9 +5586,6 @@ CONTAINS
     call C_F_string_chars(c_part_name, part_name)
   end subroutine cg_part_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_part_write_f
-!DEC$endif
   SUBROUTINE cg_part_write_f(fn, B, F, G, part_name, P, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5877,9 +5613,6 @@ CONTAINS
     P = INT(i_P)
   end subroutine cg_part_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_part_read_f
-!DEC$endif
   SUBROUTINE cg_node_part_read_f(G, P, part_name, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5900,9 +5633,6 @@ CONTAINS
     call C_F_string_chars(c_part_name, part_name)
   end subroutine cg_node_part_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_part_write_f
-!DEC$endif
   SUBROUTINE cg_node_part_write_f(G, part_name, P, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5916,7 +5646,7 @@ CONTAINS
         import :: c_int, c_char
         INTEGER(C_INT), VALUE, intent(IN) :: G
         CHARACTER(KIND=C_CHAR, LEN=1), DIMENSION(*), intent(IN) :: part_name
-        INTEGER(C_INT) , intent(IN) :: P
+        INTEGER(C_INT) , intent(OUT) :: P
       end function cg_node_part_write
     END INTERFACE
     c_part_name = TRIM(part_name)//C_NULL_CHAR
@@ -5928,9 +5658,6 @@ CONTAINS
 !      Read and write DiscreteData_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_ndiscrete_f
-!DEC$endif
   SUBROUTINE cg_ndiscrete_f(fn, B, Z, ndiscrete, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5952,9 +5679,6 @@ CONTAINS
     ndiscrete = INT(i_ndiscrete)
   end subroutine cg_ndiscrete_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_read_f
-!DEC$endif
   SUBROUTINE cg_discrete_read_f(fn, B, Z, D, discrete_name, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5979,9 +5703,6 @@ CONTAINS
     call C_F_string_chars(c_name, discrete_name)
   end subroutine cg_discrete_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_write_f
-!DEC$endif
   SUBROUTINE cg_discrete_write_f(fn, B, Z, discrete_name, D, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6007,9 +5728,6 @@ CONTAINS
     D = INT(i_D)
   end subroutine cg_discrete_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_size_f
-!DEC$endif
   SUBROUTINE cg_discrete_size_f(fn, B, Z, D, ndim, dims, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6035,9 +5753,6 @@ CONTAINS
     ndim  = INT(i_ndim)
   end subroutine cg_discrete_size_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_info_f
-!DEC$endif
   SUBROUTINE cg_discrete_ptset_info_f(fn, B, Z, S, ptype, npnts, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6061,9 +5776,6 @@ CONTAINS
     ier = INT(cg_discrete_ptset_info(INT(fn, C_INT),INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), ptype, npnts))
   end subroutine cg_discrete_ptset_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_read_f
-!DEC$endif
   SUBROUTINE cg_discrete_ptset_read_f(fn, B, Z, S, pnts, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6085,9 +5797,6 @@ CONTAINS
     ier = INT(cg_discrete_ptset_read(INT(fn, C_INT),INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), pnts))
   end subroutine cg_discrete_ptset_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_write_f
-!DEC$endif
   SUBROUTINE cg_discrete_ptset_write_f(fn, B, Z, name, location, ptype, npnts, pnts, D, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6126,9 +5835,6 @@ CONTAINS
 !      Read and write GridCoordinates_t/DataArray_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_ncoords_f
-!DEC$endif
   SUBROUTINE cg_ncoords_f(fn, B, Z, ncoords, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6150,9 +5856,6 @@ CONTAINS
     ncoords = INT(i_ncoords)
   end subroutine cg_ncoords_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_coord_info_f
-!DEC$endif
   SUBROUTINE cg_coord_info_f(fn, B, Z, C, TYPE, coordname, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6179,9 +5882,6 @@ CONTAINS
     call C_F_string_chars(c_name, coordname)
   end subroutine cg_coord_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_coord_id_f
-!DEC$endif
   SUBROUTINE cg_coord_id_f(fn, B, Z, C, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6207,10 +5907,7 @@ CONTAINS
 !      Read and write Elements_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nsections_f
-!DEC$endif
-  SUBROUTINE cg_nsections_f(fn, B, Z, nsections, ier) BIND(C, NAME="cg_nsections_f")
+  SUBROUTINE cg_nsections_f(fn, B, Z, nsections, ier)
     IMPLICIT NONE
     INTEGER :: fn
     INTEGER :: B
@@ -6232,9 +5929,6 @@ CONTAINS
   END SUBROUTINE cg_nsections_f
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_goto_f
-!DEC$endif
   SUBROUTINE cg_goto_f(fn, B, ier, &
     UserDataName1, i1, UserDataName2, i2, &
     UserDataName3, i3, UserDataName4, i4, &
@@ -6369,9 +6063,6 @@ CONTAINS
     END IF
   END SUBROUTINE cg_goto_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_gorel_f
-!DEC$endif
   SUBROUTINE cg_gorel_f(fn, ier, &
     UserDataName1, i1, UserDataName2, i2, &
     UserDataName3, i3, UserDataName4, i4, &
@@ -6494,9 +6185,6 @@ CONTAINS
     END IF
   END SUBROUTINE cg_gorel_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_gopath_f
-!DEC$endif
   SUBROUTINE cg_gopath_f(fn, path, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6520,9 +6208,6 @@ CONTAINS
 
   END SUBROUTINE cg_gopath_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_int
-!DEC$endif
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING
     INTEGER(C_INT) :: a
@@ -6530,9 +6215,6 @@ CONTAINS
     cg_get_type_c_int = CGNS_ENUMV(Integer)
   END FUNCTION cg_get_type_c_int
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_long_long
-!DEC$endif
   FUNCTION cg_get_type_c_long_long(a)
     USE ISO_C_BINDING
     INTEGER(C_LONG_LONG) :: a
@@ -6540,9 +6222,6 @@ CONTAINS
     cg_get_type_c_long_long = CGNS_ENUMV(LongInteger)
   END FUNCTION cg_get_type_c_long_long
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_float
-!DEC$endif
   FUNCTION cg_get_type_c_float(a)
     USE ISO_C_BINDING
     REAL(C_FLOAT) :: a
@@ -6550,9 +6229,6 @@ CONTAINS
     cg_get_type_c_float = CGNS_ENUMV(RealSingle)
   END FUNCTION cg_get_type_c_float
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_double
-!DEC$endif
   FUNCTION cg_get_type_c_double(a)
     USE ISO_C_BINDING
     REAL(C_DOUBLE) :: a
@@ -6560,9 +6236,6 @@ CONTAINS
     cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_complex_float
-!DEC$endif
   FUNCTION cg_get_type_c_complex_float(a)
     USE ISO_C_BINDING
     COMPLEX(C_FLOAT_COMPLEX) :: a
@@ -6570,9 +6243,6 @@ CONTAINS
     cg_get_type_c_complex_float = CGNS_ENUMV(ComplexSingle)
   END FUNCTION cg_get_type_c_complex_float
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_complex_double
-!DEC$endif
   FUNCTION cg_get_type_c_complex_double(a)
     USE ISO_C_BINDING
     COMPLEX(C_DOUBLE_COMPLEX) :: a
@@ -6580,9 +6250,6 @@ CONTAINS
     cg_get_type_c_complex_double = CGNS_ENUMV(ComplexDouble)
   END FUNCTION cg_get_type_c_complex_double
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_narrays_f
-!DEC$endif
   SUBROUTINE cg_narrays_f(narrays, ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: narrays
@@ -6601,9 +6268,6 @@ CONTAINS
 
   END SUBROUTINE cg_narrays_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_info_f
-!DEC$endif
   SUBROUTINE cg_array_info_f(A, ArrayName, DataType, DataDimension, DimensionVector, ier)
     IMPLICIT NONE
     INTEGER :: A
@@ -6659,9 +6323,6 @@ CONTAINS
 !
 !  END SUBROUTINE cg_open_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_ptr
-!DEC$endif
   SUBROUTINE cg_configure_ptr(what, value, ier)
     USE ISO_C_BINDING, ONLY : C_PTR, C_INT
     IMPLICIT NONE
@@ -6683,9 +6344,6 @@ CONTAINS
 
   END SUBROUTINE cg_configure_ptr
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
-!DEC$endif
   SUBROUTINE cg_configure_funptr(what, value, ier)
     USE ISO_C_BINDING, ONLY : C_FUNPTR, C_INT
     IMPLICIT NONE
@@ -6710,9 +6368,6 @@ CONTAINS
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
   !       Read and write ParticleZone_t Nodes                            !
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nparticle_zones_f
-!DEC$endif
   SUBROUTINE cg_nparticle_zones_f(fn, B, nparticlezones, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6738,9 +6393,6 @@ CONTAINS
 
   END SUBROUTINE cg_nparticle_zones_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_read_f
-!DEC$endif
   SUBROUTINE cg_particle_read_f(fn, B, P, particlename, nsize, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6771,9 +6423,6 @@ CONTAINS
 
   END SUBROUTINE cg_particle_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_id_f
-!DEC$endif
   SUBROUTINE cg_particle_id_f(fn, B, P, particle_id, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6797,9 +6446,6 @@ CONTAINS
 
   END SUBROUTINE cg_particle_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_write_f
-!DEC$endif
   SUBROUTINE cg_particle_write_f(fn, B, particlename, nsize, P, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6833,9 +6479,6 @@ CONTAINS
   !       Read and write ParticleCoordinates_t Nodes                     !
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_ncoord_nodes_f
-!DEC$endif
   SUBROUTINE cg_particle_ncoord_nodes_f(fn, B, P, ncoord_nodes, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -6862,9 +6505,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_ncoord_nodes_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_node_read_f
-!DEC$endif
     SUBROUTINE cg_particle_coord_node_read_f(fn, B, P, C, pcoord_name, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6894,9 +6534,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_coord_node_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_node_write_f
-!DEC$endif
     SUBROUTINE cg_particle_coord_node_write_f(fn, B, P, name, C, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6927,9 +6564,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_coord_node_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_bounding_box_read_f
-!DEC$endif
     SUBROUTINE cg_particle_bounding_box_read_f(fn, B, P, C, datatype, boundingbox, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6958,9 +6592,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_bounding_box_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_bounding_box_write_f
-!DEC$endif
     SUBROUTINE cg_particle_bounding_box_write_f(fn, B, P, C, datatype, boundingbox, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6992,9 +6623,6 @@ CONTAINS
     !       Read and write ParticleCoordinates_t/DataArray_t Nodes         !
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_ncoords_f
-!DEC$endif
      SUBROUTINE cg_particle_ncoords_f(fn, B, P, ncoords, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN)  :: fn
@@ -7022,9 +6650,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_ncoords_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_info_f
-!DEC$endif
     SUBROUTINE cg_particle_coord_info_f(fn, B, P, C, datatype, coordname, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7059,9 +6684,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_read_f
-!DEC$endif
      SUBROUTINE cg_particle_coord_read_f(fn, B, P, coordname, mem_datatype, s_rmin, s_rmax, coord_array, ier)
         IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -7101,9 +6723,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_id_f
-!DEC$endif
      SUBROUTINE cg_particle_coord_id_f(fn, B, P, C, coord_id, ier)
         IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -7131,9 +6750,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_write_f
-!DEC$endif
      SUBROUTINE cg_particle_coord_write_f(fn, B, P, datatype, coordname, coord_ptr, C, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
@@ -7173,9 +6789,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_partial_write_f
-!DEC$endif
      SUBROUTINE cg_particle_coord_partial_write_f(fn, B, P, datatype, coordname, s_rmin, s_rmax, coord_ptr, C, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
@@ -7224,9 +6837,6 @@ CONTAINS
     !      Read and write ParticleSolution_t Nodes                          *
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_nsols_f
-!DEC$endif
     SUBROUTINE cg_particle_nsols_f(fn, B, P, nsols, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7254,9 +6864,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_nsols_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_info_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_info_f(fn, B, P, S, solname, ier)
       IMPLICIT NONE
 
@@ -7288,9 +6895,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_id_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_id_f(fn, B, P, S, sol_id, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7316,9 +6920,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_write_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_write_f(fn, B, P, solname, S, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7351,9 +6952,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_sol_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_size_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_size_f(fn, B, P, S, nsize, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7379,9 +6977,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_sol_size_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_info_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_info_f(fn, B, P, S, ptype, npnts, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7409,9 +7004,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_ptset_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_read_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_read_f(fn, B, P, S, pnts, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7437,9 +7029,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_ptset_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_write_f
-!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_write_f(fn, B, P, solname, ptset_type, npnts, pnts, S, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7484,9 +7073,6 @@ CONTAINS
     !      Read and write particle solution DataArray_t Nodes               !
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_nfields_f
-!DEC$endif
     SUBROUTINE cg_particle_nfields_f(fn, B, P, S, nfields, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7515,9 +7101,6 @@ CONTAINS
 
    END SUBROUTINE cg_particle_nfields_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_info_f
-!DEC$endif
    SUBROUTINE cg_particle_field_info_f(fn, B, P, S, F, datatype, fieldname, ier)
      IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7553,9 +7136,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_field_info_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_read_f
-!DEC$endif
    SUBROUTINE cg_particle_field_read_f(fn, B, P, S, fieldname, mem_datatype, s_rmin, s_rmax, field_ptr, ier)
      IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7595,9 +7175,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_id_f
-!DEC$endif
     SUBROUTINE cg_particle_field_id_f(fn, B, P, S, F, field_id, ier)
       IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -7626,9 +7203,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_write_f
-!DEC$endif
     SUBROUTINE cg_particle_field_write_f(fn, B, P, S, datatype, fieldname, field_ptr, F, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7672,9 +7246,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_piter_read_f
-!DEC$endif
     SUBROUTINE cg_piter_read_f(fn, B, P, pitername, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7706,9 +7277,6 @@ CONTAINS
 
     END SUBROUTINE cg_piter_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_piter_write_f
-!DEC$endif
     SUBROUTINE cg_piter_write_f(fn, B, P, pitername, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7739,9 +7307,6 @@ CONTAINS
 
     END SUBROUTINE cg_piter_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_partial_write_f
-!DEC$endif
     SUBROUTINE cg_particle_field_partial_write_f(fn, B, P, S, datatype, fieldname, s_rmin, s_rmax, field_ptr, F, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7788,9 +7353,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_partial_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_equationset_read_f
-!DEC$endif
     SUBROUTINE cg_particle_equationset_read_f(EquationDimension, ParticleGoverningEquationsFlag, &
          CollisionModelFlag, BreakupModelFlag, ForceModelFlag, WallInteractionModelFlag, &
          PhaseChangeModelFlag, ier)
@@ -7843,9 +7405,6 @@ CONTAINS
 
      END SUBROUTINE cg_particle_equationset_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_governing_read_f
-!DEC$endif
     SUBROUTINE cg_particle_governing_read_f(ParticleEquationsType, ier)
       IMPLICIT NONE
       INTEGER(cgenum_t), INTENT(OUT) :: ParticleEquationsType
@@ -7864,9 +7423,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_governing_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_model_read_f
-!DEC$endif
     SUBROUTINE cg_particle_model_read_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
       CHARACTER(LEN=*), INTENT(OUT) :: ModelLabel
@@ -7892,9 +7448,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_model_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_equationset_write_f
-!DEC$endif
     SUBROUTINE cg_particle_equationset_write_f(EquationDimension, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: EquationDimension
@@ -7913,9 +7466,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_equationset_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_governing_write_f
-!DEC$endif
     SUBROUTINE cg_particle_governing_write_f(ParticleEquationstype, ier)
       IMPLICIT NONE
       INTEGER(CGENUM_T), INTENT(IN) :: ParticleEquationstype
@@ -7934,9 +7484,6 @@ CONTAINS
 
     END SUBROUTINE cg_particle_governing_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_model_write_f
-!DEC$endif
     SUBROUTINE cg_particle_model_write_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
       CHARACTER(LEN=*), INTENT(IN) :: ModelLabel
@@ -8642,6 +8189,7 @@ CONTAINS
       DEALLOCATE(c_C)
 
     END SUBROUTINE cgp_particle_coord_multi_write_data_f1
+
     SUBROUTINE cgp_particle_coord_multi_read_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
@@ -8779,6 +8327,7 @@ CONTAINS
       DEALLOCATE(c_F)
 
     END SUBROUTINE cgp_particle_field_multi_write_data_f1
+
     SUBROUTINE cgp_particle_field_multi_read_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
@@ -8850,15 +8399,14 @@ CONTAINS
     END SUBROUTINE cgp_particle_field_multi_read_data_f1
 
     SUBROUTINE cgp_ptlist_write_data_f(file_number, rmin, rmax, points, ier)
-
       IMPLICIT NONE
       INTEGER          , INTENT(IN) :: file_number
       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(IN) :: points
+      TYPE(C_PTR)      , VALUE :: points
       INTEGER, INTENT(OUT) :: ier
 
-      ier = INT(cgp_ptlist_write_data(INT(file_number, C_INT), rmin, rmax, C_LOC(points)))
+      ier = INT(cgp_ptlist_write_data(INT(file_number, C_INT), rmin, rmax, points))
 
     END SUBROUTINE cgp_ptlist_write_data_f
 
@@ -8867,10 +8415,10 @@ CONTAINS
       INTEGER          , INTENT(IN) :: file_number
       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: points
+      TYPE(C_PTR)      , VALUE :: points
       INTEGER, INTENT(OUT) :: ier
 
-      ier = INT(cgp_ptlist_read_data(INT(file_number, C_INT), rmin, rmax, C_LOC(points)))
+      ier = INT(cgp_ptlist_read_data(INT(file_number, C_INT), rmin, rmax, points))
 
     END SUBROUTINE cgp_ptlist_read_data_f
 
@@ -8882,47 +8430,151 @@ CONTAINS
       INTEGER, INTENT(IN) :: S
       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(IN) :: parents
+      TYPE(C_PTR)       , VALUE :: parents
       INTEGER, INTENT(OUT) :: ier
 
       ier = INT(cgp_parent_data_write(INT(file_number, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
-           rmin, rmax, C_LOC(parents)))
+           rmin, rmax, parents))
 
     END SUBROUTINE cgp_parent_data_write_f
 
     SUBROUTINE cgp_parentelements_read_data_f(fn, B, Z, S, start, end, parentelements, ier)
+      IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: Z
       INTEGER, INTENT(IN) :: S
       INTEGER(CGSIZE_T), INTENT(IN) :: start
       INTEGER(CGSIZE_T), INTENT(IN) :: end
-      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: parentelements
+      TYPE(C_PTR)       , VALUE :: parentelements
       INTEGER, INTENT(OUT) :: ier
 
-      TYPE(C_PTR) :: c_parentelements
-
-      INTERFACE
-         INTEGER(C_INT) FUNCTION cgp_parentelements_read_data(fn, B, Z, S, start, end, parentelements) &
-              BIND(C, NAME="cgp_parentelements_read_data")
-           IMPORT :: C_INT, C_PTR, CGSIZE_T
-           IMPLICIT NONE
-           INTEGER(C_INT), VALUE :: fn
-           INTEGER(C_INT), VALUE :: B
-           INTEGER(C_INT), VALUE :: Z
-           INTEGER(C_INT), VALUE :: S
-           INTEGER(CGSIZE_T), VALUE :: start
-           INTEGER(CGSIZE_T), VALUE :: end
-           TYPE(C_PTR)      , VALUE :: parentelements
-         END FUNCTION cgp_parentelements_read_data
-      END INTERFACE
-
-      c_parentelements = C_LOC(parentelements)
-
       ier = INT(cgp_parentelements_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
-           start, end, c_parentelements))
+           start, end, parentelements))
 
     END SUBROUTINE cgp_parentelements_read_data_f
+
+    SUBROUTINE cgp_elements_write_data_f(fn, B, Z, S, start, end, elements, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: start
+      INTEGER(CGSIZE_T), INTENT(IN) :: end
+      TYPE(C_PTR), VALUE :: elements
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_elements_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           start, end, elements))
+
+    END SUBROUTINE cgp_elements_write_data_f
+
+    SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, end, elements, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: start
+      INTEGER(CGSIZE_T), INTENT(IN) :: end
+      TYPE(C_PTR), VALUE :: elements
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_elements_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           start, end, elements))
+
+    END SUBROUTINE cgp_elements_read_data_f
+
+    SUBROUTINE cgp_coord_write_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: C
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: coord_array
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_coord_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(C, C_INT), &
+           rmin, rmax, coord_array))
+
+    END SUBROUTINE cgp_coord_write_data_f
+
+    SUBROUTINE cgp_coord_read_data_f(fn, B, Z, C, rmin, rmax, coord_array, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: C
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: coord_array
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_coord_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(C, C_INT), &
+           rmin, rmax, coord_array))
+
+    END SUBROUTINE cgp_coord_read_data_f
+
+    SUBROUTINE cgp_field_write_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: field_ptr
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_field_write_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           INT(F, C_INT), rmin, rmax, field_ptr))
+
+    END SUBROUTINE cgp_field_write_data_f
+
+    SUBROUTINE cgp_field_read_data_f(fn, B, Z, S, F, rmin, rmax, field_ptr, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: field_ptr
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_field_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           INT(F, C_INT), rmin, rmax, field_ptr))
+
+    END SUBROUTINE cgp_field_read_data_f
+
+    SUBROUTINE cgp_array_write_data_f(A, rmin, rmax, data, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: A
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: data
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_array_write_data(INT(A, C_INT), rmin, rmax, data))
+
+    END SUBROUTINE cgp_array_write_data_f
+
+    SUBROUTINE cgp_array_read_data_f(A, rmin, rmax, data, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: A
+      TYPE(C_PTR), VALUE :: rmin
+      TYPE(C_PTR), VALUE :: rmax
+      TYPE(C_PTR), VALUE :: data
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_array_read_data(INT(A, C_INT), rmin, rmax, data))
+
+    END SUBROUTINE cgp_array_read_data_f
 
     SUBROUTINE cgp_poly_elements_read_data_offsets_f(fn, B, Z, S, start, end, offsets, ier)
       INTEGER, INTENT(IN) :: fn

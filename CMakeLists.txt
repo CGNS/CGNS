@@ -23,10 +23,13 @@ project("cgns" C)
 
 include(GNUInstallDirs)
 
-# Determine CGNS_VERSION from src/cgns_version.h for
+# Determine CGNS_VERSION from src/cgns_version.h
 file (READ ${PROJECT_SOURCE_DIR}/src/cgns_version.h _cgnslib_h_contents)
-string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS_VALUE[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
-    "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
+string (REGEX MATCH "#define[ \t]+CGNS_VERSION_MAJOR[ \t]+([0-9]+)" _ ${_cgnslib_h_contents})
+set (_CGNS_MAJOR ${CMAKE_MATCH_1})
+string (REGEX MATCH "#define[ \t]+CGNS_VERSION_MINOR[ \t]+([0-9]+)" _ ${_cgnslib_h_contents})
+set (_CGNS_MINOR ${CMAKE_MATCH_1})
+set (CGNS_VERSION "${_CGNS_MAJOR}.${_CGNS_MINOR}")
 
 set(CGNS_PACKAGE "cgns")
 set(CGNS_PACKAGE_NAME "CGNS")

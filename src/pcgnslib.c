@@ -616,6 +616,15 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
  *          to be written by a given process. It is the responsibility of
  *          the application to ensure that the data type for the coordinate
  *          data matches that defined in the file; no conversions are done.
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_coord_write_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p coords.  Pass \c C_LOC(array) for each
+ *       when this rank contributes data.  To indicate no data, pass
+ *       \c C_NULL_PTR for all three; \p rmin and \p rmax are not examined
+ *       when \p coords is NULL:
+ *       \code call cgp_coord_write_data_f(fn, B, Z, C, C_LOC(rmin), C_LOC(rmax), C_LOC(coords(1)), ier) \endcode
+ *       \code call cgp_coord_write_data_f(fn, B, Z, C, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
@@ -792,6 +801,15 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
  *          by a given process. It is the responsibility of the application
  *          to ensure that the data type for the coordinate data matches that
  *          defined in the file; no conversions are done.
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_coord_read_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p coords.  Pass \c C_LOC(array) for each
+ *       when this rank contributes data.  To indicate no data, pass
+ *       \c C_NULL_PTR for all three; \p rmin and \p rmax are not examined
+ *       when \p coords is NULL:
+ *       \code call cgp_coord_read_data_f(fn, B, Z, C, C_LOC(rmin), C_LOC(rmax), C_LOC(coords(1)), ier) \endcode
+ *       \code call cgp_coord_read_data_f(fn, B, Z, C, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
@@ -1062,6 +1080,15 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
  *       for variable sized elements without knowledge of the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is the
  *       same size as that defined in the file; no conversions are done.
+ * \note To indicate that a rank contributes no data, pass \p elements = NULL.
+ *       When \p elements is NULL, the values of \p start and \p end are ignored.
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_elements_write_data_f takes \c TYPE(C_PTR)
+ *       for \p elements.  Pass \c C_LOC(elements(1)) for data, or \c C_NULL_PTR
+ *       when this rank contributes no data:
+ *       \code call cgp_elements_write_data_f(fn, B, Z, S, start, end, C_LOC(elements(1)), ier) \endcode
+ *       \code call cgp_elements_write_data_f(fn, B, Z, S, start, end, C_NULL_PTR, ier) \endcode
  */
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, const cgsize_t *elements)
@@ -1123,6 +1150,18 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
  * \param[in]  elements \PCONN_Elements
  * \param[in]  offsets  \PCONN_Offsets
  * \return \ier
+ *
+ * \note To indicate that a rank contributes no data, pass \p elements = NULL
+ *       and \p offsets = NULL.
+ *
+ * \par Fortran
+ *       \c cgp_poly_elements_write_data_f accepts only \c TYPE(C_PTR) for the
+ *       \p elements and \p offsets arguments (changed in CGNS 5.0; the previous
+ *       Fortran array overload has been removed because it could not safely express NULL).
+ *       Pass \c C_LOC(elements) and \c C_LOC(offsets) for data, or \c C_NULL_PTR
+ *       when this rank contributes no data:
+ *       \code call cgp_poly_elements_write_data_f(fn, B, Z, S, start, end, C_LOC(elements(1)), C_LOC(offsets(1)), ier) \endcode
+ *       \code call cgp_poly_elements_write_data_f(fn, B, Z, S, 0, 0, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
                             cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
@@ -1330,6 +1369,16 @@ int cgp_poly_elements_read_data_elements(int fn, int B, int Z, int S, cgsize_t s
  * \param[in]  end      \PCONN_end
  * \param[out] elements \PCONN_Elements
  * \return \ier
+ *
+ * \note To indicate that a rank contributes no data, pass \p elements = NULL.
+ *       When \p elements is NULL, the values of \p start and \p end are ignored.
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_elements_read_data_f takes \c TYPE(C_PTR)
+ *       for \p elements.  Pass \c C_LOC(elements(1)) for data, or \c C_NULL_PTR
+ *       when this rank contributes no data:
+ *       \code call cgp_elements_read_data_f(fn, B, Z, S, start, end, C_LOC(elements(1)), ier) \endcode
+ *       \code call cgp_elements_read_data_f(fn, B, Z, S, start, end, C_NULL_PTR, ier) \endcode
  */
 int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, cgsize_t *elements)
@@ -1387,6 +1436,18 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
  * \param[in]  end         \PCONN_end
  * \param[in]  parent_data \PCONN_Elements
  * \return \ier
+ *
+ * \note To indicate that a rank contributes no data, pass \p parent_data = NULL.
+ *       When \p parent_data is NULL, the values of \p start and \p end are ignored.
+ *
+ * \par Fortran
+ *       \c cgp_parent_data_write_f accepts only \c TYPE(C_PTR) for the
+ *       \p parents argument (changed in CGNS 5.0; the previous Fortran array
+ *       overload has been removed because it could not safely express NULL).
+ *       Pass \c C_LOC(parent_data) for data, or \c C_NULL_PTR when this rank
+ *       contributes no data:
+ *       \code call cgp_parent_data_write_f(fn, B, Z, S, start, end, C_LOC(parent_data(1)), ier) \endcode
+ *       \code call cgp_parent_data_write_f(fn, B, Z, S, 0, 0, C_NULL_PTR, ier) \endcode
  */
 int cgp_parent_data_write(int fn, int B, int Z, int S,
 			  cgsize_t start, cgsize_t end,
@@ -1514,6 +1575,18 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
  * \param[in]  end            \PCONN_end
  * \param[out] parentelements \PCONN_Elements
  * \return \ier
+ *
+ * \note To indicate that a rank contributes no data, pass \p parentelements = NULL.
+ *       When \p parentelements is NULL, the values of \p start and \p end are ignored.
+ *
+ * \par Fortran
+ *       \c cgp_parentelements_read_data_f accepts only \c TYPE(C_PTR) for the
+ *       \p parentelements argument (changed in CGNS 5.0; the previous Fortran array
+ *       overload has been removed because it could not safely express NULL).
+ *       Pass \c C_LOC(parentelements) for data, or \c C_NULL_PTR when this rank
+ *       contributes no data:
+ *       \code call cgp_parentelements_read_data_f(fn, B, Z, S, start, end, C_LOC(parentelements(1)), ier) \endcode
+ *       \code call cgp_parentelements_read_data_f(fn, B, Z, S, 0, 0, C_NULL_PTR, ier) \endcode
  */
 int cgp_parentelements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, cgsize_t *parentelements)
@@ -1686,6 +1759,14 @@ int cgp_field_write(int fn, int B, int Z, int S,
  * \param[in]  rmax \PSOL_range_max
  * \param[in]  data \PSOL_solution_array
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_field_write_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three; \p rmin and \p rmax are not examined when \p data is NULL:
+ *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_LOC(rmin), C_LOC(rmax), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
@@ -1845,6 +1926,14 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
  * \param[in]  rmax \PSOL_range_max
  * \param[in]  data \PSOL_solution_array
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_field_read_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three; \p rmin and \p rmax are not examined when \p data is NULL:
+ *       \code call cgp_field_read_data_f(fn, B, Z, S, F, C_LOC(rmin), C_LOC(rmax), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_field_read_data_f(fn, B, Z, S, F, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data)
@@ -2069,8 +2158,7 @@ int cgp_particle_coord_write_data(int fn, int B, int P, int C,
 
        if(coords) {
           if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims[0]) {
-             printf("%d %d %d", rmin[0]> rmax[0], rmin[0] <1, rmax[0] >dims[0]);
-             cgi_error("Invalid index ranges. cgp_coord_write_data");
+             cgi_error("Invalid index ranges. cgp_particle_coord_write_data");
              return CG_ERROR;
           }
        }
@@ -2751,10 +2839,18 @@ int cgp_array_write(const char *ArrayName, CGNS_ENUMT(DataType_t) DataType,
  * \brief Write array data in parallel.
  *
  * \param[in]  A    \PARR_A
- * \param[in]  rmin \PARR_range_min
- * \param[in]  rmax \PARR_range_max
- * \param[in]  data \PARR_data
+ * \param[in]  rmin \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  data \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_array_write_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three:
+ *       \code call cgp_array_write_data_f(A, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_array_write_data_f(A, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_array_write_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, const void *data)
@@ -2892,10 +2988,18 @@ int cgp_array_general_write_data(int A,
  * \brief Read array data in parallel.
  *
  * \param[in]  A    \PARR_A
- * \param[in]  rmin \PARR_range_min
- * \param[in]  rmax \PARR_range_max
- * \param[in]  data \PARR_data
+ * \param[in]  rmin \PARR_range_min In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[in]  rmax \PARR_range_max In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
+ * \param[out] data \PARR_data In Fortran, use C_LOC() to pass \e TYPE(C_PTR).
  * \return \ier
+ *
+ * \par Fortran
+ *       The Fortran interface \c cgp_array_read_data_f takes \c TYPE(C_PTR)
+ *       for \p rmin, \p rmax, and \p data.  Pass \c C_LOC(array) when this
+ *       rank contributes data.  To indicate no data, pass \c C_NULL_PTR for
+ *       all three:
+ *       \code call cgp_array_read_data_f(A, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(data(1)), ier) \endcode
+ *       \code call cgp_array_read_data_f(A, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
 int cgp_array_read_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, void *data)
@@ -4274,6 +4378,17 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
  * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
  *          must be used to point to a PointSet for writing.
  *
+ * \note To indicate that a rank contributes no data, pass \p points = NULL.
+ *       When \p points is NULL, the values of \p rmin and \p rmax are ignored.
+ *
+ * \par Fortran
+ *       \c cgp_ptlist_write_data_f accepts \c TYPE(C_PTR) for the \p points
+ *       argument (changed in CGNS 5.0; the previous Fortran array overload
+ *       has been removed because it could not safely express NULL).
+ *       Pass \c C_LOC(points) for data, or \c C_NULL_PTR when this rank
+ *       contributes no data:
+ *       \code call cgp_ptlist_write_data_f(file_number, rmin, rmax, C_LOC(points(1)), ier) \endcode
+ *       \code call cgp_ptlist_write_data_f(file_number, 0, 0, C_NULL_PTR, ier) \endcode
  */
 int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
     cgsize_t rmax, const cgsize_t *points)
@@ -4337,6 +4452,18 @@ int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
  *
  * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
  *          must be used to point to a PointSet for reading.
+ *
+ * \note To indicate that a rank contributes no data, pass \p points = NULL.
+ *       When \p points is NULL, the values of \p rmin and \p rmax are ignored.
+ *
+ * \par Fortran
+ *       \c cgp_ptlist_read_data_f accepts \c TYPE(C_PTR) for the \p points
+ *       argument (changed in CGNS 5.0; the previous Fortran array overload
+ *       has been removed because it could not safely express NULL).
+ *       Pass \c C_LOC(points) for data, or \c C_NULL_PTR when this rank
+ *       contributes no data:
+ *       \code call cgp_ptlist_read_data_f(file_number, rmin, rmax, C_LOC(points(1)), ier) \endcode
+ *       \code call cgp_ptlist_read_data_f(file_number, 0, 0, C_NULL_PTR, ier) \endcode
  */
 int cgp_ptlist_read_data(int file_number, cgsize_t rmin, cgsize_t rmax, cgsize_t *points)
 {

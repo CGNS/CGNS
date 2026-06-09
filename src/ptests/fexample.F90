@@ -21,10 +21,10 @@ PROGRAM fexample
   INTEGER F, B, Z, E, S, Fs, Cx, Cy, Cz, A
   INTEGER(cgsize_t) :: i, j, k, n, nn, ne
   INTEGER(cgsize_t) :: nnodes, nelems
-  INTEGER(cgsize_t) :: sizes(3), start, END
+  INTEGER(cgsize_t), TARGET :: sizes(3), start, END
   INTEGER(cgsize_t), PARAMETER :: start_1 = 1
-  REAL*4 fx(totnodes), fy(totnodes), fz(totnodes), fd(totelems)
-  INTEGER(cgsize_t) :: ie(8*totelems)
+  REAL*4, TARGET :: fx(totnodes), fy(totnodes), fz(totnodes), fd(totelems)
+  INTEGER(cgsize_t), TARGET :: ie(8*totelems)
 !
 !---- initialize MPI
   CALL MPI_INIT(mpi_err)
@@ -80,11 +80,11 @@ PROGRAM fexample
   ENDDO
 
 !---- write the coordinate data in parallel
-  CALL cgp_coord_write_data_f(F, B, Z, Cx, start, END, fx, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(start), C_LOC(END), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cy, start, END, fy, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(start), C_LOC(END), C_LOC(fy(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cz, start, END, fz, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(start), C_LOC(END), C_LOC(fz(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create data node for elements
@@ -122,7 +122,7 @@ PROGRAM fexample
   ENDDO
 
 !---- write the element connectivity in parallel
-  CALL cgp_elements_write_data_f(F, B, Z, E, start, END, ie, ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, E, start, END, C_LOC(ie(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create a centered solution
@@ -141,7 +141,7 @@ PROGRAM fexample
   ENDDO
 
 !---- write the solution field data in parallel
-  CALL cgp_field_write_data_f(F, B, Z, S, Fs, start, END, fd, ierr)
+  CALL cgp_field_write_data_f(F, B, Z, S, Fs, C_LOC(start), C_LOC(END), C_LOC(fd(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create user data under the zone and duplicate solution data
@@ -155,7 +155,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- write the array data in parallel
-  CALL cgp_array_write_data_f(A, start, END, fd, ierr)
+  CALL cgp_array_write_data_f(A, C_LOC(start), C_LOC(END), C_LOC(fd(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 !---- close the file and terminate MPI
   CALL cgp_close_f(F, ierr)

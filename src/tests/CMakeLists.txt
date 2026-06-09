@@ -52,6 +52,7 @@ set(test_complex_FILES test_complex.c)
 set(test_convert_elem_FILES test_convert_elem.c)
 set(test_back_comp_FILES test_back_comp.c)
 set(test_particle_FILES test_particle.c)
+set(test_unicode_FILES test_unicode.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -108,6 +109,10 @@ add_executable( test_particle        ${test_particle_FILES}        )
 # HDF5-specific test (conditional on HDF5 support)
 if (CGNS_ENABLE_HDF5)
   add_executable( cgioc_hdf ${cgioc_hdf_FILES} )
+  # Unicode filepath test requires HDF5 >= 2.0.0
+  if (HDF5_VERSION VERSION_GREATER_EQUAL "2.0.0")
+    add_executable( test_unicode ${test_unicode_FILES} )
+  endif()
 endif()
 
 # 64-bit test (conditional on 64-bit support)
@@ -145,6 +150,9 @@ set(C_TESTS_LIST
 # Conditionally add HDF5-specific tests
 if (CGNS_ENABLE_HDF5)
   list(APPEND C_TESTS_LIST cgioc_hdf)
+  if (HDF5_VERSION VERSION_GREATER_EQUAL "2.0.0")
+    list(APPEND C_TESTS_LIST test_unicode)
+  endif()
 endif()
 
 # Conditionally add 64-bit tests
@@ -223,7 +231,14 @@ if (CGNS_ENABLE_TESTS)
     if ( ${TARGETNAME} IN_LIST SKIP_TESTS )
       continue()
     endif()
-    add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+    if (${TARGETNAME} STREQUAL "test64c")
+      # Use 2.2 GB to exercise the >2 GB single-array write/read path without
+      # requiring excessive disk space on CI runners. -e 0 skips the element
+      # connectivity array (which would double file size), -t enables timing output.
+      add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME} -m 2.2g -e 0 -t)
+    else()
+      add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+    endif()
     set_property (TEST ${TARGETNAME} PROPERTY SKIP_RETURN_CODE 125)
     # On windows help ctest to find the required dlls
     if(CGNS_BUILD_SHARED)
@@ -243,5 +258,6 @@ if (CGNS_ENABLE_TESTS)
           "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
       endif()
     endforeach()
+
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)

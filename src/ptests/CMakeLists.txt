@@ -58,6 +58,17 @@ foreach(TGTNAME ${C_PTESTS_LIST})
   add_test_exe(${TGTNAME})
 endforeach()
 
+if (HDF5_VERSION VERSION_GREATER_EQUAL "2.0.0")
+  add_executable(pcgns_unicode_test pcgns_unicode_test.c)
+  target_link_libraries(pcgns_unicode_test PRIVATE ${PTESTS_LK_LIBS})
+  # Embed UTF-8 active code page manifest on Windows so that MPI_File_open
+  # (which uses ANSI file APIs) can handle UTF-8 filenames.
+  if (WIN32)
+    target_sources(pcgns_unicode_test PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/pcgns_unicode_test.manifest)
+  endif()
+endif()
+
 if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   set(FORTRAN_PTESTS_LIST
     pcgns_ftest
@@ -88,6 +99,11 @@ if (CGNS_ENABLE_TESTS)
              COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "4"
 	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
   endforeach()
+  if (HDF5_VERSION VERSION_GREATER_EQUAL "2.0.0")
+    add_test(NAME test-pcgns_unicode_test
+             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:pcgns_unicode_test> ${MPIEXEC_POSTFLAGS})
+  endif()
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     foreach(TEST_NAME ${FORTRAN_PTESTS_LIST})
 	    add_test(NAME test-${TEST_NAME}
