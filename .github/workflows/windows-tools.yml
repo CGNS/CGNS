@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Get Sources
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Build Tcl/Tk from Source with Private Headers
       run: |
