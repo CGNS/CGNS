@@ -14,12 +14,14 @@ jobs:
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    # Only run on push events or same-repository PRs from a non-Dependabot actor.
-    # Forks cannot access secrets, so this prevents the workflow from failing.
-    # GitHub also withholds secrets from pull_request runs triggered by Dependabot,
-    # even for same-repo branches, so those must be excluded explicitly too.
+    # Only run on push events to the upstream repo, or same-repository PRs
+    # from a non-Dependabot actor. Forks cannot access secrets (SONAR_TOKEN
+    # is only configured on CGNS/CGNS), so this prevents the workflow from
+    # failing on forks. GitHub also withholds secrets from pull_request runs
+    # triggered by Dependabot, even for same-repo branches, so those must be
+    # excluded explicitly too.
     if: |
-      github.event_name == 'push' ||
+      (github.event_name == 'push' && github.repository == 'CGNS/CGNS') ||
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository &&
        github.actor != 'dependabot[bot]')
