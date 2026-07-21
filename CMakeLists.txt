@@ -91,9 +91,9 @@ if(WIN32)
   set(tools_install_suffix "")
 endif()
 
-set(CGNS_INSTALL_TOOLS_BINDIR "${CMAKE_INSTALL_BINDIR}${install_suffix}" CACHE PATH
+set(CGNS_INSTALL_TOOLS_BINDIR "${CMAKE_INSTALL_BINDIR}${tools_install_suffix}" CACHE PATH
     "CGNS: tools binary install location")
-set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${install_suffix}" CACHE PATH
+set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${tools_install_suffix}" CACHE PATH
     "CGNS: arch independent tools data install location")
 
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
