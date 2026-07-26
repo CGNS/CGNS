@@ -1,0 +1,23 @@
+src/tests/test_error_handling.c
+  s_428b92e567de84::t_8fd04075e622af 464-610,621-661,663,665,667-677,694,696-841,843,882
+  s_428b92e567de84::t_9ccd91ceb72135 662,664,666,678-693,695
+  s_428b92e567de84::t_29222e12ea77fe 611-620
+  s_428b92e567de84::t_7f7ccbd00182ca 869-874
+  s_428b92e567de84::t_83f02f3ef3dbdb 842,844,875-877
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c83f079565b7948c73d6e6056d317b75550f7400",
+  "prompts": {},
+  "sessions": {
+    "s_428b92e567de84": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cadc00bf-c213-4edd-844f-4bc05754275c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
