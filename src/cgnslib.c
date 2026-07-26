@@ -8797,10 +8797,13 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
      * always write GridLocation = InterpolationPoints.
      */
     if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
-        sol->location != CGNS_ENUMV(CellCenter))
+        !(sol->location == CGNS_ENUMV(CellCenter) &&
+          sol->ptset != NULL && sol->ptset->npts > 0))
     {
         cgi_error("Solution interpolation order requires GridLocation = "
-                  "InterpolationPoints.");
+                  "InterpolationPoints (CellCenter is accepted only for "
+                  "backward compatibility, and only with an explicit "
+                  "PointRange or PointList).");
         return CG_ERROR;
     }
 
@@ -8866,12 +8869,21 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-/* CPEX-0045 v3 §3.3.1: per-element characteristic length h^e for       */
-/* Cartesian modal interpolation. Stored as a 1D R8 DataArray_t named   */
-/* "CharacteristicLength" under the parent FlowSolution_t.              */
+/* CPEX-0045 v3 §3.3.1: per-element characteristic length(s) for        */
+/* Cartesian modal interpolation, stored as an R8 DataArray_t named     */
+/* "CharacteristicLength" under the parent FlowSolution_t. Two encodings*/
+/* are normative and are distinguished by array rank:                   */
+/*   rank 1, [numElements]          -> isotropic, one h^e per element   */
+/*   rank 2, [nscale, numElements]  -> per-axis, nscale factors/element */
+/* The per-axis form matches the directional non-dimensionalisation used*/
+/* by Taylor-basis DG solvers (h_k = extent of the element along axis k)*/
+/* and is what keeps the modal mass matrix well conditioned on          */
+/* high-aspect-ratio cells. Writers record the factors they actually    */
+/* used; readers must use the recorded values and never recompute them. */
 
 static int cgi_find_sol_array(cgns_sol *sol, const char *name,
-                              double *node_id_out, cgsize_t *length_out)
+                              double *node_id_out, int *ndim_out,
+                              cgsize_t *dim_vals_out)
 {
     int nnodes;
     double *ids = NULL;
@@ -8917,41 +8929,54 @@ static int cgi_find_sol_array(cgns_sol *sol, const char *name,
     }
     if (ids) CGNS_FREE(ids);
     if (!found) return CG_NODE_NOT_FOUND;
-    if (strcmp(match_dtype, "R8") != 0 || match_dim != 1) {
-        cgi_error("\"%s\" must be a 1-D R8 array", name);
+    if (strcmp(match_dtype, "R8") != 0 || (match_dim != 1 && match_dim != 2)) {
+        cgi_error("\"%s\" must be a 1-D (isotropic) or 2-D (per-axis) R8 array",
+                  name);
         return CG_ERROR;
     }
+    (void)match_len;
     *node_id_out = match_id;
-    *length_out  = match_len;
+    *ndim_out    = match_dim;
+    for (i = 0; i < match_dim; i++) dim_vals_out[i] = match_dimvals[i];
     return CG_OK;
 }
 
 /**
  * \ingroup FlowSolution
- * \brief Read the per-element characteristic length \f$h^e\f$ from a FlowSolution_t.
+ * \brief Read the per-element characteristic length(s) from a FlowSolution_t.
  *
- * Reads the \texttt{CharacteristicLength} \texttt{DataArray\_t} child of a
- * FlowSolution_t node. Required when the associated SolutionInterpolation_t
- * uses \texttt{CartesianMonomialsPascal} interpolation (CPEX-0045 v3 §3.3.1).
+ * Reads the \c CharacteristicLength \c DataArray_t child of a FlowSolution_t
+ * node. Required when the associated SolutionInterpolation_t uses
+ * \c CartesianMonomialsPascal interpolation (CPEX-0045 v3 §3.3.1).
  *
  * \param[in]  fn          CGNS file index number
  * \param[in]  B           Base index number (1-based)
  * \param[in]  Z           Zone index number (1-based)
  * \param[in]  S           FlowSolution index (1-based)
- * \param[out] numElements Number of \f$h^e\f$ entries (one per element covered)
- * \param[out] h_e         Characteristic-length array (allocated by caller)
+ * \param[out] nscale      Number of scale factors per element: 1 for the
+ *                         isotropic encoding, PhysDim for the per-axis encoding
+ * \param[out] numElements Number of elements covered by the block
+ * \param[out] h_e         Scale-factor array (allocated by caller), of total
+ *                         length nscale*numElements
  * \return     CG_OK on success, CG_NODE_NOT_FOUND if the array is absent,
  *             CG_ERROR otherwise.
  *
- * Typical usage: call once with \c h_e==NULL to obtain \c numElements, then
- * allocate and call again to read the data.
+ * Typical usage: call once with \c h_e==NULL to obtain \c nscale and
+ * \c numElements, then allocate and call again to read the data.
+ *
+ * For the per-axis encoding the on-disk array is [nscale, numElements] with
+ * nscale fast-varying, so the scale factors of one element are contiguous:
+ * (hx0,hy0,hz0, hx1,hy1,hz1, ...). This matches the LagrangeControlPoints
+ * layout convention.
  */
 int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
-                                      cgsize_t *numElements, double *h_e)
+                                      int *nscale, cgsize_t *numElements,
+                                      double *h_e)
 {
     cgns_sol *sol;
     double node_id;
-    cgsize_t length;
+    int ndim;
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
     int ierr;
 
     cg = cgi_get_file(fn);
@@ -8961,14 +8986,26 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol == 0) return CG_ERROR;
 
-    ierr = cgi_find_sol_array(sol, "CharacteristicLength", &node_id, &length);
+    ierr = cgi_find_sol_array(sol, "CharacteristicLength", &node_id,
+                              &ndim, dim_vals);
     if (ierr == CG_NODE_NOT_FOUND) {
+        if (nscale) *nscale = 0;
         if (numElements) *numElements = 0;
         return CG_NODE_NOT_FOUND;
     }
     if (ierr) return CG_ERROR;
 
-    if (numElements) *numElements = length;
+    /* Rank discriminates the encoding: 1-D is isotropic (one factor per
+     * element), 2-D is per-axis ([nscale, numElements]). */
+    if (ndim == 1) {
+        if (nscale) *nscale = 1;
+        if (numElements) *numElements = dim_vals[0];
+    }
+    else {
+        if (nscale) *nscale = (int)dim_vals[0];
+        if (numElements) *numElements = dim_vals[1];
+    }
+
     if (h_e == NULL) return CG_OK;          /* size-only query */
 
     if (cgio_read_all_data_type(cg->cgio, node_id, "R8", (void *)h_e)) {
@@ -8980,19 +9017,41 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
 
 /**
  * \ingroup FlowSolution
- * \brief Write the per-element characteristic length \f$h^e\f$ on a FlowSolution_t.
+ * \brief Write the per-element characteristic length(s) on a FlowSolution_t.
  *
- * Writes a \texttt{CharacteristicLength} \texttt{DataArray\_t} child of the
- * FlowSolution_t node (R8, 1-D, length \c numElements). Required when the
- * associated SolutionInterpolation_t uses \texttt{CartesianMonomialsPascal}.
+ * Writes a \c CharacteristicLength \c DataArray_t child of the FlowSolution_t
+ * node. Required when the associated SolutionInterpolation_t uses
+ * \c CartesianMonomialsPascal (CPEX-0045 v3 §3.3.1).
+ *
+ * \param[in] fn          CGNS file index number
+ * \param[in] B           Base index number (1-based)
+ * \param[in] Z           Zone index number (1-based)
+ * \param[in] S           FlowSolution index (1-based)
+ * \param[in] nscale      Number of scale factors per element. Pass 1 for the
+ *                        isotropic encoding (R8, 1-D, [numElements]); pass
+ *                        PhysDim for the per-axis encoding (R8, 2-D,
+ *                        [nscale, numElements]).
+ * \param[in] numElements Number of elements covered by the block
+ * \param[in] h_e         Scale factors, total length nscale*numElements. For
+ *                        the per-axis encoding the factors of one element are
+ *                        contiguous: (hx0,hy0,hz0, hx1,hy1,hz1, ...).
+ * \return    CG_OK on success, CG_ERROR otherwise.
+ *
+ * Writers must record the scale factors actually used to non-dimensionalise
+ * the monomial coefficients, so that a reader reproduces the same polynomial
+ * without recomputing any geometric formula.
+ *
  * If the child already exists and the file is open in CG_MODE_MODIFY, it is
  * replaced; in CG_MODE_WRITE a duplicate write returns CG_ERROR.
  */
 int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
-                                       cgsize_t numElements, const double *h_e)
+                                       int nscale, cgsize_t numElements,
+                                       const double *h_e)
 {
     cgns_sol *sol;
-    cgsize_t dim_vals;
+    cgns_base *base;
+    cgsize_t dim_vals[2];
+    cgsize_t i, ntotal;
     int nnodes;
     double *ids = NULL;
     double dummy_id;
@@ -9003,6 +9062,9 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
     if (cg == 0) return CG_ERROR;
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol == 0) return CG_ERROR;
 
@@ -9010,9 +9072,27 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
         cgi_error("CharacteristicLength: numElements must be > 0");
         return CG_ERROR;
     }
+    /* Only the two normative encodings are accepted: isotropic (nscale==1) or
+     * one factor per physical coordinate direction (nscale==PhysDim). */
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
     if (h_e == NULL) {
         cgi_error("CharacteristicLength: h_e pointer must not be NULL");
         return CG_ERROR;
+    }
+
+    /* Scale factors divide the local coordinates, so zero or negative values
+     * would make the normalisation undefined. */
+    ntotal = (cgsize_t)nscale * numElements;
+    for (i = 0; i < ntotal; i++) {
+        if (!(h_e[i] > 0.0)) {
+            cgi_error("CharacteristicLength: all scale factors must be > 0 "
+                      "(entry %" PRIdCGSIZE " is %g)", i, h_e[i]);
+            return CG_ERROR;
+        }
     }
 
     /* Replace any existing CharacteristicLength child. */
@@ -9040,10 +9120,20 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
     }
     if (ids) CGNS_FREE(ids);
 
-    dim_vals = numElements;
-    if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
-                     &dummy_id, "R8", 1, &dim_vals, (void *)h_e))
-        return CG_ERROR;
+    /* Array rank encodes which convention was used. */
+    if (nscale == 1) {
+        dim_vals[0] = numElements;
+        if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
+                         &dummy_id, "R8", 1, dim_vals, (void *)h_e))
+            return CG_ERROR;
+    }
+    else {
+        dim_vals[0] = nscale;
+        dim_vals[1] = numElements;
+        if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
+                         &dummy_id, "R8", 2, dim_vals, (void *)h_e))
+            return CG_ERROR;
+    }
 
     return CG_OK;
 }
@@ -17362,11 +17452,12 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
 
     einterp = &family->elementinterpolations[en];
 
-    /* Reject a second LagrangeControlPoints write. A node created by
-     * cg_element_isoparametric_write has no LagrangePoints and is considered
-     * "isoparametric" per CPEX-0045 §3.2.2 (LagrangePoints is optional;
-     * absence means standard layout). */
-    if (einterp->lagrangePts != NULL) {
+    /* Reject a second LagrangeControlPoints write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below. A node
+     * created by cg_element_isoparametric_write has no LagrangePoints and is
+     * considered "isoparametric" per CPEX-0045 §3.2.2 (LagrangePoints is
+     * optional; absence means standard layout). */
+    if (einterp->lagrangePts != NULL && cg->mode == CG_MODE_WRITE) {
         cgi_error("LagrangeControlPoints already written for "
                   "ElementInterpolation_t node '%s'. Open the file in "
                   "CG_MODE_MODIFY to replace.", einterp->name);
@@ -18171,13 +18262,22 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
         return CG_ERROR;
     }
     
+    /* Reject a second LagrangeControlPoints write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below. */
+    if (sinterp->lagrangePts != NULL && cg->mode == CG_MODE_WRITE) {
+        cgi_error("LagrangeControlPoints already written for "
+                  "SolutionInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", sinterp->name);
+        return CG_ERROR;
+    }
+
     // Allocate and fill memory structure
     if (sinterp->lagrangePts)
     {
         cgi_delete_node(sinterp->id,sinterp->lagrangePts->id);
         CGNS_FREE(sinterp->lagrangePts);
     }
-    
+
     sinterp->lagrangePts = CGNS_NEW(cgns_array, 1);
     memset(sinterp->lagrangePts, 0, sizeof(cgns_array));
     
@@ -18275,6 +18375,69 @@ int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT
         }
     }
     return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Find a SolutionInterpolation_t node by element type and orders, with
+ *        bidirectional fallback to the basic (linear) element type
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number
+ * \param[in]  fam Family index number
+ * \param[in]  et  Element type to look up (e.g. TETRA_10)
+ * \param[in]  os  Spatial interpolation order
+ * \param[in]  ot  Temporal interpolation order
+ * \param[out] sn  1-based index of the matching SolutionInterpolation_t node
+ * \param[out] it  InterpolationType of the matching node
+ * \return     CG_OK if found, CG_NODE_NOT_FOUND if neither an exact nor a
+ *             basic-element-type match exists, CG_ERROR on failure
+ *
+ * \details
+ * CPEX-0045 v3 (\ref sec:solution-interpolation) defines the solution
+ * interpolation lookup as bidirectional with fallback: a query for
+ * (TETRA_10, os, ot) first searches for an exact TETRA_10 match and, if
+ * absent, falls back to the basic element tag TETRA_4. This lets a single
+ * basis description cover every geometric order of the same element family.
+ */
+int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) et,
+                                   int os, int ot, int *sn, CGNS_ENUMT(InterpolationType_t) *it)
+{
+    int n;
+    cgns_family *family;
+    cgns_solutionInterpolation *es;
+    CGNS_ENUMT(ElementType_t) basic;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
+        es = &family->solutioninterpolations[n];
+        if (es->type == et && es->spatialorder == os && es->temporalorder == ot) {
+            *sn = n + 1;
+            *it = es->interpolationName;
+            return CG_OK;
+        }
+    }
+
+    if (cg_element_basic_element_type(et, &basic) != CG_OK) return CG_ERROR;
+    if (basic != et) {
+        for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
+            es = &family->solutioninterpolations[n];
+            if (es->type == basic && es->spatialorder == os && es->temporalorder == ot) {
+                *sn = n + 1;
+                *it = es->interpolationName;
+                return CG_OK;
+            }
+        }
+    }
+
+    return CG_NODE_NOT_FOUND;
 }
 
 /**
@@ -18515,9 +18678,10 @@ int cg_element_interpolation_coefficients_write(int fn, int bn, int fam, int en,
 
     einterp = &family->elementinterpolations[en];
 
-    /* Reject a second MonomialCoefficients write (see note in the Lagrange
-     * counterpart above). */
-    if (einterp->monomialCoeff != NULL) {
+    /* Reject a second MonomialCoefficients write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below (see
+     * note in the Lagrange counterpart above). */
+    if (einterp->monomialCoeff != NULL && cg->mode == CG_MODE_WRITE) {
         cgi_error("MonomialCoefficients already written for "
                   "ElementInterpolation_t node '%s'. Open the file in "
                   "CG_MODE_MODIFY to replace.", einterp->name);
@@ -18546,6 +18710,14 @@ int cg_element_interpolation_coefficients_write(int fn, int bn, int fam, int en,
         data[i] = coeff[i];
     }
 
+    /* Replace any existing on-disk node and in-memory cache (CG_MODE_MODIFY). */
+    if (einterp->monomialCoeff) {
+        cgi_delete_node(einterp->id, einterp->monomialCoeff->id);
+        if (einterp->monomialCoeff->data) free(einterp->monomialCoeff->data);
+        CGNS_FREE(einterp->monomialCoeff);
+        einterp->monomialCoeff = 0;
+    }
+
     /* Write MonomialCoefficients data array */
     dim_vals[0] = ncoeff;
     if (cgi_new_node(einterp->id, "MonomialCoefficients", "DataArray_t",
@@ -18555,7 +18727,19 @@ int cg_element_interpolation_coefficients_write(int fn, int bn, int fam, int en,
         return CG_ERROR;
     }
 
-    free(data);
+    /* Keep the in-memory cache consistent so a subsequent write in the same
+     * session correctly detects the existing node. */
+    einterp->monomialCoeff = CGNS_NEW(cgns_array, 1);
+    memset(einterp->monomialCoeff, 0, sizeof(cgns_array));
+    snprintf(einterp->monomialCoeff->name, sizeof(einterp->monomialCoeff->name),
+             "%s", "MonomialCoefficients");
+    snprintf(einterp->monomialCoeff->data_type, sizeof(einterp->monomialCoeff->data_type),
+             "%s", "R8");
+    einterp->monomialCoeff->data_dim = 1;
+    einterp->monomialCoeff->dim_vals[0] = ncoeff;
+    einterp->monomialCoeff->id = dummy_id;
+    einterp->monomialCoeff->data = data;
+
     return CG_OK;
 }
 
@@ -18689,6 +18873,15 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
 
     sinterp = &family->solutioninterpolations[sn];
 
+    /* Reject a second MonomialCoefficients write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below. */
+    if (sinterp->monomialCoeff != NULL && cg->mode == CG_MODE_WRITE) {
+        cgi_error("MonomialCoefficients already written for "
+                  "SolutionInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", sinterp->name);
+        return CG_ERROR;
+    }
+
     /* Get number of coefficients */
     if (cg_solution_monomial_size(sinterp->type, sinterp->spatialorder,
                                   sinterp->temporalorder, &ncoeff) != CG_OK) {
@@ -18712,6 +18905,14 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
         data[i] = coeff[i];
     }
 
+    /* Replace any existing on-disk node and in-memory cache (CG_MODE_MODIFY). */
+    if (sinterp->monomialCoeff) {
+        cgi_delete_node(sinterp->id, sinterp->monomialCoeff->id);
+        if (sinterp->monomialCoeff->data) free(sinterp->monomialCoeff->data);
+        CGNS_FREE(sinterp->monomialCoeff);
+        sinterp->monomialCoeff = 0;
+    }
+
     /* Write MonomialCoefficients data array */
     dim_vals[0] = ncoeff;
     if (cgi_new_node(sinterp->id, "MonomialCoefficients", "DataArray_t",
@@ -18721,7 +18922,19 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
         return CG_ERROR;
     }
 
-    free(data);
+    /* Keep the in-memory cache consistent so a subsequent write in the same
+     * session correctly detects the existing node. */
+    sinterp->monomialCoeff = CGNS_NEW(cgns_array, 1);
+    memset(sinterp->monomialCoeff, 0, sizeof(cgns_array));
+    snprintf(sinterp->monomialCoeff->name, sizeof(sinterp->monomialCoeff->name),
+             "%s", "MonomialCoefficients");
+    snprintf(sinterp->monomialCoeff->data_type, sizeof(sinterp->monomialCoeff->data_type),
+             "%s", "R8");
+    sinterp->monomialCoeff->data_dim = 1;
+    sinterp->monomialCoeff->dim_vals[0] = ncoeff;
+    sinterp->monomialCoeff->id = dummy_id;
+    sinterp->monomialCoeff->data = data;
+
     return CG_OK;
 }
 

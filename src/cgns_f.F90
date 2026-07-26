@@ -5828,6 +5828,36 @@ CONTAINS
   END SUBROUTINE cg_solution_lagrange_interpolation_count_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_find_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_find_f(fn, B, fam, etype, os, ot, sn, it, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, os, ot
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: sn
+    INTEGER(cgenum_t), INTENT(OUT) :: it
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_sn
+    INTEGER(cgenum_t) :: c_it
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_find(fn, bn, fam, etype, os, ot, sn, it) &
+          BIND(C, name="cg_solution_interpolation_find")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), VALUE, INTENT(IN) :: os, ot
+        INTEGER(C_INT), INTENT(OUT) :: sn
+        INTEGER(cgenum_t), INTENT(OUT) :: it
+      END FUNCTION cg_solution_interpolation_find
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_find(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), etype, INT(os,C_INT), INT(ot,C_INT), c_sn, c_it))
+    sn = INT(c_sn)
+    it = c_it
+  END SUBROUTINE cg_solution_interpolation_find_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_coefficients_write_f
 !DEC$endif
   SUBROUTINE cg_element_interpolation_coefficients_write_f(fn, B, fam, en, coeff, ier)
@@ -5957,51 +5987,56 @@ CONTAINS
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_read_f
 !DEC$endif
-  SUBROUTINE cg_sol_characteristic_length_read_f(fn, B, Z, S, numElements, h_e, ier)
+  SUBROUTINE cg_sol_characteristic_length_read_f(fn, B, Z, S, nscale, numElements, h_e, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, Z, S
+    INTEGER, INTENT(OUT) :: nscale
     INTEGER(cgsize_t), INTENT(OUT) :: numElements
     REAL(C_DOUBLE), INTENT(OUT) :: h_e(*)
     INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_nscale
     INTEGER(cgsize_t) :: c_n
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_read &
-          (fn, B, Z, S, numElements, h_e) &
+          (fn, B, Z, S, nscale, numElements, h_e) &
           BIND(C, name="cg_sol_characteristic_length_read")
         IMPORT :: C_INT, C_DOUBLE, cgsize_t
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT) :: nscale
         INTEGER(cgsize_t) :: numElements
         REAL(C_DOUBLE) :: h_e(*)
       END FUNCTION cg_sol_characteristic_length_read
     END INTERFACE
     ier = INT(cg_sol_characteristic_length_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(Z,C_INT), INT(S,C_INT), c_n, h_e))
+              INT(Z,C_INT), INT(S,C_INT), c_nscale, c_n, h_e))
+    nscale = INT(c_nscale)
     numElements = c_n
   END SUBROUTINE cg_sol_characteristic_length_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_write_f
 !DEC$endif
-  SUBROUTINE cg_sol_characteristic_length_write_f(fn, B, Z, S, numElements, h_e, ier)
+  SUBROUTINE cg_sol_characteristic_length_write_f(fn, B, Z, S, nscale, numElements, h_e, ier)
     IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, Z, S
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
     INTEGER(cgsize_t), INTENT(IN) :: numElements
     REAL(C_DOUBLE), INTENT(IN), TARGET :: h_e(*)
     INTEGER, INTENT(OUT) :: ier
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_write &
-          (fn, B, Z, S, numElements, h_e) &
+          (fn, B, Z, S, nscale, numElements, h_e) &
           BIND(C, name="cg_sol_characteristic_length_write")
         IMPORT :: C_INT, C_DOUBLE, cgsize_t
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
         INTEGER(cgsize_t), VALUE :: numElements
         REAL(C_DOUBLE) :: h_e(*)
       END FUNCTION cg_sol_characteristic_length_write
     END INTERFACE
     ier = INT(cg_sol_characteristic_length_write(INT(fn,C_INT), INT(B,C_INT), &
-              INT(Z,C_INT), INT(S,C_INT), numElements, h_e))
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements, h_e))
   END SUBROUTINE cg_sol_characteristic_length_write_f
 
 !DEC$if defined(BUILD_CGNS_DLL)

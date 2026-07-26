@@ -4788,9 +4788,10 @@ static void check_discrete (int ndis)
 static void check_solution (int ns)
 {
     char name[33];
-    int n, nf, id, ierr, rind[6];
+    int n, nf, narr, id, ierr, rind[6];
     int ndim;
     int os,ot;
+    int has_interp_order;
     cgsize_t ds[3];
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -4879,6 +4880,7 @@ static void check_solution (int ns)
     {
         error_exit("cg_sol_interpolation_order_read");
     }
+    has_interp_order = (ierr == CG_OK);
     if (ierr == CG_OK)
     {
         printf ("    checking solution Interpolation Order\n");
@@ -5024,9 +5026,19 @@ static void check_solution (int ns)
     if (nf == 0)
         warning (2, "no solution data arrays defined");
 
-    for (n = 1; n <= nf; n++) {
+    /* Iterate the raw DataArray_t children rather than 1..cg_nfields: the
+     * library excludes CPEX-0045 interpolation metadata from the field count,
+     * but cg_array_info still indexes every DataArray_t, so the two
+     * enumerations would otherwise disagree. */
+    if (cg_narrays (&narr))
+        error_exit("cg_narrays");
+    for (n = 1; n <= narr; n++) {
         if (cg_array_info (n, name, &datatype, &ndim, dims))
             error_exit("cg_array_info");
+        /* Interpolation metadata carries its own shape and is validated
+         * separately below; it is not a solution field. */
+        if (strcmp (name, "CharacteristicLength") == 0)
+            continue;
         printf ("    checking solution field \"%s\"\n", name);
         fflush (stdout);
         for (size = 1, id = 0; id < ndim; id++)
@@ -5040,16 +5052,32 @@ static void check_solution (int ns)
     /* CPEX-0045 v3 §3.3.1: CharacteristicLength shape check.
      * If a "CharacteristicLength" DataArray_t is present under the
      * FlowSolution_t, it must be R8, 1-D, and length equal to the number of
-     * elements covered by the block. Family-side cross-reference (whether
-     * CartesianMonomialsPascal mandates its presence) is not done here. */
+     * elements covered by the block. We also cross-check against the
+     * zone's Family_t SolutionInterpolation_t entries: if the matching
+     * entry (found via cg_solution_interpolation_find, which implements the
+     * bidirectional-with-fallback lookup of §sec:solution-interpolation) has
+     * InterpolationType = CartesianMonomialsPascal, CharacteristicLength is
+     * mandatory. The cross-check is skipped for zones whose element
+     * sections do not all share a single basic element type (heterogeneous
+     * MIXED-type zones), since a single representative type cannot be
+     * derived in that case. */
     {
         cgsize_t cl_len = 0;
+        int cl_nscale = 0;
         int cl_ierr = cg_sol_characteristic_length_read(cgnsfn, cgnsbase,
                                                         cgnszone, ns,
-                                                        &cl_len, NULL);
+                                                        &cl_nscale, &cl_len,
+                                                        NULL);
         if (cl_ierr == CG_OK) {
-            printf ("    CharacteristicLength present: length=%ld\n",
-                    (long)cl_len);
+            printf ("    CharacteristicLength present: %s, length=%ld\n",
+                    cl_nscale == 1 ? "isotropic" : "per-axis", (long)cl_len);
+            /* Rank-2 (per-axis) must carry exactly PhysDim factors per
+             * element; rank-1 is the isotropic encoding. */
+            if (cl_nscale != 1 && cl_nscale != PhyDim) {
+                error("CharacteristicLength has %d scale factors per element; "
+                      "expected 1 (isotropic) or %d (per-axis, PhysDim).",
+                      cl_nscale, PhyDim);
+            }
             /* If the block has an explicit point set, length must match
              * the number of elements listed; otherwise it must match the
              * total cell count of the zone. */
@@ -5068,13 +5096,69 @@ static void check_solution (int ns)
                     expected += (z->sets[i].ie - z->sets[i].is + 1);
             }
             if (expected > 0 && cl_len != expected) {
-                error("CharacteristicLength length %ld does not match the "
-                      "number of elements covered by this FlowSolution_t (%ld).",
+                error("CharacteristicLength covers %ld elements, which does not "
+                      "match the number of elements covered by this "
+                      "FlowSolution_t (%ld).",
                       (long)cl_len, (long)expected);
             }
         } else if (cl_ierr != CG_NODE_NOT_FOUND) {
             error("CharacteristicLength validation failed: %s",
                   cg_get_error());
+        }
+
+        if (has_interp_order && cl_ierr == CG_NODE_NOT_FOUND) {
+            char famname[CG_MAX_NAME_LENGTH+1];
+            int fam_ierr, fnum = 0, m;
+
+            go_absolute ("Zone_t", cgnszone, NULL);
+            fam_ierr = cg_famname_read(famname);
+            go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
+
+            if (fam_ierr == CG_OK) {
+                for (m = 0; m < NumFamily; m++) {
+                    if (0 == strcmp(famname, Family[m])) { fnum = m + 1; break; }
+                }
+            }
+
+            if (fnum > 0) {
+                CGNS_ENUMT(ElementType_t) rep_basic = CGNS_ENUMV(ElementTypeNull);
+                int homogeneous = 1, si;
+
+                for (si = 0; si < z->nsets; si++) {
+                    CGNS_ENUMT(ElementType_t) basic;
+                    if (cg_element_basic_element_type(z->sets[si].type, &basic) != CG_OK) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (rep_basic == CGNS_ENUMV(ElementTypeNull))
+                        rep_basic = basic;
+                    else if (rep_basic != basic) {
+                        homogeneous = 0;
+                        break;
+                    }
+                }
+
+                if (homogeneous && rep_basic != CGNS_ENUMV(ElementTypeNull)) {
+                    int sn_found;
+                    CGNS_ENUMT(InterpolationType_t) it_found;
+                    int find_ierr = cg_solution_interpolation_find(cgnsfn, cgnsbase,
+                            fnum, rep_basic, os, ot, &sn_found, &it_found);
+
+                    if (find_ierr == CG_OK &&
+                        it_found == CGNS_ENUMV(CartesianMonomialsPascal))
+                    {
+                        if (strict_cpex45)
+                            error("CPEX-0045 v3 sec:cartesian-modal: CharacteristicLength "
+                                  "is mandatory when the associated SolutionInterpolation_t "
+                                  "uses CartesianMonomialsPascal, but is absent from this "
+                                  "FlowSolution_t.");
+                        else
+                            warning(2, "CharacteristicLength is normally required for "
+                                       "CartesianMonomialsPascal interpolation but is "
+                                       "absent from this FlowSolution_t.");
+                    }
+                }
+            }
         }
     }
 

@@ -1284,6 +1284,13 @@ CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
 CGNSDLL int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t,
                                                      int os, int ot, int *cnt);
 
+/* Bidirectional lookup with fallback (CPEX-0045 v3 sec:solution-interpolation):
+ * searches for an exact (et, os, ot) match first; if absent, falls back to the
+ * basic (order-1/linear) element type for et and searches again. Returns
+ * CG_NODE_NOT_FOUND if neither is present. */
+CGNSDLL int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) et,
+                                           int os, int ot, int *sn, CGNS_ENUMT(InterpolationType_t) *it);
+
 CGNSDLL int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
                                             CGNS_ENUMT(ElementType_t) et, int os, int ot, CGNS_ENUMT(InterpolationType_t) it, int *sn );
 
@@ -1536,20 +1543,33 @@ CGNSDLL int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
 CGNSDLL int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
                                              int spatialOrder, int  temporalOrder);
 
-/* CPEX-0045 v3 §3.3.1: per-element characteristic length h^e for
- * Cartesian modal interpolation. Stored as a 1-D R8 DataArray_t named
+/* CPEX-0045 v3 §3.3.1: per-element coordinate normalisation factors for
+ * Cartesian modal interpolation, stored as an R8 DataArray_t named
  * "CharacteristicLength" under the parent FlowSolution_t. Required when the
  * associated SolutionInterpolation_t uses CartesianMonomialsPascal.
  *
+ * Two encodings are normative, distinguished by array rank:
+ *   nscale == 1        -> isotropic: R8, 1-D, [numElements]
+ *   nscale == PhysDim  -> per-axis:  R8, 2-D, [nscale, numElements]
+ * The per-axis form corresponds to the directional non-dimensionalisation used
+ * by Taylor-basis DG solvers and keeps the modal mass matrix well conditioned
+ * on high-aspect-ratio cells. In the 2-D form nscale is fast-varying, so one
+ * element's factors are contiguous: (hx0,hy0,hz0, hx1,hy1,hz1, ...).
+ *
+ * Writers record the factors they actually used; readers must use the recorded
+ * values rather than recomputing a geometric formula.
+ *
  * cg_sol_characteristic_length_read returns CG_NODE_NOT_FOUND when the array
- * is absent (with *numElements set to 0). Pass h_e == NULL to query the size
- * only; allocate and pass a non-NULL pointer to read the data.
+ * is absent (with *nscale and *numElements set to 0). Pass h_e == NULL to query
+ * the shape only; allocate nscale*numElements doubles and call again to read.
  */
 CGNSDLL int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
-                                              cgsize_t *numElements, double *h_e);
+                                              int *nscale, cgsize_t *numElements,
+                                              double *h_e);
 
 CGNSDLL int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
-                                               cgsize_t numElements, const double *h_e);
+                                               int nscale, cgsize_t numElements,
+                                               const double *h_e);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *

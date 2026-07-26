@@ -1822,6 +1822,15 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     return CG_OK;
 }
 
+/* CPEX-0045: some DataArray_t children of FlowSolution_t are interpolation
+ * metadata rather than solution fields. They carry their own shapes, so they
+ * must be excluded from the field list: otherwise cg_nfields reports them as
+ * fields and the field size check below rejects the file outright. */
+static int cgi_is_sol_metadata_array(const char *name)
+{
+    return (strcmp(name, "CharacteristicLength") == 0);
+}
+
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                  const cgns_zone *zone)
 {
@@ -1948,6 +1957,26 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
      /* DataArray_t */
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
             &idf)) return CG_ERROR;
+
+     /* Drop interpolation-metadata arrays before they are treated as fields.
+      * idf is allocated whenever the raw count was non-zero, so it must still
+      * be released even if filtering leaves no fields behind. */
+        if (sol[0][s].nfields > 0) {
+            int nkept = 0;
+            for (z=0; z<sol[0][s].nfields; z++) {
+                char_33 aname;
+                if (cgio_get_name(cg->cgio, idf[z], aname)) {
+                    cg_io_error("cgio_get_name");
+                    CGNS_FREE(idf);
+                    return CG_ERROR;
+                }
+                if (!cgi_is_sol_metadata_array(aname))
+                    idf[nkept++] = idf[z];
+            }
+            sol[0][s].nfields = nkept;
+            if (nkept == 0) CGNS_FREE(idf);
+        }
+
         if (sol[0][s].nfields > 0) {
             sol[0][s].field = CGNS_NEW(cgns_array, sol[0][s].nfields);
             for (z=0; z<sol[0][s].nfields; z++) {
