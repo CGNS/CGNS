@@ -461,6 +461,387 @@ int test_null_pointers(void)
     return 0;
 }
 
+/* Test 7.6: re-write guards on the Lagrange/monomial arrays.
+ *
+ * A second write of LagrangeControlPoints or MonomialCoefficients must be
+ * rejected in CG_MODE_WRITE and must replace the existing array in
+ * CG_MODE_MODIFY. All four writers are required to behave the same way. */
+int test_rewrite_guards(void)
+{
+    int cgfile, cgbase, cgzone, cgfamily, en, sn;
+    cgsize_t size[9];
+    double pu[9] = {-1.,0.,1.,-1.,0.,1.,-1.,0.,1.};
+    double pv[9] = {-1.,-1.,-1.,0.,0.,0.,1.,1.,1.};
+    double coeff[6] = {1.,2.,3.,4.,5.,6.};
+    int result;
+
+    printf("\n==============================================\n");
+    printf("  Test 7.6: Re-write Guards (WRITE vs MODIFY)\n");
+    printf("==============================================\n\n");
+
+    size[0] = 9; size[1] = 1; size[2] = 0;
+    if (cg_open("test_error_rewrite.cgns", CG_MODE_WRITE, &cgfile) ||
+        cg_base_write(cgfile, "Base", 2, 2, &cgbase) ||
+        cg_zone_write(cgfile, cgbase, "Zone", size,
+                      CGNS_ENUMV(Unstructured), &cgzone) ||
+        cg_family_write(cgfile, cgbase, "Fam", &cgfamily))
+    {
+        fprintf(stderr, "ERROR: could not create base structure\n");
+        return 1;
+    }
+
+    /* --- ElementInterpolation_t: LagrangeControlPoints --- */
+    if (cg_element_interpolation_write(cgfile, cgbase, cgfamily, "Quad9",
+                                      CGNS_ENUMV(QUAD_9), &en))
+    {
+        fprintf(stderr, "ERROR: element_interpolation_write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, en,
+                                              pu, pv, NULL))
+    {
+        fprintf(stderr, "ERROR: first points write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("Testing second element points write in CG_MODE_WRITE...\n");
+    result = cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, en,
+                                                  pu, pv, NULL);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: duplicate element points write should be "
+                        "rejected in CG_MODE_WRITE\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+
+    /* --- SolutionInterpolation_t: MonomialCoefficients (modal) --- */
+    if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Quad_P2_modal",
+                                        CGNS_ENUMV(QUAD_4), 2, 0,
+                                        CGNS_ENUMV(ParametricMonomialsPascal), &sn))
+    {
+        fprintf(stderr, "ERROR: solution_interpolation_write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    if (cg_solution_interpolation_coefficients_write(cgfile, cgbase, cgfamily,
+                                                     sn, coeff))
+    {
+        fprintf(stderr, "ERROR: first coefficients write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("Testing second solution coefficients write in CG_MODE_WRITE...\n");
+    result = cg_solution_interpolation_coefficients_write(cgfile, cgbase,
+                                                          cgfamily, sn, coeff);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: duplicate solution coefficients write should be "
+                        "rejected in CG_MODE_WRITE\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+    cg_close(cgfile);
+
+    /* --- CG_MODE_MODIFY must replace rather than reject --- */
+    printf("Testing replacement in CG_MODE_MODIFY...\n");
+    if (cg_open("test_error_rewrite.cgns", CG_MODE_MODIFY, &cgfile))
+    {
+        fprintf(stderr, "ERROR: could not reopen in MODIFY\n");
+        return 1;
+    }
+    pu[4] = 0.25;   /* perturb so a successful replace is observable */
+    if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, en,
+                                              pu, pv, NULL))
+    {
+        fprintf(stderr, "ERROR: points write in CG_MODE_MODIFY should succeed: "
+                        "%s\n", cg_get_error());
+        cg_close(cgfile); return 1;
+    }
+    coeff[0] = 9.0;
+    if (cg_solution_interpolation_coefficients_write(cgfile, cgbase, cgfamily,
+                                                     sn, coeff))
+    {
+        fprintf(stderr, "ERROR: coefficients write in CG_MODE_MODIFY should "
+                        "succeed: %s\n", cg_get_error());
+        cg_close(cgfile); return 1;
+    }
+    printf("  both replacements accepted in CG_MODE_MODIFY\n");
+    cg_close(cgfile);
+
+    /* --- and the replacement actually took effect --- */
+    if (cg_open("test_error_rewrite.cgns", CG_MODE_READ, &cgfile))
+    {
+        fprintf(stderr, "ERROR: could not reopen in READ\n");
+        return 1;
+    }
+    {
+        double back_u[9], back_v[9], back_c[6];
+        if (cg_element_interpolation_points_read(cgfile, cgbase, cgfamily, en,
+                                                back_u, back_v, NULL))
+        {
+            fprintf(stderr, "ERROR: points read failed\n");
+            cg_close(cgfile); return 1;
+        }
+        if (back_u[4] != 0.25)
+        {
+            fprintf(stderr, "ERROR: MODIFY did not replace points "
+                            "(got %g, expected 0.25)\n", back_u[4]);
+            cg_close(cgfile); return 1;
+        }
+        if (cg_solution_interpolation_coefficients_read(cgfile, cgbase, cgfamily,
+                                                        sn, back_c))
+        {
+            fprintf(stderr, "ERROR: coefficients read failed\n");
+            cg_close(cgfile); return 1;
+        }
+        if (back_c[0] != 9.0)
+        {
+            fprintf(stderr, "ERROR: MODIFY did not replace coefficients "
+                            "(got %g, expected 9.0)\n", back_c[0]);
+            cg_close(cgfile); return 1;
+        }
+    }
+    printf("  replaced values verified on read-back\n");
+    cg_close(cgfile);
+
+    printf("\nTEST 7.6 PASSED: Re-write Guards Consistent\n");
+    return 0;
+}
+
+/* Test 7.7: cg_solution_interpolation_find bidirectional lookup.
+ *
+ * A query must match an exact element tag when one is stored, and otherwise
+ * fall back to the basic (linear) tag of the same element family. A triplet
+ * that matches neither must report CG_NODE_NOT_FOUND rather than an error.
+ *
+ * Note that cg_solution_interpolation_write normalises the element type to the
+ * basic tag before storing it (sinterp->type = basic type, and the same value
+ * goes into the node payload). A high-order tag such as HEXA_27 is therefore
+ * never what is on disk, so querying with a high-order tag exercises the
+ * fallback while querying with the basic tag exercises the exact match. Both
+ * are checked below, and both must resolve to the same node. */
+int test_interpolation_find(void)
+{
+    int cgfile, cgbase, cgzone, cgfamily, sn_hex, sn_tet, found;
+    cgsize_t size[9];
+    CGNS_ENUMT(InterpolationType_t) it;
+    int result;
+
+    printf("\n==============================================\n");
+    printf("  Test 7.7: Bidirectional Interpolation Lookup\n");
+    printf("==============================================\n\n");
+
+    size[0] = 8; size[1] = 1; size[2] = 0;
+    if (cg_open("test_error_find.cgns", CG_MODE_WRITE, &cgfile) ||
+        cg_base_write(cgfile, "Base", 3, 3, &cgbase) ||
+        cg_zone_write(cgfile, cgbase, "Zone", size,
+                      CGNS_ENUMV(Unstructured), &cgzone) ||
+        cg_family_write(cgfile, cgbase, "Fam", &cgfamily))
+    {
+        fprintf(stderr, "ERROR: could not create base structure\n");
+        return 1;
+    }
+
+    /* Basic-tag entry (TETRA_4) and an exact high-order entry (HEXA_27). */
+    if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Tet_P2",
+                                        CGNS_ENUMV(TETRA_4), 2, 0,
+                                        CGNS_ENUMV(ParametricLagrange), &sn_tet) ||
+        cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Hex27_P2",
+                                        CGNS_ENUMV(HEXA_27), 2, 0,
+                                        CGNS_ENUMV(CartesianMonomialsPascal), &sn_hex))
+    {
+        fprintf(stderr, "ERROR: solution_interpolation_write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    cg_close(cgfile);
+
+    if (cg_open("test_error_find.cgns", CG_MODE_READ, &cgfile))
+    {
+        fprintf(stderr, "ERROR: could not reopen\n");
+        return 1;
+    }
+
+    printf("Exact match: query basic tag HEXA_8 (as stored)...\n");
+    result = cg_solution_interpolation_find(cgfile, cgbase, cgfamily,
+                                           CGNS_ENUMV(HEXA_8), 2, 0, &found, &it);
+    if (result != CG_OK)
+    {
+        /* CG_NODE_NOT_FOUND leaves no message, so report the code. */
+        fprintf(stderr, "ERROR: exact HEXA_8 lookup returned %d\n", result);
+        cg_close(cgfile); return 1;
+    }
+    if (found != sn_hex || it != CGNS_ENUMV(CartesianMonomialsPascal))
+    {
+        fprintf(stderr, "ERROR: exact match returned sn=%d it=%d, "
+                        "expected sn=%d CartesianMonomialsPascal\n",
+                found, (int)it, sn_hex);
+        cg_close(cgfile); return 1;
+    }
+    printf("  matched index %d (%s)\n", found, cg_InterpolationTypeName(it));
+
+    printf("Fallback: query high-order HEXA_27 -> basic HEXA_8...\n");
+    result = cg_solution_interpolation_find(cgfile, cgbase, cgfamily,
+                                           CGNS_ENUMV(HEXA_27), 2, 0, &found, &it);
+    if (result != CG_OK)
+    {
+        fprintf(stderr, "ERROR: HEXA_27 should fall back to HEXA_8, "
+                        "returned %d\n", result);
+        cg_close(cgfile); return 1;
+    }
+    if (found != sn_hex || it != CGNS_ENUMV(CartesianMonomialsPascal))
+    {
+        fprintf(stderr, "ERROR: fallback returned sn=%d it=%d, expected sn=%d\n",
+                found, (int)it, sn_hex);
+        cg_close(cgfile); return 1;
+    }
+    printf("  resolved to the same node, index %d\n", found);
+
+    printf("Fallback: query TETRA_10 -> basic TETRA_4...\n");
+    result = cg_solution_interpolation_find(cgfile, cgbase, cgfamily,
+                                           CGNS_ENUMV(TETRA_10), 2, 0, &found, &it);
+    if (result != CG_OK)
+    {
+        fprintf(stderr, "ERROR: TETRA_10 should fall back to TETRA_4, "
+                        "returned %d\n", result);
+        cg_close(cgfile); return 1;
+    }
+    if (found != sn_tet || it != CGNS_ENUMV(ParametricLagrange))
+    {
+        fprintf(stderr, "ERROR: fallback returned sn=%d it=%d, "
+                        "expected sn=%d ParametricLagrange\n",
+                found, (int)it, sn_tet);
+        cg_close(cgfile); return 1;
+    }
+    printf("  fell back to basic tag, index %d (%s)\n",
+           found, cg_InterpolationTypeName(it));
+
+    printf("Order mismatch must not match...\n");
+    result = cg_solution_interpolation_find(cgfile, cgbase, cgfamily,
+                                           CGNS_ENUMV(TETRA_10), 3, 0,
+                                           &found, &it);
+    if (result != CG_NODE_NOT_FOUND)
+    {
+        fprintf(stderr, "ERROR: order 3 should report CG_NODE_NOT_FOUND, "
+                        "got %d\n", result);
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly reported CG_NODE_NOT_FOUND\n");
+
+    printf("Unrelated element family must not match...\n");
+    result = cg_solution_interpolation_find(cgfile, cgbase, cgfamily,
+                                           CGNS_ENUMV(PENTA_6), 2, 0,
+                                           &found, &it);
+    if (result != CG_NODE_NOT_FOUND)
+    {
+        fprintf(stderr, "ERROR: PENTA_6 should report CG_NODE_NOT_FOUND, "
+                        "got %d\n", result);
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly reported CG_NODE_NOT_FOUND\n");
+    cg_close(cgfile);
+
+    printf("\nTEST 7.7 PASSED: Bidirectional Lookup Working\n");
+    return 0;
+}
+
+/* Test 7.8: GridLocation requirements of cg_sol_interpolation_order_write.
+ *
+ * InterpolationPoints is always acceptable. Legacy CellCenter is accepted only
+ * when an explicit PointRange/PointList is present. Any other location, and
+ * CellCenter without a point set, must be rejected. */
+int test_interpolation_order_location(void)
+{
+    int cgfile, cgbase, cgzone, S;
+    cgsize_t size[9];
+    cgsize_t range[2] = {1, 1};
+    int result;
+
+    printf("\n==============================================\n");
+    printf("  Test 7.8: InterpolationOrders GridLocation\n");
+    printf("==============================================\n\n");
+
+    size[0] = 8; size[1] = 1; size[2] = 0;
+    if (cg_open("test_error_location.cgns", CG_MODE_WRITE, &cgfile) ||
+        cg_base_write(cgfile, "Base", 3, 3, &cgbase) ||
+        cg_zone_write(cgfile, cgbase, "Zone", size,
+                      CGNS_ENUMV(Unstructured), &cgzone))
+    {
+        fprintf(stderr, "ERROR: could not create base structure\n");
+        return 1;
+    }
+
+    printf("InterpolationPoints, whole zone (must be accepted)...\n");
+    if (cg_sol_write(cgfile, cgbase, cgzone, "FS_ip",
+                     CGNS_ENUMV(InterpolationPoints), &S) ||
+        cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0))
+    {
+        fprintf(stderr, "ERROR: InterpolationPoints should be accepted: %s\n",
+                cg_get_error());
+        cg_close(cgfile); return 1;
+    }
+    printf("  accepted\n");
+
+    printf("Vertex location (must be rejected)...\n");
+    if (cg_sol_write(cgfile, cgbase, cgzone, "FS_vertex",
+                     CGNS_ENUMV(Vertex), &S))
+    {
+        fprintf(stderr, "ERROR: sol_write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: Vertex location should have been rejected\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+
+    printf("CellCenter without a point set (must be rejected)...\n");
+    if (cg_sol_write(cgfile, cgbase, cgzone, "FS_cc_nopts",
+                     CGNS_ENUMV(CellCenter), &S))
+    {
+        fprintf(stderr, "ERROR: sol_write failed\n");
+        cg_close(cgfile); return 1;
+    }
+    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: CellCenter without PointRange/PointList should "
+                        "have been rejected\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+
+    printf("CellCenter with a PointRange (legacy, must be accepted)...\n");
+    if (cg_sol_ptset_write(cgfile, cgbase, cgzone, "FS_cc_pts",
+                           CGNS_ENUMV(CellCenter), CGNS_ENUMV(PointRange),
+                           2, range, &S))
+    {
+        fprintf(stderr, "ERROR: sol_ptset_write failed: %s\n", cg_get_error());
+        cg_close(cgfile); return 1;
+    }
+    if (cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0))
+    {
+        fprintf(stderr, "ERROR: legacy CellCenter + PointRange should be "
+                        "accepted: %s\n", cg_get_error());
+        cg_close(cgfile); return 1;
+    }
+    printf("  accepted (back-compatibility path)\n");
+
+    printf("TemporalOrder > 0 with SpatialOrder 0 (must be rejected)...\n");
+    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 0, 1);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: temporal order without spatial order should "
+                        "have been rejected\n");
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+
+    cg_close(cgfile);
+
+    printf("\nTEST 7.8 PASSED: GridLocation Rules Enforced\n");
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int errors = 0;
@@ -485,11 +866,20 @@ int main(int argc, char **argv)
     if (test_null_pointers())
         errors++;
 
+    if (test_rewrite_guards())
+        errors++;
+
+    if (test_interpolation_find())
+        errors++;
+
+    if (test_interpolation_order_location())
+        errors++;
+
     printf("\n");
     printf("##################################################\n");
     if (errors == 0)
     {
-        printf("#ALL ERROR HANDLING TESTS PASSED (5/5)     #\n");
+        printf("#ALL ERROR HANDLING TESTS PASSED (8/8)     #\n");
     }
     else
     {
