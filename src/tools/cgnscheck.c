@@ -6265,23 +6265,20 @@ static void check_family (int fam)
             printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
         }
 
-        /* CPEX-0045 §3.1.2: when the implied InterpolationType is
-         * ParametricLagrange, LagrangeControlPointDistribution should be
-         * present.  Strict mode promotes the warning to an error. */
+        /* CPEX-0045 §3.1.2: LagrangeControlPointDistribution is recommended
+         * but not required for ParametricLagrange.  The nodal basis is fully
+         * determined by the LagrangeControlPoints coordinates together with the
+         * element type and order, so absence is conformant and is not an error
+         * even in strict mode. */
         if (cg_element_interpolation_type_read(cgnsfn, cgnsbase, fam, n, &eit))
             error_exit("cg_element_interpolation_type_read");
         if (eit == CGNS_ENUMV(ParametricLagrange)) {
             dist_ierr = cg_element_interpolation_distribution_read(cgnsfn, cgnsbase,
                                                                    fam, n, &edist);
             if (dist_ierr == CG_NODE_NOT_FOUND) {
-                if (strict_cpex45)
-                    error("ElementInterpolation \"%s\": LagrangeControlPointDistribution "
-                          "missing (required by strict CPEX-0045 for ParametricLagrange).",
-                          name);
-                else
-                    warning(1, "ElementInterpolation \"%s\": LagrangeControlPointDistribution "
-                            "is absent; readers will have to assume a default distribution.",
-                            name);
+                warning(2, "ElementInterpolation \"%s\": LagrangeControlPointDistribution "
+                        "is absent; recording it is recommended.  The basis is taken from "
+                        "the LagrangeControlPoints coordinates.", name);
             } else if (dist_ierr != CG_OK) {
                 error_exit("cg_element_interpolation_distribution_read");
             } else if (verbose) {
@@ -6380,22 +6377,19 @@ static void check_family (int fam)
                   name, it);
         }
 
-        /* CPEX-0045 §3.1.2: LagrangeControlPointDistribution must be
-         * recorded for ParametricLagrange solutions to be unambiguous.
-         * Warn in default mode; error in strict mode. */
+        /* CPEX-0045 §3.1.2: LagrangeControlPointDistribution is recommended
+         * but not required for ParametricLagrange solutions.  The nodal basis is
+         * fully determined by the LagrangeControlPoints coordinates together with
+         * the element type and order, so absence is conformant and is not an error
+         * even in strict mode. */
         if (it == CGNS_ENUMV(ParametricLagrange)) {
             CGNS_ENUMT(LagrangeControlPointDistribution_t) sdist;
             int sdist_ierr = cg_solution_interpolation_distribution_read(cgnsfn,
                                 cgnsbase, fam, n, &sdist);
             if (sdist_ierr == CG_NODE_NOT_FOUND) {
-                if (strict_cpex45)
-                    error("SolutionInterpolation \"%s\": LagrangeControlPointDistribution "
-                          "missing (required by strict CPEX-0045 for ParametricLagrange).",
-                          name);
-                else
-                    warning(1, "SolutionInterpolation \"%s\": LagrangeControlPointDistribution "
-                            "is absent; readers will have to assume a default distribution.",
-                            name);
+                warning(2, "SolutionInterpolation \"%s\": LagrangeControlPointDistribution "
+                        "is absent; recording it is recommended.  The basis is taken from "
+                        "the LagrangeControlPoints coordinates.", name);
             } else if (sdist_ierr != CG_OK) {
                 error_exit("cg_solution_interpolation_distribution_read");
             } else if (verbose) {
