@@ -77,7 +77,7 @@ jobs:
 ##################################
       
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.37.4
         with:
           languages: c-cpp
           build-mode: manual
@@ -105,7 +105,7 @@ jobs:
 # see https://github.com/advanced-security/filter-sarif
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.37.4
         with:
           category: "/language:c-cpp"
           output: sarif-results
@@ -123,7 +123,7 @@ jobs:
           output: sarif-results/cpp.sarif
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v4.37.4
         with:
           sarif_file: sarif-results/cpp.sarif
 
