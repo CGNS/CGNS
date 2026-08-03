@@ -217,19 +217,22 @@ int test_out_of_range_orders(void)
         return 1;
     }
 
-    printf("Testing spatial order = 0 (invalid)...\n");
-    result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "BadOrder0",
+    /* Spatial order 0 is valid, not an edge case to be rejected: it denotes one
+     * spatial degree of freedom per element, i.e. a solution constant over the
+     * element -- v2's "standard interpolation (constant per element)" and the
+     * natural form of a finite-volume cell average.  For Lagrange it is a single
+     * control point whose nodal function is identically one, and one point is
+     * unisolvent for P_0. */
+    printf("Testing spatial order = 0 (valid: constant per element)...\n");
+    result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Order0",
                                             CGNS_ENUMV(QUAD_4), 0, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
-    if (result == CG_OK)
+    if (result != CG_OK)
     {
-        printf("  ⚠ Spatial order 0 accepted - API limitation (no lower bound validation)\n");
-        printf("    This is an API gap - order 0 is mathematically invalid\n");
+        fprintf(stderr, "ERROR: spatial order 0 should be accepted: %s\n", cg_get_error());
+        return 1;
     }
-    else
-    {
-        printf("Spatial order 0 correctly rejected (error code: %d)\n", result);
-    }
+    printf("  accepted (constant per element)\n");
 
     printf("Testing negative spatial order (invalid)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "BadOrderNeg",
@@ -826,15 +829,19 @@ int test_interpolation_order_location(void)
     }
     printf("  accepted (back-compatibility path)\n");
 
-    printf("TemporalOrder > 0 with SpatialOrder 0 (must be rejected)...\n");
+    /* SpatialOrder 0 with TemporalOrder > 0 is valid: a per-element value that is
+     * constant in space and varies in time, i.e. an unsteady finite-volume
+     * solution, with N_DOFs = q+1 per element.  No constraint couples the two
+     * orders, so this must be accepted. */
+    printf("TemporalOrder > 0 with SpatialOrder 0 (must be accepted)...\n");
     result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 0, 1);
-    if (result == CG_OK)
+    if (result != CG_OK)
     {
-        fprintf(stderr, "ERROR: temporal order without spatial order should "
-                        "have been rejected\n");
+        fprintf(stderr, "ERROR: constant-in-space, varying-in-time solution "
+                        "should have been accepted: %s\n", cg_get_error());
         cg_close(cgfile); return 1;
     }
-    printf("  correctly rejected (error code: %d)\n", result);
+    printf("  accepted (unsteady finite-volume case)\n");
 
     cg_close(cgfile);
 

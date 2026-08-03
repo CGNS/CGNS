@@ -4907,18 +4907,18 @@ static void check_solution (int ns)
         printf ("        Temporal Order : %d\n",ot);
 
         /* Validation: order values.
-         * Default (non-strict) range matches the prior behavior: warn only
-         * on clearly invalid values (negative or far-out). Strict mode (-s)
-         * also flags os==0 (constant interpolation) as an error since a
-         * SolutionInterpolation_t block with SpatialOrder=0 does not
-         * correspond to any valid Lagrange function space in Table 1. */
+         * SpatialOrder is a polynomial degree, and degree 0 is valid: it denotes
+         * one spatial degree of freedom per element, i.e. a solution constant over
+         * the element.  That is v2's "standard interpolation (constant per
+         * element)" and the natural representation of a finite-volume cell
+         * average -- the single constant monomial for a modal basis, or one
+         * control point whose nodal function is identically one for a Lagrange
+         * basis.  It must not be rejected, in strict mode or otherwise. */
         if (os < 0 || os > 100) {
             if (strict_cpex45)
-                error("Spatial order %d outside valid range [1-100]", os);
+                error("Spatial order %d outside valid range [0-100]", os);
             else
                 warning(2, "Spatial order %d is outside typical range [0-100]", os);
-        } else if (strict_cpex45 && os == 0) {
-            error("Spatial order 0 is not a valid Lagrange basis (strict CPEX-0045).");
         }
         if (ot < 0 || ot > 10) {
             if (strict_cpex45)

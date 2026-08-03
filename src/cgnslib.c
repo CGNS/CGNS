@@ -8823,12 +8823,11 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
         return CG_ERROR;
     }
 
-    // Temporal interpolation requires spatial interpolation
-    if (spatialOrder == 0 && temporalOrder > 0)
-    {
-        cgi_error("Temporal interpolation (order %d) requires spatial order >= 1.", temporalOrder);
-        return CG_ERROR;
-    }
+    /* No constraint couples the two orders.  SpatialOrder = 0 with
+     * TemporalOrder = q describes a per-element value constant in space and
+     * varying in time -- an unsteady finite-volume solution -- with
+     * N_DOFs = q+1 per element by the general rule.  Both are accepted.
+     */
 
     /* spatialOrder >= 0 marks "InterpolationOrders present". */
     sol->spatialOrder = spatialOrder;
