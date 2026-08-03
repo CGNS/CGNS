@@ -4844,12 +4844,12 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
 
      /* DataArray_t:
      Required: none
-     Optional: LagrangeControlPoints, MonomialCoefficients,
+     Optional: LagrangeControlPoints,
                LagrangeControlPointDistribution (CPEX-0045 §3.1.2)
+     Not permitted: MonomialCoefficients -- mesh interpolation is nodal only.
       */
     nnod = 0;
     eltinterpolation->lagrangePts = 0;
-    eltinterpolation->monomialCoeff = 0;
     eltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
     if (nnod > 3) {
@@ -4885,26 +4885,13 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
                 return CG_ERROR;
             }
         }
-     /* MonomialCoefficients */
+     /* MonomialCoefficients is not permitted here: mesh interpolation is nodal
+      * only (CPEX-0045, the third v2 principle -- the mesh is always defined by
+      * control points in parametric space), so modal coefficients belong to
+      * SolutionInterpolation_t alone. */
         else if (strcmp(temp_name,"MonomialCoefficients")==0) {
-            eltinterpolation->monomialCoeff = CGNS_NEW(cgns_array, 1);
-            eltinterpolation->monomialCoeff[0].id = id[i];
-            eltinterpolation->monomialCoeff[0].link = cgi_read_link(id[i]);
-            eltinterpolation->monomialCoeff[0].in_link = 0;
-            if (cgi_read_array(&eltinterpolation->monomialCoeff[0],
-                "MonomialCoefficients", eltinterpolation->id)) return CG_ERROR;
-
-             /* check data */
-            if (strcmp(eltinterpolation->monomialCoeff[0].data_type,"R8")) {
-                cgi_error("Error: Datatype %s not supported for %s",
-                eltinterpolation->monomialCoeff[0].data_type, temp_name);
-                return CG_ERROR;
-            }
-            /* check dimension */
-            if (eltinterpolation->monomialCoeff[0].data_dim != 1) {
-                cgi_error("Error: %s incorrectly dimensioned node 'MonomialCoefficients'",temp_name);
-                return CG_ERROR;
-            }
+            cgi_error("Error: 'MonomialCoefficients' is not a valid child of an ElementInterpolation_t node; mesh interpolation is nodal only and modal coefficients are solution-only.");
+            return CG_ERROR;
         }
      /* LagrangeControlPointDistribution (Character DataArray_t) */
         else if (strcmp(temp_name,"LagrangeControlPointDistribution")==0) {
@@ -4923,7 +4910,7 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
         }
         else
         {
-            cgi_error("Invalid DataArray_t node '%s' for ElementInterpolation_t node (expected 'LagrangeControlPoints', 'MonomialCoefficients', or 'LagrangeControlPointDistribution').", temp_name);
+            cgi_error("Invalid DataArray_t node '%s' for ElementInterpolation_t node (expected 'LagrangeControlPoints' or 'LagrangeControlPointDistribution').", temp_name);
             return CG_ERROR;
         }
     }   /* loop through DataArray_t */
@@ -17382,11 +17369,6 @@ void cgi_free_element_interpolation(cgns_elementInterpolation *einterp)
       CGNS_FREE(einterp->lagrangePts);
     }
     einterp->lagrangePts = 0;
-    if (einterp->monomialCoeff) {
-      cgi_free_array(einterp->monomialCoeff);
-      CGNS_FREE(einterp->monomialCoeff);
-    }
-    einterp->monomialCoeff = 0;
     if (einterp->lagrangeDist) {
       cgi_free_array(einterp->lagrangeDist);
       CGNS_FREE(einterp->lagrangeDist);

@@ -19,10 +19,9 @@
       real(kind=dp), allocatable :: pu(:), pv(:), pw(:), puu(:), pvv(:), pww(:)
       real(kind=dp), allocatable :: pt(:), ptt(:)
       real(kind=dp), allocatable :: r(:)
-      real(kind=dp), allocatable :: ecoeff(:), ecoeff_read(:)
       real(kind=dp), allocatable :: scoeff(:), scoeff_read(:)
       integer(cgsize_t), allocatable :: ielem(:)
-      integer(cgsize_t) :: ecoeff_size, scoeff_size
+      integer(cgsize_t) :: scoeff_size
 
       integer :: ierr, i, j, ii, jj, iset, ifirstnode, ielem_no
       integer :: cgfile, cgbase, cgzone, cgcoord, cgsection, cgfamily
@@ -125,21 +124,9 @@
      &                                             pw, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      ! Test cg_element_interpolation_coefficients_write_f
-      ! Use cg_element_monomial_size_f to get correct size for QUAD_9
-      write(*,*) 'Writing element interpolation coefficients ...'
-      call cg_element_monomial_size_f(CGNS_ENUMV(QUAD_9), ecoeff_size, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
-      write(*,*) 'Element monomial size for QUAD_9: ', ecoeff_size
-      allocate(ecoeff(ecoeff_size))
-      do i = 1, ecoeff_size
-        ecoeff(i) = dble(i) * 0.01_dp
-      enddo
-      call cg_element_interpolation_coefficients_write_f(cgfile, cgbase, &
-     &                                                   cgfamily, cgeinterp, &
-     &                                                   ecoeff, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
-      write(*,*) 'Element interpolation coefficients written successfully'
+      ! No element interpolation coefficients are written: mesh interpolation is
+      ! nodal only (CPEX-0045), so ElementInterpolation_t carries no monomial
+      ! coefficients and there is no element-side modal API.
 
       write(*,*) 'Writing SolutionInterpolation_t node ...'
 
@@ -340,26 +327,6 @@
 
       deallocate(pu, pv, pw, puu, pvv, pww)
 
-      ! Test cg_element_interpolation_coefficients_read_f
-      write(*,*) 'Testing cg_element_interpolation_coefficients_read_f ...'
-      allocate(ecoeff_read(ecoeff_size))
-      call cg_element_interpolation_coefficients_read_f(cgfile, cgbase, &
-     &                                                  cgfamily, cgeinterp, &
-     &                                                  ecoeff_read, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
-
-      ! Validate coefficients
-      do i = 1, ecoeff_size
-        if (abs(ecoeff(i) - ecoeff_read(i)) .gt. 1.d-10) then
-          write(*,*) 'ERROR: Element coefficient mismatch at i=', i
-          write(*,*) '  expected: ', ecoeff(i)
-          write(*,*) '  got:      ', ecoeff_read(i)
-          stop 1
-        endif
-      enddo
-      write(*,*) 'All element interpolation coefficients validated successfully'
-      deallocate(ecoeff_read)
-
       ! Read Solution interpolation Node
       write(*,*) 'Reading SolutionInterpolation_t node ...'
       call cg_solution_interpolation_read_f(cgfile, cgbase, cgfamily, cgsinterp, &
@@ -558,7 +525,7 @@
       ! CLEANUP
       ! ========================================
       deallocate(x, y, ielem)
-      deallocate(ecoeff, scoeff)
+      deallocate(scoeff)
 
       write(*,*) ''
       write(*,*) 'All Fortran high-order API tests passed!'

@@ -1042,8 +1042,9 @@ typedef struct {                    /* ElementInterpolation_t Node */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* basic element type this block overrides */
     cgns_array *lagrangePts;        /* optional LagrangeControlPoints; NULL -> use standard layout (isoparametric) */
-    cgns_array *monomialCoeff;      /* optional MonomialCoefficients; NULL -> none */
     cgns_array *lagrangeDist;       /* optional LagrangeControlPointDistribution (Character DataArray_t); NULL -> unspecified */
+    /* No monomialCoeff: mesh interpolation is nodal only (CPEX-0045); modal
+     * coefficients belong to SolutionInterpolation_t alone. */
 } cgns_elementInterpolation;
 
 typedef struct {                    /* SolutionInterpolation_t Node */

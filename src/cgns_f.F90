@@ -5858,48 +5858,6 @@ CONTAINS
   END SUBROUTINE cg_solution_interpolation_find_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_coefficients_write_f
-!DEC$endif
-  SUBROUTINE cg_element_interpolation_coefficients_write_f(fn, B, fam, en, coeff, ier)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, fam, en
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: coeff
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_element_interpolation_coefficients_write(fn, bn, fam, en, coeff) &
-          BIND(C, name="cg_element_interpolation_coefficients_write")
-        IMPORT :: C_INT, C_DOUBLE
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: coeff
-      END FUNCTION cg_element_interpolation_coefficients_write
-    END INTERFACE
-    ier = INT(cg_element_interpolation_coefficients_write(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(en,C_INT), coeff))
-  END SUBROUTINE cg_element_interpolation_coefficients_write_f
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_coefficients_read_f
-!DEC$endif
-  SUBROUTINE cg_element_interpolation_coefficients_read_f(fn, B, fam, en, coeff, ier)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, fam, en
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: coeff
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_element_interpolation_coefficients_read(fn, bn, fam, en, coeff) &
-          BIND(C, name="cg_element_interpolation_coefficients_read")
-        IMPORT :: C_INT, C_DOUBLE
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: coeff
-      END FUNCTION cg_element_interpolation_coefficients_read
-    END INTERFACE
-    ier = INT(cg_element_interpolation_coefficients_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(en,C_INT), coeff))
-  END SUBROUTINE cg_element_interpolation_coefficients_read_f
-
-!DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_coefficients_write_f
 !DEC$endif
   SUBROUTINE cg_solution_interpolation_coefficients_write_f(fn, B, fam, sn, coeff, ier)
@@ -6038,28 +5996,6 @@ CONTAINS
     ier = INT(cg_sol_characteristic_length_write(INT(fn,C_INT), INT(B,C_INT), &
               INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements, h_e))
   END SUBROUTINE cg_sol_characteristic_length_write_f
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_element_monomial_size_f
-!DEC$endif
-  SUBROUTINE cg_element_monomial_size_f(etype, nsize, ier)
-    IMPLICIT NONE
-    INTEGER(cgenum_t), INTENT(IN) :: etype
-    INTEGER(cgsize_t), INTENT(OUT) :: nsize
-    INTEGER, INTENT(OUT) :: ier
-    INTEGER(cgsize_t) :: c_nsize
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_element_monomial_size(etype, nsize) &
-          BIND(C, name="cg_element_monomial_size")
-        IMPORT :: C_INT, cgenum_t, cgsize_t
-        IMPLICIT NONE
-        INTEGER(cgenum_t), VALUE :: etype
-        INTEGER(cgsize_t) :: nsize
-      END FUNCTION cg_element_monomial_size
-    END INTERFACE
-    ier = INT(cg_element_monomial_size(etype, c_nsize))
-    nsize = c_nsize
-  END SUBROUTINE cg_element_monomial_size_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_monomial_size_f

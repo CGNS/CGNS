@@ -1302,15 +1302,13 @@ CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Modal (Monomial) Interpolation Functions                         *
  *                     (CPEX 045)                                        *
+ *                                                                       *
+ *      Solution interpolation only.  Mesh geometry is always defined by  *
+ *      control points, so ElementInterpolation_t carries no monomial     *
+ *      coefficients and has no modal accessors.                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_element_monomial_size(CGNS_ENUMT(ElementType_t) t, cgsize_t *sz);
-
 CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsize_t *sz);
-
-CGNSDLL int cg_element_interpolation_coefficients_write(int fn, int bn, int fam, int en, double *coeff);
-
-CGNSDLL int cg_element_interpolation_coefficients_read(int fn, int bn, int fam, int en, double *coeff);
 
 CGNSDLL int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff);
 
