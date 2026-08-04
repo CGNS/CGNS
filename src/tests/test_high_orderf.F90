@@ -198,13 +198,13 @@
       endif
       write(*,*) 'Solution Lagrange interpolation size validated: ', nbsolpts
 
-      ! Test cg_sol_interpolation_order_write_f with InterpolationPoints location
+      ! Test cg_sol_interpolation_degree_write_f with InterpolationPoints location
       write(*,*) 'Writing FlowSolution_t with InterpolationPoints location ...'
       call cg_sol_write_f(cgfile, cgbase, cgzone, 'FlowSolution', &
      &                    CGNS_ENUMV(InterpolationPoints), cgsol, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      call cg_sol_interpolation_order_write_f(cgfile, cgbase, cgzone, cgsol, &
+      call cg_sol_interpolation_degree_write_f(cgfile, cgbase, cgzone, cgsol, &
      &                                        3, 0, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       write(*,*) 'Solution interpolation order written successfully'
@@ -417,9 +417,9 @@
       write(*,*) 'All solution interpolation coefficients validated successfully'
       deallocate(scoeff_read)
 
-      ! Test cg_sol_interpolation_order_read_f
-      write(*,*) 'Testing cg_sol_interpolation_order_read_f ...'
-      call cg_sol_interpolation_order_read_f(cgfile, cgbase, cgzone, cgsol, &
+      ! Test cg_sol_interpolation_degree_read_f
+      write(*,*) 'Testing cg_sol_interpolation_degree_read_f ...'
+      call cg_sol_interpolation_degree_read_f(cgfile, cgbase, cgzone, cgsol, &
      &                                       os, ot, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       if (os .ne. 3 .or. ot .ne. 0) then

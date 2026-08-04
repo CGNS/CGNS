@@ -3,19 +3,19 @@
  *
  * Scenario A – variable order per cell via PointRange (spec §3.2.5):
  *   Two FlowSolution_t blocks with disjoint PointRanges:
- *     FS1  cells [1..N/2]   InterpolationOrders=(2,0)
- *     FS2  cells [N/2+1..N] InterpolationOrders=(3,0)
+ *     FS1  cells [1..N/2]   InterpolationDegrees=(2,0)
+ *     FS2  cells [N/2+1..N] InterpolationDegrees=(3,0)
  *
  * Scenario B – variable order per field variable:
  *   Two FlowSolution_t blocks each covering all cells,
  *   carrying different field arrays at different orders:
- *     FS1  "Density"   over [1..N]  InterpolationOrders=(2,0)
- *     FS2  "VelocityX" over [1..N]  InterpolationOrders=(3,0)
+ *     FS1  "Density"   over [1..N]  InterpolationDegrees=(2,0)
+ *     FS2  "VelocityX" over [1..N]  InterpolationDegrees=(3,0)
  *
  * Scenario C – variable order per cell via PointList:
  *   Two FlowSolution_t blocks with disjoint PointLists (non-contiguous):
- *     FS1  odd  cells {1,3,5,7}  InterpolationOrders=(2,0)
- *     FS2  even cells {2,4,6,8}  InterpolationOrders=(3,0)
+ *     FS1  odd  cells {1,3,5,7}  InterpolationDegrees=(2,0)
+ *     FS2  even cells {2,4,6,8}  InterpolationDegrees=(3,0)
  */
 
 #include <stdio.h>
@@ -66,13 +66,13 @@ static int test_variable_order_per_cell(void)
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_lowOrder",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointRange), 2, range1, &S1),        "ptset S1"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S1, 2, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S1, 2, 0),
               "order S1"))                                                   return 1;
 
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_highOrder",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointRange), 2, range2, &S2),        "ptset S2"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S2, 3, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S2, 3, 0),
               "order S2"))                                                   return 1;
 
     if (check(cg_close(fn), "close W")) return 1;
@@ -101,7 +101,7 @@ static int test_variable_order_per_cell(void)
                     (long long)exp_lo, (long long)exp_hi);
             return 1;
         }
-        if (check(cg_sol_interpolation_order_read(fn, B, Z, s, &os, &ot),
+        if (check(cg_sol_interpolation_degree_read(fn, B, Z, s, &os, &ot),
                   "order_read")) return 1;
         if (os != exp_order || ot != 0) {
             fprintf(stderr, "FS%d: order (%d,%d), expected (%d,0)\n",
@@ -122,7 +122,7 @@ static int test_variable_order_per_cell(void)
 /*   Same PointRange (all cells), different orders per FlowSolution_t. */
 /*                                                                     */
 /* The metadata-only check exercises that two FlowSolution_t blocks     */
-/* covering the same cells can carry distinct InterpolationOrders.      */
+/* covering the same cells can carry distinct InterpolationDegrees.      */
 /* Field arrays are not written here: under InterpolationPoints the     */
 /* per-field array length is sum_e N_DOFs(e), which requires Element_t  */
 /* sections and per-order DOF expansion (out of scope for this test).   */
@@ -157,14 +157,14 @@ static int test_variable_order_per_field(void)
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_p2_AllCells",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointRange), 2, range_all, &S1),     "ptset S1"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S1, 2, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S1, 2, 0),
               "order S1"))                                                   return 1;
 
     /* FS2 at order 3 – also covers all cells */
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_p3_AllCells",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointRange), 2, range_all, &S2),     "ptset S2"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S2, 3, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S2, 3, 0),
               "order S2"))                                                   return 1;
 
     if (check(cg_close(fn), "close W")) return 1;
@@ -189,7 +189,7 @@ static int test_variable_order_per_field(void)
             return 1;
         }
 
-        if (check(cg_sol_interpolation_order_read(fn, B, Z, s, &os, &ot),
+        if (check(cg_sol_interpolation_degree_read(fn, B, Z, s, &os, &ot),
                   "order_read")) return 1;
         if (os != exp_orders[s-1] || ot != 0) {
             fprintf(stderr, "FS%d: order (%d,%d), expected (%d,0)\n",
@@ -241,14 +241,14 @@ static int test_variable_order_pointlist(void)
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_Odd",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointList), 4, odd_cells, &S1),      "ptset S1"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S1, 2, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S1, 2, 0),
               "order S1"))                                                   return 1;
 
     /* FS2: even cells at order 3 via PointList */
     if (check(cg_sol_ptset_write(fn, B, Z, "FS_Even",
               CGNS_ENUMV(InterpolationPoints),
               CGNS_ENUMV(PointList), 4, even_cells, &S2),     "ptset S2"))  return 1;
-    if (check(cg_sol_interpolation_order_write(fn, B, Z, S2, 3, 0),
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S2, 3, 0),
               "order S2"))                                                   return 1;
 
     if (check(cg_close(fn), "close W")) return 1;
@@ -278,7 +278,7 @@ static int test_variable_order_pointlist(void)
             }
         }
 
-        if (check(cg_sol_interpolation_order_read(fn, B, Z, s, &os, &ot),
+        if (check(cg_sol_interpolation_degree_read(fn, B, Z, s, &os, &ot),
                   "order_read")) return 1;
         if (os != exp_order || ot != 0) {
             fprintf(stderr, "FS%d: order (%d,%d), expected (%d,0)\n",

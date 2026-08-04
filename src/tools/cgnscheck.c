@@ -1789,7 +1789,7 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 /*=======================================================================*/
 
-static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
+static cgsize_t get_ho_data_size (ZONE *z, int spatialDegree, int temporalDegree)
 {
     int i;
     int n;
@@ -1799,17 +1799,17 @@ static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
     {
       ELEMSET *set = &z->sets[i];
 
-      if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
+      if (cg_npe_ho(set->type, spatialDegree, &n) != CG_OK) return -1;
       datasize = datasize + (set->ie-set->is+1) * n;
     }
-    datasize = datasize * (temporalOrder+1);
+    datasize = datasize * (temporalDegree+1);
 
     return datasize;
 }
 
 /*=======================================================================*/
 
-static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalOrder,
+static cgsize_t get_ho_data_size_range (ZONE *z, int spatialDegree, int temporalDegree,
                                         cgsize_t *range)
 {
     int i;
@@ -1830,17 +1830,17 @@ static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalO
       // Get element count
       ne = rmax - rmin + 1;
 
-      if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
+      if (cg_npe_ho(set->type, spatialDegree, &n) != CG_OK) return -1;
       datasize = datasize + ne * n;
     }
-    datasize = datasize * (temporalOrder+1);
+    datasize = datasize * (temporalDegree+1);
     
     return datasize;
 }
 
 /*=======================================================================*/
 
-static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOrder,
+static cgsize_t get_ho_data_size_list (ZONE *z, int spatialDegree, int temporalDegree,
                                         cgsize_t *list, int npts)
 {
     int p, i;
@@ -1863,13 +1863,13 @@ static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOr
 
         done = 1;
 
-        if (cg_npe_ho(set->type, spatialOrder, &n) != CG_OK) return -1;
+        if (cg_npe_ho(set->type, spatialDegree, &n) != CG_OK) return -1;
         datasize = datasize + n;
       }
       
       if (done == 0) error("Point %d from ptset PointList not found in Elements_t",id);
     }
-    datasize = datasize * (temporalOrder+1);
+    datasize = datasize * (temporalDegree+1);
     
     return datasize;
 }
@@ -4875,10 +4875,10 @@ static void check_solution (int ns)
     
     
     /* Interpolation Order */
-    ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+    ierr = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
     if (ierr == CG_ERROR)
     {
-        error_exit("cg_sol_interpolation_order_read");
+        error_exit("cg_sol_interpolation_degree_read");
     }
     has_interp_order = (ierr == CG_OK);
     if (ierr == CG_OK)
@@ -4898,7 +4898,7 @@ static void check_solution (int ns)
         }
         else if (location == CGNS_ENUMV(CellCenter) && strict_cpex45)
         {
-            error("CPEX-0045 v3 §3.1.3: GridLocation = CellCenter with InterpolationOrders "
+            error("CPEX-0045 v3 §3.1.3: GridLocation = CellCenter with InterpolationDegrees "
                   "is non-conformant; use InterpolationPoints. (Accepted for back-compat in "
                   "non-strict mode.)");
         }
@@ -4934,18 +4934,18 @@ static void check_solution (int ns)
         if (strict_cpex45) {
             warning(1, "Strict mode: verify a SolutionInterpolation_t block "
                        "exists in the zone's Family_t with (basic_element_type, "
-                       "spatialOrder=%d, temporalOrder=%d).", os, ot);
+                       "spatialDegree=%d, temporalDegree=%d).", os, ot);
         }
     }
 
     /* SIDS Consistency Check: InterpolationPoints requires interpolation definition */
     if (location == CGNS_ENUMV(InterpolationPoints) && ierr == CG_NODE_NOT_FOUND)
     {
-        error("GridLocation=InterpolationPoints requires InterpolationOrders to be defined. "
+        error("GridLocation=InterpolationPoints requires InterpolationDegrees to be defined. "
               "FlowSolution at interpolation points must specify which interpolation is being used.");
     }
 
-    /* CPEX 0045 Consistency Check: CellCenter with InterpolationOrders requires PointSet */
+    /* CPEX 0045 Consistency Check: CellCenter with InterpolationDegrees requires PointSet */
     if (location == CGNS_ENUMV(CellCenter) && ierr == CG_OK)
     {
         /* Check will be performed below when reading PointSet */
@@ -4973,12 +4973,12 @@ static void check_solution (int ns)
       cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist);
     }
 
-    /* CPEX 0045 Validation: CellCenter with InterpolationOrders MUST have PointSet */
+    /* CPEX 0045 Validation: CellCenter with InterpolationDegrees MUST have PointSet */
     if (location == CGNS_ENUMV(CellCenter) && os > 0)
     {
         int has_order;
         int temp_os, temp_ot;
-        int ierr_order = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &temp_os, &temp_ot);
+        int ierr_order = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &temp_os, &temp_ot);
         has_order = (ierr_order == CG_OK && (temp_os > 0 || temp_ot > 0));
 
         if (has_order && ierr == CG_NODE_NOT_FOUND)
@@ -4999,7 +4999,7 @@ static void check_solution (int ns)
     if (location == CGNS_ENUMV(InterpolationPoints) ||
         (location == CGNS_ENUMV(CellCenter) && os > 0))
     {
-      /* CellCenter+InterpolationOrders is the legacy back-compat path;
+      /* CellCenter+InterpolationDegrees is the legacy back-compat path;
        * size it like InterpolationPoints so cgnscheck does not flag a
        * spurious size mismatch on the field arrays. */
       if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
@@ -6363,8 +6363,8 @@ static void check_family (int fam)
         if (verbose) {
             printf ("    SolutionInterpolation Name=\"%s\"\n", name);
             printf ("    SolutionInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
-            printf ("    SolutionInterpolation spatialOrder=%d\n", os);
-            printf ("    SolutionInterpolation temporalOrder=%d\n", ot);
+            printf ("    SolutionInterpolation spatialDegree=%d\n", os);
+            printf ("    SolutionInterpolation temporalDegree=%d\n", ot);
             printf ("    SolutionInterpolation InterpolationType=\"%s\"\n", cg_InterpolationTypeName(it));
         }
 
@@ -6400,10 +6400,10 @@ static void check_family (int fam)
 
         /* Validate: Check spatial and temporal orders */
         if (os < 0) {
-            error("SolutionInterpolation \"%s\": Invalid spatialOrder %d (must be >= 0)", name, os);
+            error("SolutionInterpolation \"%s\": Invalid spatialDegree %d (must be >= 0)", name, os);
         }
         if (ot < 0) {
-            error("SolutionInterpolation \"%s\": Invalid temporalOrder %d (must be >= 0)", name, ot);
+            error("SolutionInterpolation \"%s\": Invalid temporalDegree %d (must be >= 0)", name, ot);
         }
 
         /* Validate: Get expected size for this element type and orders */

@@ -979,10 +979,10 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
               cg_element_basic_element_type(family->solutioninterpolations[m].type,&btype);
               if (n != m) {
                   if (atype == btype
-                   && family->solutioninterpolations[n].spatialorder  == family->solutioninterpolations[m].spatialorder
-                   && family->solutioninterpolations[n].temporalorder == family->solutioninterpolations[m].temporalorder
+                   && family->solutioninterpolations[n].spatialdegree  == family->solutioninterpolations[m].spatialdegree
+                   && family->solutioninterpolations[n].temporaldegree == family->solutioninterpolations[m].temporaldegree
                   ) {
-                      cgi_error("Only a single SolutionInterpolation_t node per triplet (Element_t,spatialOrder,temporalOrder) is allowed.");
+                      cgi_error("Only a single SolutionInterpolation_t node per triplet (Element_t,spatialDegree,temporalDegree) is allowed.");
                       return CG_ERROR;
                   }
               }
@@ -1874,14 +1874,14 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
      /* Determine data size (HO solution case) */
         if ( sol[0][s].location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (sol[0][s].spatialOrder < 0)
+            if (sol[0][s].spatialDegree < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution requires interpolationOrders");
                 return CG_ERROR;
             }
             
-            int ret = cgi_ho_datasize(Idim,zone,sol[0][s].spatialOrder,
-                                sol[0][s].temporalOrder, DataSize);
+            int ret = cgi_ho_datasize(Idim,zone,sol[0][s].spatialDegree,
+                                sol[0][s].temporalDegree, DataSize);
             
             if ( ret == CG_ERROR) return CG_ERROR;
             if ( ret == CG_NODE_NOT_FOUND ) checksize = 0;
@@ -1925,8 +1925,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                     return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_range(Idim,zone,sol[0][s].spatialOrder,
-                                  sol[0][s].temporalOrder, range_min[0],
+                ret = cgi_ho_datasize_range(Idim,zone,sol[0][s].spatialDegree,
+                                  sol[0][s].temporalDegree, range_min[0],
                                   range_max[0], &DataCount);
               }
               // Override based on list
@@ -1941,8 +1941,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                   return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_list(Idim,zone,sol[0][s].spatialOrder,
-                                  sol[0][s].temporalOrder, pnts,
+                ret = cgi_ho_datasize_list(Idim,zone,sol[0][s].spatialDegree,
+                                  sol[0][s].temporalDegree, pnts,
                                   sol[0][s].ptset->npts, &DataCount);
                 
                 CGNS_FREE(pnts);
@@ -2055,9 +2055,9 @@ int cgi_read_solution_order(cgns_sol *sol)
     char_33 temp_name,data_type;
     
     
-    // Set default values: spatialOrder<0 means "no InterpolationOrders child"
-    sol->spatialOrder  = -1;
-    sol->temporalOrder = 0;
+    // Set default values: spatialDegree<0 means "no InterpolationDegrees child"
+    sol->spatialDegree  = -1;
+    sol->temporalDegree = 0;
     
     /* spatial and temporal orders IndexArray_t */
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
@@ -2072,32 +2072,32 @@ int cgi_read_solution_order(cgns_sol *sol)
             }
       
             if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
-            if (strcmp(temp_name, "InterpolationOrders")==0) {
+            if (strcmp(temp_name, "InterpolationDegrees")==0) {
                 if (strcmp(data_type,"I4")) {
-                    cgi_error("InterpolationOrders in FlowSolution '%s': expected I4 data type, got %s",
+                    cgi_error("InterpolationDegrees in FlowSolution '%s': expected I4 data type, got %s",
                               sol->name, data_type);
                     if (vdata) CGNS_FREE(vdata);
                     CGNS_FREE(idf);
                     return CG_ERROR;
                 }
                 if (ndim != 1) {
-                    cgi_error("InterpolationOrders in FlowSolution '%s': expected ndim=1, got %d",
+                    cgi_error("InterpolationDegrees in FlowSolution '%s': expected ndim=1, got %d",
                               sol->name, ndim);
                     if (vdata) CGNS_FREE(vdata);
                     CGNS_FREE(idf);
                     return CG_ERROR;
                 }
                 if (dim_vals[0] != 2) {
-                    cgi_error("InterpolationOrders in FlowSolution '%s': expected 2 values, got %"PRIdCGSIZE,
+                    cgi_error("InterpolationDegrees in FlowSolution '%s': expected 2 values, got %"PRIdCGSIZE,
                               sol->name, dim_vals[0]);
                     if (vdata) CGNS_FREE(vdata);
                     CGNS_FREE(idf);
                     return CG_ERROR;
                 }
                 edata = (int*)vdata;
-                /* spatialOrder >= 0 implies InterpolationOrders was present. */
-                sol->spatialOrder  = edata[0];
-                sol->temporalOrder = edata[1];
+                /* spatialDegree >= 0 implies InterpolationDegrees was present. */
+                sol->spatialDegree  = edata[0];
+                sol->temporalDegree = edata[1];
                 CGNS_FREE(vdata);
             }
         }
@@ -4934,10 +4934,10 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     }
     
      /* Data:
-     Required: ElementType_t,spatialOrder,temporalOrder
+     Required: ElementType_t,spatialDegree,temporalDegree
       */
-    sltinterpolation->spatialorder  = 1;
-    sltinterpolation->temporalorder = 0;
+    sltinterpolation->spatialdegree  = 1;
+    sltinterpolation->temporaldegree = 0;
     if (cgi_read_node(sltinterpolation->id, sltinterpolation->name, data_type,
             &ndim, dim_vals, &vdata, READ_DATA)) {
         cgi_error("Error reading SolutionInterpolation_t node");
@@ -4961,8 +4961,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     }
     edata = (int *)vdata;
     sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
-    sltinterpolation->spatialorder = edata[1];
-    sltinterpolation->temporalorder = edata[2];
+    sltinterpolation->spatialdegree = edata[1];
+    sltinterpolation->temporaldegree = edata[2];
     CGNS_FREE(vdata);
     if (INVALID_ENUM(sltinterpolation->type, NofValidElementTypes)) {
         cgi_error("Invalid element type %d in SolutionInterpolation_t node '%s'",
@@ -7966,11 +7966,11 @@ int cgi_datasize(int ndim, cgsize_t *dims,
  * and summing npe_ho for each element.
  *
  * \param[in]  section      Pointer to MIXED element section
- * \param[in]  spatialOrder Spatial interpolation order
+ * \param[in]  spatialDegree Spatial interpolation order
  * \param[out] DataSize     Computed data size for this section
  * \return CG_OK on success, CG_ERROR on failure
  */
-static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize_t *DataSize)
+static int cgi_ho_datasize_mixed(cgns_section *section, int spatialDegree, cgsize_t *DataSize)
 {
     cgsize_t ne, pos = 0;
     cgsize_t nelems = section->range[1] - section->range[0] + 1;
@@ -8021,10 +8021,10 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize
         elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
 
         /* Get NPE for high-order solution at this spatial order */
-        if (cg_npe_ho(elem_type, spatialOrder, &npe) != CG_OK) {
+        if (cg_npe_ho(elem_type, spatialDegree, &npe) != CG_OK) {
             if (needs_free) CGNS_FREE((void*)connect);
             cgi_error("Failed to get npe_ho for element type %s (order %d) in MIXED section '%s'",
-                      cg_ElementTypeName(elem_type), spatialOrder, section->name);
+                      cg_ElementTypeName(elem_type), spatialDegree, section->name);
             return CG_ERROR;
         }
 
@@ -8056,13 +8056,13 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int spatialOrder, cgsize
  * For MIXED sections, iterate only through elements in the specified range.
  *
  * \param[in]  section      Pointer to MIXED element section
- * \param[in]  spatialOrder Spatial interpolation order
+ * \param[in]  spatialDegree Spatial interpolation order
  * \param[in]  rmin         First element in range (global indexing)
  * \param[in]  rmax         Last element in range (global indexing)
  * \param[out] DataSize     Computed data size for this range
  * \return CG_OK on success, CG_ERROR on failure
  */
-static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
+static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialDegree,
                                        cgsize_t rmin, cgsize_t rmax, cgsize_t *DataSize)
 {
     cgsize_t ne, pos = 0, elem_idx;
@@ -8114,10 +8114,10 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
 
         /* Check if this element is within the requested range */
         if (elem_idx >= first_elem_offset && elem_idx <= last_elem_offset) {
-            if (cg_npe_ho(elem_type, spatialOrder, &npe) != CG_OK) {
+            if (cg_npe_ho(elem_type, spatialDegree, &npe) != CG_OK) {
                 if (needs_free) CGNS_FREE((void*)connect);
                 cgi_error("Failed to get npe_ho for element type %s (order %d) in MIXED section '%s'",
-                          cg_ElementTypeName(elem_type), spatialOrder, section->name);
+                          cg_ElementTypeName(elem_type), spatialDegree, section->name);
                 return CG_ERROR;
             }
             *DataSize += npe;
@@ -8146,7 +8146,7 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int spatialOrder,
     return CG_OK;
 }
 
-int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, cgsize_t *DataSize)
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialDegree, int temporalDegree, cgsize_t *DataSize)
 {
     int i,j, ne;
     int npe;
@@ -8178,7 +8178,7 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
         if (type == CGNS_ENUMV(MIXED)) {
             // MIXED section: must iterate through connectivity to get individual element types
             cgsize_t mixed_size = 0;
-            if (cgi_ho_datasize_mixed(section, spatialOrder, &mixed_size) != CG_OK) {
+            if (cgi_ho_datasize_mixed(section, spatialDegree, &mixed_size) != CG_OK) {
                 return CG_ERROR;
             }
             for (j = 0 ; j < id_dim ; j++) DataSize[j] += mixed_size;
@@ -8187,9 +8187,9 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
             // Get element count
             ne = section->range[1] - section->range[0] + 1;
             // Get number of nodes for this element type based solution
-            if (cg_npe_ho(type, spatialOrder, &npe) != CG_OK) {
+            if (cg_npe_ho(type, spatialDegree, &npe) != CG_OK) {
                 cgi_error("Failed to get number of nodes for element type %s with spatial order %d",
-                          cg_ElementTypeName(type), spatialOrder);
+                          cg_ElementTypeName(type), spatialDegree);
                 return CG_ERROR;
             }
 
@@ -8197,13 +8197,13 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
         }
     }
     // Temporal Order
-    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
+    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalDegree+1);
     return CG_OK;
 }
 
 
-int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder,
-                          const int temporalOrder, const cgsize_t imin, const cgsize_t imax,
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialDegree,
+                          const int temporalDegree, const cgsize_t imin, const cgsize_t imax,
                           cgsize_t *DataSize)
 {
     int i, ne;
@@ -8242,7 +8242,7 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
         if (type == CGNS_ENUMV(MIXED)) {
             // MIXED section: iterate through connectivity for range
             cgsize_t mixed_size = 0;
-            if (cgi_ho_datasize_mixed_range(section, spatialOrder, rmin, rmax, &mixed_size) != CG_OK) {
+            if (cgi_ho_datasize_mixed_range(section, spatialDegree, rmin, rmax, &mixed_size) != CG_OK) {
                 return CG_ERROR;
             }
             *DataSize += mixed_size;
@@ -8251,9 +8251,9 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
             // Get element count
             ne = rmax - rmin + 1;
             // Get number of nodes for this element type based solution
-            if (cg_npe_ho(type, spatialOrder, &npe) != CG_OK) {
+            if (cg_npe_ho(type, spatialDegree, &npe) != CG_OK) {
                 cgi_error("Failed to get number of nodes for element type %s with spatial order %d",
-                          cg_ElementTypeName(type), spatialOrder);
+                          cg_ElementTypeName(type), spatialDegree);
                 return CG_ERROR;
             }
 
@@ -8261,7 +8261,7 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
         }
     }
     // Temporal Order
-    *DataSize *= (temporalOrder + 1);
+    *DataSize *= (temporalDegree + 1);
     return CG_OK;
 }
 
@@ -8274,8 +8274,8 @@ static int compare_cgsize(const void *a, const void *b) {
     return 0;
 }
 
-int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialOrder,
-                         const int temporalOrder, const cgsize_t *list, const cgsize_t npts,
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialDegree,
+                         const int temporalDegree, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize)
 {
     int i;
@@ -8382,11 +8382,11 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
                 while (list_idx < npts && sorted_list[list_idx] == current_elem_id) {
                     /* Element Match! Accumulate Size */
                     int ho_npe;
-                    if (cg_npe_ho(elem_type, spatialOrder, &ho_npe) != CG_OK) {
+                    if (cg_npe_ho(elem_type, spatialDegree, &ho_npe) != CG_OK) {
                         if (connect_buf) CGNS_FREE(connect_buf);
                         CGNS_FREE(sorted_list);
                         cgi_error("Failed to get npe_ho for element type %s with spatial order %d",
-                                  cg_ElementTypeName(elem_type), spatialOrder);
+                                  cg_ElementTypeName(elem_type), spatialDegree);
                         return CG_ERROR;
                     }
                     *DataSize += ho_npe;
@@ -8419,10 +8419,10 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
             int ho_npe;
             cgsize_t p;
 
-            if (cg_npe_ho(type, spatialOrder, &ho_npe) != CG_OK) {
+            if (cg_npe_ho(type, spatialDegree, &ho_npe) != CG_OK) {
                 CGNS_FREE(sorted_list);
                 cgi_error("Failed to get npe_ho for element type %s with spatial order %d",
-                          cg_ElementTypeName(type), spatialOrder);
+                          cg_ElementTypeName(type), spatialDegree);
                 return CG_ERROR;
             }
 
@@ -8438,7 +8438,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
     CGNS_FREE(sorted_list);
 
     /* Temporal Order */
-    *DataSize *= (temporalOrder + 1);
+    *DataSize *= (temporalDegree + 1);
 
     return CG_OK;
 }
@@ -17539,8 +17539,8 @@ void cgi_free_sol(cgns_sol *sol)
         cgi_free_ptset(sol->ptset);
         CGNS_FREE(sol->ptset);
     }
-    sol->spatialOrder = -1;
-    sol->temporalOrder = 0;
+    sol->spatialDegree = -1;
+    sol->temporalDegree = 0;
     sol->ho_ptset_datasize = -1;
 }
 

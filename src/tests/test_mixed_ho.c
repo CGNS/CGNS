@@ -119,8 +119,8 @@ int test_mixed_ho_simple()
     printf("  Created MIXED section with 2 TRI_3 + 1 QUAD_4\n");
 
     /* Create high-order solution (order 2, temporal 0) */
-    int spatial_order = 2;
-    int temporal_order = 0;
+    int spatial_degree = 2;
+    int temporal_degree = 0;
 
     if (cg_sol_write(fn, bn, zn, "HighOrderSolution", CGNS_ENUMV(InterpolationPoints), &soln)) {
         printf("ERROR: Failed to create solution: %s\n", cg_get_error());
@@ -130,7 +130,7 @@ int test_mixed_ho_simple()
     }
 
     /* Set interpolation orders */
-    if (cg_sol_interpolation_order_write(fn, bn, zn, soln, spatial_order, temporal_order)) {
+    if (cg_sol_interpolation_degree_write(fn, bn, zn, soln, spatial_degree, temporal_degree)) {
         printf("ERROR: Failed to set interpolation orders: %s\n", cg_get_error());
         cg_close(fn);
         failed_tests++;

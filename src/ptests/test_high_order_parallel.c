@@ -401,7 +401,7 @@ int test_solution_field(const char *filename)
 
     /* Set solution interpolation order (required for InterpolationPoints solutions)
      * Using order 1 (gives 1 node per element for scalar solution) */
-    CHECK_ERROR(cg_sol_interpolation_order_write(fn, B, Z, Sol, 1, 0),
+    CHECK_ERROR(cg_sol_interpolation_degree_write(fn, B, Z, Sol, 1, 0),
                 "Setting solution interpolation order");
 
     /* Write solution field - one value per element */

@@ -745,7 +745,7 @@ int test_interpolation_find(void)
     return 0;
 }
 
-/* Test 7.8: GridLocation requirements of cg_sol_interpolation_order_write.
+/* Test 7.8: GridLocation requirements of cg_sol_interpolation_degree_write.
  *
  * InterpolationPoints is always acceptable. Legacy CellCenter is accepted only
  * when an explicit PointRange/PointList is present. Any other location, and
@@ -758,7 +758,7 @@ int test_interpolation_order_location(void)
     int result;
 
     printf("\n==============================================\n");
-    printf("  Test 7.8: InterpolationOrders GridLocation\n");
+    printf("  Test 7.8: InterpolationDegrees GridLocation\n");
     printf("==============================================\n\n");
 
     size[0] = 8; size[1] = 1; size[2] = 0;
@@ -774,7 +774,7 @@ int test_interpolation_order_location(void)
     printf("InterpolationPoints, whole zone (must be accepted)...\n");
     if (cg_sol_write(cgfile, cgbase, cgzone, "FS_ip",
                      CGNS_ENUMV(InterpolationPoints), &S) ||
-        cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0))
+        cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 2, 0))
     {
         fprintf(stderr, "ERROR: InterpolationPoints should be accepted: %s\n",
                 cg_get_error());
@@ -789,7 +789,7 @@ int test_interpolation_order_location(void)
         fprintf(stderr, "ERROR: sol_write failed\n");
         cg_close(cgfile); return 1;
     }
-    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0);
+    result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 2, 0);
     if (result == CG_OK)
     {
         fprintf(stderr, "ERROR: Vertex location should have been rejected\n");
@@ -804,7 +804,7 @@ int test_interpolation_order_location(void)
         fprintf(stderr, "ERROR: sol_write failed\n");
         cg_close(cgfile); return 1;
     }
-    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0);
+    result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 2, 0);
     if (result == CG_OK)
     {
         fprintf(stderr, "ERROR: CellCenter without PointRange/PointList should "
@@ -821,7 +821,7 @@ int test_interpolation_order_location(void)
         fprintf(stderr, "ERROR: sol_ptset_write failed: %s\n", cg_get_error());
         cg_close(cgfile); return 1;
     }
-    if (cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 2, 0))
+    if (cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 2, 0))
     {
         fprintf(stderr, "ERROR: legacy CellCenter + PointRange should be "
                         "accepted: %s\n", cg_get_error());
@@ -834,7 +834,7 @@ int test_interpolation_order_location(void)
      * solution, with N_DOFs = q+1 per element.  No constraint couples the two
      * orders, so this must be accepted. */
     printf("TemporalOrder > 0 with SpatialOrder 0 (must be accepted)...\n");
-    result = cg_sol_interpolation_order_write(cgfile, cgbase, cgzone, S, 0, 1);
+    result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 0, 1);
     if (result != CG_OK)
     {
         fprintf(stderr, "ERROR: constant-in-space, varying-in-time solution "

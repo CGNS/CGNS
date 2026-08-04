@@ -56,7 +56,7 @@ int main()
 /* create flow solution node */
     if (cg_sol_write(index_file,index_base,index_zone,solname,CGNS_ENUMV(InterpolationPoints),&index_flow)) cg_error_exit();
 /* add Corresponding spatial and temporal order --> 3rd and 0th order */
-    if (cg_sol_interpolation_order_write(index_file,index_base,index_zone,index_flow,3,0)) cg_error_exit();
+    if (cg_sol_interpolation_degree_write(index_file,index_base,index_zone,index_flow,3,0)) cg_error_exit();
 /* allocate fields */
     rho  = createField(ni*nj);
     pres = createField(ni*nj);

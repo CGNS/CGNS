@@ -100,7 +100,7 @@ int main (int argc, char **argv)
       cgp_error_exit();
 
     // [1.7] Write the Solution Order (3rd Order in space, 0th Order in time)
-    if (cg_sol_interpolation_order_write(fn,B,Z,Sol,3,0) )
+    if (cg_sol_interpolation_degree_write(fn,B,Z,Sol,3,0) )
       cgp_error_exit();
     
     // Note : It is MANDATORY to set solution interpolation Order BEFORE creating and writing the 

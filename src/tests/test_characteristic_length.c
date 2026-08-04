@@ -87,7 +87,7 @@ static int make_file(const char *filename, int *fn, int *B, int *Z, int *S)
      * PointList) blocks are covered by test_variable_order. */
     if (check(cg_sol_write(*fn, *B, *Z, "FS",
               CGNS_ENUMV(InterpolationPoints), S), "sol")) return 1;
-    if (check(cg_sol_interpolation_order_write(*fn, *B, *Z, *S, 2, 0),
+    if (check(cg_sol_interpolation_degree_write(*fn, *B, *Z, *S, 2, 0),
               "order")) return 1;
     if (check(cg_field_write(*fn, *B, *Z, *S, CGNS_ENUMV(RealDouble),
               "Density", fld, &fi), "field")) return 1;

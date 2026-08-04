@@ -246,7 +246,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     }
     
     /* add Corresponding spatial and temporal order --> 3rd and 0th order */
-    error = cg_sol_interpolation_order_write(cgfile,cgbase,cgzone,cgsol,3,0);
+    error = cg_sol_interpolation_degree_write(cgfile,cgbase,cgzone,cgsol,3,0);
     
     if (error)
     {

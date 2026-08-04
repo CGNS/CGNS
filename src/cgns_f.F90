@@ -5900,47 +5900,47 @@ CONTAINS
   END SUBROUTINE cg_solution_interpolation_coefficients_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_order_read_f
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_read_f
 !DEC$endif
-  SUBROUTINE cg_sol_interpolation_order_read_f(fn, B, Z, S, os, ot, ier)
+  SUBROUTINE cg_sol_interpolation_degree_read_f(fn, B, Z, S, os, ot, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, Z, S
     INTEGER, INTENT(OUT) :: os, ot
     INTEGER, INTENT(OUT) :: ier
     INTEGER(C_INT) :: c_os, c_ot
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_sol_interpolation_order_read(fn, B, Z, S, os, ot) &
-          BIND(C, name="cg_sol_interpolation_order_read")
+      INTEGER(C_INT) FUNCTION cg_sol_interpolation_degree_read(fn, B, Z, S, os, ot) &
+          BIND(C, name="cg_sol_interpolation_degree_read")
         IMPORT :: C_INT
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
         INTEGER(C_INT), INTENT(OUT) :: os, ot
-      END FUNCTION cg_sol_interpolation_order_read
+      END FUNCTION cg_sol_interpolation_degree_read
     END INTERFACE
-    ier = INT(cg_sol_interpolation_order_read(INT(fn,C_INT), INT(B,C_INT), &
+    ier = INT(cg_sol_interpolation_degree_read(INT(fn,C_INT), INT(B,C_INT), &
               INT(Z,C_INT), INT(S,C_INT), c_os, c_ot))
     os = INT(c_os)
     ot = INT(c_ot)
-  END SUBROUTINE cg_sol_interpolation_order_read_f
+  END SUBROUTINE cg_sol_interpolation_degree_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_order_write_f
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_write_f
 !DEC$endif
-  SUBROUTINE cg_sol_interpolation_order_write_f(fn, B, Z, S, os, ot, ier)
+  SUBROUTINE cg_sol_interpolation_degree_write_f(fn, B, Z, S, os, ot, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, Z, S, os, ot
     INTEGER, INTENT(OUT) :: ier
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_sol_interpolation_order_write(fn, B, Z, S, os, ot) &
-          BIND(C, name="cg_sol_interpolation_order_write")
+      INTEGER(C_INT) FUNCTION cg_sol_interpolation_degree_write(fn, B, Z, S, os, ot) &
+          BIND(C, name="cg_sol_interpolation_degree_write")
         IMPORT :: C_INT
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S, os, ot
-      END FUNCTION cg_sol_interpolation_order_write
+      END FUNCTION cg_sol_interpolation_degree_write
     END INTERFACE
-    ier = INT(cg_sol_interpolation_order_write(INT(fn,C_INT), INT(B,C_INT), &
+    ier = INT(cg_sol_interpolation_degree_write(INT(fn,C_INT), INT(B,C_INT), &
               INT(Z,C_INT), INT(S,C_INT), INT(os,C_INT), INT(ot,C_INT)))
-  END SUBROUTINE cg_sol_interpolation_order_write_f
+  END SUBROUTINE cg_sol_interpolation_degree_write_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_read_f

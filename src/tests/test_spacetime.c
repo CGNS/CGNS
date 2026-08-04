@@ -7,10 +7,10 @@
 /* Test 5.1: Temporal Order 1 (Linear Time)
  * Tests space-time interpolation with linear temporal component
  * QUAD_9 element with spatial order 2, temporal order 1
- * Uses SolutionInterpolation_t with InterpolationOrders = [2, 2, 1]
+ * Uses SolutionInterpolation_t with InterpolationDegrees = [2, 2, 1]
  * LagrangeControlPoints: (3+1) × ((2+1)^2 × (1+1)) = 4 × 18 array
  */
-int test_temporal_order1(void)
+int test_temporal_degree1(void)
 {
     int i, j, n;
     double *pu, *pv, *pw, *pt, *pu_read, *pv_read, *pt_read;
@@ -21,7 +21,7 @@ int test_temporal_order1(void)
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
     char sinterpName[33], familyname[33];
     const char *filename = "test_spacetime_order1.cgns";
-    int spatial_order = 2, temporal_order = 1;
+    int spatial_degree = 2, temporal_degree = 1;
     int os_read, ot_read;
     cgsize_t npts_spatial;
     cgsize_t npts_total;
@@ -32,11 +32,11 @@ int test_temporal_order1(void)
     printf("==============================================\n\n");
 
     printf("Testing QUAD_9 with SolutionInterpolation_t\n");
-    printf("  InterpolationOrders = [%d, %d, %d] (spatial_u, spatial_v, temporal)\n",
-           spatial_order, spatial_order, temporal_order);
+    printf("  InterpolationDegrees = [%d, %d, %d] (spatial_u, spatial_v, temporal)\n",
+           spatial_degree, spatial_degree, temporal_degree);
 
     /* Calculate the number of Lagrange control points */
-    if (cg_solution_lagrange_interpolation_size(type, spatial_order, temporal_order, &npts_total))
+    if (cg_solution_lagrange_interpolation_size(type, spatial_degree, temporal_degree, &npts_total))
     {
         fprintf(stderr, "ERROR: Failed to get solution interpolation size\n");
         return 1;
@@ -70,7 +70,7 @@ int test_temporal_order1(void)
 
     printf("Writing SolutionInterpolation_t node with space-time support...\n");
     if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "SpaceTimeInterpolation",
-                                        type, spatial_order, temporal_order,
+                                        type, spatial_degree, temporal_degree,
                                         CGNS_ENUMV(ParametricLagrange), &cgsinterp))
     {
         fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t node\n");
@@ -160,7 +160,7 @@ int test_temporal_order1(void)
 
     /* NOTE: SolutionInterpolation_t stores the basic element type (e.g., QUAD_4)
      * rather than the high-order type (e.g., QUAD_9). The actual order is in
-     * the spatialorder field. */
+     * the spatialdegree field. */
     CGNS_ENUMT(ElementType_t) basic_type;
     cg_element_basic_element_type(type, &basic_type);
     if (etyperead != basic_type)
@@ -171,10 +171,10 @@ int test_temporal_order1(void)
     }
     printf("Element type: %s\n", cg_ElementTypeName(etyperead));
 
-    if (os_read != spatial_order || ot_read != temporal_order)
+    if (os_read != spatial_degree || ot_read != temporal_degree)
     {
         fprintf(stderr, "ERROR: Wrong interpolation orders (expected [%d, %d], got [%d, %d])\n",
-                spatial_order, temporal_order, os_read, ot_read);
+                spatial_degree, temporal_degree, os_read, ot_read);
         return 1;
     }
     printf("Interpolation orders: spatial=%d, temporal=%d\n", os_read, ot_read);
@@ -311,30 +311,30 @@ int test_temporal_higher_orders(void)
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
     char sinterpName[33], familyname[33];
     char filename[64];
-    int spatial_order = 2;
+    int spatial_degree = 2;
     int os_read, ot_read;
     cgsize_t npts_total;
     int failed_points;
 
     /* Test both quadratic (order 2) and cubic (order 3) temporal interpolation */
-    int temporal_orders[2] = {2, 3};
+    int temporal_degrees[2] = {2, 3};
     const char *order_names[2] = {"Quadratic", "Cubic"};
 
     for (int test_idx = 0; test_idx < 2; test_idx++)
     {
-        int temporal_order = temporal_orders[test_idx];
-        int npts_temporal = temporal_order + 1;  /* Order 2 -> 3 levels, Order 3 -> 4 levels */
+        int temporal_degree = temporal_degrees[test_idx];
+        int npts_temporal = temporal_degree + 1;  /* Order 2 -> 3 levels, Order 3 -> 4 levels */
 
         printf("\n==============================================\n");
         printf("  Test 5.2.%d: %s Temporal Interpolation\n", test_idx + 1, order_names[test_idx]);
         printf("==============================================\n\n");
 
         printf("Testing QUAD_9 with SolutionInterpolation_t\n");
-        printf("  InterpolationOrders = [%d, %d, %d] (spatial_u, spatial_v, temporal)\n",
-               spatial_order, spatial_order, temporal_order);
+        printf("  InterpolationDegrees = [%d, %d, %d] (spatial_u, spatial_v, temporal)\n",
+               spatial_degree, spatial_degree, temporal_degree);
 
         /* Calculate the number of Lagrange control points */
-        if (cg_solution_lagrange_interpolation_size(type, spatial_order, temporal_order, &npts_total))
+        if (cg_solution_lagrange_interpolation_size(type, spatial_degree, temporal_degree, &npts_total))
         {
             fprintf(stderr, "ERROR: Failed to get solution interpolation size\n");
             return 1;
@@ -342,7 +342,7 @@ int test_temporal_higher_orders(void)
         printf("  Total Lagrange control points: %d\n", npts_total);
         printf("  (9 spatial × %d temporal levels)\n", npts_temporal);
 
-        snprintf(filename, sizeof(filename), "test_spacetime_order%d.cgns", temporal_order);
+        snprintf(filename, sizeof(filename), "test_spacetime_order%d.cgns", temporal_degree);
 
         /* Simple 2D structured grid size (metadata only) */
         size[0] = 9;   /* vertex size */
@@ -371,7 +371,7 @@ int test_temporal_higher_orders(void)
 
         printf("Writing SolutionInterpolation_t node with %s time...\n", order_names[test_idx]);
         if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "SpaceTimeInterpolation",
-                                            type, spatial_order, temporal_order,
+                                            type, spatial_degree, temporal_degree,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp))
         {
             fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t node\n");
@@ -393,7 +393,7 @@ int test_temporal_higher_orders(void)
         int idx = 0;
         for (int t = 0; t < npts_temporal; t++)
         {
-            double t_val = (double)t / (double)temporal_order;
+            double t_val = (double)t / (double)temporal_degree;
             for (int s = 0; s < 9; s++)  /* 9 spatial points for QUAD_9 */
             {
                 pu[idx] = u_spatial[s];
@@ -445,10 +445,10 @@ int test_temporal_higher_orders(void)
             return 1;
         }
 
-        if (os_read != spatial_order || ot_read != temporal_order)
+        if (os_read != spatial_degree || ot_read != temporal_degree)
         {
             fprintf(stderr, "ERROR: Wrong interpolation orders (expected [%d, %d], got [%d, %d])\n",
-                    spatial_order, temporal_order, os_read, ot_read);
+                    spatial_degree, temporal_degree, os_read, ot_read);
             return 1;
         }
         printf("Interpolation orders: spatial=%d, temporal=%d\n", os_read, ot_read);
@@ -500,7 +500,7 @@ int test_temporal_higher_orders(void)
         {
             /* Check first spatial node at each time level */
             int idx_check = t * 9;  /* 9 spatial points per time level */
-            double expected_time = (double)t / (double)temporal_order;
+            double expected_time = (double)t / (double)temporal_degree;
 
             if (fabs(pt_read[idx_check] - expected_time) > 1.e-12)
             {
@@ -536,7 +536,7 @@ int main(int argc, char **argv)
     printf("##################################################\n");
 
     /* Test 5.1: Temporal Order 1 (Linear Time) */
-    if (test_temporal_order1())
+    if (test_temporal_degree1())
         errors++;
 
     /* Test 5.2: Higher Temporal Orders */

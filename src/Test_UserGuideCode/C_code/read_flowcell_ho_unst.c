@@ -55,7 +55,7 @@ int main()
       return 1;
     }
 /* read flow solution spatial and temporal orders*/
-    cg_sol_interpolation_order_read(index_file,index_base,index_zone,index_flow,&so,&to);
+    cg_sol_interpolation_degree_read(index_file,index_base,index_zone,index_flow,&so,&to);
     if (so != 3 || to != 0)
     {
         fprintf( stderr, "ERROR: wrong values for solution interpolation orders. Needed (3,0) get(%d,%d)", so,to);

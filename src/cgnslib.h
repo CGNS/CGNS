@@ -1525,21 +1525,21 @@ CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  *   (a) §3.2.5 enumerates "int SpatialOrder; int TemporalOrder;" as scalar
  *       fields of FlowSolution_t itself.
  *   (b) §5.3 ("Extension to the SIDS file mapping") specifies a single
- *       IndexArray_t child named "InterpolationOrders" with dim = 2,
- *       values = [spatialOrder, temporalOrder].
+ *       IndexArray_t child named "InterpolationDegrees" with dim = 2,
+ *       values = [spatialDegree, temporalDegree].
  * This implementation follows (b) as the normative file layout: the
- * cg_sol_interpolation_order_{read,write}() pair reads/writes the
+ * cg_sol_interpolation_degree_{read,write}() pair reads/writes the
  * IndexArray_t child. Form (a) is treated as the in-SIDS-prose convenience
  * description of that same data. If a future clarification from the CGNS
  * Steering Committee requires form (a) as an additional on-disk encoding,
  * these functions must be extended; existing callers will be unaffected.
  */
-CGNSDLL int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
-                                            int *spatialOrder, int *temporalOrder);
+CGNSDLL int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S,
+                                            int *spatialDegree, int *temporalDegree);
 
 
-CGNSDLL int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
-                                             int spatialOrder, int  temporalOrder);
+CGNSDLL int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
+                                             int spatialDegree, int  temporalDegree);
 
 /* CPEX-0045 v3 §3.3.1: per-element coordinate normalisation factors for
  * Cartesian modal interpolation, stored as an R8 DataArray_t named

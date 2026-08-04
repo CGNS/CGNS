@@ -8237,7 +8237,7 @@ int cg_sol_id(int fn, int B, int Z, int S, double *sol_id)
  *
  * \details
  * **IMPORTANT**: If \p location is \e InterpolationPoints, you MUST also call
- * cg_sol_interpolation_order_write() to define the spatial and temporal interpolation
+ * cg_sol_interpolation_degree_write() to define the spatial and temporal interpolation
  * orders. Without interpolation orders, readers cannot determine where the interpolation
  * points are located, making the data invalid.
  *
@@ -8245,7 +8245,7 @@ int cg_sol_id(int fn, int B, int Z, int S, double *sol_id)
  * \code
  * int sol_idx;
  * cg_sol_write(fn, B, Z, "HighOrderSolution", InterpolationPoints, &sol_idx);
- * cg_sol_interpolation_order_write(fn, B, Z, sol_idx, 3, 0);  // 3rd order spatial, 0th temporal
+ * cg_sol_interpolation_degree_write(fn, B, Z, sol_idx, 3, 0);  // 3rd order spatial, 0th temporal
  * \endcode
  */
 int cg_sol_write(int fn, int B, int Z, const char * solname,
@@ -8325,9 +8325,9 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     strcpy(sol->name,solname);
     sol->location = location;
     
-    /* initialize solution order: -1 means "no InterpolationOrders child" */
-    sol->spatialOrder       = -1;
-    sol->temporalOrder      = 0;
+    /* initialize solution order: -1 means "no InterpolationDegrees child" */
+    sol->spatialDegree       = -1;
+    sol->temporalDegree      = 0;
     sol->ho_ptset_datasize  = -1;
 
     index_dim = zone->index_dim;
@@ -8390,14 +8390,14 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (sol->spatialOrder < 0)
+            if (sol->spatialDegree < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution requires definition of interpolationOrders");
                 return CG_ERROR;
             }
 
-            if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialOrder,
-                                sol->temporalOrder, dim_vals) ) {
+            if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialDegree,
+                                sol->temporalDegree, dim_vals) ) {
               cgi_error("Unable to retrieve solution datasize for High Order solution");
               return CG_ERROR;
             }
@@ -8425,8 +8425,8 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (cgi_ptset_range(sol->ptset, range_min, range_max)) return CG_ERROR;
 
-            if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
-                              sol->temporalOrder, range_min[0], range_max[0], &dim_vals[0]) ) {
+            if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialDegree,
+                              sol->temporalDegree, range_min[0], range_max[0], &dim_vals[0]) ) {
               cgi_error("Unable to retrieve solution datasize for High Order solution from PointRange");
               return CG_ERROR;
             }
@@ -8447,8 +8447,8 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                 return CG_ERROR;
               }
 
-              if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialOrder,
-                                      sol->temporalOrder, pnts,
+              if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialDegree,
+                                      sol->temporalDegree, pnts,
                                       sol->ptset->npts, &dim_vals[0]) ) {
                 cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
                 CGNS_FREE(pnts);
@@ -8646,26 +8646,26 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  * \param[in]  B             Base index number (1-based)
  * \param[in]  Z             Zone index number (1-based)
  * \param[in]  S             FlowSolution index (1-based)
- * \param[out] spatialOrder  Spatial interpolation order (polynomial degree)
- * \param[out] temporalOrder Temporal interpolation order (0 if no temporal)
+ * \param[out] spatialDegree  Spatial interpolation order (polynomial degree)
+ * \param[out] temporalDegree Temporal interpolation order (0 if no temporal)
  * \return     CG_OK on success, CG_ERROR on failure
  *
  * \details
- * This function reads the InterpolationOrders child node from a FlowSolution_t
+ * This function reads the InterpolationDegrees child node from a FlowSolution_t
  * node. The interpolation orders must be set for element-based solutions
  * (GridLocation = CellCenter or other element-based locations).
  *
  * \par Precedence relative to SolutionInterpolation_t (CPEX-0045 §4.3):
- * The per-zone InterpolationOrders pair and the per-family
- * SolutionInterpolation_t triplet (element_type, spatialOrder, temporalOrder)
+ * The per-zone InterpolationDegrees pair and the per-family
+ * SolutionInterpolation_t triplet (element_type, spatialDegree, temporalDegree)
  * play complementary roles. The zone-level orders identify *which*
  * SolutionInterpolation_t block in the zone's Family_t describes the
- * interpolation basis (via the (element_type, spatialOrder, temporalOrder)
+ * interpolation basis (via the (element_type, spatialDegree, temporalDegree)
  * key, with the element_type falling back from the actual section tag
  * (e.g. TETRA_10) to the basic tag (TETRA_4) when no exact match is found).
- * The InterpolationOrders pair here therefore *selects* a family-level
+ * The InterpolationDegrees pair here therefore *selects* a family-level
  * basis; it does not override its order values. A SolutionInterpolation_t
- * block whose orders disagree with a FlowSolution_t's InterpolationOrders
+ * block whose orders disagree with a FlowSolution_t's InterpolationDegrees
  * is a file-level inconsistency and cgnscheck reports it.
  *
  * Spatial order:
@@ -8674,19 +8674,19 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  * - order = 3: Cubic interpolation (4 nodes per direction)
  *
  * Temporal order (for time-accurate solutions):
- * - temporalOrder = 0: No temporal interpolation (steady or time-instance)
- * - temporalOrder = 1: Linear temporal interpolation
- * - temporalOrder = 2: Quadratic temporal interpolation
+ * - temporalDegree = 0: No temporal interpolation (steady or time-instance)
+ * - temporalDegree = 1: Linear temporal interpolation
+ * - temporalDegree = 2: Quadratic temporal interpolation
  *
  * Example:
  * \code
- * int spatial_order, temporal_order;
- * cg_sol_interpolation_order_read(fn, B, Z, S, &spatial_order, &temporal_order);
- * printf("Spatial order: %d, Temporal order: %d\n", spatial_order, temporal_order);
+ * int spatial_degree, temporal_degree;
+ * cg_sol_interpolation_degree_read(fn, B, Z, S, &spatial_degree, &temporal_degree);
+ * printf("Spatial order: %d, Temporal order: %d\n", spatial_degree, temporal_degree);
  * \endcode
  */
-int cg_sol_interpolation_order_read(int fn, int B, int Z, int S, 
-                                            int *spatialOrder, int *temporalOrder)
+int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S, 
+                                            int *spatialDegree, int *temporalDegree)
 {
     cgns_sol *sol;
 
@@ -8699,10 +8699,10 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     if (sol==0) return CG_ERROR;
 
     // Defaults
-    *spatialOrder  = 0;
-    *temporalOrder = 0;
+    *spatialDegree  = 0;
+    *temporalDegree = 0;
 
-    if (sol->spatialOrder < 0) return CG_NODE_NOT_FOUND;
+    if (sol->spatialDegree < 0) return CG_NODE_NOT_FOUND;
 
     /* CPEX-0045 v3 §3.1.3: high-order FlowSolution_t nodes use
      * GridLocation = InterpolationPoints. CellCenter is accepted for
@@ -8716,8 +8716,8 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
         return CG_ERROR;
     }
 
-    *spatialOrder  = sol->spatialOrder;
-    *temporalOrder = sol->temporalOrder;
+    *spatialDegree  = sol->spatialDegree;
+    *temporalDegree = sol->temporalDegree;
     return CG_OK;
 }
 
@@ -8726,29 +8726,29 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
  * \brief Write interpolation orders for a FlowSolution node
  *
  * Writes the spatial and temporal interpolation orders to an element-based
- * FlowSolution_t node as an InterpolationOrders child node.
+ * FlowSolution_t node as an InterpolationDegrees child node.
  *
  * \param[in] fn            CGNS file index number
  * \param[in] B             Base index number (1-based)
  * \param[in] Z             Zone index number (1-based)
  * \param[in] S             FlowSolution index (1-based)
- * \param[in] spatialOrder  Spatial interpolation order (polynomial degree)
- * \param[in] temporalOrder Temporal interpolation order (0 if no temporal)
+ * \param[in] spatialDegree  Spatial interpolation order (polynomial degree)
+ * \param[in] temporalDegree Temporal interpolation order (0 if no temporal)
  * \return    CG_OK on success, CG_ERROR on failure
  *
  * \details
- * This function writes an InterpolationOrders DataArray_t child node under
+ * This function writes an InterpolationDegrees DataArray_t child node under
  * the specified FlowSolution_t node. The FlowSolution must be element-based
  * (GridLocation = CellCenter or similar).
  *
- * The InterpolationOrders array contains [spatialOrder, temporalOrder]:
- * - spatialOrder: Polynomial degree for spatial interpolation
- * - temporalOrder: Polynomial degree for temporal interpolation (0 = none)
+ * The InterpolationDegrees array contains [spatialDegree, temporalDegree]:
+ * - spatialDegree: Polynomial degree for spatial interpolation
+ * - temporalDegree: Polynomial degree for temporal interpolation (0 = none)
  *
  * \par Relationship to family-level SolutionInterpolation_t (CPEX-0045 §4.3):
  * The orders written here form the lookup key into the zone's Family_t
- * SolutionInterpolation_t blocks: pair (element_type, spatialOrder,
- * temporalOrder) — with element_type taken from the section's basic type
+ * SolutionInterpolation_t blocks: pair (element_type, spatialDegree,
+ * temporalDegree) — with element_type taken from the section's basic type
  * when no exact match exists. Keep the two in sync: if the family does
  * not carry a matching SolutionInterpolation_t, cgnscheck will flag the
  * file.
@@ -8762,11 +8762,11 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
  * \code
  * int sol_idx;
  * cg_sol_write(fn, B, Z, "FlowSolution", CellCenter, &sol_idx);
- * cg_sol_interpolation_order_write(fn, B, Z, sol_idx, 2, 0);  // Quadratic spatial, no temporal
+ * cg_sol_interpolation_degree_write(fn, B, Z, sol_idx, 2, 0);  // Quadratic spatial, no temporal
  * \endcode
  */
-int cg_sol_interpolation_order_write(int fn, int B, int Z, int S, 
-                                             int spatialOrder, int  temporalOrder)
+int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S, 
+                                             int spatialDegree, int  temporalDegree)
 {
     int n,nnodes;
     char_33 name;
@@ -8817,7 +8817,7 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     }
 
     // Check values
-    if (temporalOrder < 0 || spatialOrder < 0)
+    if (temporalDegree < 0 || spatialDegree < 0)
     {
         cgi_error("Negative values are not allowed for spatial or temporal order in solution interpolation node.");
         return CG_ERROR;
@@ -8829,9 +8829,9 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
      * N_DOFs = q+1 per element by the general rule.  Both are accepted.
      */
 
-    /* spatialOrder >= 0 marks "InterpolationOrders present". */
-    sol->spatialOrder = spatialOrder;
-    sol->temporalOrder= temporalOrder;
+    /* spatialDegree >= 0 marks "InterpolationDegrees present". */
+    sol->spatialDegree = spatialDegree;
+    sol->temporalDegree= temporalDegree;
     
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nnodes, &ids)) 
       return CG_ERROR;
@@ -8845,7 +8845,7 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
                 CGNS_FREE(ids);
                 return CG_ERROR;
             }
-            if (strcmp(name,"InterpolationOrders")==0)
+            if (strcmp(name,"InterpolationDegrees")==0)
             {
                 // Delete Node ...
                 if (cgi_delete_node(sol->id,ids[n])) {
@@ -8858,9 +8858,9 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     }
     
     dim_vals = 2;
-    array[0] = spatialOrder;
-    array[1] = temporalOrder;
-    if (cgi_new_node(sol->id, "InterpolationOrders", "IndexArray_t",
+    array[0] = spatialDegree;
+    array[1] = temporalDegree;
+    if (cgi_new_node(sol->id, "InterpolationDegrees", "IndexArray_t",
                          &dummy_id, "I4", 1, &dim_vals, &array[0]))
             return CG_ERROR;
 
@@ -9613,14 +9613,14 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
 
-            if (sol->spatialOrder < 0)
+            if (sol->spatialDegree < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution field requires definition of interpolationOrders first");
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(s_numdim,zone,sol->spatialOrder,
-                                sol->temporalOrder, s_dimvals) ) return CG_ERROR;
+            if (cgi_ho_datasize(s_numdim,zone,sol->spatialDegree,
+                                sol->temporalDegree, s_dimvals) ) return CG_ERROR;
             
             /* add rinds */
             for (j=0; j<s_numdim; j++) s_dimvals[j] = s_dimvals[j] 
@@ -17332,14 +17332,14 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
  * - Sets InterpolationType_t = IsoParametric
  * - Does NOT write LagrangeControlPoints (uses grid coordinates)
  *
- * After calling this, you can write InterpolationOrders if needed using
+ * After calling this, you can write InterpolationDegrees if needed using
  * cg_element_interpolation_order_write().
  *
  * Example:
  * \code
  * int einterp;
  * cg_element_isoparametric_write(fn, bn, fam, "QUAD9_IsoParam", QUAD_9, &einterp);
- * // InterpolationOrders can optionally be set separately
+ * // InterpolationDegrees can optionally be set separately
  * \endcode
  */
 /* Per CPEX-0045 §3.2.2, absence of a LagrangeControlPoints child implies
@@ -17715,9 +17715,9 @@ int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
  * char interp_name[33];
  * CGNS_ENUMT(ElementType_t) elem_type;
  * CGNS_ENUMT(InterpolationType_t) interp_type;
- * int spatial_order, temporal_order;
+ * int spatial_degree, temporal_degree;
  * cg_solution_interpolation_read(fn, bn, fam, 1, interp_name, &elem_type,
- *                                &spatial_order, &temporal_order, &interp_type);
+ *                                &spatial_degree, &temporal_degree, &interp_type);
  * \endcode
  */
 int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,
@@ -17747,8 +17747,8 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
     *et = es->type;
     
     /* Get Element Orders */
-    *os = es->spatialorder;
-    *ot = es->temporalorder;
+    *os = es->spatialdegree;
+    *ot = es->temporaldegree;
     
     /* Get Interpolation Type Name */
     *it = es->interpolationName;
@@ -17814,7 +17814,7 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
  * **Temporal Coordinates:** Typically normalized to [0,1]. For higher temporal
  * orders, intermediate levels are included (e.g., TemporalOrder=2 uses t=0, 0.5, 1).
  *
- * Example for QUAD_9 with temporal_order=1:
+ * Example for QUAD_9 with temporal_degree=1:
  * \code
  * cgsize_t npts;
  * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
@@ -17845,8 +17845,8 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
     
     /* Get orders */
-    int so = es->spatialorder;
-    int to = es->temporalorder;
+    int so = es->spatialdegree;
+    int to = es->temporaldegree;
     
     /* Get lagrange Points array */
     cgns_array *lpts = es->lagrangePts;
@@ -18038,8 +18038,8 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     for (n = 0 ; n<family->nsolutioninterpolation ; n++)
     {
         tmpinterp = &family->solutioninterpolations[n];
-        if (tmpinterp->type == type && os == tmpinterp->spatialorder &&
-            ot == tmpinterp->temporalorder )
+        if (tmpinterp->type == type && os == tmpinterp->spatialdegree &&
+            ot == tmpinterp->temporaldegree )
         {
             if (cg->mode==CG_MODE_WRITE)
             {
@@ -18057,7 +18057,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
             }
             else
             {
-                cgi_error("Only one SolutionInterpolation_t node allowed per (ElementType_t,spatialOrder,temporalOrder) !\n");
+                cgi_error("Only one SolutionInterpolation_t node allowed per (ElementType_t,spatialDegree,temporalDegree) !\n");
                 return CG_ERROR;
             }
         }
@@ -18081,8 +18081,8 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     memset(sinterp,0,sizeof(cgns_solutionInterpolation));
     snprintf(sinterp->name, sizeof(sinterp->name), "%s", node_name);
     sinterp->type = type;
-    sinterp->spatialorder = os;
-    sinterp->temporalorder= ot;
+    sinterp->spatialdegree = os;
+    sinterp->temporaldegree= ot;
     sinterp->interpolationName = it;
 
     // Write SolutionInterpolation_t node
@@ -18214,8 +18214,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     sn--;
     
     sinterp = &family->solutioninterpolations[sn];
-    ot = sinterp->temporalorder;
-    os = sinterp->spatialorder;
+    ot = sinterp->temporaldegree;
+    os = sinterp->spatialdegree;
 
     /* CPEX-0045: LagrangeControlPoints only make sense for nodal (Lagrange)
      * or IsoParametric interpolation. Modal (Parametric/Cartesian monomials)
@@ -18365,7 +18365,7 @@ int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT
     {
         es = &family->solutioninterpolations[n];
         
-        if (es->spatialorder == os && es->temporalorder == ot && es->type == t)
+        if (es->spatialdegree == os && es->temporaldegree == ot && es->type == t)
         {
             *cnt = 1;
             return CG_OK;
@@ -18415,7 +18415,7 @@ int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementTy
 
     for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
         es = &family->solutioninterpolations[n];
-        if (es->type == et && es->spatialorder == os && es->temporalorder == ot) {
+        if (es->type == et && es->spatialdegree == os && es->temporaldegree == ot) {
             *sn = n + 1;
             *it = es->interpolationName;
             return CG_OK;
@@ -18426,7 +18426,7 @@ int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementTy
     if (basic != et) {
         for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
             es = &family->solutioninterpolations[n];
-            if (es->type == basic && es->spatialorder == os && es->temporalorder == ot) {
+            if (es->type == basic && es->spatialdegree == os && es->temporaldegree == ot) {
                 *sn = n + 1;
                 *it = es->interpolationName;
                 return CG_OK;
@@ -18623,8 +18623,8 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
     }
 
     /* Get number of coefficients */
-    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialorder,
-                                  sinterp->temporalorder, &ncoeff) != CG_OK) {
+    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialdegree,
+                                  sinterp->temporaldegree, &ncoeff) != CG_OK) {
         return CG_ERROR;
     }
 
@@ -18731,8 +18731,8 @@ int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn,
     }
 
     /* Get expected number of coefficients */
-    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialorder,
-                                  sinterp->temporalorder, &ncoeff) != CG_OK) {
+    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialdegree,
+                                  sinterp->temporaldegree, &ncoeff) != CG_OK) {
         return CG_ERROR;
     }
 
@@ -23726,10 +23726,10 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
-        else if (strcmp(node_name,"InterpolationOrders")==0) {
+        else if (strcmp(node_name,"InterpolationDegrees")==0) {
             if (cgi_delete_node(parent->id, posit_id)) return CG_ERROR;
-            parent->spatialOrder = -1;
-            parent->temporalOrder = 0;
+            parent->spatialDegree = -1;
+            parent->temporalDegree = 0;
         }
         else if (strcmp(node_name,"PointList")==0 ||
                  strcmp(node_name,"PointRange")==0)

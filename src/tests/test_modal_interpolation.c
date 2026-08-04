@@ -79,7 +79,7 @@ int test_solution_modal()
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
     int i, n;
     cgsize_t ncoeff;
-    int spatialorder = 3, temporalorder = 1;
+    int spatialdegree = 3, temporaldegree = 1;
     double *coeff, *coeff_read;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) type = CGNS_ENUMV(QUAD_4);
@@ -94,9 +94,9 @@ int test_solution_modal()
     printf("==============================================\n\n");
 
     /* Get number of coefficients for order 3 spatial, order 1 temporal */
-    cg_solution_monomial_size(type, spatialorder, temporalorder, &ncoeff);
+    cg_solution_monomial_size(type, spatialdegree, temporaldegree, &ncoeff);
     printf("Creating CGNS file with %d monomial coefficients...\n", ncoeff);
-    printf("  (spatial order %d, temporal order %d)\n", spatialorder, temporalorder);
+    printf("  (spatial order %d, temporal order %d)\n", spatialdegree, temporaldegree);
 
     /* Allocate and fill coefficient array */
     coeff = (double*) malloc(ncoeff * sizeof(double));
@@ -128,7 +128,7 @@ int test_solution_modal()
 
     /* Write SolutionInterpolation_t */
     if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "ModalSolutionInterp",
-                                       type, spatialorder, temporalorder,
+                                       type, spatialdegree, temporaldegree,
                                        CGNS_ENUMV(ParametricMonomialsPascal), &cgsinterp))
     {
         fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t node\n");
@@ -184,9 +184,9 @@ int test_solution_modal()
     }
     printf("Element type: %s\n", cg_ElementTypeName(type_read));
 
-    if (os_read != spatialorder || ot_read != temporalorder) {
+    if (os_read != spatialdegree || ot_read != temporaldegree) {
         fprintf(stderr, "ERROR: Wrong orders: spatial=%d (expected %d), temporal=%d (expected %d)\n",
-                os_read, spatialorder, ot_read, temporalorder);
+                os_read, spatialdegree, ot_read, temporaldegree);
         free(coeff);
         return 1;
     }

@@ -840,11 +840,11 @@ typedef struct {            /* FlowSolution_t node          */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
     /* CPEX 045 */
-    /* InterpolationOrders is considered present iff spatialOrder >= 0.
-     * spatialOrder == -1 is the sentinel for "no InterpolationOrders child node".
-     * temporalOrder defaults to 0 (spec §3.2.5 default). */
-    int spatialOrder;
-    int temporalOrder;
+    /* InterpolationDegrees is considered present iff spatialDegree >= 0.
+     * spatialDegree == -1 is the sentinel for "no InterpolationDegrees child node".
+     * temporalDegree defaults to 0 (spec §3.2.5 default). */
+    int spatialDegree;
+    int temporalDegree;
     /* Cached high-order data count for PointList ptset (-1 = not yet computed).
      * Avoids repeated disk reads of PointList + connectivity in cgi_sol_size. */
     cgsize_t ho_ptset_datasize;
@@ -1051,8 +1051,8 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
-    int spatialorder;               /* Order of the spatial interpolation */
-    int temporalorder;              /* Order of the temporal interpolation */
+    int spatialdegree;               /* Order of the spatial interpolation */
+    int temporaldegree;              /* Order of the temporal interpolation */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
     cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
@@ -1398,12 +1398,12 @@ CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 			 int *rind_planes, cgsize_t *DataSize);
 
 /* CPEX 045 */
-int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, 
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialDegree, int temporalDegree, 
                     cgsize_t *DataSize);
-int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
-                          const int temporalOrder, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
-int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
-                         const int temporalOrder, const cgsize_t *list, const cgsize_t npts, 
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialDegree, 
+                          const int temporalDegree, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialDegree, 
+                         const int temporalDegree, const cgsize_t *list, const cgsize_t npts, 
                          cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
