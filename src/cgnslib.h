@@ -1319,8 +1319,8 @@ CGNSDLL int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam,
  *                                                                       *
  *  When the InterpolationType is ParametricLagrange, the parametric-    *
  *  space distribution of the control points may be recorded as a        *
- *  labelled enumeration node named "ControlPointDistribution"   *
- *  of label ControlPointDistribution_t, holding an I4 scalar,   *
+ *  labelled enumeration node named "ControlPointDistribution"           *
+ *  of label ControlPointDistribution_t, holding an I4 scalar,           *
  *  child of the ElementInterpolation_t / SolutionInterpolation_t node.  *
  *  This is the InterpolationType_t convention, NOT the name-matched     *
  *  DataArray_t convention used by LagrangeControlPoints: the only       *

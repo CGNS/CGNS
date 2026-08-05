@@ -19009,8 +19009,11 @@ static int cgi_read_distribution_value(const cgns_array *arr,
  * \brief Write ControlPointDistribution attribute on an
  *        ElementInterpolation_t node (CPEX-0045 §3.1.2).
  *
- * Records the parametric-space distribution of the Lagrange control points
- * as a Character DataArray_t named "ControlPointDistribution".
+ * Records the parametric-space distribution of the Lagrange control points as a
+ * child node named "ControlPointDistribution" of label
+ * "ControlPointDistribution_t", holding the enumeration value as a scalar I4.
+ * It is NOT a Character DataArray_t: a hand-written file using that earlier
+ * shape is rejected by the reader.
  * The node must already have LagrangeControlPoints written; otherwise the
  * attribute is meaningless and the call is rejected.
  */

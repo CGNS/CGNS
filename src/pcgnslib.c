@@ -1064,6 +1064,30 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
 }
 
 /*---------------------------------------------------------*/
+
+/* Shared by cgp_elements_write_data() and cgp_elements_read_data().  Defined
+ * ahead of the doxygen block below on purpose: a comment block documents
+ * whatever declaration follows it, so placing this helper between the block and
+ * cgp_elements_write_data() would silently reattach that public function's
+ * documentation to this static one. */
+static int cgp_calc_elem_offsets(cgsize_t start_offset, cgsize_t global_end_offset,
+    cgsize_t elemsize, cgsize_t *rmin, cgsize_t *rmax)
+{
+    if (global_end_offset > 0 && elemsize > 0) {
+        if (start_offset > CG_SIZE_MAX / elemsize) {
+            cgi_error("Start offset too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+        if (global_end_offset > CG_SIZE_MAX / elemsize) {
+            cgi_error("Element range too large: would overflow connectivity offset calculation");
+            return CG_ERROR;
+        }
+    }
+    *rmin = start_offset * elemsize + 1;
+    *rmax = global_end_offset * elemsize;
+    return CG_OK;
+}
+
 /**
  * \ingroup ElementConnectivityData
  *
@@ -1108,24 +1132,6 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
  *       \code call cgp_elements_write_data_f(fn, B, Z, S, start, end, C_LOC(elements(1)), ier) \endcode
  *       \code call cgp_elements_write_data_f(fn, B, Z, S, start, end, C_NULL_PTR, ier) \endcode
  */
-static int cgp_calc_elem_offsets(cgsize_t start_offset, cgsize_t global_end_offset,
-    cgsize_t elemsize, cgsize_t *rmin, cgsize_t *rmax)
-{
-    if (global_end_offset > 0 && elemsize > 0) {
-        if (start_offset > CG_SIZE_MAX / elemsize) {
-            cgi_error("Start offset too large: would overflow connectivity offset calculation");
-            return CG_ERROR;
-        }
-        if (global_end_offset > CG_SIZE_MAX / elemsize) {
-            cgi_error("Element range too large: would overflow connectivity offset calculation");
-            return CG_ERROR;
-        }
-    }
-    *rmin = start_offset * elemsize + 1;
-    *rmax = global_end_offset * elemsize;
-    return CG_OK;
-}
-
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, const cgsize_t *elements)
 {
@@ -1210,17 +1216,18 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
  *
  * <b>Example: MIXED section with HEXA_8 and HEXA_125</b>
  * \code
- *   // Process 0 writes elements 0-1 (one HEXA_8, one HEXA_125)
+ *   // This rank writes elements 1-2 (one HEXA_8, one HEXA_125).
+ *   // Element numbers are 1-based, as everywhere else in CGNS.
  *   cgsize_t elements[] = {
- *     HEXA_8, 1,2,3,4,5,6,7,8,           // Element 0: 8 nodes
- *     HEXA_125, 9,10,11,...,133          // Element 1: 125 nodes
+ *     HEXA_8, 1,2,3,4,5,6,7,8,           // Element 1: 1 type + 8 nodes  = 9
+ *     HEXA_125, 9,10,11,...,133          // Element 2: 1 type + 125 nodes = 126
  *   };
  *   cgsize_t offsets[] = {
- *     0,                                  // Start of element 0
- *     9,                                  // Start of element 1 (1 type + 8 nodes)
- *     134                                 // End (1 type + 125 nodes)
+ *     0,                                  // Start of element 1
+ *     9,                                  // Start of element 2 (1 type + 8 nodes)
+ *     135                                 // End (9 + 1 type + 125 nodes)
  *   };
- *   cgp_poly_elements_write_data(fn, B, Z, S, 0, 1, elements, offsets);
+ *   cgp_poly_elements_write_data(fn, B, Z, S, 1, 2, elements, offsets);
  * \endcode
  *
  * The offsets array must have size (end-start+2) and contain cumulative offsets into the
@@ -1388,22 +1395,22 @@ int cgp_poly_elements_read_data_offsets(int fn, int B, int Z, int S, cgsize_t st
  *
  * <b>Usage with MIXED sections containing CPEX 45 elements:</b>
  * \code
- *   // Read 2 elements (indices 0-1) from a MIXED section
+ *   // Read 2 elements (1-based indices 1-2) from a MIXED section
  *   cgsize_t offsets[3];  // Size = end-start+2 = 3
- *   cgp_poly_elements_read_data_offsets(fn, B, Z, S, 0, 1, offsets);
+ *   cgp_poly_elements_read_data_offsets(fn, B, Z, S, 1, 2, offsets);
  *
  *   // Allocate buffer based on offsets
  *   cgsize_t conn_size = offsets[2] - offsets[0];  // Total connectivity size
  *   cgsize_t *elements = malloc(conn_size * sizeof(cgsize_t));
  *
  *   // Read connectivity
- *   cgp_poly_elements_read_data_elements(fn, B, Z, S, 0, 1, offsets, elements);
+ *   cgp_poly_elements_read_data_elements(fn, B, Z, S, 1, 2, offsets, elements);
  *
  *   // Parse connectivity for each element
  *   for (int i = 0; i < 2; i++) {
  *     cgsize_t offset = offsets[i] - offsets[0];  // Local offset
  *     ElementType_t type = (ElementType_t)elements[offset];
- *     cgsize_t npe;
+ *     int npe;                       // cg_npe() takes int*, not cgsize_t*
  *     cg_npe(type, &npe);
  *     cgsize_t *nodes = &elements[offset + 1];  // Node connectivity
  *     // ... process element ...
