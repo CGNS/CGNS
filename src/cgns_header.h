@@ -1042,7 +1042,16 @@ typedef struct {                    /* ElementInterpolation_t Node */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* basic element type this block overrides */
     cgns_array *lagrangePts;        /* optional LagrangeControlPoints; NULL -> use standard layout (isoparametric) */
-    cgns_array *lagrangeDist;       /* optional LagrangeControlPointDistribution (Character DataArray_t); NULL -> unspecified */
+    cgns_array *lagrangeDist;       /* optional ControlPointDistribution: a labelled
+                                     * ControlPointDistribution_t enum node with an I4
+                                     * scalar payload (not a DataArray_t); NULL -> not recorded */
+    int isoparametric;              /* set when the node was created by
+                                     * cg_element_isoparametric_write.  CPEX-0045 forbids a
+                                     * following cg_element_interpolation_points_write, and
+                                     * lagrangePts == NULL cannot express that on its own
+                                     * because it is exactly the state the points write
+                                     * overwrites.  On-disk the two forms are identical by
+                                     * design, so this is only enforceable within a session. */
     /* No monomialCoeff: mesh interpolation is nodal only (CPEX-0045); modal
      * coefficients belong to SolutionInterpolation_t alone. */
 } cgns_elementInterpolation;
@@ -1056,7 +1065,9 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
     cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
-    cgns_array *lagrangeDist;       /* optional LagrangeControlPointDistribution (Character DataArray_t); NULL -> unspecified */
+    cgns_array *lagrangeDist;       /* optional ControlPointDistribution: a labelled
+                                     * ControlPointDistribution_t enum node with an I4
+                                     * scalar payload (not a DataArray_t); NULL -> not recorded */
 } cgns_solutionInterpolation;
 
 typedef struct cgns_family_s {            /* Family_t node            */
@@ -1325,7 +1336,7 @@ cgns_pmodel *cgi_particle_model_address(int local_mode, char const *ModelLabel, 
 /* read CGNS file into internal database */
 int cgi_read(void);
 int cgi_read_base(cgns_base *base);
-int cgi_read_zone(cgns_zone *zone);
+int cgi_read_zone(const cgns_base *base, cgns_zone *zone);
 int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
 int cgi_read_family(cgns_family *family);
 int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
@@ -1359,6 +1370,7 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
 int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                       cgns_discrete **discrete);
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
+                 const cgns_base *base,
                  const cgns_zone *zone);
 int cgi_read_solution_order(cgns_sol *sol);
 int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor,
@@ -1397,13 +1409,24 @@ CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 			 CGNS_ENUMT(GridLocation_t) location,
 			 int *rind_planes, cgsize_t *DataSize);
 
-/* CPEX 045 */
-int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialDegree, int temporalDegree, 
+/* CPEX 045
+ *
+ * The high-order field length is sum_e N_DOFs(e), and N_DOFs(e) is defined by
+ * the SolutionInterpolation_t matching element e -- it depends on the
+ * interpolation type, not on the element type and degree alone.  These
+ * functions therefore take the family resolved from the zone's FamilyName_t
+ * and return CG_NODE_NOT_FOUND when no matching interpolation node exists,
+ * rather than assuming a nodal cardinality. */
+const cgns_family *cgi_ho_find_family(const cgns_base *base, const char *family_name);
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+                    int spatialDegree, int temporalDegree,
                     cgsize_t *DataSize);
-int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialDegree, 
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+                          const int spatialDegree,
                           const int temporalDegree, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
-int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialDegree, 
-                         const int temporalDegree, const cgsize_t *list, const cgsize_t npts, 
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+                         const int spatialDegree,
+                         const int temporalDegree, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,

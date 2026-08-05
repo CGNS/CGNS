@@ -60,6 +60,8 @@ set(test_particle_FILES test_particle.c)
 set(test_error_handling_FILES test_error_handling.c)
 set(test_variable_order_FILES test_variable_order.c)
 set(test_characteristic_length_FILES test_characteristic_length.c)
+set(test_degree_zero_FILES test_degree_zero.c)
+set(test_distribution_FILES test_distribution.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -96,7 +98,7 @@ set(C_TESTS_LIST
     write_array write_bcdata write_links write_rind write_test write_zones
     test_family_tree test_bbox test_complex test_convert_elem
     test_back_comp test_particle test_error_handling test_variable_order
-    test_characteristic_length
+    test_characteristic_length test_degree_zero test_distribution
 )
 foreach(t IN LISTS C_TESTS_LIST)
     add_executable(${t} ${${t}_FILES})
@@ -204,6 +206,73 @@ if (CGNS_ENABLE_TESTS)
     endif()
 
   endforeach()
+
+  # ------------------------------------------------------------------------
+  # Validate the high-order files with cgnscheck, in default and strict mode.
+  #
+  # Nothing previously ran cgnscheck from the test suite, so CPEX-0045
+  # validation defects -- and the whole "cgnscheck -s" strict mode -- had no
+  # automated coverage at all.  cgnscheck always exits 0, so failure is
+  # detected from its output instead of its return code.
+  #
+  # Only files that carry a complete grid (coordinates + Elements_t) are listed
+  # here; several high-order tests write family-level interpolation nodes only,
+  # and cgnscheck rightly reports those as structurally incomplete.
+  # ------------------------------------------------------------------------
+  set(CGNSCHECK_HO_FILES
+      high_order.cgns                  # test_high_order
+      test_mixed_ho_simple.cgns        # test_mixed_ho (MIXED: 2 TRI_3 + 1 QUAD_4)
+      test_degree_zero_modal.cgns      # test_degree_zero: (p,q)=(0,0) modal
+      test_degree_zero_lagrange.cgns   # test_degree_zero: (p,q)=(0,0) Lagrange
+      test_degree_zero_spacetime.cgns  # test_degree_zero: (p,q)=(0,2)
+      test_dist_match.cgns             # test_distribution: coords match the name
+      test_dist_reordered.cgns         # test_distribution: same set, reordered
+      test_dist_equi.cgns              # test_distribution: equidistant, named so
+  )
+  set(CGNSCHECK_HO_DEPENDS test_high_order test_mixed_ho test_degree_zero
+                           test_distribution)
+
+  foreach(HOFILE IN LISTS CGNSCHECK_HO_FILES)
+    foreach(MODE default strict)
+      if (MODE STREQUAL "strict")
+        set(_args -s)
+        set(_suffix strict)
+      else()
+        set(_args)
+        set(_suffix default)
+      endif()
+      add_test(NAME cgnscheck_${HOFILE}_${_suffix}
+               COMMAND cgnscheck ${_args} ${HOFILE})
+      # cgnscheck exits 1 when it finds errors, which ctest treats as a
+      # failure; the regex is a second guard in case a diagnostic is ever
+      # printed without being counted.  Warnings are tolerated.
+      set_tests_properties(cgnscheck_${HOFILE}_${_suffix} PROPERTIES
+        FAIL_REGULAR_EXPRESSION "ERROR"
+        DEPENDS "${CGNSCHECK_HO_DEPENDS}")
+      if(CGNS_BUILD_SHARED)
+        set_tests_properties(cgnscheck_${HOFILE}_${_suffix} PROPERTIES
+          ENVIRONMENT_MODIFICATION
+          "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
+      endif()
+    endforeach()
+  endforeach()
+
+  # The coordinate-vs-distribution comparison must FLAG a file whose stored
+  # points disagree with the named family.  A check that only ever passes proves
+  # nothing, so this asserts the failure directly: strict mode must exit
+  # non-zero, while default mode must still succeed -- the coordinates are
+  # authoritative, so such a file is conformant and only -s rejects it.
+  add_test(NAME cgnscheck_dist_mismatch_strict_fails
+           COMMAND cgnscheck -s test_dist_mismatch.cgns)
+  set_tests_properties(cgnscheck_dist_mismatch_strict_fails PROPERTIES
+    WILL_FAIL TRUE
+    DEPENDS "test_distribution")
+
+  add_test(NAME cgnscheck_dist_mismatch_default_passes
+           COMMAND cgnscheck test_dist_mismatch.cgns)
+  set_tests_properties(cgnscheck_dist_mismatch_default_passes PROPERTIES
+    PASS_REGULAR_EXPRESSION "do not match the named distribution"
+    DEPENDS "test_distribution")
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)

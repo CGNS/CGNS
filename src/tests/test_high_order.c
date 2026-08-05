@@ -134,8 +134,21 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         fprintf(stderr,"ERROR: an error occurred during family writing !\n");
         cg_error_exit();
     }
-    
-    
+
+    /* Attach the family to the zone.  A high-order FlowSolution_t field is
+     * sized as sum_e N_DOFs(e), and N_DOFs(e) comes from the
+     * SolutionInterpolation_t matching element e -- which is reachable only
+     * through the zone's FamilyName_t.  Without this the library cannot size
+     * the field and refuses the write rather than assuming a cardinality. */
+    error = cg_goto(cgfile, cgbase, "Zone_t", cgzone, NULL);
+    if (!error) error = cg_famname_write("family");
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occurred attaching the family to the zone !\n");
+        cg_error_exit();
+    }
+
+
     printf ("Writing ElementInterpolation_t node  ...\n");
     
     error = cg_element_interpolation_write(cgfile, cgbase,cgfamily,"QuadInterpolation",type,&cgeinterp);
@@ -178,7 +191,35 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     }
     
     printf ("Writing SolutionInterpolation_t node  ...\n");
-    
+
+    free(pu); free(pv);
+
+    /* Degree 3 solution basis.  The FlowSolution_t below declares
+     * InterpolationDegrees = (3,0), and those degrees *select* the family-level
+     * SolutionInterpolation_t that defines N_DOFs for the field arrays -- so a
+     * matching degree-3 block has to exist.  Without it the field length is
+     * undefined and the write is refused. */
+    order = 3;
+    pu = (double*) malloc( (size_t) (order+1)*(order+1) * sizeof(double));
+    pv = (double*) malloc( (size_t) (order+1)*(order+1) * sizeof(double));
+    fillQuadLagrangePoints(order,pu,pv);
+
+    error = cg_solution_interpolation_write(cgfile, cgbase,cgfamily,"3rdOrderQuadSolution",
+                                            CGNS_ENUMV(QUAD_4),order,0,
+                                            CGNS_ENUMV(ParametricLagrange),&cgsinterp);
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occurred during degree-3 Solution interpolation writing !\n");
+        cg_error_exit();
+    }
+    error = cg_solution_interpolation_points_write(cgfile, cgbase,cgfamily,cgsinterp,
+                                                   pu,pv,NULL,NULL);
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occurred during degree-3 Lagrange points writing !\n");
+        cg_error_exit();
+    }
+
     free(pu); free(pv);
     // Order 4 solution
     order = 4;
@@ -225,11 +266,13 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         cg_error_exit();
     }
     
-    if (neinterp != 1 || nsinterp != 1)
+    /* One ElementInterpolation_t (QUAD) and two SolutionInterpolation_t
+     * blocks: degree 3 (used by the FlowSolution_t below) and degree 4. */
+    if (neinterp != 1 || nsinterp != 2)
     {
         fprintf(stderr,"ERROR: wrong interpolation node count.\n");
         fprintf(stderr,"       cg_nelement_interpolation_read = %d, should be 1.\n",neinterp);
-        fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 1.\n",nsinterp);
+        fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 2.\n",nsinterp);
         cg_error_exit();
     }
     free(pu); free(pv);
@@ -598,11 +641,13 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             cg_error_exit();
         }
         
-        if (neinterp != 2 || nsinterp != 2)
+        /* 2 ElementInterpolation_t (QUAD, TRI); 3 SolutionInterpolation_t
+         * (QUAD degree 3, QUAD degree 4, TRI degree 5). */
+        if (neinterp != 2 || nsinterp != 3)
         {
             fprintf(stderr,"ERROR: wrong interpolation node count.\n");
             fprintf(stderr,"       cg_nelement_interpolation_read = %d, should be 2.\n",neinterp);
-            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 2.\n",nsinterp);
+            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 3.\n",nsinterp);
             cg_error_exit();
         }
     }
@@ -639,11 +684,13 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             cg_error_exit();
         }
         
-        if (neinterp != 2 || nsinterp != 2)
+        /* 2 ElementInterpolation_t (QUAD, TRI); 3 SolutionInterpolation_t
+         * (QUAD degree 3, QUAD degree 4, TRI degree 5). */
+        if (neinterp != 2 || nsinterp != 3)
         {
             fprintf(stderr,"ERROR: wrong interpolation node count.\n");
             fprintf(stderr,"       cg_nelement_interpolation_read = %d, should be 2.\n",neinterp);
-            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 2.\n",nsinterp);
+            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 3.\n",nsinterp);
             cg_error_exit();
         }
     }
@@ -675,11 +722,14 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             cg_error_exit();
         }
         
-        if (neinterp != 1 || nsinterp != 1)
+        /* After deleting QuadInterpolation and the degree-4 quad solution:
+         * 1 ElementInterpolation_t (TRI) and 2 SolutionInterpolation_t
+         * (QUAD degree 3, TRI degree 5) remain. */
+        if (neinterp != 1 || nsinterp != 2)
         {
             fprintf(stderr,"ERROR: wrong interpolation node count.\n");
             fprintf(stderr,"       cg_nelement_interpolation_read = %d, should be 1.\n",neinterp);
-            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 1.\n",nsinterp);
+            fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 2.\n",nsinterp);
             cg_error_exit();
         }
     }

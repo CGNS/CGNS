@@ -25,7 +25,7 @@
 
       integer :: ierr, i, j, ii, jj, iset, ifirstnode, ielem_no
       integer :: cgfile, cgbase, cgzone, cgcoord, cgsection, cgfamily
-      integer :: cgeinterp, cgsinterp, cgsol, nfield
+      integer :: cgeinterp, cgsinterp, cgsmodal, cgsol, nfield
       integer :: neinterp, nsinterp, os, ot, ncount
       integer(cgsize_t) :: size(9), nsize, nbsolpts
       integer(cgsize_t) :: nelem_start, nelem_end, nbdyelem
@@ -113,6 +113,15 @@
       call cg_family_write_f(cgfile, cgbase, 'family', cgfamily, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
+      ! Attach the family to the zone.  A high-order FlowSolution_t field is
+      ! sized from the SolutionInterpolation_t matching each element, which is
+      ! reachable only through the zone's FamilyName_t; without it the library
+      ! cannot size the field and refuses the write.
+      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_famname_write_f('family', ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+
       write(*,*) 'Writing ElementInterpolation_t node ...'
       call cg_element_interpolation_write_f(cgfile, cgbase, cgfamily, &
      &                                      'QuadInterpolation', &
@@ -149,18 +158,28 @@
      &                                              pw, pt, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      ! Test cg_solution_interpolation_coefficients_write_f
-      ! Use cg_solution_monomial_size_f to get correct size for QUAD_4, order 4, temporal 0
-      write(*,*) 'Writing solution interpolation coefficients ...'
-      call cg_solution_monomial_size_f(CGNS_ENUMV(QUAD_4), 4, 0, scoeff_size, ierr)
+      ! Test cg_solution_interpolation_coefficients_write_f.
+      ! MonomialCoefficients belong only to the two modal interpolation types,
+      ! so they need their own node -- writing them onto the ParametricLagrange
+      ! node above is the invalid combination the library now rejects.
+      write(*,*) 'Writing modal solution interpolation ...'
+      call cg_solution_interpolation_write_f(cgfile, cgbase, cgfamily, &
+     &                                      '2ndOrderQuadModal', &
+     &                                      CGNS_ENUMV(QUAD_4), 2, 0, &
+     &                            CGNS_ENUMV(ParametricMonomialsPascal), &
+     &                                      cgsmodal, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      write(*,*) 'Solution monomial size for QUAD_4, order 4: ', scoeff_size
+
+      write(*,*) 'Writing solution interpolation coefficients ...'
+      call cg_solution_monomial_size_f(CGNS_ENUMV(QUAD_4), 2, 0, scoeff_size, ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      write(*,*) 'Solution monomial size for QUAD_4, degree 2: ', scoeff_size
       allocate(scoeff(scoeff_size))
       do i = 1, scoeff_size
         scoeff(i) = dble(i) * 0.001_dp
       enddo
       call cg_solution_interpolation_coefficients_write_f(cgfile, cgbase, &
-     &                                                    cgfamily, cgsinterp, &
+     &                                                    cgfamily, cgsmodal, &
      &                                                    scoeff, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       write(*,*) 'Solution interpolation coefficients written successfully'
@@ -174,7 +193,9 @@
      &                                       nsinterp, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      if (neinterp .ne. 1 .or. nsinterp .ne. 1) then
+      ! One ElementInterpolation_t (QUAD_9) and two SolutionInterpolation_t:
+      ! the degree-4 ParametricLagrange node and the degree-2 modal node.
+      if (neinterp .ne. 1 .or. nsinterp .ne. 2) then
         write(*,*) 'ERROR: wrong interpolation node count.'
         write(*,*) '       cg_nelement_interpolation_read_f = ', neinterp, &
      &             ', should be 1.'
@@ -185,15 +206,17 @@
 
       deallocate(pu, pv, pw, pt)
 
-      ! Test cg_solution_lagrange_interpolation_size_f
-      ! Get number of solution points required for a QUAD_9 with order 3
+      ! Test cg_solution_lagrange_interpolation_size_f.
+      ! Degree 4, matching the ParametricLagrange node written above: the
+      ! FlowSolution_t below declares the same degree, and those degrees select
+      ! the family-level SolutionInterpolation_t that defines the field length.
       call cg_solution_lagrange_interpolation_size_f(CGNS_ENUMV(QUAD_9), &
-     &                                               3, 0, nbsolpts, ierr)
+     &                                               4, 0, nbsolpts, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      if (nbsolpts .ne. 16) then
+      if (nbsolpts .ne. 25) then
         write(*,*) 'ERROR: Wrong number of solution points: ', nbsolpts, &
-     &             ', expected 16'
+     &             ', expected 25'
         stop 1
       endif
       write(*,*) 'Solution Lagrange interpolation size validated: ', nbsolpts
@@ -205,7 +228,7 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_sol_interpolation_degree_write_f(cgfile, cgbase, cgzone, cgsol, &
-     &                                        3, 0, ierr)
+     &                                        4, 0, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       write(*,*) 'Solution interpolation order written successfully'
 
@@ -400,8 +423,9 @@
       ! Test cg_solution_interpolation_coefficients_read_f
       write(*,*) 'Testing cg_solution_interpolation_coefficients_read_f ...'
       allocate(scoeff_read(scoeff_size))
+      ! Read from the modal node: MonomialCoefficients exist only there.
       call cg_solution_interpolation_coefficients_read_f(cgfile, cgbase, &
-     &                                                   cgfamily, cgsinterp, &
+     &                                                   cgfamily, cgsmodal, &
      &                                                   scoeff_read, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -422,9 +446,9 @@
       call cg_sol_interpolation_degree_read_f(cgfile, cgbase, cgzone, cgsol, &
      &                                       os, ot, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      if (os .ne. 3 .or. ot .ne. 0) then
-        write(*,*) 'ERROR: Wrong solution interpolation order!'
-        write(*,*) '  expected: os=3, ot=0'
+      if (os .ne. 4 .or. ot .ne. 0) then
+        write(*,*) 'ERROR: Wrong solution interpolation degree!'
+        write(*,*) '  expected: os=4, ot=0'
         write(*,*) '  got:      os=', os, ', ot=', ot
         stop 1
       endif

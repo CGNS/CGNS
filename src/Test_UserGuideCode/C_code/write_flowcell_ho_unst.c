@@ -57,6 +57,21 @@ int main()
     if (cg_sol_write(index_file,index_base,index_zone,solname,CGNS_ENUMV(InterpolationPoints),&index_flow)) cg_error_exit();
 /* add Corresponding spatial and temporal order --> 3rd and 0th order */
     if (cg_sol_interpolation_degree_write(index_file,index_base,index_zone,index_flow,3,0)) cg_error_exit();
+/* write Lagrange Basis in Family.
+ *
+ * ORDER MATTERS: this must precede the cg_field_write calls below.  The length
+ * of a GridLocation=InterpolationPoints field array is sum_e N_DOFs(e), and
+ * N_DOFs(e) is defined by the SolutionInterpolation_t that matches element e
+ * (reached through the zone's FamilyName_t, written by write_grid_ho_unst.c).
+ * If the basis does not exist yet, the field length is undefined and
+ * cg_field_write fails rather than assuming a cardinality. */
+    if (cg_solution_interpolation_write(index_file,index_base,index_family,"3rdOrderQUADsolution",
+                                        CGNS_ENUMV(QUAD_4),3,0,CGNS_ENUMV(ParametricLagrange),&index_interp)) cg_error_exit();
+/* get Lagrange Basis for 3rd order QUAD solution */
+    solutionLagrangeBasis(&pu,&pv);
+/* write Lagrange Control Points */
+    if (cg_solution_interpolation_points_write(index_file,index_base,index_family,
+                                               index_interp,pu,pv,NULL,NULL)) cg_error_exit();
 /* allocate fields */
     rho  = createField(ni*nj);
     pres = createField(ni*nj);
@@ -65,14 +80,6 @@ int main()
                        CGNS_ENUMV(RealDouble),"Density",rho,&index_field)) cg_error_exit();
     if (cg_field_write(index_file,index_base,index_zone,index_flow,
                        CGNS_ENUMV(RealDouble),"Pressure",pres,&index_field)) cg_error_exit();
-/* write Lagrange Basis in Family */
-    if (cg_solution_interpolation_write(index_file,index_base,index_family,"3rdOrderQUADsolution",
-                                        CGNS_ENUMV(QUAD_4),3,0,CGNS_ENUMV(ParametricLagrange),&index_interp)) cg_error_exit();
-/* get Lagrange Basis for 3rd order QUAD solution */
-    solutionLagrangeBasis(&pu,&pv);
-/* write Lagrange Control Points */
-    if (cg_solution_interpolation_points_write(index_file,index_base,index_family,
-                                               index_interp,pu,pv,NULL,NULL)) cg_error_exit();
 /* close CGNS file */
     if (cg_close(index_file)) cg_error_exit();
     printf("\nSuccessfully added InterpolationPoints flow solution data to file grid_ho_c.cgns (unstructured)\n");

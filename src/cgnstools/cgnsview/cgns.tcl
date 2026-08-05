@@ -53,7 +53,11 @@ array set CGNSnodes {
   ElementInterpolation         {0 ElementInterpolation_t I4 1 1}
   SolutionInterpolation        {0 SolutionInterpolation_t I4 3 1}
   LagrangeControlPoints        {1 DataArray_t R8 {} 0}
+  MonomialCoefficients         {1 DataArray_t R8 {} 0}
   InterpolationType            {1 InterpolationType_t I4 1 0}
+  ControlPointDistribution {1 ControlPointDistribution_t I4 1 0}
+  InterpolationDegrees         {1 IndexArray_t I4 2 0}
+  CharacteristicLength         {1 DataArray_t R8 {} 0}
   FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
   FlowSolution                 {0 FlowSolution_t MT {} 1}
   FlowSolutionPointers         {1 DataArray_t C1 32 0}
@@ -174,8 +178,9 @@ array set CGNSnodeChildren {
       ParentData Rind UserDefinedData}
   Family_t {Descriptor FamilyBC GeometryReference Ordinal UserDefinedData \
       ElementInterpolation SolutionInterpolation}
-  ElementInterpolation_t {LagrangeControlPoints}
-  SolutionInterpolation_t {InterpolationType LagrangeControlPoints}
+  ElementInterpolation_t {LagrangeControlPoints ControlPointDistribution}
+  SolutionInterpolation_t {InterpolationType LagrangeControlPoints \
+      MonomialCoefficients ControlPointDistribution}
   FamilyBCDataSet_t {DataClass Descriptor DimensionalUnits DirichletData \
       NeumannData ReferenceState UserDefinedData}
   FlowEquationSet_t {ChemicalKineticsModel DataClass Descriptor \
@@ -183,7 +188,8 @@ array set CGNSnodeChildren {
       ThermalConductivityModel ThermalRelaxationModel TurbulenceClosure \
       TurbulenceModel UserDefinedData ViscosityModel}
   FlowSolution_t {DataClass Descriptor DimensionalUnits \
-      GridLocation Rind SolutionData UserDefinedData}
+      GridLocation Rind SolutionData UserDefinedData \
+      InterpolationDegrees CharacteristicLength}
   GasModel_t {DataArray DataClass Descriptor DimensionalUnits \
       UserDefinedData}
   GeometryReference_t {Descriptor GeometryEntity GeometryFile \
@@ -520,7 +526,7 @@ Constant or Frozen}}
       C1 2 {32,NumberOfSteps} {pointers to GridCoordinates_t nodes}}
   GridLocation_t {GridLocation GridLocation_t {0,1} C1 1 {length of string} \
       {one of: Null, UserDefined, Vertex, CellCenter, FaceCenter,\
-      IFaceCenter, JFaceCenter, KFaceCenter or EdgeCenter InterpolationPoints}}
+      IFaceCenter, JFaceCenter, KFaceCenter, EdgeCenter or InterpolationPoints}}
   GridVelocity {{user defined} DataArray_t {0,N} {R4 or R8} 1 \
       NumberOfVertices {component of grid velocity. Data-name identifiers\
       are: GridVelocityX, GridVelocityY, GridVelocityZ, GridVelocityR,\
@@ -680,7 +686,7 @@ Constant or Frozen}}
   ElementInterpolation_t {{user defined} ElementInterpolation_t {0,N} I4 1 1 \
       {ElementType}}
   SolutionInterpolation_t {{user defined} SolutionInterpolation_t {0,N} I4 1 3 \
-      {ElementType, spatial order, temporal order} }
+      {ElementType, spatial degree, temporal degree} }
   LagrangeControlPoints {LagrangeControlPoints DataArray_t 1 R8 2 {dimension,NumberOfPoints} 
       {List of Control Points}}
   InterpolationType_t {InterpolationType InterpolationType_t 1 I4 1 1 \
@@ -688,8 +694,24 @@ Constant or Frozen}}
       
       types are: 0:Null, 1:UserDefined, 2:ParametricLagrange, 3:ParametricMonomialsPascal,\
       4: CartesianMonomialsPascal, 5: IsoParametric}}
-  InterpolationOrders {InterpolationOrders IndexArray_t 1 I4 1 2 
-      {spatial order, temporal order}}
+  InterpolationDegrees {InterpolationDegrees IndexArray_t 1 I4 1 2 
+      {spatial interpolation degree, temporal interpolation degree}}
+  ControlPointDistribution_t {ControlPointDistribution \
+      ControlPointDistribution_t 1 I4 1 1 \
+      {ControlPointDistribution_t
+
+      Parametric-space distribution of the Lagrange control points.
+      Recommended, not required: the stored coordinates alone determine the
+      basis, and on conflict the coordinates are authoritative.
+
+      values are: 0:Null, 1:UserDefined, 2:GaussLobattoLegendre,\
+      3:Equidistant, 4:GaussLegendre, 5:WarpAndBlend}}
+  CharacteristicLength {CharacteristicLength DataArray_t 1 R8 {} {} \
+      {Per-element coordinate normalisation factors for Cartesian modal
+      interpolation. Rank selects the encoding: rank 1 is isotropic
+      ([NumElements]), rank 2 is per-axis ([PhysDim,NumElements]).
+      All factors must be strictly positive. This node is interpolation
+      metadata, not a solution field.}}
 }
 
 array set CGNSnodeRef {
@@ -919,7 +941,8 @@ proc cgns_init {{version ""}} {
         ThermalConductivityModel ThermalRelaxationModel TurbulenceClosure \
         TurbulenceModel UserDefinedData ViscosityModel}
       FlowSolution_t {DataClass Descriptor DimensionalUnits \
-        GridLocation Rind SolutionData UserDefinedData}
+        GridLocation Rind SolutionData UserDefinedData \
+      InterpolationDegrees CharacteristicLength}
       GasModel_t {DataArray DataClass Descriptor DimensionalUnits \
         UserDefinedData}
       GeometryReference_t {Descriptor GeometryEntity GeometryFile \
@@ -1090,7 +1113,7 @@ proc cgns_init {{version ""}} {
       FamilyBC_t {FamilyBCDataSet}
       FlowSolution_t {DataClass Descriptor DimensionalUnits \
         GridLocation PointList PointRange Rind SolutionData \
-        UserDefinedData}
+        UserDefinedData InterpolationDegrees CharacteristicLength}
       ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
         Descriptor DimensionalUnits FlowSolutionPointers \
         GridCoordinatesPointers RigidGridMotionPointers \

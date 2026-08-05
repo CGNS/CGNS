@@ -420,7 +420,7 @@ const char * InterpolationTypeName[NofValidInterpolationTypes] =
      "ParametricLagrange", "ParametricMonomialsPascal",
      "CartesianMonomialsPascal", "IsoParametric"
     };
-const char * LagrangeControlPointDistributionName[NofValidLagrangeControlPointDistributions] =
+const char * ControlPointDistributionName[NofValidControlPointDistributions] =
     {"Null", "UserDefined",
      "GaussLobattoLegendre", "Equidistant",
      "GaussLegendre", "WarpAndBlend"
@@ -1395,10 +1395,10 @@ const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t )  type)
 {
     return cg_get_name(NofValidInterpolationTypes,InterpolationTypeName,(int)type);
 }
-const char *cg_LagrangeControlPointDistributionName(CGNS_ENUMT( LagrangeControlPointDistribution_t ) type)
+const char *cg_ControlPointDistributionName(CGNS_ENUMT( ControlPointDistribution_t ) type)
 {
-    return cg_get_name(NofValidLagrangeControlPointDistributions,
-                       LagrangeControlPointDistributionName,(int)type);
+    return cg_get_name(NofValidControlPointDistributions,
+                       ControlPointDistributionName,(int)type);
 }
 const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t )  type)
 {
@@ -3738,6 +3738,12 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+    /* CPEX-0045: InterpolationPoints is valid only on FlowSolution_t */
+    if (location == CGNS_ENUMV(InterpolationPoints)) {
+        cgi_error("GridLocation InterpolationPoints is valid only under "
+                  "FlowSolution_t, not under DiscreteData_t");
+        return CG_ERROR;
+    }
 
     if (cg_discrete_write(fn, B, Z, discrete_name, D))
         return CG_ERROR;
@@ -8384,6 +8390,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
     if (sol->ptset == NULL) {
         cgns_zone *zone = &cg->base[B-1].zone[Z-1];
+        const cgns_family *hofam = cgi_ho_find_family(&cg->base[B-1], zone->family_name);
         *data_dim = zone->index_dim;
 
         /* CPEX 045 */
@@ -8396,8 +8403,17 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                 return CG_ERROR;
             }
 
-            if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialDegree,
-                                sol->temporalDegree, dim_vals) ) {
+            ret = cgi_ho_datasize(zone->index_dim,zone,hofam,sol->spatialDegree,
+                                  sol->temporalDegree, dim_vals);
+            if (ret == CG_NODE_NOT_FOUND) {
+              cgi_error("GridLocation=InterpolationPoints field length is defined by the "
+                        "SolutionInterpolation_t matching each element, but none was found: "
+                        "the zone needs a FamilyName_t naming a Family_t that carries a "
+                        "SolutionInterpolation_t for the element type at degree (%d,%d)",
+                        sol->spatialDegree, sol->temporalDegree);
+              return CG_ERROR;
+            }
+            if (ret != CG_OK) {
               cgi_error("Unable to retrieve solution datasize for High Order solution");
               return CG_ERROR;
             }
@@ -8418,6 +8434,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
         /* CPEX 045 */
         if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
           cgns_zone *zone = &cg->base[B-1].zone[Z-1];
+          const cgns_family *hofam = cgi_ho_find_family(&cg->base[B-1], zone->family_name);
           // Override based on range
           if (sol->ptset->type == CGNS_ENUMV(PointRange)) {
 
@@ -8425,8 +8442,16 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (cgi_ptset_range(sol->ptset, range_min, range_max)) return CG_ERROR;
 
-            if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialDegree,
-                              sol->temporalDegree, range_min[0], range_max[0], &dim_vals[0]) ) {
+            ret = cgi_ho_datasize_range(zone->index_dim,zone,hofam,sol->spatialDegree,
+                              sol->temporalDegree, range_min[0], range_max[0], &dim_vals[0]);
+            if (ret == CG_NODE_NOT_FOUND) {
+              cgi_error("GridLocation=InterpolationPoints field length requires a "
+                        "SolutionInterpolation_t for the listed elements at degree (%d,%d); "
+                        "none was found via the zone's FamilyName_t",
+                        sol->spatialDegree, sol->temporalDegree);
+              return CG_ERROR;
+            }
+            if (ret != CG_OK) {
               cgi_error("Unable to retrieve solution datasize for High Order solution from PointRange");
               return CG_ERROR;
             }
@@ -8447,14 +8472,21 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                 return CG_ERROR;
               }
 
-              if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialDegree,
+              ret = cgi_ho_datasize_list(zone->index_dim,zone,hofam,sol->spatialDegree,
                                       sol->temporalDegree, pnts,
-                                      sol->ptset->npts, &dim_vals[0]) ) {
-                cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
-                CGNS_FREE(pnts);
+                                      sol->ptset->npts, &dim_vals[0]);
+              CGNS_FREE(pnts);
+              if (ret == CG_NODE_NOT_FOUND) {
+                cgi_error("GridLocation=InterpolationPoints field length requires a "
+                          "SolutionInterpolation_t for the listed elements at degree (%d,%d); "
+                          "none was found via the zone's FamilyName_t",
+                          sol->spatialDegree, sol->temporalDegree);
                 return CG_ERROR;
               }
-              CGNS_FREE(pnts);
+              if (ret != CG_OK) {
+                cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
+                return CG_ERROR;
+              }
               sol->ho_ptset_datasize = dim_vals[0]; /* cache for subsequent field writes */
             }
           }
@@ -9001,6 +9033,14 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
         if (numElements) *numElements = dim_vals[0];
     }
     else {
+        /* CPEX-0045 requires nscale to be either 1 or PhysDim. */
+        int phys_dim = cg->base[B-1].phys_dim;
+        if (dim_vals[0] != 1 && dim_vals[0] != (cgsize_t)phys_dim) {
+            cgi_error("CharacteristicLength in FlowSolution '%s': nscale must be 1 "
+                      "(isotropic) or PhysDim=%d (per-axis), got %"PRIdCGSIZE,
+                      sol->name, phys_dim, dim_vals[0]);
+            return CG_ERROR;
+        }
         if (nscale) *nscale = (int)dim_vals[0];
         if (numElements) *numElements = dim_vals[1];
     }
@@ -9010,6 +9050,22 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
     if (cgio_read_all_data_type(cg->cgio, node_id, "R8", (void *)h_e)) {
         cg_io_error("cgio_read_all_data_type");
         return CG_ERROR;
+    }
+
+    /* All factors must be strictly positive.  Checked here rather than at file
+     * open: positivity cannot be established without reading the data, and the
+     * reader deliberately does not pull array contents at open.  The !(x > 0)
+     * form also rejects NaN, matching the writer's check. */
+    {
+        cgsize_t n, total = (ndim == 1) ? dim_vals[0] : dim_vals[0] * dim_vals[1];
+        for (n = 0; n < total; n++) {
+            if (!(h_e[n] > 0.0)) {
+                cgi_error("CharacteristicLength in FlowSolution '%s': factor %"
+                          PRIdCGSIZE " is %g; all factors must be strictly positive",
+                          sol->name, n, h_e[n]);
+                return CG_ERROR;
+            }
+        }
     }
     return CG_OK;
 }
@@ -9619,8 +9675,21 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(s_numdim,zone,sol->spatialDegree,
-                                sol->temporalDegree, s_dimvals) ) return CG_ERROR;
+            {
+                const cgns_family *hofam =
+                    cgi_ho_find_family(&cg->base[B-1], zone->family_name);
+                int hret = cgi_ho_datasize(s_numdim,zone,hofam,sol->spatialDegree,
+                                           sol->temporalDegree, s_dimvals);
+                if (hret == CG_NODE_NOT_FOUND) {
+                    cgi_error("GridLocation=InterpolationPoints field length is defined by the "
+                              "SolutionInterpolation_t matching each element, but none was found: "
+                              "the zone needs a FamilyName_t naming a Family_t that carries a "
+                              "SolutionInterpolation_t for the element type at degree (%d,%d)",
+                              sol->spatialDegree, sol->temporalDegree);
+                    return CG_ERROR;
+                }
+                if (hret != CG_OK) return CG_ERROR;
+            }
             
             /* add rinds */
             for (j=0; j<s_numdim; j++) s_dimvals[j] = s_dimvals[j] 
@@ -17047,8 +17116,12 @@ static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
  * elements, tensor product ordering for hexahedral elements).
  *
  * **Coordinate Ranges:**
- * - Quadrilateral/hexahedral elements: typically [-1, 1] in each dimension
- * - Simplicial elements (TRI, TETRA): typically [0, 1] where coordinates sum to ≤ 1
+ * - Quadrilateral/hexahedral elements: the bi-unit cube [-1, 1]^d
+ * - Simplicial elements (TRI, TETRA): the bi-unit simplex, NOT [0, 1].
+ *   TRI is {u >= -1, v >= -1, u+v <= 0}; TETRA is {u,v,w >= -1, u+v+w <= -1}.
+ *   A [0,1]-based simplex convention is explicitly non-conformant, and the
+ *   error cannot be detected after the fact because such coordinates are
+ *   indistinguishable from valid bi-unit ones.
  *
  * Example:
  * \code
@@ -17348,7 +17421,19 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
 int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_name,
                                    CGNS_ENUMT(ElementType_t) et, int *en)
 {
-    return cg_element_interpolation_write(fn, bn, fam, node_name, et, en);
+    cgns_family *family;
+    int ier = cg_element_interpolation_write(fn, bn, fam, node_name, et, en);
+    if (ier) return ier;
+
+    /* Record the intent, so a following cg_element_interpolation_points_write can
+     * be refused as CPEX-0045 requires.  The absence of LagrangeControlPoints
+     * cannot carry this by itself: it is exactly the state the points write
+     * overwrites. */
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+    if (*en >= 1 && *en <= family->nelementinterpolation)
+        family->elementinterpolations[*en - 1].isoparametric = 1;
+    return CG_OK;
 }
 
 /**
@@ -17405,8 +17490,12 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
  *   interior nodes omitted
  *
  * **Parametric Coordinate Ranges:**
- * - Quadrilateral/hexahedral elements: typically [-1, 1] in each dimension
- * - Simplicial elements (TRI, TETRA): typically [0, 1] where coordinates sum to ≤ 1
+ * - Quadrilateral/hexahedral elements: the bi-unit cube [-1, 1]^d
+ * - Simplicial elements (TRI, TETRA): the bi-unit simplex, NOT [0, 1].
+ *   TRI is {u >= -1, v >= -1, u+v <= 0}; TETRA is {u,v,w >= -1, u+v+w <= -1}.
+ *   A [0,1]-based simplex convention is explicitly non-conformant, and the
+ *   error cannot be detected after the fact because such coordinates are
+ *   indistinguishable from valid bi-unit ones.
  *
  * **Example for QUAD_9 (tensor product, u varies fastest):**
  * \code
@@ -17448,6 +17537,14 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     en--;
 
     einterp = &family->elementinterpolations[en];
+
+    if (einterp->isoparametric) {
+        cgi_error("ElementInterpolation '%s' was created as IsoParametric; writing "
+                  "LagrangeControlPoints to it is not permitted (CPEX-0045). Use "
+                  "cg_element_interpolation_write to create a nodal mesh interpolation.",
+                  einterp->name);
+        return CG_ERROR;
+    }
 
     /* Reject a second LagrangeControlPoints write only in CG_MODE_WRITE; in
      * CG_MODE_MODIFY the existing node is deleted and replaced below. A node
@@ -17850,14 +17947,58 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     
     /* Get lagrange Points array */
     cgns_array *lpts = es->lagrangePts;
-    
+
+    /* CPEX-0045 v3: an IsoParametric solution takes the mesh basis, and the
+     * referenced ElementInterpolation_t is required to exist in the family.  The
+     * control points therefore *are* in the file, one documented indirection
+     * away, and the indirection is what IsoParametric means -- so resolve the
+     * reference and return that node's points rather than reporting this node's
+     * own lack of an array.  This differs from the mesh-side call, where an
+     * IsoParametric node has no points stored anywhere.
+     *
+     * CG_NODE_NOT_FOUND is still returned when the referenced
+     * ElementInterpolation_t is itself IsoParametric: nothing is stored
+     * anywhere, and the standard equidistant lattice on the element's reference
+     * domain applies. */
+    if (!lpts && es->interpolationName == CGNS_ENUMV(IsoParametric))
+    {
+        CGNS_ENUMT(ElementType_t) basic;
+        int n;
+
+        if (cg_element_basic_element_type(es->type, &basic)) return CG_ERROR;
+
+        for (n = 0; n < family->nelementinterpolation; n++)
+        {
+            CGNS_ENUMT(ElementType_t) ebasic;
+            cgns_elementInterpolation *ei = &family->elementinterpolations[n];
+
+            /* The solution node stores the basic tag, whereas an
+             * ElementInterpolation_t stores its exact (possibly high-order)
+             * tag, so compare on the basic tag of each. */
+            if (cg_element_basic_element_type(ei->type, &ebasic)) continue;
+            if (ebasic != basic) continue;
+
+            if (ei->lagrangePts == NULL) {
+                /* Mesh node is itself IsoParametric -- reduces to the mesh case */
+                return CG_NODE_NOT_FOUND;
+            }
+            return cg_element_interpolation_points_read(fn, bn, fam, n + 1,
+                                                       pu, pv, pw);
+        }
+
+        cgi_error("SolutionInterpolation '%s' is IsoParametric but the family "
+                  "carries no ElementInterpolation_t for element type %s",
+                  es->name, cg_ElementTypeName(es->type));
+        return CG_ERROR;
+    }
+
     /* Has Node ? */
     if (!lpts)
     {
         //cgi_warning("No LagrangreInterpolation Points for this solution interpolation node.");
         return CG_NODE_NOT_FOUND;
     }
-    
+
     /* Get Array dim */
     int pdim = lpts->dim_vals[0];
     int expected_array_dim;
@@ -18613,6 +18754,18 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
 
     sinterp = &family->solutioninterpolations[sn];
 
+    /* CPEX-0045: modal coefficients belong only to the two modal types.  The
+     * mirror-image guard is already present on
+     * cg_solution_interpolation_points_write. */
+    if (sinterp->interpolationName != CGNS_ENUMV(ParametricMonomialsPascal) &&
+        sinterp->interpolationName != CGNS_ENUMV(CartesianMonomialsPascal))
+    {
+        cgi_error("MonomialCoefficients cannot be written to a SolutionInterpolation_t "
+                  "whose InterpolationType is %s; write LagrangeControlPoints instead",
+                  cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+
     /* Reject a second MonomialCoefficients write only in CG_MODE_WRITE; in
      * CG_MODE_MODIFY the existing node is deleted and replaced below. */
     if (sinterp->monomialCoeff != NULL && cg->mode == CG_MODE_WRITE) {
@@ -18763,26 +18916,32 @@ int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn,
  *  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int cgi_validate_distribution(CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+static int cgi_validate_distribution(CGNS_ENUMT(ControlPointDistribution_t) dist)
 {
-    if (dist <= CGNS_ENUMV(LagrangeControlPointDistributionUserDefined) ||
-        dist >= NofValidLagrangeControlPointDistributions) {
-        cgi_error("Invalid LagrangeControlPointDistribution value %d", (int)dist);
+    if (dist <= CGNS_ENUMV(ControlPointDistributionUserDefined) ||
+        dist >= NofValidControlPointDistributions) {
+        cgi_error("Invalid ControlPointDistribution value %d", (int)dist);
         return CG_ERROR;
     }
     return CG_OK;
 }
 
 static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
-                                       CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+                                       CGNS_ENUMT(ControlPointDistribution_t) dist)
 {
-    const char *name_str;
-    cgsize_t length;
     cgns_array *arr;
+    cgsize_t one = 1;
+    int val = (int)dist;
+    double dummy_id;
 
-    name_str = cg_LagrangeControlPointDistributionName(dist);
-    if (name_str == 0) return CG_ERROR;
-    length = (cgsize_t)strlen(name_str);
+    /* CPEX-0045: a labelled enumeration node -- name
+     * "ControlPointDistribution", label
+     * "ControlPointDistribution_t", I4 scalar payload -- following the
+     * same convention as InterpolationType_t, and deliberately not the
+     * name-matched DataArray_t convention used by LagrangeControlPoints.  A
+     * DataArray_t child by this name would in fact have to be *rejected* by a
+     * conforming reader, since the only DataArray_t names permitted under these
+     * nodes are LagrangeControlPoints and MonomialCoefficients. */
 
     /* Replace any pre-existing node */
     if (*out_arr) {
@@ -18794,71 +18953,61 @@ static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
 
     arr = CGNS_NEW(cgns_array, 1);
     memset(arr, 0, sizeof(cgns_array));
-    snprintf(arr->name, sizeof(arr->name), "%s", "LagrangeControlPointDistribution");
-    snprintf(arr->data_type, sizeof(arr->data_type), "%s", "C1");
+    snprintf(arr->name, sizeof(arr->name), "%s", "ControlPointDistribution");
+    snprintf(arr->data_type, sizeof(arr->data_type), "%s", "I4");
     arr->data_dim = 1;
-    arr->dim_vals[0] = length;
-    arr->data = malloc((size_t)(length + 1));
+    arr->dim_vals[0] = 1;
+    arr->data = malloc(sizeof(int));
     if (!arr->data) {
-        cgi_error("Error allocating LagrangeControlPointDistribution data");
+        cgi_error("Error allocating ControlPointDistribution data");
         CGNS_FREE(arr);
         return CG_ERROR;
     }
-    memcpy(arr->data, name_str, (size_t)length);
-    ((char *)arr->data)[length] = '\0';
+    ((int *)arr->data)[0] = val;
 
-    if (cgi_new_node(parent_id, arr->name, "DataArray_t", &arr->id,
-                     arr->data_type, arr->data_dim, arr->dim_vals, arr->data)) {
+    if (cgi_new_node(parent_id, arr->name, "ControlPointDistribution_t",
+                     &dummy_id, arr->data_type, 1, &one, arr->data)) {
         free(arr->data);
         CGNS_FREE(arr);
         return CG_ERROR;
     }
+    arr->id = dummy_id;
     *out_arr = arr;
     return CG_OK;
 }
 
 static int cgi_read_distribution_value(const cgns_array *arr,
-                                       CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+                                       CGNS_ENUMT(ControlPointDistribution_t) *dist)
 {
-    char buf[64];
-    cgsize_t len;
-    int i;
+    int val;
 
     if (!arr || !arr->data) {
-        cgi_error("LagrangeControlPointDistribution data not loaded");
+        cgi_error("ControlPointDistribution data not loaded");
         return CG_ERROR;
     }
-    len = arr->dim_vals[0];
-    if (len <= 0 || len >= (cgsize_t)sizeof(buf)) {
-        cgi_error("LagrangeControlPointDistribution string length %" PRIdCGSIZE " out of range", len);
+    /* I4 scalar payload of the labelled enumeration node; the reader has
+     * already checked the datatype, rank and enumerator range. */
+    val = ((const int *)arr->data)[0];
+    if (INVALID_ENUM(val, NofValidControlPointDistributions)) {
+        cgi_error("Invalid ControlPointDistribution value %d", val);
         return CG_ERROR;
     }
-    memcpy(buf, arr->data, (size_t)len);
-    buf[len] = '\0';
-
-    for (i = 0; i < NofValidLagrangeControlPointDistributions; i++) {
-        if (strcmp(buf, LagrangeControlPointDistributionName[i]) == 0) {
-            *dist = (CGNS_ENUMT(LagrangeControlPointDistribution_t))i;
-            return CG_OK;
-        }
-    }
-    *dist = CGNS_ENUMV(LagrangeControlPointDistributionUserDefined);
-    cgi_warning("Unknown LagrangeControlPointDistribution value '%s'", buf);
+    *dist = (CGNS_ENUMT(ControlPointDistribution_t))val;
     return CG_OK;
 }
 
 /**
  * \ingroup ElementInterpolation
- * \brief Write LagrangeControlPointDistribution attribute on an
+ * \brief Write ControlPointDistribution attribute on an
  *        ElementInterpolation_t node (CPEX-0045 §3.1.2).
  *
  * Records the parametric-space distribution of the Lagrange control points
- * as a Character DataArray_t named "LagrangeControlPointDistribution".
+ * as a Character DataArray_t named "ControlPointDistribution".
  * The node must already have LagrangeControlPoints written; otherwise the
  * attribute is meaningless and the call is rejected.
  */
 int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
-                                                CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+                                                CGNS_ENUMT(ControlPointDistribution_t) dist)
 {
     cgns_family *family;
     cgns_elementInterpolation *einterp;
@@ -18878,7 +19027,7 @@ int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
     einterp = &family->elementinterpolations[en - 1];
 
     if (einterp->lagrangePts == 0) {
-        cgi_error("Cannot attach LagrangeControlPointDistribution: ElementInterpolation_t '%s' "
+        cgi_error("Cannot attach ControlPointDistribution: ElementInterpolation_t '%s' "
                   "has no LagrangeControlPoints (interpolation type is not ParametricLagrange).",
                   einterp->name);
         return CG_ERROR;
@@ -18890,7 +19039,7 @@ int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
 
 /**
  * \ingroup ElementInterpolation
- * \brief Read LagrangeControlPointDistribution attribute from an
+ * \brief Read ControlPointDistribution attribute from an
  *        ElementInterpolation_t node.
  *
  * Returns CG_NODE_NOT_FOUND if the attribute is absent.  Strict CPEX-0045
@@ -18898,7 +19047,7 @@ int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
  * ParametricLagrange; cgnscheck enforces that.
  */
 int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
-                                               CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+                                               CGNS_ENUMT(ControlPointDistribution_t) *dist)
 {
     cgns_family *family;
     cgns_elementInterpolation *einterp;
@@ -18907,7 +19056,7 @@ int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
         cgi_error("NULL output pointer");
         return CG_ERROR;
     }
-    *dist = CGNS_ENUMV(LagrangeControlPointDistributionNull);
+    *dist = CGNS_ENUMV(ControlPointDistributionNull);
 
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
@@ -18930,13 +19079,13 @@ int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
 
 /**
  * \ingroup SolutionInterpolation
- * \brief Write LagrangeControlPointDistribution attribute on a
+ * \brief Write ControlPointDistribution attribute on a
  *        SolutionInterpolation_t node (CPEX-0045 §3.1.2).
  *
  * The interpolation type must be ParametricLagrange.
  */
 int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn,
-                                                 CGNS_ENUMT(LagrangeControlPointDistribution_t) dist)
+                                                 CGNS_ENUMT(ControlPointDistribution_t) dist)
 {
     cgns_family *family;
     cgns_solutionInterpolation *sinterp;
@@ -18956,7 +19105,7 @@ int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn
     sinterp = &family->solutioninterpolations[sn - 1];
 
     if (sinterp->interpolationName != CGNS_ENUMV(ParametricLagrange)) {
-        cgi_error("LagrangeControlPointDistribution is only valid for "
+        cgi_error("ControlPointDistribution is only valid for "
                   "InterpolationType=ParametricLagrange (node '%s' has %s).",
                   sinterp->name,
                   cg_InterpolationTypeName(sinterp->interpolationName));
@@ -18969,11 +19118,11 @@ int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn
 
 /**
  * \ingroup SolutionInterpolation
- * \brief Read LagrangeControlPointDistribution attribute from a
+ * \brief Read ControlPointDistribution attribute from a
  *        SolutionInterpolation_t node.
  */
 int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
-                                                CGNS_ENUMT(LagrangeControlPointDistribution_t) *dist)
+                                                CGNS_ENUMT(ControlPointDistribution_t) *dist)
 {
     cgns_family *family;
     cgns_solutionInterpolation *sinterp;
@@ -18982,7 +19131,7 @@ int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
         cgi_error("NULL output pointer");
         return CG_ERROR;
     }
-    *dist = CGNS_ENUMV(LagrangeControlPointDistributionNull);
+    *dist = CGNS_ENUMV(ControlPointDistributionNull);
 
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
@@ -20303,6 +20452,17 @@ int cg_narrays(int *narrays)
     } else if (strcmp(posit->label,"FlowSolution_t")==0) {
         cgns_sol *sol = (cgns_sol *)posit->posit;
         (*narrays) = sol->nfields;
+
+    /* CPEX 045 */
+    } else if (strcmp(posit->label,"ElementInterpolation_t")==0) {
+        cgns_elementInterpolation *ei =
+            (cgns_elementInterpolation *)posit->posit;
+        (*narrays) = ei->lagrangePts ? 1 : 0;
+
+    } else if (strcmp(posit->label,"SolutionInterpolation_t")==0) {
+        cgns_solutionInterpolation *si =
+            (cgns_solutionInterpolation *)posit->posit;
+        (*narrays) = (si->lagrangePts ? 1 : 0) + (si->monomialCoeff ? 1 : 0);
 
     } else if (strcmp(posit->label,"ParticleSolution_t")==0) {
        cgns_psol *sol = (cgns_psol *)posit->posit;
@@ -22122,6 +22282,17 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
         return CG_ERROR;
     }
 
+    /* CPEX-0045: GridLocation InterpolationPoints is valid only on
+     * FlowSolution_t nodes.  DiscreteData_t shares the permissive
+     * cgi_check_location path below, and BC_t and the connectivity nodes reach
+     * it too, so the restriction is enforced here for every parent at once. */
+    if (GridLocation == CGNS_ENUMV(InterpolationPoints) &&
+        strcmp(posit->label,"FlowSolution_t") != 0) {
+        cgi_error("GridLocation InterpolationPoints is valid only under "
+                  "FlowSolution_t, not under '%s'", posit->label);
+        return CG_ERROR;
+    }
+
     ier = 0;
     if (strcmp(posit->label,"FlowSolution_t")==0 ||
         strcmp(posit->label,"DiscreteData_t")== 0) {
@@ -23229,9 +23400,14 @@ int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
     // Be sure to have a Basic Type
     if (cg_element_basic_element_type(type,&tmpType)) return CG_ERROR;
 
-    /* Validate order bounds */
-    if (order < 1) {
-        cgi_error("Invalid order %d: order must be >= 1 for element type %s",
+    /* Validate order bounds.
+     *
+     * Degree 0 is valid and yields a single degree of freedom: the constant
+     * basis over the element (CPEX-0045 v3, "Degree zero is valid").  Every
+     * cardinality formula below already evaluates to 1 at order 0, including
+     * PYRA ((0+1)(0+2)(2*0+3)/6 = 1), so no special case is needed. */
+    if (order < 0) {
+        cgi_error("Invalid order %d: order must be >= 0 for element type %s",
                   order, cg_ElementTypeName(type));
         return CG_ERROR;
     }

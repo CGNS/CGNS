@@ -346,8 +346,21 @@ int test_hexa27_isoparametric()
 /*
  * Test 3: IsoParametric type for SolutionInterpolation_t
  *
- * Verifies that a SolutionInterpolation_t node with InterpolationType=IsoParametric
- * round-trips correctly and has no LagrangeControlPoints child.
+ * Verifies the round-trip, and the two point-read outcomes CPEX-0045 v3 defines.
+ * An IsoParametric solution takes the mesh basis, and the referenced
+ * ElementInterpolation_t is required to exist in the family, so the control
+ * points ARE in the file one documented indirection away:
+ *
+ *   3a  referenced ElementInterpolation_t stores LagrangeControlPoints
+ *       -> cg_solution_interpolation_points_read resolves the reference and
+ *          returns that node's points
+ *   3b  referenced ElementInterpolation_t is itself IsoParametric
+ *       -> CG_NODE_NOT_FOUND, because nothing is stored anywhere and the
+ *          standard equidistant lattice applies
+ *
+ * Returning CG_NODE_NOT_FOUND in case 3a was the pre-v3 behaviour and is now
+ * non-conformant: the data is retrievable, and the indirection is exactly what
+ * IsoParametric means.
  */
 int test_sol_isoparametric()
 {
@@ -355,9 +368,14 @@ int test_sol_isoparametric()
     char name[33];
     CGNS_ENUMT(ElementType_t) et;
     CGNS_ENUMT(InterpolationType_t) it;
-    int os, ot, ier;
+    int os, ot, ier, en;
     const char *fname = "test_sol_isoparam.cgns";
-    double dummy_u[4], dummy_v[4];
+    const char *fname_b = "test_sol_isoparam_meshiso.cgns";
+    double dummy_u[9], dummy_v[9];
+    /* Equidistant QUAD_4 corners on the bi-unit reference domain */
+    double mesh_u[4] = {-1.0,  1.0,  1.0, -1.0};
+    double mesh_v[4] = {-1.0, -1.0,  1.0,  1.0};
+    int i;
 
     printf("\n=== Test 3: SolutionInterpolation_t IsoParametric ===\n");
     total_tests++;
@@ -367,6 +385,18 @@ int test_sol_isoparametric()
         cg_base_write(fn, "Base", 3, 3, &bn) ||
         cg_family_write(fn, bn, "SolFamily", &fam)) {
         printf("ERROR (setup): %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+
+    /* The referenced ElementInterpolation_t must exist (CPEX-0045 v3 §7.4).
+     * Here it stores control points, so this is case 3a. */
+    if (cg_element_interpolation_write(fn, bn, fam, "QUAD4_Mesh",
+                                       CGNS_ENUMV(QUAD_4), &en) ||
+        cg_element_interpolation_points_write(fn, bn, fam, en,
+                                              mesh_u, mesh_v, NULL)) {
+        printf("ERROR: element interpolation setup: %s\n", cg_get_error());
+        cg_close(fn);
         failed_tests++;
         return 1;
     }
@@ -419,17 +449,61 @@ int test_sol_isoparametric()
         return 1;
     }
 
-    /* No LagrangeControlPoints should exist for IsoParametric */
+    /* 3a: the reference must be resolved to the mesh node's control points */
+    for (i = 0; i < 9; i++) { dummy_u[i] = 999.0; dummy_v[i] = 999.0; }
     ier = cg_solution_interpolation_points_read(fn, bn, fam, 1,
                                                 dummy_u, dummy_v, NULL, NULL);
-    if (ier != CG_NODE_NOT_FOUND) {
-        printf("ERROR: IsoParametric SolutionInterpolation_t should have no "
-               "LagrangeControlPoints\n");
+    if (ier != CG_OK) {
+        printf("ERROR: IsoParametric solution points read should resolve the "
+               "referenced ElementInterpolation_t (got %d: %s)\n",
+               ier, cg_get_error());
         cg_close(fn);
         failed_tests++;
         return 1;
     }
-    printf("  Verified: No LagrangeControlPoints (expected for IsoParametric)\n");
+    for (i = 0; i < 4; i++) {
+        if (dummy_u[i] != mesh_u[i] || dummy_v[i] != mesh_v[i]) {
+            printf("ERROR: resolved point %d = (%g,%g), expected (%g,%g)\n",
+                   i, dummy_u[i], dummy_v[i], mesh_u[i], mesh_v[i]);
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+    }
+    printf("  Verified 3a: reference resolved to the mesh control points\n");
+    cg_close(fn);
+
+    /* 3b: mesh node itself IsoParametric -> nothing stored anywhere */
+    if (cg_open(fname_b, CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 3, 3, &bn) ||
+        cg_family_write(fn, bn, "SolFamily", &fam) ||
+        cg_element_isoparametric_write(fn, bn, fam, "QUAD4_MeshIso",
+                                       CGNS_ENUMV(QUAD_4), &en) ||
+        cg_solution_interpolation_write(fn, bn, fam, "QUAD4_IsoParam",
+                                        CGNS_ENUMV(QUAD_4), 1, 0,
+                                        CGNS_ENUMV(IsoParametric), &sn)) {
+        printf("ERROR (3b setup): %s\n", cg_get_error());
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    cg_close(fn);
+
+    if (cg_open(fname_b, CG_MODE_READ, &fn)) {
+        printf("ERROR (3b reopen): %s\n", cg_get_error());
+        failed_tests++;
+        return 1;
+    }
+    ier = cg_solution_interpolation_points_read(fn, bn, fam, 1,
+                                                dummy_u, dummy_v, NULL, NULL);
+    if (ier != CG_NODE_NOT_FOUND) {
+        printf("ERROR: expected CG_NODE_NOT_FOUND when the referenced "
+               "ElementInterpolation_t is itself IsoParametric (got %d)\n", ier);
+        cg_close(fn);
+        failed_tests++;
+        return 1;
+    }
+    printf("  Verified 3b: CG_NODE_NOT_FOUND when nothing is stored anywhere\n");
 
     cg_close(fn);
     printf("Test 3 PASSED: SolutionInterpolation_t IsoParametric\n");

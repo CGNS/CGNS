@@ -32,7 +32,11 @@
 #define N_ELEM  4
 #define N_VERT  (N_ELEM * 8)
 #define PHYSDIM 3
-#define N_DOF   27              /* cg_npe_ho(HEXA_8, order 2) */
+/* This block uses CartesianMonomialsPascal, so N_DOFs is the Pascal-space
+ * cardinality C(p+d,d) = C(2+3,3) = 10 -- NOT the nodal count 27.  The two
+ * differ for every modal basis, and the field-array length rule is defined in
+ * terms of the interpolation type actually declared. */
+#define N_DOF   10              /* C(2+3,3), HEXA modal at degree 2 */
 
 static int check(int err, const char *what)
 {
@@ -79,6 +83,10 @@ static int make_file(const char *filename, int *fn, int *B, int *Z, int *S)
     if (check(cg_section_write(*fn, *B, *Z, "Hexas", CGNS_ENUMV(HEXA_8),
               1, N_ELEM, 0, conn, &sec), "section")) return 1;
     if (check(cg_family_write(*fn, *B, "CartFam", &F), "family")) return 1;
+    /* The zone must name the family: the high-order field length is derived
+     * from the SolutionInterpolation_t reached through FamilyName_t. */
+    if (check(cg_goto(*fn, *B, "Zone_t", *Z, NULL), "goto zone")) return 1;
+    if (check(cg_famname_write("CartFam"), "famname")) return 1;
     if (check(cg_solution_interpolation_write(*fn, *B, F, "Hex_P2",
               CGNS_ENUMV(HEXA_8), 2, 0,
               CGNS_ENUMV(CartesianMonomialsPascal), &si), "SI")) return 1;

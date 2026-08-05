@@ -122,6 +122,48 @@ int test_mixed_ho_simple()
     int spatial_degree = 2;
     int temporal_degree = 0;
 
+    /* A heterogeneous block needs one SolutionInterpolation_t per element
+     * family present in the section: N_DOFs is resolved per element, so both
+     * TRI_3 and QUAD_4 must declare their basis.  Declaring them also makes
+     * the field length well defined -- the library derives it from these
+     * nodes rather than assuming a cardinality. */
+    {
+        int fam, si;
+        /* Equidistant control points on the bi-unit reference domains.
+         * Positions are the writer's responsibility; only the count matters
+         * to the field-length rule. */
+        double tri_u[6] = {-1.0,  0.0,  1.0, -1.0,  0.0, -1.0};
+        double tri_v[6] = {-1.0, -1.0, -1.0,  0.0,  0.0,  1.0};
+        double quad_u[9] = {-1.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0};
+        double quad_v[9] = {-1.0,-1.0,-1.0,  0.0, 0.0, 0.0,  1.0, 1.0, 1.0};
+
+        if (cg_family_write(fn, bn, "MixedFam", &fam)) {
+            printf("ERROR: Failed to write family: %s\n", cg_get_error());
+            cg_close(fn); failed_tests++; return 1;
+        }
+        if (cg_solution_interpolation_write(fn, bn, fam, "Tri_P2",
+                CGNS_ENUMV(TRI_3), spatial_degree, temporal_degree,
+                CGNS_ENUMV(ParametricLagrange), &si) ||
+            cg_solution_interpolation_points_write(fn, bn, fam, si,
+                tri_u, tri_v, NULL, NULL)) {
+            printf("ERROR: Failed to write TRI interpolation: %s\n", cg_get_error());
+            cg_close(fn); failed_tests++; return 1;
+        }
+        if (cg_solution_interpolation_write(fn, bn, fam, "Quad_P2",
+                CGNS_ENUMV(QUAD_4), spatial_degree, temporal_degree,
+                CGNS_ENUMV(ParametricLagrange), &si) ||
+            cg_solution_interpolation_points_write(fn, bn, fam, si,
+                quad_u, quad_v, NULL, NULL)) {
+            printf("ERROR: Failed to write QUAD interpolation: %s\n", cg_get_error());
+            cg_close(fn); failed_tests++; return 1;
+        }
+        if (cg_goto(fn, bn, "Zone_t", zn, NULL) ||
+            cg_famname_write("MixedFam")) {
+            printf("ERROR: Failed to attach family to zone: %s\n", cg_get_error());
+            cg_close(fn); failed_tests++; return 1;
+        }
+    }
+
     if (cg_sol_write(fn, bn, zn, "HighOrderSolution", CGNS_ENUMV(InterpolationPoints), &soln)) {
         printf("ERROR: Failed to create solution: %s\n", cg_get_error());
         cg_close(fn);

@@ -899,10 +899,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  CHARACTER(LEN=MAX_LEN) :: LagrangeControlPointDistributionName(0:5)
+  CHARACTER(LEN=MAX_LEN) :: ControlPointDistributionName(0:5)
   ENUM, BIND(C)
-      ENUMERATOR :: CGNS_ENUMV(LagrangeControlPointDistributionNull) = CG_Null
-      ENUMERATOR :: CGNS_ENUMV(LagrangeControlPointDistributionUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(ControlPointDistributionNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ControlPointDistributionUserDefined)
       ENUMERATOR :: CGNS_ENUMV(GaussLobattoLegendre)
       ENUMERATOR :: CGNS_ENUMV(Equidistant)
       ENUMERATOR :: CGNS_ENUMV(GaussLegendre)
@@ -910,7 +910,7 @@ MODULE cgns
   END ENUM
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: LagrangeControlPointDistributionName
+!DEC$ATTRIBUTES DLLEXPORT :: ControlPointDistributionName
 !DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -1168,7 +1168,7 @@ MODULE cgns
 !*      Lagrange Control-Point Distributions                          *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-  DATA LagrangeControlPointDistributionName / 'Null','UserDefined', &
+  DATA ControlPointDistributionName / 'Null','UserDefined', &
        'GaussLobattoLegendre', 'Equidistant', &
        'GaussLegendre', 'WarpAndBlend' /
 
