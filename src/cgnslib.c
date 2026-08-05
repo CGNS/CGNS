@@ -23664,14 +23664,23 @@ int cg_delete_node(const char *node_name)
         (strcmp(posit->label,"AverageInterface_t")==0 &&
          strcmp(node_label,"AverageInterfaceType_t")==0) ||
 
-        (strcmp(posit->label,"ElementInterpolation_t")==0 &&
-         strcmp(node_label,"ElementType_t")==0) ||
+        /* CPEX-0045: no child of either interpolation node may be deleted.
+         * cg_delete_node() removes the node from the file BEFORE updating the
+         * in-memory database, and that update dispatches on posit->label -- for
+         * which these two labels have no case, so it falls through to
+         * "Unrecognized label" and returns CG_ERROR with the node already gone
+         * from disk and the stale cache still serving reads.  Refusing up front
+         * keeps the two views consistent, and matches the read-only stance
+         * cgi_array_address() already takes for these labels: use
+         * cg_element_interpolation_points_write /
+         * cg_solution_interpolation_points_write /
+         * cg_solution_interpolation_coefficients_write to replace the contents,
+         * which maintain both views.  (The former narrower guards named
+         * ElementType_t/InterpolationType_t, which are these nodes' own
+         * payloads rather than children, and so never matched.) */
+        strcmp(posit->label,"ElementInterpolation_t")==0 ||
 
-        (strcmp(posit->label,"SolutionInterpolation_t")==0 &&
-         strcmp(node_label,"ElementType_t")==0) ||
-
-        (strcmp(posit->label,"SolutionInterpolation_t")==0 &&
-         strcmp(node_label,"InterpolationType_t")==0)
+        strcmp(posit->label,"SolutionInterpolation_t")==0
 
     ) {
         cgi_error("Node '%s' under '%s' can not be deleted",node_name,posit->label);
