@@ -2033,7 +2033,9 @@ static int ho_wb_tri (int p, double *r, double *sarr)
     int np = (p+1)*(p+2)/2, i, m, n, sk;
 
     if (p < 1 || p > HO_WB_MAXP) return -1;
-    alpha = (p < (int)(sizeof(alpopt)/sizeof(alpopt[0]))) ? alpopt[p] : 5.0/3.0;
+    /* p is bounded by HO_WB_MAXP above, and the table covers 1..15, so the
+     * lookup is always in range -- no fallback branch is reachable. */
+    alpha = alpopt[p];
 
     L1 = (double*) malloc ((size_t)np * 9 * sizeof(double));
     if (!L1) return -1;
@@ -2164,7 +2166,8 @@ static int ho_wb_tet (int p, double *r, double *sarr, double *tarr)
     const double tol = 1.0e-10;
 
     if (p < 1 || p > HO_WB_MAXP) return -1;
-    alpha = (p < (int)(sizeof(alpopt3)/sizeof(alpopt3[0]))) ? alpopt3[p] : 1.0;
+    /* bounded by HO_WB_MAXP above; see ho_wb_tri */
+    alpha = alpopt3[p];
 
     buf = (double*) malloc ((size_t)np * 12 * sizeof(double));
     if (!buf) return -1;
