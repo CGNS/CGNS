@@ -8403,7 +8403,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                 return CG_ERROR;
             }
 
-            ret = cgi_ho_datasize(zone->index_dim,zone,hofam,sol->spatialDegree,
+            ret = cgi_ho_datasize(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
                                   sol->temporalDegree, dim_vals);
             if (ret == CG_NODE_NOT_FOUND) {
               cgi_error("GridLocation=InterpolationPoints field length is defined by the "
@@ -8442,7 +8442,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (cgi_ptset_range(sol->ptset, range_min, range_max)) return CG_ERROR;
 
-            ret = cgi_ho_datasize_range(zone->index_dim,zone,hofam,sol->spatialDegree,
+            ret = cgi_ho_datasize_range(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
                               sol->temporalDegree, range_min[0], range_max[0], &dim_vals[0]);
             if (ret == CG_NODE_NOT_FOUND) {
               cgi_error("GridLocation=InterpolationPoints field length requires a "
@@ -8472,7 +8472,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
                 return CG_ERROR;
               }
 
-              ret = cgi_ho_datasize_list(zone->index_dim,zone,hofam,sol->spatialDegree,
+              ret = cgi_ho_datasize_list(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
                                       sol->temporalDegree, pnts,
                                       sol->ptset->npts, &dim_vals[0]);
               CGNS_FREE(pnts);
@@ -9678,7 +9678,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
             {
                 const cgns_family *hofam =
                     cgi_ho_find_family(&cg->base[B-1], zone->family_name);
-                int hret = cgi_ho_datasize(s_numdim,zone,hofam,sol->spatialDegree,
+                int hret = cgi_ho_datasize(s_numdim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
                                            sol->temporalDegree, s_dimvals);
                 if (hret == CG_NODE_NOT_FOUND) {
                     cgi_error("GridLocation=InterpolationPoints field length is defined by the "
@@ -17586,9 +17586,12 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     }
     
     // Allocate and fill memory structure
-    if (einterp->lagrangePts) 
+    if (einterp->lagrangePts)
     {
       cgi_delete_node(einterp->id,einterp->lagrangePts->id);
+      /* The node being replaced may have been read from the file, in which case
+       * it owns ->data (and ->link); freeing only the struct leaks those. */
+      cgi_free_array(einterp->lagrangePts);
       CGNS_FREE(einterp->lagrangePts);
     }
     
@@ -18413,6 +18416,9 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     if (sinterp->lagrangePts)
     {
         cgi_delete_node(sinterp->id,sinterp->lagrangePts->id);
+        /* see cg_element_interpolation_points_write: the replaced node may own
+         * ->data and ->link if it came from the file */
+        cgi_free_array(sinterp->lagrangePts);
         CGNS_FREE(sinterp->lagrangePts);
     }
 
@@ -18801,7 +18807,9 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
     /* Replace any existing on-disk node and in-memory cache (CG_MODE_MODIFY). */
     if (sinterp->monomialCoeff) {
         cgi_delete_node(sinterp->id, sinterp->monomialCoeff->id);
-        free(sinterp->monomialCoeff->data);
+        /* frees ->data as before, and additionally ->link, which the read path
+         * populates via cgi_read_link() */
+        cgi_free_array(sinterp->monomialCoeff);
         CGNS_FREE(sinterp->monomialCoeff);
         sinterp->monomialCoeff = 0;
     }

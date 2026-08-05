@@ -2408,7 +2408,10 @@ static int ho_points_match (const double *su, const double *sv, const double *sw
             d = du*du + dv*dv + dw*dw;
             if (best < 0 || d < bestd) { best = j; bestd = d; }
         }
-        if (best < 0 || sqrt(bestd) > tol) { ok = -1; break; }
+        /* Negated <= rather than >, so a NaN distance counts as a mismatch.
+         * NaN can come straight from the file's own coordinates, and "NaN > tol"
+         * is false -- which would report unusable data as a match. */
+        if (best < 0 || !(sqrt(bestd) <= tol)) { ok = -1; break; }
         used[best] = 1;
     }
     free (used);
@@ -2427,6 +2430,19 @@ static void ho_check_distribution (const char *what, const char *nodename,
     int np, dim = 0;
 
     if (cg_element_basic_element_type (etype, &btype) != CG_OK) return;
+
+    /* Degree 0 has a single control point, and a single point is unisolvent for
+     * P0 wherever it sits, so no position can be called wrong and there is
+     * nothing to compare.  Skipping is not merely defensive: comparing here
+     * would flag a conformant file, and on the simplex lattices the degree-0
+     * spacing (2*i/p) is 0/0, whose NaN silently satisfies the tolerance test
+     * and made the check accept arbitrary coordinates. */
+    if (p == 0) {
+        if (verbose)
+            printf ("      degree 0: single control point, unisolvent for P0 at "
+                    "any position -- nothing to compare\n");
+        return;
+    }
 
     np = ho_gen_lattice (btype, dist, p, &gu, &gv, &gw, &dim);
     if (np < 0) {

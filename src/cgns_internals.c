@@ -1883,7 +1883,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 return CG_ERROR;
             }
             
-            int ret = cgi_ho_datasize(Idim,zone,hofam,sol[0][s].spatialDegree,
+            int ret = cgi_ho_datasize(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
                                 sol[0][s].temporalDegree, DataSize);
             
             if ( ret == CG_ERROR) return CG_ERROR;
@@ -1928,7 +1928,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                     return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_range(Idim,zone,hofam,sol[0][s].spatialDegree,
+                ret = cgi_ho_datasize_range(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
                                   sol[0][s].temporalDegree, range_min[0],
                                   range_max[0], &DataCount);
               }
@@ -1944,7 +1944,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                   return CG_ERROR;
                 }
                 
-                ret = cgi_ho_datasize_list(Idim,zone,hofam,sol[0][s].spatialDegree,
+                ret = cgi_ho_datasize_list(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
                                   sol[0][s].temporalDegree, pnts,
                                   sol[0][s].ptset->npts, &DataCount);
                 
@@ -4967,7 +4967,10 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
 {
     int i, nnod,ndim;
     double *id;
-    cgsize_t dim_vals[1];
+    /* Must hold CGIO_MAX_DIMENSIONS: cgi_read_node() -> cgio_get_dimensions()
+     * writes one value per dimension actually present in the file, and the
+     * "ndim != 1" check below only runs after that call has returned. */
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
     void *vdata;
     int *edata;
     char_33 temp_name,data_type;
@@ -5085,7 +5088,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
 {
     int i, nnod,ndim;
     double *id;
-    cgsize_t dim_vals[1];
+    /* see cgi_read_element_interpolation: sized for the file's rank, not ours */
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
     void *vdata;
     int *edata;
     char_33 temp_name,data_type;
@@ -8269,12 +8273,16 @@ static int cgi_ho_ndofs(const cgns_family *family,
             }
             if (ei != NULL && ei->lagrangePts != NULL &&
                 ei->lagrangePts->data_dim == 2) {
-                *ndofs = (int)ei->lagrangePts->dim_vals[1];
-                return CG_OK;
+                /* The mesh node's extent is purely spatial -- unlike a
+                 * SolutionInterpolation_t's, it carries no (q+1) replication
+                 * (cg_element_interpolation_points_write stores cg_npe(type)).
+                 * Fall through to the scaling below rather than returning it
+                 * directly, or a temporal degree > 0 loses the (q+1) factor. */
+                npe = (int)ei->lagrangePts->dim_vals[1];
             }
             /* Mesh node is itself IsoParametric: the standard layout of the
              * element's own tag applies. */
-            if (cg_npe(el_type, &npe)) return CG_ERROR;
+            else if (cg_npe(el_type, &npe)) return CG_ERROR;
         }
         break;
 
@@ -8487,7 +8495,8 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, const cgns_family 
     return CG_OK;
 }
 
-int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
+                    const cgns_family *family,
                     int spatialDegree, int temporalDegree, cgsize_t *DataSize)
 {
     int i,j, ne;
@@ -8531,7 +8540,7 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, const cgns_family *
              * that CPEX-0045 words this as "all zone elements", which read
              * literally would include boundary sections; see the amendment
              * note in the CPEX-0045 tracking notes. */
-            if (cg_element_dimension(type, &edim) == CG_OK && edim < Cdim)
+            if (cg_element_dimension(type, &edim) == CG_OK && edim < cell_dim)
                 continue;
 
             // Uniform section: simple calculation
@@ -8557,7 +8566,7 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, const cgns_family *
 }
 
 
-int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone,
+int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone *zone,
                           const cgns_family *family, const int spatialDegree,
                           const int temporalDegree, const cgsize_t imin, const cgsize_t imax,
                           cgsize_t *DataSize)
@@ -8597,7 +8606,7 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone,
 
         /* Boundary/edge sections hold no solution DOFs (see cgi_ho_datasize) */
         if (type != CGNS_ENUMV(MIXED) &&
-            cg_element_dimension(type, &edim) == CG_OK && edim < Cdim)
+            cg_element_dimension(type, &edim) == CG_OK && edim < cell_dim)
             continue;
 
         if (type == CGNS_ENUMV(MIXED)) {
@@ -8636,7 +8645,7 @@ static int compare_cgsize(const void *a, const void *b) {
     return 0;
 }
 
-int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone,
+int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *zone,
                          const cgns_family *family, const int spatialDegree,
                          const int temporalDegree, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize)
@@ -8786,7 +8795,7 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone,
             cgsize_t p;
 
             /* Boundary/edge sections hold no solution DOFs (see cgi_ho_datasize) */
-            if (cg_element_dimension(type, &edim) == CG_OK && edim < Cdim)
+            if (cg_element_dimension(type, &edim) == CG_OK && edim < cell_dim)
                 continue;
 
             ret = cgi_ho_ndofs(family, type, spatialDegree, temporalDegree, &ho_npe);
@@ -16667,6 +16676,11 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
             (given_no == 1 ||
              strcmp(given_name,"LagrangeControlPoints")==0))
             array = ei->lagrangePts;
+        /* Nothing selected must become CG_NODE_NOT_FOUND, per ADDRESS4MULTIPLE.
+         * Falling through with error2 clear returns NULL while *ier stays 0, and
+         * the callers (cg_array_info, cg_array_read, ...) then report CG_OK with
+         * every output parameter left untouched. */
+        else error2 = 1;
 
     /* CPEX 045: 0,2 DataArray_t under SolutionInterpolation_t */
     } else if (strcmp(posit->label,"SolutionInterpolation_t")==0) {
@@ -16696,6 +16710,8 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
             else if (si->monomialCoeff &&
                      strcmp(given_name,"MonomialCoefficients")==0)
                 array = si->monomialCoeff;
+            /* see the ElementInterpolation_t branch above */
+            else error2 = 1;
         }
 
      /* 0,N DataArray_t under FlowSolution_t */

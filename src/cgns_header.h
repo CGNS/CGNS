@@ -1418,13 +1418,22 @@ CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
  * and return CG_NODE_NOT_FOUND when no matching interpolation node exists,
  * rather than assuming a nodal cardinality. */
 const cgns_family *cgi_ho_find_family(const cgns_base *base, const char *family_name);
-int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+/* cell_dim is the owning base's CellDimension.  It is passed explicitly rather
+ * than read from the global Cdim: Cdim is only assigned by cgi_read_base() and
+ * by cgi_write() (at close), so during a write session it is still 0 and the
+ * "skip lower-dimensional (boundary) sections" test silently never fires --
+ * which made the write side count DOFs for face sections that the read side
+ * ignores, producing files this library could not read back. */
+int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
+                    const cgns_family *family,
                     int spatialDegree, int temporalDegree,
                     cgsize_t *DataSize);
-int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone *zone,
+                          const cgns_family *family,
                           const int spatialDegree,
                           const int temporalDegree, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
-int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const cgns_family *family,
+int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *zone,
+                         const cgns_family *family,
                          const int spatialDegree,
                          const int temporalDegree, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize);
