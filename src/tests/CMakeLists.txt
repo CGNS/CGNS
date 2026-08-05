@@ -234,6 +234,8 @@ if (CGNS_ENABLE_TESTS)
       test_dist_wb_p3.cgns             # test_distribution: WarpAndBlend p=3
       test_dist_wb_p3_reord.cgns       # test_distribution: same W&B set, reordered
       test_dist_wb_p4.cgns             # test_distribution: WarpAndBlend p=4
+      test_dist_wbtet_p2.cgns          # test_distribution: TETRA W&B p=2
+      test_dist_wbtet_p3.cgns          # test_distribution: TETRA W&B p=3
   )
   set(CGNSCHECK_HO_DEPENDS test_high_order test_mixed_ho test_degree_zero
                            test_distribution)
@@ -277,6 +279,12 @@ if (CGNS_ENABLE_TESTS)
   add_test(NAME cgnscheck_dist_wb_bad_strict_fails
            COMMAND cgnscheck -s test_dist_wb_p3_bad.cgns)
   set_tests_properties(cgnscheck_dist_wb_bad_strict_fails PROPERTIES
+    WILL_FAIL TRUE
+    DEPENDS "test_distribution")
+
+  add_test(NAME cgnscheck_dist_wbtet_bad_strict_fails
+           COMMAND cgnscheck -s test_dist_wbtet_p3_bad.cgns)
+  set_tests_properties(cgnscheck_dist_wbtet_bad_strict_fails PROPERTIES
     WILL_FAIL TRUE
     DEPENDS "test_distribution")
 

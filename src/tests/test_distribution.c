@@ -106,7 +106,14 @@ static int write_wb_case(const char *filename, int p, int npts,
     double au[16], av[16];
 
     for (i = 0; i < npts; i++) { au[i] = u[i]; av[i] = v[i]; }
-    if (perturb) au[npts/2] += 0.05;      /* one node off the family */
+    if (perturb) {
+        /* The error CPEX-0045 names as otherwise undetectable: a [0,1] simplex
+         * convention where the bi-unit domain is required.  It displaces nodes
+         * by O(1), far above the freedom left by the unpinned Warp&Blend
+         * blending parameter (at most ~2.7e-2 for degrees up to 10), so it must
+         * be flagged rather than excused. */
+        for (i = 0; i < npts; i++) { au[i] = (au[i]+1.0)/2.0; av[i] = (av[i]+1.0)/2.0; }
+    }
     if (reorder) {                         /* same set, reversed traversal */
         double t[16];
         for (i = 0; i < npts; i++) t[i] = au[npts-1-i];
@@ -126,6 +133,69 @@ static int write_wb_case(const char *filename, int p, int npts,
     if (check(cg_solution_interpolation_distribution_write(fn, B, F, si,
               CGNS_ENUMV(WarpAndBlend)), "distribution H")) return 1;
     return check(cg_close(fn), "close H");
+}
+
+
+/* Tetrahedral WarpAndBlend reference sets, computed independently and validated
+ * on the properties the construction must have: at p=2 it reduces exactly to
+ * equidistant, at p=4 its single interior node is the centroid (-0.5,-0.5,-0.5),
+ * and the trace on each face reproduces the 2D Warp&Blend triangle at p<=3.
+ * (At higher degree the face trace legitimately differs: the 2D and 3D
+ * constructions use separately optimised blending parameters.) */
+static const double wb_tet2_u[10] = {
+        -1, 0, 1, -1, -2.3461773124865103e-17, -1, -1, 0, -1, -1};
+static const double wb_tet2_v[10] = {
+        -1, -1, -1, -6.4098756212785448e-17, -6.4098756212785448e-17,
+        0.99999999999999989, -1, -1, 0, -1};
+static const double wb_tet2_w[10] = {
+        -0.99999999999999989, -0.99999999999999989, -0.99999999999999989,
+        -0.99999999999999989, -0.99999999999999989, -0.99999999999999989, 0,
+        0, 0, 1};
+static const double wb_tet3_u[20] = {
+        -1, -0.44721359549995809, 0.44721359549995782, 1,
+        -1.0000000000000002, -0.33333333333333331, 0.44721359549995765, -1,
+        -0.44721359549995798, -1, -1.0000000000000002, -0.33333333333333343,
+        0.44721359549995776, -1, -0.33333333333333343, -1, -1,
+        -0.44721359549995787, -1, -1};
+static const double wb_tet3_v[20] = {
+        -1, -1, -1, -1, -0.44721359549995798, -0.33333333333333337,
+        -0.44721359549995798, 0.44721359549995776, 0.44721359549995776,
+        0.99999999999999989, -1, -0.99999999999999989, -1,
+        -0.33333333333333337, -0.33333333333333337, 0.44721359549995776,
+        -0.99999999999999978, -0.99999999999999978, -0.44721359549995798, -1};
+static const double wb_tet3_w[20] = {
+        -0.99999999999999989, -0.99999999999999989, -0.99999999999999989,
+        -0.99999999999999989, -0.99999999999999989, -0.99999999999999989,
+        -0.99999999999999989, -0.99999999999999989, -0.99999999999999989,
+        -0.99999999999999989, -0.44721359549995804, -0.33333333333333331,
+        -0.44721359549995793, -0.33333333333333331, -0.33333333333333331,
+        -0.44721359549995776, 0.44721359549995771, 0.44721359549995771,
+        0.44721359549995798, 1};
+
+static int write_wb_tet_case(const char *filename, int p, int npts,
+                             const double *u, const double *v, const double *w,
+                             int domain01)
+{
+    int fn, B, F, si, i;
+    double au[64], av[64], aw[64];
+
+    for (i = 0; i < npts; i++) { au[i] = u[i]; av[i] = v[i]; aw[i] = w[i]; }
+    if (domain01)
+        for (i = 0; i < npts; i++) {
+            au[i] = (au[i]+1.0)/2.0; av[i] = (av[i]+1.0)/2.0; aw[i] = (aw[i]+1.0)/2.0;
+        }
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open tet")) return 1;
+    if (check(cg_base_write(fn, "Base", 3, 3, &B), "base tet")) return 1;
+    if (check(cg_family_write(fn, B, "Fam", &F), "family tet")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, F, "Tet",
+              CGNS_ENUMV(TETRA_4), p, 0,
+              CGNS_ENUMV(ParametricLagrange), &si), "sol interp tet")) return 1;
+    if (check(cg_solution_interpolation_points_write(fn, B, F, si,
+              au, av, aw, NULL), "sol points tet")) return 1;
+    if (check(cg_solution_interpolation_distribution_write(fn, B, F, si,
+              CGNS_ENUMV(WarpAndBlend)), "distribution tet")) return 1;
+    return check(cg_close(fn), "close tet");
 }
 
 int main(void)
@@ -311,6 +381,14 @@ int main(void)
     if (write_wb_case("test_dist_wb_p3_bad.cgns",  3, 10, wb_tri3_u, wb_tri3_v, 1, 0)) return 1;
     if (write_wb_case("test_dist_wb_p4.cgns",      4, 15, wb_tri4_u, wb_tri4_v, 0, 0)) return 1;
     printf("  wrote 4 WarpAndBlend reference files  OK\n");
+
+    if (write_wb_tet_case("test_dist_wbtet_p2.cgns",    2, 10,
+                          wb_tet2_u, wb_tet2_v, wb_tet2_w, 0)) return 1;
+    if (write_wb_tet_case("test_dist_wbtet_p3.cgns",    3, 20,
+                          wb_tet3_u, wb_tet3_v, wb_tet3_w, 0)) return 1;
+    if (write_wb_tet_case("test_dist_wbtet_p3_bad.cgns",3, 20,
+                          wb_tet3_u, wb_tet3_v, wb_tet3_w, 1)) return 1;
+    printf("  wrote 3 tetrahedral WarpAndBlend files  OK\n");
 
     if (failures) {
         fprintf(stderr, "\n%d failure(s)\n", failures);

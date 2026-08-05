@@ -1814,6 +1814,22 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 #define HO_DIST_TOL 1.0e-8
 
+/* WarpAndBlend is not uniquely determined by CPEX-0045.  The standard cites
+ * Warburton's construction without pinning its blending parameter alpha, and
+ * alpha moves the interior nodes: measured against alpha = 0, the optimised
+ * values displace them by ~6e-5 at degree 4, ~7e-4 at degree 5 and ~1e-2 at
+ * degree 6.  So an exact comparison would reject a conformant writer that uses
+ * a different blending parameter.
+ *
+ * The errors this check exists to catch -- a permuted point list, or a
+ * [0,1]-versus-[-1,1] domain convention -- displace nodes by O(1), orders of
+ * magnitude above that freedom.  So a WarpAndBlend set that agrees within
+ * HO_DIST_TOL is confirmed; one that agrees only within HO_WB_SLACK is reported
+ * inconclusive rather than wrong; and only a set outside HO_WB_SLACK is flagged.
+ * Pinning alpha in the standard would let this collapse back to one tolerance;
+ * raised as a v4 item. */
+#define HO_WB_SLACK 5.0e-2
+
 /* Legendre polynomial P_n and its derivative at x, by the standard recurrence */
 static void ho_legendre (int nn, double x, double *p, double *dp)
 {
@@ -2069,6 +2085,185 @@ static int ho_wb_tri (int p, double *r, double *sarr)
     return 0;
 }
 
+/* Warburton's 1D edge warp in product form (evalwarp), used by the tetrahedral
+ * construction.  Equivalent in intent to ho_warpfactor above but written as a
+ * direct Lagrange product, which is how the 3D code path expresses it. */
+static int ho_evalwarp (int p, const double *xnodes, const double *xout,
+                        int nr, double *warp)
+{
+    double xeq[HO_WB_MAXP+1];
+    int i, j, k;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    for (i = 1; i <= p+1; i++) xeq[i-1] = -1.0 + 2.0*(p+1-i)/(double)p;
+
+    for (k = 0; k < nr; k++) warp[k] = 0.0;
+    for (i = 1; i <= p+1; i++) {
+        for (k = 0; k < nr; k++) {
+            double d = xnodes[i-1] - xeq[i-1];
+            for (j = 2; j <= p; j++)
+                if (i != j) d *= (xout[k] - xeq[j-1])/(xeq[i-1] - xeq[j-1]);
+            if (i != 1)   d = -d/(xeq[i-1] - xeq[0]);
+            if (i != p+1) d =  d/(xeq[i-1] - xeq[p]);
+            warp[k] += d;
+        }
+    }
+    return 0;
+}
+
+/* In-face shift of the 3D construction (evalshift) */
+static int ho_evalshift (int p, double alpha, const double *L1,
+                         const double *L2, const double *L3, int n,
+                         double *dx, double *dy)
+{
+    double *gx, *w1, *w2, *w3, *tmp;
+    int i, rc = -1;
+
+    gx = (double*) malloc ((size_t)(HO_WB_MAXP+1 + 4*n) * sizeof(double));
+    if (!gx) return -1;
+    w1 = gx + HO_WB_MAXP+1; w2 = w1 + n; w3 = w2 + n; tmp = w3 + n;
+
+    if (ho_gen_1d (CGNS_ENUMV(GaussLobattoLegendre), p, gx)) goto done;
+    for (i = 0; i <= p; i++) gx[i] = -gx[i];      /* gaussX = -JacobiGL */
+
+    for (i = 0; i < n; i++) tmp[i] = L3[i] - L2[i];
+    if (ho_evalwarp (p, gx, tmp, n, w1)) goto done;
+    for (i = 0; i < n; i++) tmp[i] = L1[i] - L3[i];
+    if (ho_evalwarp (p, gx, tmp, n, w2)) goto done;
+    for (i = 0; i < n; i++) tmp[i] = L2[i] - L1[i];
+    if (ho_evalwarp (p, gx, tmp, n, w3)) goto done;
+
+    for (i = 0; i < n; i++) {
+        double a1 = alpha*L1[i], a2 = alpha*L2[i], a3 = alpha*L3[i];
+        double W1 = (L2[i]*L3[i]) * 4.0*w1[i] * (1.0 + a1*a1);
+        double W2 = (L1[i]*L3[i]) * 4.0*w2[i] * (1.0 + a2*a2);
+        double W3 = (L1[i]*L2[i]) * 4.0*w3[i] * (1.0 + a3*a3);
+        dx[i] = W1 + cos(2.0*M_PI/3.0)*W2 + cos(4.0*M_PI/3.0)*W3;
+        dy[i] =      sin(2.0*M_PI/3.0)*W2 + sin(4.0*M_PI/3.0)*W3;
+    }
+    rc = 0;
+done:
+    free (gx);
+    return rc;
+}
+
+/* Warp&Blend nodes on the bi-unit tetrahedron {r,s,t >= -1, r+s+t <= -1}.
+ * Writes (p+1)(p+2)(p+3)/6 points.  Returns 0 on success. */
+static int ho_wb_tet (int p, double *r, double *sarr, double *tarr)
+{
+    static const double alpopt3[] = {
+        0.0000, 0.0000, 0.0000, 0.0000, 0.1002, 1.1332, 1.5608, 1.3413,
+        1.2577, 1.1603, 1.10153, 0.6080, 0.4523, 0.8856, 0.8717, 0.9655 };
+    const double s3 = 1.7320508075688772, s6 = 2.4494897427831781;
+    double v[4][3], tg1[4][3], tg2[4][3];
+    double *L[4], *xyz, *sh, *w1, *w2, *buf;
+    double alpha, A[9], rhs[3];
+    int np = (p+1)*(p+2)*(p+3)/6;
+    int i, k, face, a, b, c, sk, rc = -1;
+    const double tol = 1.0e-10;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    alpha = (p < (int)(sizeof(alpopt3)/sizeof(alpopt3[0]))) ? alpopt3[p] : 1.0;
+
+    buf = (double*) malloc ((size_t)np * 12 * sizeof(double));
+    if (!buf) return -1;
+    for (i = 0; i < 4; i++) L[i] = buf + i*np;
+    xyz = buf + 4*np;                  /* np x 3 */
+    sh  = buf + 7*np;                  /* np x 3 */
+    w1  = buf + 10*np; w2 = buf + 11*np;
+
+    /* equilateral tetrahedron vertices */
+    v[0][0] = -1.0; v[0][1] = -1.0/s3; v[0][2] = -1.0/s6;
+    v[1][0] =  1.0; v[1][1] = -1.0/s3; v[1][2] = -1.0/s6;
+    v[2][0] =  0.0; v[2][1] =  2.0/s3; v[2][2] = -1.0/s6;
+    v[3][0] =  0.0; v[3][1] =  0.0;    v[3][2] =  3.0/s6;
+
+    /* orthogonal face tangents */
+    for (k = 0; k < 3; k++) {
+        tg1[0][k] = v[1][k]-v[0][k];  tg1[1][k] = v[1][k]-v[0][k];
+        tg1[2][k] = v[2][k]-v[1][k];  tg1[3][k] = v[2][k]-v[0][k];
+        tg2[0][k] = v[2][k]-0.5*(v[0][k]+v[1][k]);
+        tg2[1][k] = v[3][k]-0.5*(v[0][k]+v[1][k]);
+        tg2[2][k] = v[3][k]-0.5*(v[1][k]+v[2][k]);
+        tg2[3][k] = v[3][k]-0.5*(v[0][k]+v[2][k]);
+    }
+    for (i = 0; i < 4; i++) {
+        double n1 = 0.0, n2 = 0.0;
+        for (k = 0; k < 3; k++) { n1 += tg1[i][k]*tg1[i][k]; n2 += tg2[i][k]*tg2[i][k]; }
+        n1 = sqrt(n1); n2 = sqrt(n2);
+        for (k = 0; k < 3; k++) { tg1[i][k] /= n1; tg2[i][k] /= n2; }
+    }
+
+    /* equidistant barycentric coordinates from the reference-tet lattice */
+    sk = 0;
+    for (c = 0; c <= p; c++)
+        for (b = 0; b <= p - c; b++)
+            for (a = 0; a <= p - b - c; a++) {
+                double rr = -1.0 + 2.0*a/(double)p;
+                double ss = -1.0 + 2.0*b/(double)p;
+                double tt = -1.0 + 2.0*c/(double)p;
+                L[0][sk] = (1.0+tt)/2.0;
+                L[1][sk] = (1.0+ss)/2.0;
+                L[2][sk] = -(1.0+rr+ss+tt)/2.0;
+                L[3][sk] = (1.0+rr)/2.0;
+                sk++;
+            }
+
+    for (i = 0; i < np; i++) {
+        for (k = 0; k < 3; k++) {
+            xyz[i*3+k] = L[2][i]*v[0][k] + L[3][i]*v[1][k]
+                       + L[1][i]*v[2][k] + L[0][i]*v[3][k];
+            sh[i*3+k] = 0.0;
+        }
+    }
+
+    for (face = 0; face < 4; face++) {
+        double *La, *Lb, *Lc, *Ld;
+        switch (face) {
+        case 0: La=L[0]; Lb=L[1]; Lc=L[2]; Ld=L[3]; break;
+        case 1: La=L[1]; Lb=L[0]; Lc=L[2]; Ld=L[3]; break;
+        case 2: La=L[2]; Lb=L[0]; Lc=L[3]; Ld=L[1]; break;
+        default:La=L[3]; Lb=L[0]; Lc=L[2]; Ld=L[1]; break;
+        }
+        if (ho_evalshift (p, alpha, Lb, Lc, Ld, np, w1, w2)) goto done;
+        for (i = 0; i < np; i++) {
+            double blend = Lb[i]*Lc[i]*Ld[i];
+            double denom = (Lb[i]+0.5*La[i])*(Lc[i]+0.5*La[i])*(Ld[i]+0.5*La[i]);
+            int onface;
+            if (denom > tol)
+                blend = (1.0 + (alpha*La[i])*(alpha*La[i]))*blend/denom;
+            for (k = 0; k < 3; k++)
+                sh[i*3+k] += blend*w1[i]*tg1[face][k] + blend*w2[i]*tg2[face][k];
+            /* on this face, replace rather than accumulate */
+            onface = (La[i] < tol) &&
+                     (((Lb[i] > tol) + (Lc[i] > tol) + (Ld[i] > tol)) < 3);
+            if (onface)
+                for (k = 0; k < 3; k++)
+                    sh[i*3+k] = w1[i]*tg1[face][k] + w2[i]*tg2[face][k];
+        }
+    }
+
+    /* equilateral tet -> bi-unit reference tet: solve A [r s t]^T = xyz - o */
+    for (k = 0; k < 3; k++) {
+        A[k*3+0] = 0.5*(v[1][k]-v[0][k]);
+        A[k*3+1] = 0.5*(v[2][k]-v[0][k]);
+        A[k*3+2] = 0.5*(v[3][k]-v[0][k]);
+    }
+    for (i = 0; i < np; i++) {
+        double M[9];
+        for (k = 0; k < 9; k++) M[k] = A[k];
+        for (k = 0; k < 3; k++)
+            rhs[k] = xyz[i*3+k] + sh[i*3+k]
+                   - 0.5*(v[1][k]+v[2][k]+v[3][k]-v[0][k]);
+        if (ho_solve (3, M, rhs)) goto done;
+        r[i] = rhs[0]; sarr[i] = rhs[1]; tarr[i] = rhs[2];
+    }
+    rc = 0;
+done:
+    free (buf);
+    return rc;
+}
+
 /* Generate the full lattice for a basic element type.  Returns the point count,
  * or -1 when the combination cannot be generated.  Caller frees *gu/*gv/*gw. */
 static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
@@ -2123,10 +2318,25 @@ static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
         return np;
     }
 
+    /* Tetrahedron with WarpAndBlend */
+    if (btype == CGNS_ENUMV(TETRA_4) && dist == CGNS_ENUMV(WarpAndBlend)) {
+        *dim = 3;
+        np = (p+1)*(p+2)*(p+3)/6;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) malloc ((size_t)np * sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        if (ho_wb_tet (p, *gu, *gv, *gw)) {
+            free(*gu); free(*gv); free(*gw);
+            *gu = *gv = *gw = NULL;
+            return -1;
+        }
+        return np;
+    }
+
     /* Other simplex cases: only the equidistant barycentric lattice is
-     * generated.  The tetrahedral Warp&Blend construction and the Fekete
-     * distributions are not, so those are reported unchecked rather than
-     * compared against the wrong set. */
+     * generated.  The Fekete distributions are not, so those are reported
+     * unchecked rather than compared against the wrong set. */
     if (dist != CGNS_ENUMV(Equidistant)) return -1;
 
     if (btype == CGNS_ENUMV(TRI_3)) {
@@ -2224,6 +2434,19 @@ static void ho_check_distribution (const char *what, const char *nodename,
     }
 
     if (ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_DIST_TOL)) {
+        /* WarpAndBlend: distinguish a different blending parameter, which is
+         * conformant, from a genuinely wrong point set. */
+        if (dist == CGNS_ENUMV(WarpAndBlend) &&
+            ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_WB_SLACK) == 0) {
+            warning (3, "%s \"%s\": control points are close to %s at degree %d but "
+                        "not exact. CPEX-0045 does not pin the blending parameter of "
+                        "the Warp&Blend construction, so this is consistent with a "
+                        "different choice and is not reported as a mismatch.",
+                     what, nodename,
+                     cg_ControlPointDistributionName(dist), p);
+            free(gu); free(gv); free(gw);
+            return;
+        }
         /* The coordinates are authoritative and the name is advisory, so a
          * mismatch is not grounds for rejecting the file: it is an error only
          * under -s, and the remedy is to correct or drop the name, never to
