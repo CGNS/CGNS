@@ -1814,26 +1814,17 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 #define HO_DIST_TOL 1.0e-8
 
-/* HO_DIST_TOL is the tolerance CPEX-0045 v4 fixes for this comparison.  v3 left
- * it to "its chosen tolerance" per implementation, which is itself ambiguity:
- * two conforming validators could disagree about the same file.
+/* The comparison tolerance CPEX-0045 v4 fixes.  v3 left it to "its chosen
+ * tolerance" per implementation, which is itself ambiguity -- two conforming
+ * validators could disagree about the same file, and one would report an error.
  *
- * HO_WB_SLACK is transitional.  v3 gives WarpAndBlend only by citation, and the
- * construction cited carries a free blending parameter alpha that moves the
- * interior nodes -- against alpha = 0, the optimised values displace them by
- * ~6e-5 at degree 4, ~7e-4 at degree 5 and up to ~2.7e-2 by degree 10.  Until
- * the tabulated alpha of v4 is adopted, a file written with a different alpha is
- * conformant, so an exact comparison would falsely reject it.
- *
- * The errors this check exists to catch -- a permuted point list, or a
- * [0,1]-versus-[-1,1] domain convention -- displace nodes by O(1), far above
- * that freedom, so bounding it costs the check almost nothing: a set agreeing
- * within HO_DIST_TOL is confirmed, one agreeing only within HO_WB_SLACK is
- * reported inconclusive, and only a set outside HO_WB_SLACK is flagged.
- *
- * Once v4 is adopted this collapses to the single tolerance: delete
- * HO_WB_SLACK and the branch that uses it. */
-#define HO_WB_SLACK 5.0e-2
+ * A single tolerance is sufficient because v4 also tabulates the WarpAndBlend
+ * blending parameter alpha.  Under v3, where alpha was free, an exact comparison
+ * could have rejected a conformant file whose interior nodes were placed with a
+ * different alpha (displacements against alpha = 0 reach ~2.7e-2 by degree 10),
+ * and this checker carried a second, looser band to avoid that.  With alpha
+ * pinned there is one correct point set per family and degree, so the band is
+ * gone. */
 
 /* Legendre polynomial P_n and its derivative at x, by the standard recurrence */
 static void ho_legendre (int nn, double x, double *p, double *dp)
@@ -2443,19 +2434,6 @@ static void ho_check_distribution (const char *what, const char *nodename,
     }
 
     if (ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_DIST_TOL)) {
-        /* WarpAndBlend: distinguish a different blending parameter, which is
-         * conformant, from a genuinely wrong point set. */
-        if (dist == CGNS_ENUMV(WarpAndBlend) &&
-            ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_WB_SLACK) == 0) {
-            warning (3, "%s \"%s\": control points are close to %s at degree %d but "
-                        "not exact. CPEX-0045 does not pin the blending parameter of "
-                        "the Warp&Blend construction, so this is consistent with a "
-                        "different choice and is not reported as a mismatch.",
-                     what, nodename,
-                     cg_ControlPointDistributionName(dist), p);
-            free(gu); free(gv); free(gw);
-            return;
-        }
         /* The coordinates are authoritative and the name is advisory, so a
          * mismatch is not grounds for rejecting the file: it is an error only
          * under -s, and the remedy is to correct or drop the name, never to

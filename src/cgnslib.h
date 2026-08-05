@@ -1229,6 +1229,29 @@ CGNSDLL int cg_multifam_read(int N, char *name, char *family);
 CGNSDLL int cg_multifam_write(const char *name, const char *family);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      CPEX-0045 implementation target                                  *
+ *                                                                       *
+ *  This branch implements CPEX-0045 **v4**, which is drafted but NOT yet *
+ *  adopted; v3.0 was adopted 2026-08-04.  The v4 items the code relies   *
+ *  on are:                                                              *
+ *                                                                       *
+ *   - ControlPointDistribution_t as the enumeration name (the v3 name is *
+ *     34 characters and exceeds the 32-character CGNS limit, so it       *
+ *     cannot be written at all)                                         *
+ *   - N_DOFs resolved per interpolation type, and the field-array        *
+ *     element set restricted to cells of the base CellDimension          *
+ *   - GaussLegendre nodes as the roots of P_{p+1} (the v3 rule gives one *
+ *     node too few and is not unisolvent)                               *
+ *   - tabulated WarpAndBlend blending parameters and a fixed 1e-8        *
+ *     comparison tolerance, without which the comparison the standard    *
+ *     mandates cannot be implemented                                    *
+ *                                                                       *
+ *  Nothing has been released, so there is no compatibility cost to       *
+ *  tracking the draft.  If the Committee alters any of the above, the    *
+ *  code changes with it -- these are the places to look.                 *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ElementInterpolation_t Nodes                      *
  *                     (CPEX 045)                                        *
  *                                                                       *
