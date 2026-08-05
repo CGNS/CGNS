@@ -1814,20 +1814,25 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 #define HO_DIST_TOL 1.0e-8
 
-/* WarpAndBlend is not uniquely determined by CPEX-0045.  The standard cites
- * Warburton's construction without pinning its blending parameter alpha, and
- * alpha moves the interior nodes: measured against alpha = 0, the optimised
- * values displace them by ~6e-5 at degree 4, ~7e-4 at degree 5 and ~1e-2 at
- * degree 6.  So an exact comparison would reject a conformant writer that uses
- * a different blending parameter.
+/* HO_DIST_TOL is the tolerance CPEX-0045 v4 fixes for this comparison.  v3 left
+ * it to "its chosen tolerance" per implementation, which is itself ambiguity:
+ * two conforming validators could disagree about the same file.
+ *
+ * HO_WB_SLACK is transitional.  v3 gives WarpAndBlend only by citation, and the
+ * construction cited carries a free blending parameter alpha that moves the
+ * interior nodes -- against alpha = 0, the optimised values displace them by
+ * ~6e-5 at degree 4, ~7e-4 at degree 5 and up to ~2.7e-2 by degree 10.  Until
+ * the tabulated alpha of v4 is adopted, a file written with a different alpha is
+ * conformant, so an exact comparison would falsely reject it.
  *
  * The errors this check exists to catch -- a permuted point list, or a
- * [0,1]-versus-[-1,1] domain convention -- displace nodes by O(1), orders of
- * magnitude above that freedom.  So a WarpAndBlend set that agrees within
- * HO_DIST_TOL is confirmed; one that agrees only within HO_WB_SLACK is reported
- * inconclusive rather than wrong; and only a set outside HO_WB_SLACK is flagged.
- * Pinning alpha in the standard would let this collapse back to one tolerance;
- * raised as a v4 item. */
+ * [0,1]-versus-[-1,1] domain convention -- displace nodes by O(1), far above
+ * that freedom, so bounding it costs the check almost nothing: a set agreeing
+ * within HO_DIST_TOL is confirmed, one agreeing only within HO_WB_SLACK is
+ * reported inconclusive, and only a set outside HO_WB_SLACK is flagged.
+ *
+ * Once v4 is adopted this collapses to the single tolerance: delete
+ * HO_WB_SLACK and the branch that uses it. */
 #define HO_WB_SLACK 5.0e-2
 
 /* Legendre polynomial P_n and its derivative at x, by the standard recurrence */
@@ -2419,8 +2424,12 @@ static void ho_check_distribution (const char *what, const char *nodename,
 
     np = ho_gen_lattice (btype, dist, p, &gu, &gv, &gw, &dim);
     if (np < 0) {
-        warning (3, "%s \"%s\": cannot generate %s nodes for %s, so the stored "
-                    "coordinates are not checked against the named distribution.",
+        /* Report the comparison as NOT PERFORMED, never as a mismatch: this
+         * implementation not generating a family says nothing about the file,
+         * and the coordinates are authoritative regardless. */
+        warning (3, "%s \"%s\": comparison against %s not performed -- this build "
+                    "does not generate that family for %s. The stored coordinates "
+                    "are authoritative and remain valid.",
                  what, nodename, cg_ControlPointDistributionName(dist),
                  cg_ElementTypeName(btype));
         return;
