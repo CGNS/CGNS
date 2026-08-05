@@ -3345,26 +3345,6 @@ CGNSDLL void FMNAME(cgp_coord_write_f, CGP_COORD_WRITE_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cgp_coord_write_data_f,CGP_COORD_WRITE_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
-	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
-{
-  *ier = (cgint_f)cgp_coord_write_data((int)*fn, (int)*B, (int)*Z, (int)*C,
-               rmin, rmax, data);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_coord_read_data_f,CGP_COORD_READ_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
-	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
-{
-  *ier = (cgint_f)cgp_coord_read_data((int)*fn, (int)*B, (int)*Z, (int)*C,
-               rmin, rmax, data);
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
 	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(section_name),
 	CGNS_ENUMT(ElementType_t)*type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
@@ -3380,26 +3360,6 @@ CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
     *ier = (cgint_f)cgp_section_write((int)*fn, (int)*B, (int)*Z, c_name,
                *type, *start, *end, (int)*nbndry, &i_S);
     *S = (cgint_f)i_S;
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_elements_write_data_f,CGP_ELEMENTS_WRITE_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
-	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_elements_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-               *start, *end, elements);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_elements_read_data_f,CGP_ELEMENTS_READ_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
-	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_elements_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-               *start, *end, elements);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -3421,28 +3381,6 @@ CGNSDLL void FMNAME(cgp_field_write_f, CGP_FIELD_WRITE_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
- CGNSDLL void FMNAME(cgp_field_write_data_f,CGP_FIELD_WRITE_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_field_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-               (int)*F, rmin, rmax, field_ptr);
-}
-
-/*-----------------------------------------------------------------------*/
-
- CGNSDLL void FMNAME(cgp_field_read_data_f,CGP_FIELD_READ_DATA_F)(
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_field_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-               (int)*F, rmin, rmax, field_ptr);
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void FMNAME(cgp_array_write_f, CGP_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
 	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
 	cgint_f *A, cgint_f *ier STR_PLEN(ArrayName))
@@ -3457,24 +3395,6 @@ CGNSDLL void FMNAME(cgp_array_write_f, CGP_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
     *ier = (cgint_f)cgp_array_write(c_name, *DataType,
                (int)*DataDimension, DimensionVector, &i_A);
     *A = (cgint_f)i_A;
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_array_write_data_f, CGP_ARRAY_WRITE_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_array_write_data((int)*A, rmin, rmax, data);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
-	cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_array_read_data((int)*A, rmin, rmax, data);
 }
 
 /*-----------------------------------------------------------------------*/

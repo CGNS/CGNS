@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Get Sources
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Build Tcl/Tk from Source with Private Headers
       run: |
@@ -26,7 +26,18 @@ jobs:
         $version = "8.6.15"
         $buildRoot = "$env:TEMP\tcltk_build"
         $installDir = "C:\tcltk"
-        $vcvarsall = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+
+        # Locate vcvarsall.bat dynamically since the VS version/edition on
+        # GitHub-hosted Windows runners can change (e.g. 2022 -> 2026).
+        $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vsInstallPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if (-not $vsInstallPath) {
+            throw "Could not locate a Visual Studio installation with the VC tools component"
+        }
+        $vcvarsall = Join-Path $vsInstallPath "VC\Auxiliary\Build\vcvarsall.bat"
+        if (-not (Test-Path $vcvarsall)) {
+            throw "vcvarsall.bat not found at $vcvarsall"
+        }
 
         # Download and extract Tcl/Tk source
         Write-Host "Downloading Tcl/Tk..."
@@ -114,7 +125,10 @@ jobs:
         # Configure CGNS with HDF5 and cgnstools
         $hdf5CmakeDir = "$env:USERPROFILE\hdf5\cmake"
 
-        cmake -G "Visual Studio 17 2022" -A x64 `
+        # Let CMake auto-detect the installed Visual Studio generator
+        # instead of hardcoding a version, since the VS version bundled
+        # on GitHub-hosted Windows runners changes over time.
+        cmake -A x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DCGNS_ENABLE_FORTRAN=OFF `
           -DCGNS_ENABLE_HDF5=ON `
@@ -180,7 +194,7 @@ jobs:
       shell: pwsh
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: cgns-windows-tools
         path: cbuild/install

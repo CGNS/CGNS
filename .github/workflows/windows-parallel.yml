@@ -1,0 +1,94 @@
+name: Windows Parallel
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+env:
+  hdf5_ver: 2.1.1
+  hdf5_tag: 2.1.1
+
+jobs:
+  build:
+    name: Windows Parallel MS-MPI
+    runs-on: windows-2022
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install Dependencies
+        run: choco install ninja
+        shell: bash
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup MS-MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: msmpi
+
+      - name: Build HDF5 from source (parallel)
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch ${{ env.hdf5_tag }} https://github.com/HDFGroup/hdf5.git hdf5-src
+          New-Item -ItemType Directory -Path "hdf5-build" -Force
+          cd hdf5-build
+
+          cmake -G Ninja `
+            -D CMAKE_BUILD_TYPE:STRING=Release `
+            -D BUILD_SHARED_LIBS:BOOL=OFF `
+            -D BUILD_TESTING:BOOL=OFF `
+            -D HDF5_BUILD_TOOLS:BOOL=OFF `
+            -D HDF5_BUILD_EXAMPLES:BOOL=OFF `
+            -D HDF5_BUILD_HL_LIB:BOOL=ON `
+            -D HDF5_ENABLE_PARALLEL:BOOL=ON `
+            -D HDF5_ENABLE_Z_LIB_SUPPORT:BOOL=OFF `
+            -D HDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF `
+            -D HDF5_BUILD_FORTRAN:BOOL=OFF `
+            -D CMAKE_INSTALL_PREFIX:PATH="C:\hdf5" `
+            ..\hdf5-src
+
+          cmake --build . --config Release --parallel 4
+          cmake --install . --config Release
+
+      - name: Configure CGNS
+        shell: pwsh
+        run: |
+          mkdir build
+          cd build
+          cmake -G Ninja `
+            -D CMAKE_BUILD_TYPE:STRING=Release `
+            -D CGNS_BUILD_SHARED:BOOL=OFF `
+            -D CGNS_USE_SHARED:BOOL=OFF `
+            -D CGNS_ENABLE_64BIT:BOOL=ON `
+            -D CGNS_ENABLE_HDF5:BOOL=ON `
+            -D HDF5_DIR:PATH="C:\hdf5\cmake" `
+            -D CMAKE_PREFIX_PATH:PATH="C:\hdf5\cmake" `
+            -D HDF5_NEED_MPI:BOOL=ON `
+            -D HDF5_NEED_ZLIB:BOOL=OFF `
+            -D HDF5_NEED_SZIP:BOOL=OFF `
+            -D CGNS_ENABLE_TESTS:BOOL=ON `
+            -D CGNS_ENABLE_LFS:BOOL=OFF `
+            -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF `
+            -D CGNS_ENABLE_SCOPING:BOOL=OFF `
+            -D CGNS_ENABLE_FORTRAN:BOOL=OFF `
+            -D CGNS_ENABLE_PARALLEL:BOOL=ON `
+            -D CMAKE_INSTALL_PREFIX:PATH="." `
+            ..
+
+      - name: Build CGNS
+        shell: pwsh
+        run: |
+          cd build
+          cmake --build . --config Release --parallel 4
+
+      - name: Test CGNS
+        shell: pwsh
+        run: |
+          cd build
+          ctest -C Release --output-on-failure

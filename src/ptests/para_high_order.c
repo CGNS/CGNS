@@ -66,53 +66,12 @@ int main (int argc, char **argv)
   if (cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B))
     cgp_error_exit();
   
-  // [1] Create the Nodes (all processes have to be part of it)
-  for (zn = 1 ; zn <= nzones ; zn++)
-  {
-    // [1.1] Create the corresponding Zone
-    sprintf(ZoneName,"Zone %d",zn);
-    if (cg_zone_write(fn, B, ZoneName, nijk, CGNS_ENUMV(Unstructured), &Z))
-      cgp_error_exit();
-    
-    // [1.2] Write the Related Family Name (here only one for all Zones)
-    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_famname_write("Family"))
-      cgp_error_exit();
-    
-    // [1.3] Write the Ordinal of the zone (Optional)
-    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_ordinal_write(zn) )
-      cgp_error_exit();
-    
-    // [1.4] Create the coordinates nodes
-    if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) ||
-        cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) ||
-        cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz))
-        cgp_error_exit();
-    
-    // [1.5] Create the Element Section
-    start = 1;
-    end   = 9;
-    if (cgp_section_write(fn,B,Z,"Elements",CGNS_ENUMV(QUAD_9),start,end,0,&S))
-      cgp_error_exit();
-
-
-    // [1.6] Write the Solution Node
-    if (cg_sol_write(fn,B,Z,"solution",CGNS_ENUMV(InterpolationPoints),&Sol) )
-      cgp_error_exit();
-
-    // [1.7] Write the Solution Order (3rd Order in space, 0th Order in time)
-    if (cg_sol_interpolation_degree_write(fn,B,Z,Sol,3,0) )
-      cgp_error_exit();
-    
-    // Note : It is MANDATORY to set solution interpolation Order BEFORE creating and writing the 
-    //        field data. CGNS will internally deduce the size of the array based on the 
-    //        interpolation orders.
-    
-    // [1.8] Write the solution Field 
-    if (cgp_field_write(fn,B,Z,Sol,CGNS_ENUMV(RealDouble), "Density", &Fld))
-        cgp_error_exit();
-    
-  }
-  
+  // NOTE: the Family and its interpolation nodes must be created BEFORE the
+  //       fields, not after.  A GridLocation=InterpolationPoints field array is
+  //       sized as sum_e N_DOFs(e), and N_DOFs comes from the
+  //       SolutionInterpolation_t matching each element, reached through the
+  //       zone's FamilyName_t.  With the family written afterwards the basis
+  //       cannot be resolved and cgp_field_write fails.
   // [2] Create the Family and its ElementInterpolation_t and SolutionInterpolation_t
   //     nodes
   {
@@ -177,6 +136,53 @@ int main (int argc, char **argv)
         free(pv);
       }
     }
+    
+  }
+
+  // [1] Create the Nodes (all processes have to be part of it)
+  for (zn = 1 ; zn <= nzones ; zn++)
+  {
+    // [1.1] Create the corresponding Zone
+    sprintf(ZoneName,"Zone %d",zn);
+    if (cg_zone_write(fn, B, ZoneName, nijk, CGNS_ENUMV(Unstructured), &Z))
+      cgp_error_exit();
+    
+    // [1.2] Write the Related Family Name (here only one for all Zones)
+    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_famname_write("Family"))
+      cgp_error_exit();
+    
+    // [1.3] Write the Ordinal of the zone (Optional)
+    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_ordinal_write(zn) )
+      cgp_error_exit();
+    
+    // [1.4] Create the coordinates nodes
+    if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) ||
+        cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) ||
+        cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz))
+        cgp_error_exit();
+    
+    // [1.5] Create the Element Section
+    start = 1;
+    end   = 9;
+    if (cgp_section_write(fn,B,Z,"Elements",CGNS_ENUMV(QUAD_9),start,end,0,&S))
+      cgp_error_exit();
+
+
+    // [1.6] Write the Solution Node
+    if (cg_sol_write(fn,B,Z,"solution",CGNS_ENUMV(InterpolationPoints),&Sol) )
+      cgp_error_exit();
+
+    // [1.7] Write the Solution Order (3rd Order in space, 0th Order in time)
+    if (cg_sol_interpolation_degree_write(fn,B,Z,Sol,3,0) )
+      cgp_error_exit();
+    
+    // Note : It is MANDATORY to set solution interpolation Order BEFORE creating and writing the 
+    //        field data. CGNS will internally deduce the size of the array based on the 
+    //        interpolation orders.
+    
+    // [1.8] Write the solution Field 
+    if (cgp_field_write(fn,B,Z,Sol,CGNS_ENUMV(RealDouble), "Density", &Fld))
+        cgp_error_exit();
     
   }
   

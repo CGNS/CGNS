@@ -375,6 +375,25 @@ int test_solution_field(const char *filename)
     CHECK_ERROR(cg_zone_write(fn, B, "Zone1", sizes, CGNS_ENUMV(Unstructured), &Z),
                 "Creating zone");
 
+    /* A GridLocation=InterpolationPoints field is sized as sum_e N_DOFs(e), and
+     * N_DOFs comes from the SolutionInterpolation_t matching each element,
+     * reached through the zone's FamilyName_t.  Both must therefore exist before
+     * the field is written.
+     *
+     * This test wants one value per element, which is a degree-0 solution: a
+     * single coefficient per element, the cell average.  (Degree 1 would give
+     * (1+1)^3 = 8 degrees of freedom per HEXA, not 1.) */
+    {
+        int Fam, Si;
+        CHECK_ERROR(cg_family_write(fn, B, "HOFamily", &Fam), "Creating family");
+        CHECK_ERROR(cg_goto(fn, B, "Zone_t", Z, NULL), "goto zone");
+        CHECK_ERROR(cg_famname_write("HOFamily"), "Attaching family to zone");
+        CHECK_ERROR(cg_solution_interpolation_write(fn, B, Fam, "Hex_P0",
+                        CGNS_ENUMV(HEXA_8), 0, 0,
+                        CGNS_ENUMV(ParametricMonomialsPascal), &Si),
+                    "Creating degree-0 solution interpolation");
+    }
+
     /* Write element section - required for InterpolationPoints solutions */
     elem_start = comm_rank * num_elem_per_proc + 1;
     elem_end = elem_start + num_elem_per_proc - 1;
@@ -399,10 +418,10 @@ int test_solution_field(const char *filename)
     CHECK_ERROR(cg_sol_write(fn, B, Z, "Solution", CGNS_ENUMV(InterpolationPoints), &Sol),
                 "Creating element-based solution");
 
-    /* Set solution interpolation order (required for InterpolationPoints solutions)
-     * Using order 1 (gives 1 node per element for scalar solution) */
-    CHECK_ERROR(cg_sol_interpolation_degree_write(fn, B, Z, Sol, 1, 0),
-                "Setting solution interpolation order");
+    /* Degree 0: one degree of freedom per element, matching the one value per
+     * element written below. */
+    CHECK_ERROR(cg_sol_interpolation_degree_write(fn, B, Z, Sol, 0, 0),
+                "Setting solution interpolation degree");
 
     /* Write solution field - one value per element */
     CHECK_ERROR(cgp_field_write(fn, B, Z, Sol, CGNS_ENUMV(RealDouble), "Density", &F),

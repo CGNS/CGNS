@@ -139,7 +139,7 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(IN)  :: ulp
     Rel = 1.0
     IF ( PRESENT(ulp) ) Rel = REAL( ABS(ulp), KIND(1.0))
-    c_float_eq = ABS( a - b ) < ( Rel * SPACING( MAX(ABS(a),ABS(b)) ) )
+    c_float_eq = ABS( a - b ) <= ( Rel * SPACING( MAX(ABS(a),ABS(b)) ) )
   END FUNCTION c_float_eq
 
   LOGICAL FUNCTION c_double_eq(a,b,ulp)
@@ -150,7 +150,7 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(IN)  :: ulp
     Rel = 1.D0
     IF ( PRESENT(ulp) ) Rel = REAL( ABS(ulp), KIND(1.D0))
-    c_double_eq = ABS( a - b ) < ( Rel * SPACING( MAX(ABS(a),ABS(b)) ) )
+    c_double_eq = ABS( a - b ) <= ( Rel * SPACING( MAX(ABS(a),ABS(b)) ) )
   END FUNCTION c_double_eq
 
   LOGICAL FUNCTION c_long_eq(a,b)

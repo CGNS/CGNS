@@ -52,6 +52,11 @@ CALL = \
 	test_spacetime$(EXE) \
 	test_variable_order$(EXE)
 
+# test_unicode requires HDF5 >= 2.0.0 for Unicode filepath support.
+# It is not included in the default test run; build and run it manually:
+#   make test_unicode && ./test_unicode
+HDF5_UNICODE_TESTS = test_unicode$(EXE)
+
 F_TESTS = \
 	cgiof_F03$(EXE) \
 	cgwrite_F03$(EXE) \
@@ -361,6 +366,12 @@ test_back_comp$(EXE) : test_back_comp.c $(CGNSLIB)
 
 #----------
 
+test_unicode$(EXE) : test_unicode.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_unicode.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 cgiof$(EXE) : cgiof.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgiof.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
@@ -499,4 +510,5 @@ allclean : clean
 	-$(RM) $(ALL) $(FALL) $(ALL64)
 	-$(RM) *.cgns *.cgio
 	-$(RM) CGNS_timing.txt
+	-$(RM) -r $(shell printf '\xc3\xa9coulement')
 

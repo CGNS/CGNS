@@ -583,7 +583,12 @@ if (CGNS_ENABLE_FORTRAN)
   add_library(cgns_f2c OBJECT cgns_f.F90)
   # shared libraries need PIC
   set_property(TARGET cgns_f2c PROPERTY POSITION_INDEPENDENT_CODE 1)
-
+  # BUILD_CGNS_DLL activates !DEC$ATTRIBUTES DLLEXPORT for module data (name arrays).
+  # Data exports require DLLEXPORT in the .mod file so consumers generate correct
+  # __imp_ references. Procedure exports are handled by the .def file instead.
+  if (WIN32 AND CGNS_BUILD_SHARED)
+    target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
+  endif ()
   target_include_directories(cgns_f2c BEFORE PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 else ()
   set(cgns_FILES ${cgns_C_FILES})
@@ -607,12 +612,22 @@ endif()
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
-  add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
-  add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
-  if (WIN32 AND CGNS_ENABLE_FORTRAN)
-    target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
-  endif()
+  # Configure the Fortran DLL exports .def file (Windows only)
+  set(CGNS_FORTRAN_DLLDEF "")
+  if (WIN32 AND CGNS_ENABLE_FORTRAN AND MSVC)
+    if (NOT CGNS_ENABLE_PARALLEL)
+      set (CGNS_NOPAREXP ";")
+    else ()
+      set (CGNS_NOPAREXP "")
+    endif ()
+    configure_file (${CMAKE_CURRENT_SOURCE_DIR}/cgns_fortrandll.def.in
+                    ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def @ONLY)
+    set (CGNS_FORTRAN_DLLDEF ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def)
+  endif ()
+
+  add_library(cgns_shared SHARED ${CGNS_FORTRAN_DLLDEF} ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
+  add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
   if (WIN32 OR CYGWIN)
     target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)

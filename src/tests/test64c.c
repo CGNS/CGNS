@@ -69,7 +69,7 @@ char *format_time(int secs)
 
 int main (int argc, char **argv)
 {
-    char *dbname = "test64.cgns";
+    char *dbname = "test64c.cgns";
     int i, j, k, celldim = 3, phydim = 3;
     cgsize_t n, sizes[3];
     cgsize_t ns, ne, nn, count;

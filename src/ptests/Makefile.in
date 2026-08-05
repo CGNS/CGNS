@@ -31,6 +31,11 @@ CALL =	pcgns_ctest$(EXE) \
 	test_mixed_par_ser$(EXE) \
 	thesis_benchmark$(EXE)
 
+# pcgns_unicode_test requires HDF5 >= 2.0.0 for Unicode filepath support.
+# It is not included in the default test run; build and run it manually:
+#   make pcgns_unicode_test && mpiexec -n 2 ./pcgns_unicode_test
+HDF5_UNICODE_TESTS = pcgns_unicode_test$(EXE)
+
 FALL =	pcgns_ftest$(EXE) \
 	ftest_zone$(EXE) \
 	fexample$(EXE) \
@@ -177,6 +182,19 @@ test_general_wrappers_f90$(EXE) : test_general_wrappers_f90.F90 utilsf.$(O) $(CG
 
 #----------
 
+Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ Metadata_Stressing.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+pcgns_unicode_test$(EXE) : pcgns_unicode_test.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ pcgns_unicode_test.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+
 utilsf.$(O) : $(CGNSDIR)/tests/utilsf.F90
 	$(F77) $(FOPTS) -c $(CGNSDIR)/tests/utilsf.F90
 
@@ -188,4 +206,5 @@ allclean : clean
 	-$(RM) *~ *.bak
 	-$(RM) *.cgns *.cg?
 	-$(RM) CGNS_timing.txt
+	-$(RM) -r $(shell printf '\xc3\xa9coulement_par')
 

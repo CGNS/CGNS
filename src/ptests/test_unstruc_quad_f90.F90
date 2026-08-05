@@ -52,19 +52,21 @@ PROGRAM test_unstruc_quad_f
   INTEGER(cgsize_t) :: start_local(1), end_local(1)
   INTEGER(cgsize_t) :: start, end
   INTEGER(cgsize_t) :: emin(1), emax(1)
-  INTEGER(cgsize_t) :: rmin(1), rmax(1)
+  INTEGER(cgsize_t), TARGET :: rmin(1), rmax(1)
   INTEGER(cgsize_t) :: nelem, nvert
   INTEGER(cgsize_t), PARAMETER :: start_1 = 1
-  INTEGER Cx, Cy, Cz, F, B, Z, S, BC
+  INTEGER Cx, Cy, Cz, F, B, Z, S, BC, Sol, Fld
+  INTEGER S_elements, S_bottom, S_right, S_left
   INTEGER i, k
   INTEGER global_num_quads
   INTEGER(C_INT), DIMENSION(4) :: indices
 
-  REAL(dp), allocatable ::  fx(:), fy(:), fz(:) 
+  REAL(dp), allocatable, target ::  fx(:), fy(:), fz(:)
   INTEGER(cgsize_t), allocatable, target :: elements(:)
   INTEGER(cgsize_t), allocatable :: point_list(:)
-  INTEGER(cgsize_t), dimension(:), pointer :: el_ptr => null()
   INTEGER(cgsize_t), dimension(:), pointer :: null_ptr => null()
+  INTEGER(cgsize_t), dimension(:), pointer :: el_ptr => null()
+  TYPE(C_PTR) :: c_elements
   LOGICAL found_point
 
 
@@ -130,17 +132,43 @@ PROGRAM test_unstruc_quad_f
 
 
 !---- write the coordinate data in parallel
-  CALL cgp_coord_write_data_f(F, B, Z, Cx, rmin, rmax, fx, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cy, rmin, rmax, fy, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cy, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fy(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_data_f(F, B, Z, Cz, rmin, rmax, fz, ierr)
+  CALL cgp_coord_write_data_f(F, B, Z, Cz, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fz(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+! Test no-data path: rank 0 passes C_NULL_PTR, verifying rmin/rmax are not
+! examined when data is NULL (all ranks still participate in the collective).
+  IF (comm_rank .EQ. 0) THEN
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
+  ELSE
+    CALL cgp_coord_write_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
+  END IF
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+!---- create a solution node and write field data in parallel
+  CALL cg_sol_write_f(F, B, Z, 'Solution', CGNS_ENUMV(Vertex), Sol, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  CALL cgp_field_write_f(F, B, Z, Sol, CGNS_ENUMV(RealDouble), 'FieldX', Fld, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+! Test no-data path: rank 0 passes C_NULL_PTR for data.
+  IF (comm_rank .EQ. 0) THEN
+    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ierr)
+  ELSE
+    CALL cgp_field_write_data_f(F, B, Z, Sol, Fld, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
+  END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   end = comm_size*3
 !---- create data node for elements
   CALL cgp_section_write_f(F, B, Z, 'Elements', CGNS_ENUMV(QUAD_4), start_1, end, 0, S, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  S_elements = S
 
   nelem = 3;
   emin(1) = comm_rank*3+1;
@@ -159,17 +187,26 @@ PROGRAM test_unstruc_quad_f
   PRINT *, comm_rank, ":", nelem, ":", emin(1), ":", emax(1)
 
 !---- write the element connectivity in parallel
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
+! Test no-data path: rank 0 passes C_NULL_PTR; start/end are ignored by
+! the C layer when elements is NULL.
+  IF (comm_rank .EQ. 0) THEN
+    CALL cgp_elements_write_data_f(F, B, Z, S_elements, emin(1), emax(1), C_NULL_PTR, ierr)
+  ELSE
+    CALL cgp_elements_write_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  END IF
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create data node for elements
   start = 3*comm_size + 1
   end = start + 3*comm_size - 1
   CALL cgp_section_write_f(F, B, Z, 'Bottom', CGNS_ENUMV(BAR_2), start, end, 0, S, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  S_bottom = S
 
-! Parent elements/side data 
+! Parent elements/side data
   DO k=1,3
     elements(3*0+k) = comm_rank*3+k  ! Element
     elements(3*1+k) = 0
@@ -181,7 +218,7 @@ PROGRAM test_unstruc_quad_f
   emax(1) = emin(1)+2
   PRINT *, comm_rank, ':', emin(1), ' ', emax(1) 
   
-  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
+  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! side connectivity
@@ -189,7 +226,7 @@ PROGRAM test_unstruc_quad_f
     elements(2*(k-1)+1) = 2*(comm_rank*3+(k-1))+1
     elements(2*(k-1)+2) = 2*(comm_rank*3+(k-1))+3
   ENDDO
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   n_boco_elems = end-start+1
@@ -215,7 +252,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   PRINT *, elements(1), elements(2), start_local(1), end_local(1)
-  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), elements, ierr)
+  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_boco_gridlocation_write_f(F, B, Z, BC, CGNS_ENUMV(EdgeCenter), ierr)
@@ -227,7 +264,35 @@ PROGRAM test_unstruc_quad_f
 
   CALL cg_famname_write_f("Bottom", ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  
+
+! right BC — all ranks contribute parent data
+  start = end + 1
+  end = start + 3*comm_size - 1
+  CALL cgp_section_write_f(F, B, Z, 'Right', CGNS_ENUMV(BAR_2), start, end, 0, S, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  S_right = S
+
+! Parent elements/side data
+  DO k=1,3
+    elements(3*0+k) = comm_rank*3+k  ! Element
+    elements(3*1+k) = 0
+    elements(3*2+k) = 2 ! Side
+    elements(3*3+k) = 0
+  ENDDO
+
+  emin(1) = comm_rank*3+start
+  emax(1) = emin(1)+2
+
+  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+! side connectivity
+  DO k=1,3
+    elements(2*(k-1)+1) = 2*(comm_rank*3+(k-1))+1
+    elements(2*(k-1)+2) = 2*(comm_rank*3+(k-1))+3
+  ENDDO
+  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! left BC
   start = end + 1
@@ -235,6 +300,7 @@ PROGRAM test_unstruc_quad_f
 
   CALL cgp_section_write_f(F, B, Z, 'Left', CGNS_ENUMV(BAR_2), start, end, 0, S, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  S_left = S
 
   IF (comm_rank .EQ. 0) THEN
     emin(1) = start
@@ -244,23 +310,24 @@ PROGRAM test_unstruc_quad_f
     elements(2) = 0
     elements(3) = 4 ! Side
     elements(4) = 0
-    el_ptr => elements
+    c_elements = C_LOC(elements(1))
   ELSE
     emin(1) = 0
     emax(1) = 0
-    el_ptr => NULL()
+    c_elements = C_NULL_PTR
   ENDIF
   PRINT *, comm_rank, ":", emin(1), " ", emax(1)
 
-  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), el_ptr, ierr)
+  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), c_elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   IF (comm_rank .EQ. 0) THEN
     elements(1) = 1
     elements(2) = 2
-  ENDIF
-  
-  CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), el_ptr, ierr)
+    CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  ELSE
+    CALL cgp_elements_write_data_f(F, B, Z, S, emin(1), emax(1), C_NULL_PTR, ierr)
+  END IF
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   n_boco_elems = 1
@@ -271,11 +338,11 @@ PROGRAM test_unstruc_quad_f
     start_local(1) = 1
     end_local(1) = 1
     elements(1) = start
-    el_ptr => elements
+    c_elements = C_LOC(elements(1))
   ELSE
     start_local(1) = 0
     end_local(1) = 0
-    el_ptr => NULL()
+    c_elements = C_NULL_PTR
   ENDIF
 
   PRINT *, comm_rank, ":", start_local(1), " ", end_local(1)
@@ -283,7 +350,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), el_ptr, ierr)
+  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), c_elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_boco_gridlocation_write_f(F, B, Z, BC, CGNS_ENUMV(EdgeCenter), ierr)
@@ -307,26 +374,40 @@ PROGRAM test_unstruc_quad_f
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   ! Left BC
-  start = 6*comm_size + 1
+  start = 9*comm_size + 1
   end   = start
 
   IF (comm_rank .EQ. 0) THEN
      emin(1) = start
      emax(1) = END
+     c_elements = C_LOC(elements(1))
   ELSE
      emin(1) = 0
      emax(1) = 0
+     c_elements = C_NULL_PTR
   END IF
 
-  CALL cgp_parentelements_read_data_f(F, 1, 1, 3, emin(1), emax(1), el_ptr, ierr)
+  CALL cgp_parentelements_read_data_f(F, 1, 1, S_left, emin(1), emax(1), c_elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   IF (comm_rank .EQ. 0) THEN
-     IF (el_ptr(1) .NE. 1 .OR. el_ptr(2) .NE. 0)THEN
+     IF (elements(1) .NE. 1 .OR. elements(2) .NE. 0)THEN
         WRITE(*,'(A)') "Could not read parent_element"
         CALL MPI_Abort(MPI_COMM_WORLD, 1, mpi_err)
      ENDIF
   ENDIF
+
+! All ranks have parent data for Bottom section
+  emin(1) = 3*comm_size + comm_rank*3 + 1
+  emax(1) = emin(1) + 2
+  CALL cgp_parentelements_read_data_f(F, 1, 1, S_bottom, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+! All ranks read parent data for Right section
+  emin(1) = 6*comm_size + comm_rank*3 + 1
+  emax(1) = emin(1) + 2
+  CALL cgp_parentelements_read_data_f(F, 1, 1, S_right, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 !  if (cg_goto(fn,1,"Zone_t",1,"Elements_t",3,"end"))
 !    cgp_error_exit();
 
@@ -346,7 +427,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-  CALL cgp_ptlist_read_data_f(F, start_local(1), end_local(1), elements, ierr)
+  CALL cgp_ptlist_read_data_f(F, start_local(1), end_local(1), C_LOC(elements(1)), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   PRINT *, comm_rank, ": ", elements(1), " ", elements(2), " ", elements(3)
@@ -373,6 +454,20 @@ PROGRAM test_unstruc_quad_f
     endif
   enddo
   
+
+!---- read element connectivity in parallel
+  emin(1) = comm_rank * nelem + 1
+  emax(1) = emin(1) + nelem - 1
+  CALL cgp_elements_read_data_f(F, B, Z, S_elements, emin(1), emax(1), C_LOC(elements(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+!---- read coordinate data in parallel
+  CALL cgp_coord_read_data_f(F, B, Z, Cx, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+!---- read field data in parallel (Sol=1, Fld=1 as written above)
+  CALL cgp_field_read_data_f(F, B, Z, 1, 1, C_LOC(rmin(1)), C_LOC(rmax(1)), C_LOC(fx(1)), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- close the file and terminate MPI
   CALL cgp_close_f(F, ierr)
