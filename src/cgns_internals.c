@@ -4952,6 +4952,10 @@ static int cgi_read_distribution_node(double parent_id, const char *parent_label
     if (cgi_read_node(id[0], name, data_type, &ndim, dim_vals, &vdata, READ_DATA)) {
         cgi_error("Error reading ControlPointDistribution under %s '%s'",
                   parent_label, parent_name);
+        /* cgi_read_node() allocates the payload before its last failure point
+         * (the cgio_read_all_data_type call), so vdata can be non-NULL here --
+         * as the very next error branch already assumes. */
+        if (vdata) CGNS_FREE(vdata);
         CGNS_FREE(id);
         return CG_ERROR;
     }

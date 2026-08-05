@@ -18983,10 +18983,16 @@ static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
      * conforming reader, since the only DataArray_t names permitted under these
      * nodes are LagrangeControlPoints and MonomialCoefficients. */
 
-    /* Replace any pre-existing node */
+    /* Replace any pre-existing node.  Bail out if the delete fails rather than
+     * dropping the in-memory node anyway: doing so would leave the file holding
+     * a node the database no longer knows about, so the cgi_new_node() below
+     * would collide on the duplicate name while a subsequent read reported
+     * CG_NODE_NOT_FOUND for something still on disk.  cgi_free_array() rather
+     * than a bare free of ->data, so ->link (populated by cgi_read_link() when
+     * this node came from a file) is released too. */
     if (*out_arr) {
-        cgi_delete_node(parent_id, (*out_arr)->id);
-        if ((*out_arr)->data) free((*out_arr)->data);
+        if (cgi_delete_node(parent_id, (*out_arr)->id)) return CG_ERROR;
+        cgi_free_array(*out_arr);
         CGNS_FREE(*out_arr);
         *out_arr = 0;
     }
