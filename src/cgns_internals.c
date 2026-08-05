@@ -1887,7 +1887,31 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                                 sol[0][s].temporalDegree, DataSize);
             
             if ( ret == CG_ERROR) return CG_ERROR;
-            if ( ret == CG_NODE_NOT_FOUND ) checksize = 0;
+            if ( ret == CG_NODE_NOT_FOUND ) {
+                /* Say which of the several distinct causes it was, and that the
+                 * consequence is unvalidated field lengths.  The generic
+                 * "Data Size checking disabled" warning emitted further down
+                 * fires long after the information is gone, leaving the user
+                 * nothing to act on.  Still a warning, not an error: the write
+                 * path rejects these files, but refusing to open one already on
+                 * disk would strand data that earlier versions accepted. */
+                if (hofam == NULL)
+                    cgi_warning("FlowSolution '%s': zone family '%s' does not "
+                                "resolve to a Family_t, so InterpolationPoints "
+                                "field lengths cannot be validated",
+                                sol[0][s].name,
+                                (zone && zone->family_name[0]) ?
+                                    zone->family_name : "<unset>");
+                else
+                    cgi_warning("FlowSolution '%s': no SolutionInterpolation_t "
+                                "under family '%s' matches this zone's elements "
+                                "at degree (%d,%d), so InterpolationPoints field "
+                                "lengths cannot be validated",
+                                sol[0][s].name, zone->family_name,
+                                sol[0][s].spatialDegree,
+                                sol[0][s].temporalDegree);
+                checksize = 0;
+            }
 
             /* add rinds (only when DataSize was actually computed) */
             if (checksize) {
@@ -8514,7 +8538,10 @@ int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
                     const cgns_family *family,
                     int spatialDegree, int temporalDegree, cgsize_t *DataSize)
 {
-    int i,j, ne;
+    int i,j;
+    /* cgsize_t: section->range is cgsize_t, and ne*npe is a total DOF count
+     * that can exceed INT_MAX on a large mesh (e.g. 1e8 HEXA_8 at 27 DOFs). */
+    cgsize_t ne;
     int npe, edim, ret;
 
     if (!zone) return CG_ERROR;
@@ -8586,7 +8613,9 @@ int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone 
                           const int temporalDegree, const cgsize_t imin, const cgsize_t imax,
                           cgsize_t *DataSize)
 {
-    int i, ne;
+    int i;
+    /* see cgi_ho_datasize: ne*npe is a DOF total, not an element count */
+    cgsize_t ne;
     int npe, edim, ret;
 
     if (!zone) return CG_ERROR;

@@ -18628,11 +18628,32 @@ int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
                                            int os, int ot, int *sz)
 {
     int tmp;
-    int error = cgi_get_basis_size(t, os, &tmp);
-    if (error == CG_OK) {
-        *sz = tmp * (cgsize_t)(ot+1);
+    int error;
+    cgsize_t total;
+
+    /* os reaches cg_npe_ho(), which bounds it; ot was unbounded here, and the
+     * product below is what callers pass to malloc(). */
+    if (ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Temporal interpolation order %d out of valid range [0, %d]",
+                  ot, CG_MAX_ORDER);
+        return CG_ERROR;
     }
-    return error;
+    error = cgi_get_basis_size(t, os, &tmp);
+    if (error != CG_OK) return error;
+
+    /* Compute in cgsize_t and range-check before narrowing: the old
+     * "*sz = tmp * (cgsize_t)(ot+1)" evaluated wide but stored into an int, so
+     * e.g. (HEXA_8, os=1000, ot=1000) returned CG_OK with sz = -1016343263 and
+     * a caller allocating sz*sizeof(double) got a negative length. */
+    total = (cgsize_t)tmp * (cgsize_t)(ot + 1);
+    if (total > (cgsize_t)INT_MAX) {
+        cgi_error("Interpolation point count %lld for element type %s at "
+                  "(os=%d, ot=%d) exceeds INT_MAX",
+                  (long long)total, cg_ElementTypeName(t), os, ot);
+        return CG_ERROR;
+    }
+    *sz = (int)total;
+    return CG_OK;
 }
 
 /* Helper function to compute binomial coefficient C(n, k)
@@ -18684,7 +18705,7 @@ static cgsize_t binomial_coefficient(int n, int k)
 int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz)
 {
     int dim;
-    cgsize_t spatial_coeffs;
+    cgsize_t spatial_coeffs, total;
 
     /* Guard against integer overflow in binomial_coefficient(os + dim, dim).
      * A malicious/corrupted file supplying os ~ INT_MAX would make os+dim wrap
@@ -18704,8 +18725,19 @@ int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *
     /* Number of spatial monomials = C(os + dim, dim) */
     spatial_coeffs = binomial_coefficient(os + dim, dim);
 
-    /* Multiply by temporal dimension (ot + 1) */
-    *sz = spatial_coeffs * (cgsize_t)(ot + 1);
+    /* Multiply by temporal dimension (ot + 1), range-checking before the
+     * narrowing store: os and ot are each bounded by CG_MAX_ORDER above, but
+     * their product is not, and sz is an int the caller sizes a malloc with.
+     * (HEXA_8, os=1000, ot=1000) used to return CG_OK with sz = 332444957
+     * against a true 168168168168. */
+    total = spatial_coeffs * (cgsize_t)(ot + 1);
+    if (total > (cgsize_t)INT_MAX) {
+        cgi_error("Monomial coefficient count %lld for element type %s at "
+                  "(os=%d, ot=%d) exceeds INT_MAX",
+                  (long long)total, cg_ElementTypeName(t), os, ot);
+        return CG_ERROR;
+    }
+    *sz = (int)total;
 
     return CG_OK;
 }
