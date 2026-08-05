@@ -5026,17 +5026,22 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     /* Not recoverable from disk: the IsoParametric and empty-nodal forms are
      * identical on disk by design, so this is a write-session flag only. */
     eltinterpolation->isoparametric = 0;
+    /* cgi_get_nodes() sets nnod = 0 before any of its own failure returns, so an
+     * unchecked failure here simply skips the loop below.  id is only allocated
+     * when nnod > 0, hence the "if (nnod)" on every free.  Errors inside the loop
+     * must go through err_free or the id list leaks -- this is the path an
+     * old-format file takes, so it is not a rare one. */
     cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
     if (nnod > 3) {
         cgi_error("Too many DataArray_t nodes (%d, max 3) under ElementInterpolation_t '%s'",
                   nnod, eltinterpolation->name);
-        return CG_ERROR;
+        goto err_free;
     }
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
             cg_io_error("cgio_get_name");
-            return CG_ERROR;
+            goto err_free;
         }
 
      /* LagrangeControlPoints */
@@ -5046,18 +5051,18 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
             eltinterpolation->lagrangePts[0].link = cgi_read_link(id[i]);
             eltinterpolation->lagrangePts[0].in_link = 0;
             if (cgi_read_array(&eltinterpolation->lagrangePts[0],
-                "LagrangeControlPoints", eltinterpolation->id)) return CG_ERROR;
+                "LagrangeControlPoints", eltinterpolation->id)) goto err_free;
 
              /* check data */
             if (strcmp(eltinterpolation->lagrangePts[0].data_type,"R8")) {
                 cgi_error("Error: Datatype %s not supported for %s",
                 eltinterpolation->lagrangePts[0].data_type, temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
             /* check dimension */
             if (eltinterpolation->lagrangePts[0].data_dim != 2) {
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
         }
      /* MonomialCoefficients is not permitted here: mesh interpolation is nodal
@@ -5066,12 +5071,12 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
       * SolutionInterpolation_t alone. */
         else if (strcmp(temp_name,"MonomialCoefficients")==0) {
             cgi_error("Error: 'MonomialCoefficients' is not a valid child of an ElementInterpolation_t node; mesh interpolation is nodal only and modal coefficients are solution-only.");
-            return CG_ERROR;
+            goto err_free;
         }
         else
         {
             cgi_error("Invalid DataArray_t node '%s' for ElementInterpolation_t node (expected 'LagrangeControlPoints').", temp_name);
-            return CG_ERROR;
+            goto err_free;
         }
     }   /* loop through DataArray_t */
     if (nnod) CGNS_FREE(id);
@@ -5083,6 +5088,10 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
             eltinterpolation->name, &eltinterpolation->lagrangeDist)) return CG_ERROR;
 
     return CG_OK;
+
+err_free:
+    if (nnod) CGNS_FREE(id);
+    return CG_ERROR;
 }
 int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation)
 {
@@ -5144,12 +5153,12 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     cgi_get_nodes(sltinterpolation->id, "InterpolationType_t", &nnod, &id);
     if (nnod != 1) {
       cgi_error("InterpolationType_t node required in SolutionInterpolation_t node.");
-      return CG_ERROR;
+      goto err_free;
     }
     else {
         if (cgio_get_name(cg->cgio, id[0], temp_name)) {
             cg_io_error("cgio_get_name");
-            return CG_ERROR;
+            goto err_free;
         }
         if (strcmp(temp_name,"InterpolationType")==0) {
           
@@ -5157,7 +5166,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             if (cgi_read_node(id[0], temp_name, data_type,
                 &ndim, dim_vals, &vdata, READ_DATA)) {
                 cgi_error("Error reading InterpolationType_t node");
-                return CG_ERROR;
+                if (vdata) CGNS_FREE(vdata);
+                goto err_free;
             }
             /* The payload must be validated before it is dereferenced.
              * cgi_read_node() leaves *data untouched for datatype MT, and
@@ -5169,8 +5179,7 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
                           "be an I4 scalar (got %s, ndim %d)",
                           sltinterpolation->name, data_type, ndim);
                 if (vdata) CGNS_FREE(vdata);
-                CGNS_FREE(id);
-                return CG_ERROR;
+                goto err_free;
             }
             edata = (int *)vdata;
             sltinterpolation->interpolationName = (CGNS_ENUMT(InterpolationType_t))edata[0];
@@ -5178,13 +5187,12 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             if (INVALID_ENUM(sltinterpolation->interpolationName, NofValidInterpolationTypes)) {
                 cgi_error("Invalid interpolation type %d in SolutionInterpolation_t node '%s'",
                           (int)sltinterpolation->interpolationName, sltinterpolation->name);
-                CGNS_FREE(id);
-                return CG_ERROR;
+                goto err_free;
             }
         }
         else {
             cgi_error("Only 'InterpolationType' named node of type InterpolationType_t allowed for SolutionInterpolation_t node.");
-            return CG_ERROR;
+            goto err_free;
         }
     }
     if(nnod) CGNS_FREE(id);
@@ -5202,13 +5210,13 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     if (nnod > 3) {
         cgi_error("Too many DataArray_t nodes (%d, max 3) under SolutionInterpolation_t '%s'",
                   nnod, sltinterpolation->name);
-        return CG_ERROR;
+        goto err_free;
     }
 
     for (i = 0; i < nnod; i++) {
         if (cgio_get_name(cg->cgio, id[i], temp_name)) {
             cg_io_error("cgio_get_name");
-            return CG_ERROR;
+            goto err_free;
         }
 
      /* LagrangeControlPoints */
@@ -5218,17 +5226,17 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             sltinterpolation->lagrangePts->link = cgi_read_link(id[i]);
             sltinterpolation->lagrangePts->in_link = 0;
             if (cgi_read_array(sltinterpolation->lagrangePts,
-                "LagrangeControlPoints", sltinterpolation->id)) return CG_ERROR;
+                "LagrangeControlPoints", sltinterpolation->id)) goto err_free;
 
              /* check data */
             if (strcmp(sltinterpolation->lagrangePts->data_type,"R8")) {
                 cgi_error("Error: Datatype %s not supported for %s",
                 sltinterpolation->lagrangePts->data_type, temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
             if (sltinterpolation->lagrangePts->data_dim != 2) {
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
         }
      /* MonomialCoefficients */
@@ -5238,23 +5246,23 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             sltinterpolation->monomialCoeff->link = cgi_read_link(id[i]);
             sltinterpolation->monomialCoeff->in_link = 0;
             if (cgi_read_array(sltinterpolation->monomialCoeff,
-                "MonomialCoefficients", sltinterpolation->id)) return CG_ERROR;
+                "MonomialCoefficients", sltinterpolation->id)) goto err_free;
 
              /* check data */
             if (strcmp(sltinterpolation->monomialCoeff->data_type,"R8")) {
                 cgi_error("Error: Datatype %s not supported for %s",
                 sltinterpolation->monomialCoeff->data_type, temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
             if (sltinterpolation->monomialCoeff->data_dim != 1) {
                 cgi_error("Error: %s incorrectly dimensioned node 'MonomialCoefficients'",temp_name);
-                return CG_ERROR;
+                goto err_free;
             }
         }
         else
         {
             cgi_error("Invalid DataArray_t node '%s' for SolutionInterpolation_t node (expected 'LagrangeControlPoints' or 'MonomialCoefficients').", temp_name);
-            return CG_ERROR;
+            goto err_free;
         }
     }   /* loop through DataArray_t */
     if (nnod) CGNS_FREE(id);
@@ -5265,6 +5273,13 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             sltinterpolation->name, &sltinterpolation->lagrangeDist)) return CG_ERROR;
 
     return CG_OK;
+
+/* nnod is reset to 0 before each cgi_get_nodes(), and id is only allocated when
+ * nnod > 0, so this frees whichever id list is currently live -- and nothing
+ * after the corresponding "if (nnod) CGNS_FREE(id)" has already run. */
+err_free:
+    if (nnod) CGNS_FREE(id);
+    return CG_ERROR;
 }
 int cgi_read_converg_from_list(int in_link, _childnode_t *nodelist, int nnodes, cgns_converg** converg)
 {
