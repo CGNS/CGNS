@@ -1814,6 +1814,11 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 #define HO_DIST_TOL 1.0e-8
 
+/* M_PI is not standard C, and MSVC omits it from <math.h> unless
+ * _USE_MATH_DEFINES is defined before the include -- fragile to header
+ * ordering, so the value is defined locally instead. */
+#define HO_PI 3.14159265358979323846
+
 /* The comparison tolerance CPEX-0045 fixes for matching a stored point set
  * against a named family.  One tolerance suffices because the standard also
  * tabulates the WarpAndBlend blending parameter, so each family and degree
@@ -1841,7 +1846,7 @@ static int ho_legendre_roots (int m, double *r)
     int i, it;
     if (m < 1) return -1;
     for (i = 0; i < m; i++) {
-        double x = -cos(M_PI * (2.0*i + 1.0) / (2.0*m));   /* Chebyshev guess */
+        double x = -cos(HO_PI * (2.0*i + 1.0) / (2.0*m));   /* Chebyshev guess */
         for (it = 0; it < 100; it++) {
             double pp, dpp, dx;
             ho_legendre (m, x, &pp, &dpp);
@@ -1879,7 +1884,7 @@ static int ho_gen_1d (CGNS_ENUMT(ControlPointDistribution_t) dist,
              * by Newton on P'_p using P''_p from the Legendre ODE */
             for (i = 1; i <= p-1; i++) {
                 int it;
-                double x = -cos(M_PI * i / (double)p);   /* Chebyshev guess */
+                double x = -cos(HO_PI * i / (double)p);   /* Chebyshev guess */
                 for (it = 0; it < 100; it++) {
                     double pp, dpp, ddpp, dx;
                     ho_legendre (p, x, &pp, &dpp);
@@ -1921,6 +1926,7 @@ static int ho_gen_1d (CGNS_ENUMT(ControlPointDistribution_t) dist,
  */
 
 #define HO_WB_MAXP 10   /* warp factor needs a dense solve of size (p+1) */
+
 
 /* Legendre P_0..P_p at x */
 static void ho_legendre_all (int p, double x, double *pv)
@@ -2056,8 +2062,8 @@ static int ho_wb_tri (int p, double *r, double *sarr)
         /* equilateral coordinates, then the three edge deformations */
         double x = -L2[i] + L3[i];
         double y = (-L2[i] - L3[i] + 2.0*L1[i]) / sqrt(3.0);
-        double b1c = cos(2.0*M_PI/3.0), b1s = sin(2.0*M_PI/3.0);
-        double b2c = cos(4.0*M_PI/3.0), b2s = sin(4.0*M_PI/3.0);
+        double b1c = cos(2.0*HO_PI/3.0), b1s = sin(2.0*HO_PI/3.0);
+        double b2c = cos(4.0*HO_PI/3.0), b2s = sin(4.0*HO_PI/3.0);
         double l1, l2, l3;
         x += W1 + b1c*W2 + b2c*W3;
         y += 0.0 + b1s*W2 + b2s*W3;
@@ -2125,8 +2131,8 @@ static int ho_evalshift (int p, double alpha, const double *L1,
         double W1 = (L2[i]*L3[i]) * 4.0*w1[i] * (1.0 + a1*a1);
         double W2 = (L1[i]*L3[i]) * 4.0*w2[i] * (1.0 + a2*a2);
         double W3 = (L1[i]*L2[i]) * 4.0*w3[i] * (1.0 + a3*a3);
-        dx[i] = W1 + cos(2.0*M_PI/3.0)*W2 + cos(4.0*M_PI/3.0)*W3;
-        dy[i] =      sin(2.0*M_PI/3.0)*W2 + sin(4.0*M_PI/3.0)*W3;
+        dx[i] = W1 + cos(2.0*HO_PI/3.0)*W2 + cos(4.0*HO_PI/3.0)*W3;
+        dy[i] =      sin(2.0*HO_PI/3.0)*W2 + sin(4.0*HO_PI/3.0)*W3;
     }
     rc = 0;
 done:
