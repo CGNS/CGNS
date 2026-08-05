@@ -18801,7 +18801,7 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
     /* Replace any existing on-disk node and in-memory cache (CG_MODE_MODIFY). */
     if (sinterp->monomialCoeff) {
         cgi_delete_node(sinterp->id, sinterp->monomialCoeff->id);
-        if (sinterp->monomialCoeff->data) free(sinterp->monomialCoeff->data);
+        free(sinterp->monomialCoeff->data);
         CGNS_FREE(sinterp->monomialCoeff);
         sinterp->monomialCoeff = 0;
     }
