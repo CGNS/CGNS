@@ -5810,17 +5810,17 @@ CONTAINS
     IMPLICIT NONE
     INTEGER(cgenum_t), INTENT(IN) :: etype
     INTEGER, INTENT(IN) :: os, ot
-    INTEGER(cgsize_t), INTENT(OUT) :: nsize
+    INTEGER, INTENT(OUT) :: nsize
     INTEGER, INTENT(OUT) :: ier
-    INTEGER(cgsize_t) :: c_nsize
+    INTEGER(C_INT) :: c_nsize
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_solution_monomial_size(etype, os, ot, nsize) &
           BIND(C, name="cg_solution_monomial_size")
-        IMPORT :: C_INT, cgenum_t, cgsize_t
+        IMPORT :: C_INT, cgenum_t
         IMPLICIT NONE
         INTEGER(cgenum_t), VALUE :: etype
         INTEGER(C_INT), VALUE :: os, ot
-        INTEGER(cgsize_t) :: nsize
+        INTEGER(C_INT) :: nsize
       END FUNCTION cg_solution_monomial_size
     END INTERFACE
     ier = INT(cg_solution_monomial_size(etype, INT(os,C_INT), INT(ot,C_INT), c_nsize))
@@ -9491,18 +9491,18 @@ CONTAINS
   SUBROUTINE cg_element_lagrange_interpolation_size_f(type, sz, ier)
     IMPLICIT NONE
     INTEGER(cgenum_t), INTENT(IN) :: type
-    INTEGER(cgsize_t), INTENT(OUT) :: sz
+    INTEGER, INTENT(OUT) :: sz
     INTEGER, INTENT(OUT) :: ier
 
-    INTEGER(cgsize_t) :: c_sz
+    INTEGER(C_INT) :: c_sz
 
     INTERFACE
       INTEGER(c_int) FUNCTION cg_element_lagrange_interpolation_size(type, sz) &
         BIND(C, name="cg_element_lagrange_interpolation_size")
-        IMPORT :: c_int, cgenum_t, cgsize_t
+        IMPORT :: c_int, cgenum_t
         IMPLICIT NONE
         INTEGER(cgenum_t), VALUE :: type
-        INTEGER(cgsize_t) :: sz
+        INTEGER(C_INT) :: sz
       END FUNCTION cg_element_lagrange_interpolation_size
     END INTERFACE
 
@@ -9521,20 +9521,20 @@ CONTAINS
     INTEGER(cgenum_t), INTENT(IN) :: type
     INTEGER, INTENT(IN) :: os
     INTEGER, INTENT(IN) :: ot
-    INTEGER(cgsize_t), INTENT(OUT) :: sz
+    INTEGER, INTENT(OUT) :: sz
     INTEGER, INTENT(OUT) :: ier
 
-    INTEGER(cgsize_t) :: c_sz
+    INTEGER(C_INT) :: c_sz
 
     INTERFACE
       INTEGER(c_int) FUNCTION cg_solution_lagrange_interpolation_size(type, os, ot, sz) &
         BIND(C, name="cg_solution_lagrange_interpolation_size")
-        IMPORT :: c_int, cgenum_t, cgsize_t
+        IMPORT :: c_int, cgenum_t
         IMPLICIT NONE
         INTEGER(cgenum_t), VALUE :: type
         INTEGER(c_int), VALUE :: os
         INTEGER(c_int), VALUE :: ot
-        INTEGER(cgsize_t) :: sz
+        INTEGER(C_INT) :: sz
       END FUNCTION cg_solution_lagrange_interpolation_size
     END INTERFACE
 

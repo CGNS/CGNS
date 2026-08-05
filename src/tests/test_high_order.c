@@ -22,7 +22,7 @@ int main (int argc, char **argv)
 {
     double start, finish;
     int error, i, j, iset, ii, jj, ni, nj, ifirstnode, ielem_no, nbdyelem, n;
-    cgsize_t nsize;
+    int nsize;
     int ncount;
     double *x;
     double *y;
@@ -37,7 +37,7 @@ int main (int argc, char **argv)
     int cgfile, cgbase, cgzone, cgsection, cgfamily, cgsol, cgcoord, cgeinterp, cgsinterp;
     char einterpName[33],sinterpname[33],fieldname[33],zonename[33],familyname[33],sectionname[33],solname[33];
     int os,ot,cntneinterp,neinterp,nsinterp;
-    cgsize_t nbsolpts;
+    int nbsolpts;
     
     
     int order = 2;

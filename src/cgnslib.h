@@ -1266,7 +1266,7 @@ CGNSDLL int cg_element_interpolation_points_write(int fn, int bn, int fam, int e
 CGNSDLL int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_name,
                                            CGNS_ENUMT(ElementType_t) et, int *en);
 
-CGNSDLL int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, cgsize_t *sz);
+CGNSDLL int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int *sz);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write SolutionInterpolation_t Nodes                     *
@@ -1297,7 +1297,7 @@ CGNSDLL int cg_solution_interpolation_write(int fn, int bn, int fam, const char 
 CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn,
                                                    double *pu, double *pv, double *pw, double *pt);
 
-CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsize_t *sz);
+CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Modal (Monomial) Interpolation Functions                         *
@@ -1308,7 +1308,7 @@ CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
  *      coefficients and has no modal accessors.                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsize_t *sz);
+CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
 
 CGNSDLL int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff);
 

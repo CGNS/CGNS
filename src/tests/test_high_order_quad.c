@@ -30,7 +30,7 @@ int test_quad_element(CGNS_ENUMT(ElementType_t) type, const char* name,
                       int order, int npts)
 {
     int error, i, nfam1, nfam2, n;
-    cgsize_t nsize;
+    int nsize;
     double *pu, *pv, *puu, *pvv;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) etyperead;

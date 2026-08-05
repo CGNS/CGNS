@@ -98,7 +98,7 @@ double *createField(size_t nbelements)
 {
   // Allocate field for (3rd order in space and 0th in time) solution on Quadrangle
   double *f;
-  cgsize_t sz;
+  int sz;
   int error;
   error = cg_solution_lagrange_interpolation_size(CGNS_ENUMV(QUAD_4),3,0,&sz);
   if (error)
@@ -114,7 +114,7 @@ double *createField(size_t nbelements)
 void solutionLagrangeBasis(double **u, double **v)
 {
   cgsize_t i;
-  cgsize_t sz;
+  int sz;
   cg_solution_lagrange_interpolation_size(CGNS_ENUMV(QUAD_4),3,0,&sz);
   
   u[0] = (double*)malloc(sz*sizeof(double));

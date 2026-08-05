@@ -24,7 +24,7 @@ int test_temporal_degree1(void)
     int spatial_degree = 2, temporal_degree = 1;
     int os_read, ot_read;
     cgsize_t npts_spatial;
-    cgsize_t npts_total;
+    int npts_total;
     int failed_points = 0;
 
     printf("\n==============================================\n");
@@ -181,7 +181,7 @@ int test_temporal_degree1(void)
 
     /* Check control point size */
     printf("Validating Lagrange control point dimensions...\n");
-    cgsize_t size_check;
+    int size_check;
     if (cg_solution_lagrange_interpolation_size(etyperead, os_read, ot_read, &size_check))
     {
         fprintf(stderr, "ERROR: Failed to get interpolation size\n");
@@ -313,7 +313,7 @@ int test_temporal_higher_orders(void)
     char filename[64];
     int spatial_degree = 2;
     int os_read, ot_read;
-    cgsize_t npts_total;
+    int npts_total;
     int failed_points;
 
     /* Test both quadratic (order 2) and cubic (order 3) temporal interpolation */

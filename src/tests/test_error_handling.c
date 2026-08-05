@@ -266,7 +266,7 @@ int test_out_of_range_orders(void)
      * os=INT_MAX makes os+dim wrap negative, binomial_coefficient returns 1, and a
      * subsequent write can overflow the tiny allocation.  Verify the guard fires. */
     {
-        cgsize_t msize;
+        int msize;
         printf("Testing INT_MAX spatial order in cg_solution_monomial_size (overflow guard)...\n");
         result = cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), INT_MAX, 0, &msize);
         if (result == CG_OK)

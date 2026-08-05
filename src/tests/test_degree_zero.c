@@ -81,7 +81,7 @@ static cgsize_t write_case(const char *filename, int p, int q,
     if (it == CGNS_ENUMV(ParametricLagrange)) {
         /* One control point: its nodal function is identically one, and a
          * single point is unisolvent for P0. */
-        cgsize_t npts = 0;
+        int npts = 0;
         double pu[8], pv[8];
         if (check(cg_solution_lagrange_interpolation_size(CGNS_ENUMV(QUAD_4), p, q, &npts),
                   "lagrange size at degree 0")) return -1;
@@ -95,7 +95,7 @@ static cgsize_t write_case(const char *filename, int p, int q,
         if (check(cg_solution_interpolation_points_write(fn, B, F, si, pu, pv, NULL,
                   q > 0 ? pv : NULL), "lagrange points at degree 0")) return -1;
     } else {
-        cgsize_t nmodal = 0;
+        int nmodal = 0;
         double *coeff;
         if (check(cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), p, q, &nmodal),
                   "monomial size at degree 0")) return -1;

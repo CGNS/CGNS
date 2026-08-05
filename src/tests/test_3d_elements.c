@@ -120,7 +120,7 @@ int test_3d_element(CGNS_ENUMT(ElementType_t) type, const char* name,
                     int npts, void (*fill_func)(int, double*, double*, double*))
 {
     int error, i, nfam1, nfam2, n;
-    cgsize_t nsize;
+    int nsize;
     double *pu, *pv, *pw, *puu, *pvv, *pww;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) etyperead;

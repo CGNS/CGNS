@@ -17712,7 +17712,7 @@ int cg_element_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(
  * When order = -1, the function uses cg_npe() to get the size from element type.
  * When order >= 0, the function uses cg_npe_ho() with the specified order.
  */
-static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, cgsize_t *sz)
+static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, int *sz)
 {
     int npe;
     int result;
@@ -17726,7 +17726,7 @@ static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, cgsize_t *
     }
 
     if (result == CG_OK) {
-        *sz = (cgsize_t)npe;
+        *sz = npe;
     }
     return result;
 }
@@ -17772,7 +17772,7 @@ static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, cgsize_t *
  * \endcode
  */
 int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
-                                           cgsize_t *sz)
+                                           int *sz)
 {
     int result = cgi_get_basis_size(t, -1, sz);
     return result;
@@ -18007,7 +18007,7 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     int npe = lpts->dim_vals[1];
 
     /* Sanity Check */
-    cgsize_t sz=0;
+    int sz=0;
     int dim;
     if (cg_element_dimension(es->type, &dim) != CG_OK) return CG_ERROR;
     if (cg_solution_lagrange_interpolation_size(es->type, so, to, &sz) != CG_OK) return CG_ERROR;
@@ -18330,7 +18330,7 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
                                            double *pt)
 {
     int ot,os,n,edim;
-    cgsize_t nnodes;
+    int nnodes;
     double *ids, *data;
     double dummy_id;
     cgsize_t dim_vals;
@@ -18619,9 +18619,9 @@ int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementTy
  * \endcode
  */
 int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
-                                           int os, int ot, cgsize_t *sz)
+                                           int os, int ot, int *sz)
 {
-    cgsize_t tmp;
+    int tmp;
     int error = cgi_get_basis_size(t, os, &tmp);
     if (error == CG_OK) {
         *sz = tmp * (cgsize_t)(ot+1);
@@ -18675,7 +18675,7 @@ static cgsize_t binomial_coefficient(int n, int k)
 
 /* Calculate number of monomial coefficients for solution interpolation */
 
-int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsize_t *sz)
+int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz)
 {
     int dim;
     cgsize_t spatial_coeffs;
@@ -18728,7 +18728,7 @@ int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, cgsiz
 int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff)
 {
     cgsize_t i;
-    cgsize_t ncoeff;
+    int ncoeff;
     double *data;
     double dummy_id;
     cgsize_t dim_vals[2];
@@ -18851,7 +18851,7 @@ int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn
 int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn, double *coeff)
 {
     cgsize_t i;
-    cgsize_t ncoeff;
+    int ncoeff;
     cgns_family *family;
     cgns_solutionInterpolation *sinterp;
     cgns_array *mcoeff;

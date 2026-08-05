@@ -21,13 +21,14 @@
       real(kind=dp), allocatable :: r(:)
       real(kind=dp), allocatable :: scoeff(:), scoeff_read(:)
       integer(cgsize_t), allocatable :: ielem(:)
-      integer(cgsize_t) :: scoeff_size
+      integer :: scoeff_size
 
       integer :: ierr, i, j, ii, jj, iset, ifirstnode, ielem_no
       integer :: cgfile, cgbase, cgzone, cgcoord, cgsection, cgfamily
       integer :: cgeinterp, cgsinterp, cgsmodal, cgsol, nfield
       integer :: neinterp, nsinterp, os, ot, ncount
-      integer(cgsize_t) :: size(9), nsize, nbsolpts
+      integer(cgsize_t) :: size(9)
+      integer :: nsize, nbsolpts
       integer(cgsize_t) :: nelem_start, nelem_end, nbdyelem
 
       character(len=32) :: fname

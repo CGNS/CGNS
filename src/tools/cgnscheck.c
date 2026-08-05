@@ -2498,7 +2498,7 @@ static int ho_ndofs (int fnum, CGNS_ENUMT(ElementType_t) el_type,
                      int spatialDegree, int temporalDegree, cgsize_t *ndofs)
 {
     int sn, npe;
-    cgsize_t sz;
+    int sz;
     CGNS_ENUMT(InterpolationType_t) it;
 
     *ndofs = 0;
@@ -7131,7 +7131,7 @@ static void check_family (int fam)
         }
 
         /* Validate: Get expected size for this element type */
-        cgsize_t tmp_i;
+        int tmp_i;
         cg_element_lagrange_interpolation_size(etype,&tmp_i);
         i = tmp_i;
         if (i <= 0) {
@@ -7267,7 +7267,7 @@ static void check_family (int fam)
         }
 
         /* Validate: Get expected size for this element type and orders */
-        cgsize_t tmp_i2;
+        int tmp_i2;
         if (cg_solution_lagrange_interpolation_size(etype, os, ot, &tmp_i2) != CG_OK) {
             error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size failed "
                   "for element type %s with orders (spatial=%d, temporal=%d)",
@@ -7327,7 +7327,7 @@ static void check_family (int fam)
 
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
-            cgsize_t npt_size;
+            int npt_size;
             cg_solution_lagrange_interpolation_size(btype,os,ot,&npt_size);
             npt = (int)npt_size;
 

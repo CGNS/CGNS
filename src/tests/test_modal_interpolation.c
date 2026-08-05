@@ -7,7 +7,7 @@
 /* Test monomial coefficient size calculations */
 int test_monomial_size()
 {
-    cgsize_t sz;
+    int sz;
     int expected;
 
     printf("\n==============================================\n");
@@ -78,7 +78,7 @@ int test_solution_modal()
 {
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
     int i, n;
-    cgsize_t ncoeff;
+    int ncoeff;
     int spatialdegree = 3, temporaldegree = 1;
     double *coeff, *coeff_read;
     cgsize_t size[9];
