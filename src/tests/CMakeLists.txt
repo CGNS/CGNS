@@ -250,8 +250,12 @@ if (CGNS_ENABLE_TESTS)
       test_dist_wbtet_p2.cgns          # test_distribution: TETRA W&B p=2
       test_dist_wbtet_p3.cgns          # test_distribution: TETRA W&B p=3
   )
-  set(CGNSCHECK_HO_DEPENDS test_high_order test_mixed_ho test_degree_zero
-                           test_distribution)
+  # A fixture, not DEPENDS: ctest honours FIXTURES_REQUIRED even when the run is
+  # filtered with -R, so the producers cannot be skipped, leaving a cgnscheck
+  # test to run against a file that was never written.
+  set_tests_properties(test_high_order test_mixed_ho test_degree_zero
+                       test_distribution
+                       PROPERTIES FIXTURES_SETUP HO_TEST_FILES)
 
   foreach(HOFILE IN LISTS CGNSCHECK_HO_FILES)
     foreach(MODE default strict)
@@ -269,7 +273,8 @@ if (CGNS_ENABLE_TESTS)
       # printed without being counted.  Warnings are tolerated.
       set_tests_properties(cgnscheck_${HOFILE}_${_suffix} PROPERTIES
         FAIL_REGULAR_EXPRESSION "ERROR"
-        DEPENDS "${CGNSCHECK_HO_DEPENDS}")
+        FIXTURES_REQUIRED HO_TEST_FILES
+        TIMEOUT 120)
       if(CGNS_BUILD_SHARED)
         set_tests_properties(cgnscheck_${HOFILE}_${_suffix} PROPERTIES
           ENVIRONMENT_MODIFICATION
@@ -286,26 +291,30 @@ if (CGNS_ENABLE_TESTS)
   add_test(NAME cgnscheck_dist_mismatch_strict_fails
            COMMAND cgnscheck -s test_dist_mismatch.cgns)
   set_tests_properties(cgnscheck_dist_mismatch_strict_fails PROPERTIES
-    WILL_FAIL TRUE
-    DEPENDS "test_distribution")
+    PASS_REGULAR_EXPRESSION "do not match the named distribution"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
 
   add_test(NAME cgnscheck_dist_wb_bad_strict_fails
            COMMAND cgnscheck -s test_dist_wb_p3_bad.cgns)
   set_tests_properties(cgnscheck_dist_wb_bad_strict_fails PROPERTIES
-    WILL_FAIL TRUE
-    DEPENDS "test_distribution")
+    PASS_REGULAR_EXPRESSION "do not match the named distribution"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
 
   add_test(NAME cgnscheck_dist_wbtet_bad_strict_fails
            COMMAND cgnscheck -s test_dist_wbtet_p3_bad.cgns)
   set_tests_properties(cgnscheck_dist_wbtet_bad_strict_fails PROPERTIES
-    WILL_FAIL TRUE
-    DEPENDS "test_distribution")
+    PASS_REGULAR_EXPRESSION "do not match the named distribution"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
 
   add_test(NAME cgnscheck_dist_mismatch_default_passes
            COMMAND cgnscheck test_dist_mismatch.cgns)
   set_tests_properties(cgnscheck_dist_mismatch_default_passes PROPERTIES
     PASS_REGULAR_EXPRESSION "do not match the named distribution"
-    DEPENDS "test_distribution")
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)

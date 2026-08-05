@@ -1819,6 +1819,14 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
  * ordering, so the value is defined locally instead. */
 #define HO_PI 3.14159265358979323846
 
+/* Largest degree for which node sets are generated.  Well above any practical
+ * interpolation degree; beyond it the comparison reports "not performed", which
+ * is the conformant outcome.  Bounds the 1D work arrays too -- these were
+ * previously sized by CG_MAX_ORDER (1000), an unrelated constant that put 8 KB
+ * on the stack and let the guard admit degrees the rest of the code cannot
+ * handle. */
+#define HO_GEN_MAXP 32
+
 /* The comparison tolerance CPEX-0045 fixes for matching a stored point set
  * against a named family.  One tolerance suffices because the standard also
  * tabulates the WarpAndBlend blending parameter, so each family and degree
@@ -2264,11 +2272,11 @@ static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
                            CGNS_ENUMT(ControlPointDistribution_t) dist,
                            int p, double **gu, double **gv, double **gw, int *dim)
 {
-    double u1[CG_MAX_ORDER+2];
+    double u1[HO_GEN_MAXP+1];
     int i, j, k, np = 0, n1 = p + 1;
 
     *gu = *gv = *gw = NULL;
-    if (p < 0 || n1 > (int)(sizeof(u1)/sizeof(u1[0]))) return -1;
+    if (p < 0 || p > HO_GEN_MAXP) return -1;
 
     /* Tensor-product families: the 1D rule is applied independently per
      * parametric direction. */

@@ -4953,8 +4953,8 @@ static int cgi_read_distribution_node(double parent_id, const char *parent_label
     (*dist)->id = id[0];
     (*dist)->link = cgi_read_link(id[0]);
     (*dist)->in_link = 0;
-    strcpy((*dist)->name, name);
-    strcpy((*dist)->data_type, "I4");
+    snprintf((*dist)->name, sizeof((*dist)->name), "%s", name);
+    snprintf((*dist)->data_type, sizeof((*dist)->data_type), "%s", "I4");
     (*dist)->data_dim = 1;
     (*dist)->dim_vals[0] = 1;
     (*dist)->data = vdata;   /* ownership transfers to the struct */
