@@ -5821,7 +5821,7 @@ static void check_solution (int ns)
        * the field arrays of this FlowSolution_t are enumerated below. */
       go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
       if (datasize < 0) {
-        if (ptsetlist) free(ptsetlist);
+        free(ptsetlist);
         error("could not compute high-order data size for solution \"%s\"", name);
         return;
       }
@@ -5829,7 +5829,7 @@ static void check_solution (int ns)
     else
       datasize = get_data_size (z, location, rind);
 
-    if (ptsetlist) free(ptsetlist);
+    free(ptsetlist);
     
     /* read solution data as arrays to get size */
 
@@ -5857,7 +5857,7 @@ static void check_solution (int ns)
             size *= dims[id];
         if (ndim != z->idim || size < 1 ||
             (datasize && size != datasize))
-            error ("bad dimension values. required %ld, %ld given",datasize,size);
+            error ("bad dimension values. required %"PRIdCGSIZE", %"PRIdCGSIZE" given",datasize,size);
         check_quantity (n, name, dataclass, punits, 1, 6);
     }
 
