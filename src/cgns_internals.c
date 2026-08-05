@@ -8453,7 +8453,7 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, const cgns_family 
                                        int spatialDegree, int temporalDegree,
                                        cgsize_t rmin, cgsize_t rmax, cgsize_t *DataSize)
 {
-    cgsize_t ne, pos = 0, elem_idx;
+    cgsize_t pos = 0, elem_idx;
     cgsize_t nelems_section = section->range[1] - section->range[0] + 1;
     cgsize_t first_elem_offset = rmin - section->range[0];  /* 0-based offset */
     cgsize_t last_elem_offset = rmax - section->range[0];   /* 0-based offset */

@@ -17632,8 +17632,8 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     if (cgi_new_node(einterp->id, einterp->lagrangePts->name, "DataArray_t", &einterp->lagrangePts->id,
         einterp->lagrangePts->data_type, einterp->lagrangePts->data_dim, einterp->lagrangePts->dim_vals,
         einterp->lagrangePts->data)) {
-        /* Free allocated memory on error */
-        if (einterp->lagrangePts->data) free(einterp->lagrangePts->data);
+        /* Free allocated memory on error (free(NULL) is a no-op) */
+        free(einterp->lagrangePts->data);
         CGNS_FREE(einterp->lagrangePts);
         einterp->lagrangePts = 0;
         return CG_ERROR;
@@ -18459,8 +18459,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     if (cgi_new_node(sinterp->id, sinterp->lagrangePts->name, "DataArray_t", &sinterp->lagrangePts->id,
                      sinterp->lagrangePts->data_type, sinterp->lagrangePts->data_dim, sinterp->lagrangePts->dim_vals,
                      sinterp->lagrangePts->data)) {
-        /* Free allocated memory on error */
-        if (sinterp->lagrangePts->data) free(sinterp->lagrangePts->data);
+        /* Free allocated memory on error (free(NULL) is a no-op) */
+        free(sinterp->lagrangePts->data);
         CGNS_FREE(sinterp->lagrangePts);
         sinterp->lagrangePts = 0;
         return CG_ERROR;
