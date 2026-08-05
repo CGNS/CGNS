@@ -2252,7 +2252,8 @@ done:
 }
 
 /* Generate the full lattice for a basic element type.  Returns the point count,
- * or -1 when the combination cannot be generated.  Caller frees *gu/*gv/*gw. */
+ * or -1 when the combination cannot be generated.  The caller frees the three
+ * coordinate arrays returned through gu, gv and gw. */
 static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
                            CGNS_ENUMT(ControlPointDistribution_t) dist,
                            int p, double **gu, double **gv, double **gw, int *dim)

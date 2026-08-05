@@ -42,7 +42,15 @@ CALL = \
 	test_convert_elem$(EXE) \
 	test_back_comp$(EXE) \
 	test_complex$(EXE) \
-	test_mixed_ho$(EXE)
+	test_mixed_ho$(EXE) \
+	test_characteristic_length$(EXE) \
+	test_degree_zero$(EXE) \
+	test_distribution$(EXE) \
+	test_error_handling$(EXE) \
+	test_isoparametric$(EXE) \
+	test_modal_interpolation$(EXE) \
+	test_spacetime$(EXE) \
+	test_variable_order$(EXE)
 
 F_TESTS = \
 	cgiof_F03$(EXE) \
@@ -56,6 +64,7 @@ F_TESTS = \
 	test_particlef$(EXE) \
 	test_complexf$(EXE) \
 	test_high_orderf$(EXE) \
+	test_ho_apif$(EXE) \
 	test_cg_npe_f$(EXE)
 
 FALL = $(F_TESTS)
@@ -292,6 +301,54 @@ test_mixed_ho$(EXE) : test_mixed_ho.c utils.$(O) $(CGNSLIB)
 
 #----------
 
+test_characteristic_length$(EXE) : test_characteristic_length.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_characteristic_length.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_degree_zero$(EXE) : test_degree_zero.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_degree_zero.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_distribution$(EXE) : test_distribution.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_distribution.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_error_handling$(EXE) : test_error_handling.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_error_handling.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_isoparametric$(EXE) : test_isoparametric.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_isoparametric.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_modal_interpolation$(EXE) : test_modal_interpolation.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_modal_interpolation.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_spacetime$(EXE) : test_spacetime.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_spacetime.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_variable_order$(EXE) : test_variable_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_variable_order.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
 test_convert_elem$(EXE) : test_convert_elem.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_convert_elem.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -413,6 +470,12 @@ test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
 
 test_high_orderf$(EXE) : test_high_orderf.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_high_orderf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_ho_apif$(EXE) : test_ho_apif.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_ho_apif.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

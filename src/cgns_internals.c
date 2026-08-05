@@ -2143,11 +2143,22 @@ int cgi_read_solution_order(cgns_sol *sol)
         for (n=0;n<nIA;n++) {
             if (cgio_get_name(cg->cgio, idf[n], temp_name)) {
                 cg_io_error("cgio_get_name");
+                CGNS_FREE(idf);
                 return CG_ERROR;
             }
-      
-            if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
-            if (strcmp(temp_name, "InterpolationDegrees")==0) {
+
+            /* Test the name before reading the payload.  A FlowSolution_t can
+             * carry other IndexArray_t children -- PointList, notably -- and
+             * reading their data here allocated a buffer that only the
+             * InterpolationDegrees branch below ever freed, leaking on every
+             * successful read of a variable-order solution. */
+            if (strcmp(temp_name, "InterpolationDegrees")) continue;
+
+            if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) {
+                CGNS_FREE(idf);
+                return CG_ERROR;
+            }
+            {
                 if (strcmp(data_type,"I4")) {
                     cgi_error("InterpolationDegrees in FlowSolution '%s': expected I4 data type, got %s",
                               sol->name, data_type);
