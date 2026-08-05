@@ -316,6 +316,15 @@ if (CGNS_ENABLE_TESTS)
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
+  if(CGNS_BUILD_SHARED)
+    set_tests_properties(cgnscheck_dist_mismatch_strict_fails
+                         cgnscheck_dist_wb_bad_strict_fails
+                         cgnscheck_dist_wbtet_bad_strict_fails
+                         cgnscheck_dist_mismatch_default_passes
+      PROPERTIES ENVIRONMENT_MODIFICATION
+      "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
+  endif()
+
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)
     foreach(TARGETNAME ${FORTRAN_TESTS_LIST})

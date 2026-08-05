@@ -2426,21 +2426,9 @@ static void ho_check_distribution (const char *what, const char *nodename,
     double *gu, *gv, *gw;
     int np, dim = 0;
 
-    /* TRACE: diagnostic-only, written to stderr and flushed immediately, so a
-     * hang anywhere below shows in the CI log exactly how far execution got.
-     * Distinct wording deliberately avoids matching this test suite's
-     * PASS/FAIL_REGULAR_EXPRESSION checks ("ERROR", "do not match ..."). */
-    fprintf (stderr, "TRACE: ho_check_distribution enter %s \"%s\" dist=%d p=%d npt=%d\n",
-             what, nodename, (int)dist, p, npt);
-    fflush (stderr);
-
     if (cg_element_basic_element_type (etype, &btype) != CG_OK) return;
-    fprintf (stderr, "TRACE: basic_element_type ok, btype=%d\n", (int)btype);
-    fflush (stderr);
 
     np = ho_gen_lattice (btype, dist, p, &gu, &gv, &gw, &dim);
-    fprintf (stderr, "TRACE: ho_gen_lattice returned np=%d dim=%d\n", np, dim);
-    fflush (stderr);
     if (np < 0) {
         /* Report the comparison as NOT PERFORMED, never as a mismatch: this
          * implementation not generating a family says nothing about the file,
@@ -2460,14 +2448,7 @@ static void ho_check_distribution (const char *what, const char *nodename,
         return;
     }
 
-    fprintf (stderr, "TRACE: calling ho_points_match np=%d dim=%d tol=%g\n",
-             np, dim, HO_DIST_TOL);
-    fflush (stderr);
-    {
-    int mismatch = ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_DIST_TOL);
-    fprintf (stderr, "TRACE: ho_points_match returned %d\n", mismatch);
-    fflush (stderr);
-    if (mismatch) {
+    if (ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_DIST_TOL)) {
         /* The coordinates are authoritative and the name is advisory, so a
          * mismatch is not grounds for rejecting the file: it is an error only
          * under -s, and the remedy is to correct or drop the name, never to
@@ -2489,9 +2470,6 @@ static void ho_check_distribution (const char *what, const char *nodename,
         printf ("      control points match %s at degree %d\n",
                 cg_ControlPointDistributionName(dist), p);
     }
-    }
-    fprintf (stderr, "TRACE: ho_check_distribution exit\n");
-    fflush (stderr);
     free(gu); free(gv); free(gw);
 }
 
