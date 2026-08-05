@@ -1814,17 +1814,10 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 #define HO_DIST_TOL 1.0e-8
 
-/* The comparison tolerance CPEX-0045 v4 fixes.  v3 left it to "its chosen
- * tolerance" per implementation, which is itself ambiguity -- two conforming
- * validators could disagree about the same file, and one would report an error.
- *
- * A single tolerance is sufficient because v4 also tabulates the WarpAndBlend
- * blending parameter alpha.  Under v3, where alpha was free, an exact comparison
- * could have rejected a conformant file whose interior nodes were placed with a
- * different alpha (displacements against alpha = 0 reach ~2.7e-2 by degree 10),
- * and this checker carried a second, looser band to avoid that.  With alpha
- * pinned there is one correct point set per family and degree, so the band is
- * gone. */
+/* The comparison tolerance CPEX-0045 fixes for matching a stored point set
+ * against a named family.  One tolerance suffices because the standard also
+ * tabulates the WarpAndBlend blending parameter, so each family and degree
+ * denotes exactly one point set. */
 
 /* Legendre polynomial P_n and its derivative at x, by the standard recurrence */
 static void ho_legendre (int nn, double x, double *p, double *dp)
@@ -1903,10 +1896,8 @@ static int ho_gen_1d (CGNS_ENUMT(ControlPointDistribution_t) dist,
         return 0;
 
     case CGNS_ENUMV(GaussLegendre):
-        /* p+1 interior nodes, i.e. the roots of P_{p+1}.  NOTE: the standard
-         * says "roots of P_p", which yields p nodes where p+1 are needed --
-         * an off-by-one raised as a v4 item.  P_{p+1} is used here because it
-         * is the only reading that produces a unisolvent set. */
+        /* p+1 interior nodes, i.e. the roots of P_{p+1} -- p+1 nodes are needed
+         * for a degree-p basis, and only that count is unisolvent. */
         return ho_legendre_roots (p+1, u);
 
     default:
