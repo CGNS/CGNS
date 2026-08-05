@@ -68,6 +68,66 @@ static const CGNS_ENUMT(ControlPointDistribution_t) named[4] = {
     CGNS_ENUMV(WarpAndBlend)
 };
 
+
+/* ------------------------------------------------------------------ */
+/* H - WarpAndBlend on the triangle.                                   */
+/*                                                                     */
+/* Reference node sets for the bi-unit triangle, computed independently */
+/* from the Warburton construction (J. Engrg. Math. 56(3):247-262) and  */
+/* checked against three properties it must have: at p=2 it reduces     */
+/* exactly to equidistant, since the 1D GLL nodes are then {-1,0,1};    */
+/* at p=3 it has a single interior node, at the centroid; and at every  */
+/* degree the node set is invariant under the triangle's rotation.      */
+/* Pinning the values here keeps cgnscheck's generator honest -- a      */
+/* generator validated only against itself would accept its own drift.  */
+/* ------------------------------------------------------------------ */
+static const double wb_tri3_u[10] = {
+        -1, -0.44721359549995804, 0.44721359549995804, 1,
+        -1.0000000000000002, -0.33333333333333343, 0.44721359549995782,
+        -0.99999999999999989, -0.44721359549995804, -1};
+static const double wb_tri3_v[10] = {
+        -1, -1, -1, -1, -0.44721359549995809, -0.33333333333333343,
+        -0.44721359549995782, 0.44721359549995765, 0.44721359549995804, 1};
+static const double wb_tri4_u[15] = {
+        -1, -0.65465367070797709, 0, 0.65465367070797709, 1, -1,
+        -0.55158350755530561, 0.10316701511061113, 0.6546536707079772, -1,
+        -0.55158350755530561, 0, -0.99999999999999989, -0.65465367070797709,
+        -1};
+static const double wb_tri4_v[15] = {
+        -1, -1, -1, -1, -1, -0.65465367070797709, -0.55158350755530561,
+        -0.55158350755530561, -0.6546536707079772, 0, 0.10316701511061116, 0,
+        0.65465367070797709, 0.65465367070797709, 1};
+
+static int write_wb_case(const char *filename, int p, int npts,
+                         const double *u, const double *v,
+                         int perturb, int reorder)
+{
+    int fn, B, F, si, i;
+    double au[16], av[16];
+
+    for (i = 0; i < npts; i++) { au[i] = u[i]; av[i] = v[i]; }
+    if (perturb) au[npts/2] += 0.05;      /* one node off the family */
+    if (reorder) {                         /* same set, reversed traversal */
+        double t[16];
+        for (i = 0; i < npts; i++) t[i] = au[npts-1-i];
+        for (i = 0; i < npts; i++) au[i] = t[i];
+        for (i = 0; i < npts; i++) t[i] = av[npts-1-i];
+        for (i = 0; i < npts; i++) av[i] = t[i];
+    }
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open H")) return 1;
+    if (check(cg_base_write(fn, "Base", 2, 2, &B), "base H")) return 1;
+    if (check(cg_family_write(fn, B, "Fam", &F), "family H")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, F, "Tri",
+              CGNS_ENUMV(TRI_3), p, 0,
+              CGNS_ENUMV(ParametricLagrange), &si), "sol interp H")) return 1;
+    if (check(cg_solution_interpolation_points_write(fn, B, F, si,
+              au, av, NULL, NULL), "sol points H")) return 1;
+    if (check(cg_solution_interpolation_distribution_write(fn, B, F, si,
+              CGNS_ENUMV(WarpAndBlend)), "distribution H")) return 1;
+    return check(cg_close(fn), "close H");
+}
+
 int main(void)
 {
     const char *fname = "test_distribution.cgns";
@@ -244,6 +304,13 @@ int main(void)
         }
         printf("  wrote %d files for the cgnscheck comparison  OK\n", ncase);
     }
+
+    /* ------- H: WarpAndBlend reference sets ------- */
+    if (write_wb_case("test_dist_wb_p3.cgns",      3, 10, wb_tri3_u, wb_tri3_v, 0, 0)) return 1;
+    if (write_wb_case("test_dist_wb_p3_reord.cgns",3, 10, wb_tri3_u, wb_tri3_v, 0, 1)) return 1;
+    if (write_wb_case("test_dist_wb_p3_bad.cgns",  3, 10, wb_tri3_u, wb_tri3_v, 1, 0)) return 1;
+    if (write_wb_case("test_dist_wb_p4.cgns",      4, 15, wb_tri4_u, wb_tri4_v, 0, 0)) return 1;
+    printf("  wrote 4 WarpAndBlend reference files  OK\n");
 
     if (failures) {
         fprintf(stderr, "\n%d failure(s)\n", failures);

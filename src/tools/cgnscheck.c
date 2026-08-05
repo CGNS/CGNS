@@ -1902,6 +1902,173 @@ static int ho_gen_1d (CGNS_ENUMT(ControlPointDistribution_t) dist,
     }
 }
 
+/* ---- Warburton Warp&Blend nodes on the simplex -------------------------
+ *
+ * Warburton, "An explicit construction of interpolation nodes on the simplex",
+ * J. Engrg. Math. 56(3):247-262, 2006 -- the construction CPEX-0045 cites for
+ * the WarpAndBlend distribution.  Equidistant barycentric nodes on the
+ * equilateral triangle are displaced towards the one-dimensional GLL
+ * distribution along each edge, the displacement blended so that it vanishes at
+ * the opposite vertex, then mapped to the bi-unit reference triangle.
+ *
+ * Only the triangle is generated.  The tetrahedral construction warps over four
+ * faces with its own optimised parameters, and a subtly wrong table would
+ * produce false mismatches on conformant files -- worse than reporting the case
+ * unchecked, which is what happens instead.
+ */
+
+#define HO_WB_MAXP 10   /* warp factor needs a dense solve of size (p+1) */
+
+/* Legendre P_0..P_p at x */
+static void ho_legendre_all (int p, double x, double *pv)
+{
+    int k;
+    pv[0] = 1.0;
+    if (p >= 1) pv[1] = x;
+    for (k = 2; k <= p; k++)
+        pv[k] = ((2.0*k - 1.0)*x*pv[k-1] - (k - 1.0)*pv[k-2]) / (double)k;
+}
+
+/* Solve A x = b in place, Gaussian elimination with partial pivoting.
+ * A is row-major n x n, n <= HO_WB_MAXP+1.  Returns 0 on success. */
+static int ho_solve (int n, double *A, double *b)
+{
+    int i, j, k;
+    for (k = 0; k < n; k++) {
+        int piv = k;
+        double amax = fabs(A[k*n+k]);
+        for (i = k+1; i < n; i++)
+            if (fabs(A[i*n+k]) > amax) { amax = fabs(A[i*n+k]); piv = i; }
+        if (amax < 1.0e-14) return -1;
+        if (piv != k) {
+            for (j = 0; j < n; j++)
+                { double t = A[k*n+j]; A[k*n+j] = A[piv*n+j]; A[piv*n+j] = t; }
+            { double t = b[k]; b[k] = b[piv]; b[piv] = t; }
+        }
+        for (i = k+1; i < n; i++) {
+            double f = A[i*n+k] / A[k*n+k];
+            if (f == 0.0) continue;
+            for (j = k; j < n; j++) A[i*n+j] -= f*A[k*n+j];
+            b[i] -= f*b[k];
+        }
+    }
+    for (i = n-1; i >= 0; i--) {
+        double sum = b[i];
+        for (j = i+1; j < n; j++) sum -= A[i*n+j]*b[j];
+        b[i] = sum / A[i*n+i];
+    }
+    return 0;
+}
+
+/* Warburton's 1D warp factor: the GLL-minus-equidistant displacement,
+ * interpolated at the points rout through the equidistant Lagrange basis. */
+static int ho_warpfactor (int p, const double *rout, int nr, double *warp)
+{
+    double gll[HO_WB_MAXP+1], req[HO_WB_MAXP+1], diff[HO_WB_MAXP+1];
+    double Veq[(HO_WB_MAXP+1)*(HO_WB_MAXP+1)];
+    double A[(HO_WB_MAXP+1)*(HO_WB_MAXP+1)], rhs[HO_WB_MAXP+1];
+    int n1 = p + 1, i, j, k;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    if (ho_gen_1d (CGNS_ENUMV(GaussLobattoLegendre), p, gll)) return -1;
+    for (i = 0; i < n1; i++) req[i] = -1.0 + 2.0*i/(double)p;
+    for (i = 0; i < n1; i++) diff[i] = gll[i] - req[i];
+
+    /* Veq[i][j] = P_j(req_i) */
+    for (i = 0; i < n1; i++) {
+        double pv[HO_WB_MAXP+1];
+        ho_legendre_all (p, req[i], pv);
+        for (j = 0; j < n1; j++) Veq[i*n1+j] = pv[j];
+    }
+
+    for (k = 0; k < nr; k++) {
+        double pv[HO_WB_MAXP+1], sf;
+        int zerof;
+        /* solve Veq^T l = P(rout_k), then warp = l . diff */
+        ho_legendre_all (p, rout[k], pv);
+        for (i = 0; i < n1; i++) {
+            for (j = 0; j < n1; j++) A[i*n1+j] = Veq[j*n1+i];   /* transpose */
+            rhs[i] = pv[i];
+        }
+        if (ho_solve (n1, A, rhs)) return -1;
+        warp[k] = 0.0;
+        for (i = 0; i < n1; i++) warp[k] += rhs[i]*diff[i];
+
+        /* remove the endpoint singularity; the warp vanishes at |r| >= 1 */
+        zerof = (fabs(rout[k]) < 1.0 - 1.0e-10) ? 1 : 0;
+        if (!zerof) { warp[k] = 0.0; continue; }
+        sf = 1.0 - rout[k]*rout[k];
+        warp[k] /= sf;
+    }
+    return 0;
+}
+
+/* Warp&Blend nodes on the bi-unit triangle {r,s >= -1, r+s <= 0}.
+ * Writes (p+1)(p+2)/2 points.  Returns 0 on success. */
+static int ho_wb_tri (int p, double *r, double *sarr)
+{
+    /* Warburton's optimised blend parameter, indexed by degree */
+    static const double alpopt[] = {
+        0.0000, 0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999,
+        1.2832, 1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258 };
+    double *L1, *L2, *L3, *w1, *w2, *w3, *t1, *t2, *t3;
+    double alpha;
+    int np = (p+1)*(p+2)/2, i, m, n, sk;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    alpha = (p < (int)(sizeof(alpopt)/sizeof(alpopt[0]))) ? alpopt[p] : 5.0/3.0;
+
+    L1 = (double*) malloc ((size_t)np * 9 * sizeof(double));
+    if (!L1) return -1;
+    L2 = L1 + np;   L3 = L1 + 2*np;
+    w1 = L1 + 3*np; w2 = L1 + 4*np; w3 = L1 + 5*np;
+    t1 = L1 + 6*np; t2 = L1 + 7*np; t3 = L1 + 8*np;
+
+    /* equidistant barycentric coordinates */
+    sk = 0;
+    for (n = 0; n <= p; n++)
+        for (m = 0; m <= p - n; m++) {
+            L1[sk] = n/(double)p;
+            L3[sk] = m/(double)p;
+            L2[sk] = 1.0 - L1[sk] - L3[sk];
+            sk++;
+        }
+
+    /* blend arguments per edge */
+    for (i = 0; i < np; i++) {
+        t1[i] = L3[i] - L2[i];
+        t2[i] = L1[i] - L3[i];
+        t3[i] = L2[i] - L1[i];
+    }
+    if (ho_warpfactor (p, t1, np, w1) ||
+        ho_warpfactor (p, t2, np, w2) ||
+        ho_warpfactor (p, t3, np, w3)) { free(L1); return -1; }
+
+    for (i = 0; i < np; i++) {
+        double b1 = 4.0*L2[i]*L3[i], b2 = 4.0*L1[i]*L3[i], b3 = 4.0*L1[i]*L2[i];
+        double a1 = alpha*L1[i], a2 = alpha*L2[i], a3 = alpha*L3[i];
+        double W1 = b1*w1[i]*(1.0 + a1*a1);
+        double W2 = b2*w2[i]*(1.0 + a2*a2);
+        double W3 = b3*w3[i]*(1.0 + a3*a3);
+        /* equilateral coordinates, then the three edge deformations */
+        double x = -L2[i] + L3[i];
+        double y = (-L2[i] - L3[i] + 2.0*L1[i]) / sqrt(3.0);
+        double b1c = cos(2.0*M_PI/3.0), b1s = sin(2.0*M_PI/3.0);
+        double b2c = cos(4.0*M_PI/3.0), b2s = sin(4.0*M_PI/3.0);
+        double l1, l2, l3;
+        x += W1 + b1c*W2 + b2c*W3;
+        y += 0.0 + b1s*W2 + b2s*W3;
+        /* equilateral -> bi-unit reference triangle */
+        l1 = (sqrt(3.0)*y + 1.0)/3.0;
+        l2 = (-3.0*x - sqrt(3.0)*y + 2.0)/6.0;
+        l3 = ( 3.0*x - sqrt(3.0)*y + 2.0)/6.0;
+        r[i]    = -l2 + l3 - l1;
+        sarr[i] = -l2 - l3 + l1;
+    }
+    free (L1);
+    return 0;
+}
+
 /* Generate the full lattice for a basic element type.  Returns the point count,
  * or -1 when the combination cannot be generated.  Caller frees *gu/*gv/*gw. */
 static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
@@ -1940,9 +2107,26 @@ static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
         return np;
     }
 
-    /* Simplices: only the equidistant barycentric lattice is generated.
-     * WarpAndBlend and Fekete distributions are not, so those are reported
-     * unchecked rather than compared against the wrong set. */
+    /* Triangle with WarpAndBlend: the Warburton construction above. */
+    if (btype == CGNS_ENUMV(TRI_3) && dist == CGNS_ENUMV(WarpAndBlend)) {
+        *dim = 2;
+        np = (p+1)*(p+2)/2;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) calloc ((size_t)np, sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        if (ho_wb_tri (p, *gu, *gv)) {
+            free(*gu); free(*gv); free(*gw);
+            *gu = *gv = *gw = NULL;
+            return -1;
+        }
+        return np;
+    }
+
+    /* Other simplex cases: only the equidistant barycentric lattice is
+     * generated.  The tetrahedral Warp&Blend construction and the Fekete
+     * distributions are not, so those are reported unchecked rather than
+     * compared against the wrong set. */
     if (dist != CGNS_ENUMV(Equidistant)) return -1;
 
     if (btype == CGNS_ENUMV(TRI_3)) {

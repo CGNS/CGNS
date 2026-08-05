@@ -1535,7 +1535,10 @@ MODULE cgns
       INTEGER :: B
       INTEGER :: Z
       INTEGER :: S
-      INTEGER(CGSIZE_T) ::pnts
+      ! cgsize_t *pnts on the C side: 2 bounds for PointRange, npnts entries
+      ! for PointList.  Declared scalar here, a caller could pass a single
+      ! integer and the C entry would write past it.
+      INTEGER(CGSIZE_T) :: pnts(*)
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_sol_ptset_read_f
 
@@ -1549,7 +1552,8 @@ MODULE cgns
       INTEGER(cgenum_t) :: location
       INTEGER(cgenum_t) :: ptype
       INTEGER(CGSIZE_T) :: npnts
-      INTEGER(CGSIZE_T) :: pnts
+      ! const cgsize_t *pnts on the C side -- see cg_sol_ptset_read_f
+      INTEGER(CGSIZE_T) :: pnts(*)
       INTEGER :: S
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_sol_ptset_write_f
@@ -5946,28 +5950,37 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_read_f
 !DEC$endif
   SUBROUTINE cg_sol_characteristic_length_read_f(fn, B, Z, S, nscale, numElements, h_e, ier)
+    !! h_e is OPTIONAL so that the shape-only query the C entry documents
+    !! (h_e == NULL: report nscale and numElements without reading the data) is
+    !! reachable from Fortran.  Omitting it passes a null pointer through.
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, Z, S
     INTEGER, INTENT(OUT) :: nscale
     INTEGER(cgsize_t), INTENT(OUT) :: numElements
-    REAL(C_DOUBLE), INTENT(OUT) :: h_e(*)
+    REAL(C_DOUBLE), INTENT(OUT), OPTIONAL, TARGET :: h_e(*)
     INTEGER, INTENT(OUT) :: ier
     INTEGER(C_INT) :: c_nscale
     INTEGER(cgsize_t) :: c_n
+    TYPE(C_PTR) :: c_h
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_read &
           (fn, B, Z, S, nscale, numElements, h_e) &
           BIND(C, name="cg_sol_characteristic_length_read")
-        IMPORT :: C_INT, C_DOUBLE, cgsize_t
+        IMPORT :: C_INT, C_PTR, cgsize_t
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
         INTEGER(C_INT) :: nscale
         INTEGER(cgsize_t) :: numElements
-        REAL(C_DOUBLE) :: h_e(*)
+        TYPE(C_PTR), VALUE :: h_e
       END FUNCTION cg_sol_characteristic_length_read
     END INTERFACE
+    IF (PRESENT(h_e)) THEN
+      c_h = C_LOC(h_e(1))
+    ELSE
+      c_h = C_NULL_PTR
+    END IF
     ier = INT(cg_sol_characteristic_length_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(Z,C_INT), INT(S,C_INT), c_nscale, c_n, h_e))
+              INT(Z,C_INT), INT(S,C_INT), c_nscale, c_n, c_h))
     nscale = INT(c_nscale)
     numElements = c_n
   END SUBROUTINE cg_sol_characteristic_length_read_f

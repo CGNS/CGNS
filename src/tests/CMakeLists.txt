@@ -79,6 +79,7 @@ set(test_complexf_FILES test_complexf.F90)
 set(test_particlef_FILES test_particlef.F90 utilsf.F90)
 set(test_high_orderf_FILES test_high_orderf.F90)
 set(test_cg_npe_f_FILES test_cg_npe_f.F90)
+set(test_ho_apif_FILES test_ho_apif.F90)
 
 # HDF5-specific tests
 set(cgioc_hdf_FILES cgioc_hdf.c)
@@ -144,6 +145,7 @@ if (CGNS_ENABLE_FORTRAN)
         add_executable( test_particlef     ${test_particlef_FILES}     )
         add_executable( test_high_orderf   ${test_high_orderf_FILES}   )
         add_executable( test_cg_npe_f      ${test_cg_npe_f_FILES}      )
+        add_executable( test_ho_apif       ${test_ho_apif_FILES}       )
 
 	# 64-bit Fortran tests (conditional on 64-bit support)
 	# Both test64f.F90 and test64f_f03.F90 use fixed-form syntax despite .F90 extension
@@ -175,6 +177,7 @@ if (CGNS_ENABLE_FORTRAN)
         test_particlef
         test_high_orderf
         test_cg_npe_f
+        test_ho_apif
         )
 
 	# Conditionally add 64-bit Fortran tests
@@ -228,6 +231,9 @@ if (CGNS_ENABLE_TESTS)
       test_dist_match.cgns             # test_distribution: coords match the name
       test_dist_reordered.cgns         # test_distribution: same set, reordered
       test_dist_equi.cgns              # test_distribution: equidistant, named so
+      test_dist_wb_p3.cgns             # test_distribution: WarpAndBlend p=3
+      test_dist_wb_p3_reord.cgns       # test_distribution: same W&B set, reordered
+      test_dist_wb_p4.cgns             # test_distribution: WarpAndBlend p=4
   )
   set(CGNSCHECK_HO_DEPENDS test_high_order test_mixed_ho test_degree_zero
                            test_distribution)
@@ -265,6 +271,12 @@ if (CGNS_ENABLE_TESTS)
   add_test(NAME cgnscheck_dist_mismatch_strict_fails
            COMMAND cgnscheck -s test_dist_mismatch.cgns)
   set_tests_properties(cgnscheck_dist_mismatch_strict_fails PROPERTIES
+    WILL_FAIL TRUE
+    DEPENDS "test_distribution")
+
+  add_test(NAME cgnscheck_dist_wb_bad_strict_fails
+           COMMAND cgnscheck -s test_dist_wb_p3_bad.cgns)
+  set_tests_properties(cgnscheck_dist_wb_bad_strict_fails PROPERTIES
     WILL_FAIL TRUE
     DEPENDS "test_distribution")
 
