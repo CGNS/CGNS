@@ -18169,6 +18169,16 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
         cgi_error("Invalid solution Interpolation type.");
         return CG_ERROR;
     }
+    /* Bound the degrees here, where they enter the file.  Every path that later
+     * sizes this basis -- cg_npe_ho(), cg_solution_lagrange_interpolation_size(),
+     * cg_solution_monomial_size() -- rejects anything outside [0, CG_MAX_ORDER],
+     * so without this check the writer accepts a degree that makes its own file
+     * impossible to size on read. */
+    if (os < 0 || os > CG_MAX_ORDER || ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Interpolation degrees (spatial=%d, temporal=%d) out of valid range [0, %d]",
+                  os, ot, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
 
     // Get Basic type
     if (cg_element_basic_element_type(et,&type) != CG_OK) {
