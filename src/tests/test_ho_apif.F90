@@ -16,6 +16,7 @@
 !   cg_sol_characteristic_length_write_f / _read_f  (including the shape-only
 !       query, reachable now that h_e is OPTIONAL)
 !
+#include "cgnstypes_f03.h"
       program test_ho_apif
       use cgns
       implicit none
@@ -66,17 +67,17 @@
       isize(1) = 9
       isize(2) = 4
       isize(3) = 0
-      call cg_zone_write_f(cgfile, cgbase, 'Zone', isize, Unstructured, &
+      call cg_zone_write_f(cgfile, cgbase, 'Zone', isize, CGNS_ENUMV(Unstructured), &
      &                     cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealDouble, &
+      call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealDouble), &
      &                      'CoordinateX', x, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealDouble, &
+      call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealDouble), &
      &                      'CoordinateY', y, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       nelem = 4
-      call cg_section_write_f(cgfile, cgbase, cgzone, 'Elem', QUAD_4, &
+      call cg_section_write_f(cgfile, cgbase, cgzone, 'Elem', CGNS_ENUMV(QUAD_4), &
      &                        1_cgsize_t, nelem, 0, ielem, cgsec, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -96,31 +97,31 @@
       pt = 0.0_dp
 
       call cg_element_interpolation_write_f(cgfile, cgbase, cgfam, &
-     &                                      'QuadMesh', QUAD_4, cgei, ierr)
+     &                                      'QuadMesh', CGNS_ENUMV(QUAD_4), cgei, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_element_interpolation_points_write_f(cgfile, cgbase, cgfam, &
      &                                             cgei, pu, pv, pw, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_element_interpolation_distribution_write_f(cgfile, cgbase, &
-     &                          cgfam, cgei, Equidistant, ierr)
+     &                          cgfam, cgei, CGNS_ENUMV(Equidistant), ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! ---- solution interpolation (nodal) + distribution -----------------------
       call cg_solution_interpolation_write_f(cgfile, cgbase, cgfam, &
-     &                        'QuadSol', QUAD_4, 1, 0, ParametricLagrange, &
+     &                        'QuadSol', CGNS_ENUMV(QUAD_4), 1, 0, CGNS_ENUMV(ParametricLagrange), &
      &                        cgsi, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_solution_interpolation_points_write_f(cgfile, cgbase, cgfam, &
      &                        cgsi, pu, pv, pw, pt, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_solution_interpolation_distribution_write_f(cgfile, cgbase, &
-     &                        cgfam, cgsi, Equidistant, ierr)
+     &                        cgfam, cgsi, CGNS_ENUMV(Equidistant), ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! ---- solution interpolation (modal), so CharacteristicLength belongs -----
       call cg_solution_interpolation_write_f(cgfile, cgbase, cgfam, &
-     &                        'QuadModal', QUAD_4, 2, 0, &
-     &                        CartesianMonomialsPascal, cgsm, ierr)
+     &                        'QuadModal', CGNS_ENUMV(QUAD_4), 2, 0, &
+     &                        CGNS_ENUMV(CartesianMonomialsPascal), cgsm, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       do i = 1, 6
         coeff(i) = dble(i)*0.5_dp
@@ -134,7 +135,7 @@
       prange(2) = 4
       npnts = 2
       call cg_sol_ptset_write_f(cgfile, cgbase, cgzone, 'FS', &
-     &                          InterpolationPoints, PointRange, npnts, &
+     &                          CGNS_ENUMV(InterpolationPoints), CGNS_ENUMV(PointRange), npnts, &
      &                          prange, cgsol, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_sol_interpolation_degree_write_f(cgfile, cgbase, cgzone, &
@@ -160,7 +161,7 @@
       call cg_element_interpolation_distribution_read_f(cgfile, cgbase, &
      &                        cgfam, 1, dist, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      if (dist .ne. Equidistant) then
+      if (dist .ne. CGNS_ENUMV(Equidistant)) then
         write(*,*) 'ERROR: element distribution round-trip: got ', dist
         failures = failures + 1
       else
@@ -171,7 +172,7 @@
       call cg_solution_interpolation_distribution_read_f(cgfile, cgbase, &
      &                        cgfam, 1, dist, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      if (dist .ne. Equidistant) then
+      if (dist .ne. CGNS_ENUMV(Equidistant)) then
         write(*,*) 'ERROR: solution distribution round-trip: got ', dist
         failures = failures + 1
       else
@@ -180,10 +181,10 @@
 
       snfound = -1
       itype = -1
-      call cg_solution_interpolation_find_f(cgfile, cgbase, cgfam, QUAD_4, &
+      call cg_solution_interpolation_find_f(cgfile, cgbase, cgfam, CGNS_ENUMV(QUAD_4), &
      &                        1, 0, snfound, itype, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      if (snfound .ne. 1 .or. itype .ne. ParametricLagrange) then
+      if (snfound .ne. 1 .or. itype .ne. CGNS_ENUMV(ParametricLagrange)) then
         write(*,*) 'ERROR: interpolation_find: sn=', snfound, ' it=', itype
         failures = failures + 1
       else
@@ -195,7 +196,7 @@
       call cg_sol_ptset_info_f(cgfile, cgbase, cgzone, cgsol, ptype, &
      &                         npnts, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      if (ptype .ne. PointRange .or. npnts .ne. 2) then
+      if (ptype .ne. CGNS_ENUMV(PointRange) .or. npnts .ne. 2) then
         write(*,*) 'ERROR: sol_ptset_info: type=', ptype, ' npnts=', npnts
         failures = failures + 1
       else
