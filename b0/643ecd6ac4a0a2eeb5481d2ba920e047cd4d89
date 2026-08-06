@@ -1,0 +1,20 @@
+src/ptests/para_high_order.c
+  s_cfc7438a6aaeaf::t_fdb76a9a32de87 20
+  s_cfc7438a6aaeaf::t_0e621a0f0585f1 423-425
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "b0643ecd6ac4a0a2eeb5481d2ba920e047cd4d89",
+  "prompts": {},
+  "sessions": {
+    "s_cfc7438a6aaeaf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1845df7-5791-486f-b17e-83382fa8d5bf",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
