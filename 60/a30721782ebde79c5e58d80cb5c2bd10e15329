@@ -1,0 +1,19 @@
+src/cgnslib.c
+  s_cfc7438a6aaeaf::t_d03c4513d40a1e 18172-18181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "60a30721782ebde79c5e58d80cb5c2bd10e15329",
+  "prompts": {},
+  "sessions": {
+    "s_cfc7438a6aaeaf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1845df7-5791-486f-b17e-83382fa8d5bf",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
