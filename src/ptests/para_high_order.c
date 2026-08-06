@@ -17,6 +17,7 @@
 
 #include "pcgnslib.h"
 #include "mpi.h"
+#include "utils.h"
 
 #define cgp_doError {printf("Error at %s:%d\n",__FILE__, __LINE__); return 1;}
 
@@ -419,9 +420,9 @@ int main (int argc, char **argv)
          * this recomputation are the same source expression but different
          * call sites, and compilers are free to contract a*b+c to a single
          * FMA at one site and not the other, so bit-exact equality is not a
-         * guarantee IEEE 754 makes here.  A relative tolerance many orders
-         * above that noise floor still catches any real corruption. */
-        if (fabs(field[n] - expect) > 1e-9 * (fabs(expect) + 1.0))
+         * guarantee IEEE 754 makes here.  compareValuesDouble (utils.h) is
+         * the tolerance the rest of the suite already uses for this. */
+        if (!compareValuesDouble(field[n], expect))
           mismatch(comm_rank, "Density", n, field[n], expect);
       }
 
