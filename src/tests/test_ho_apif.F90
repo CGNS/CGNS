@@ -8,7 +8,7 @@
 ! kind mismatch, a missing INT() conversion, or a symbol that does not link.
 ! Semantics are the C tests' job; nothing here duplicates their edge cases.
 !
-! Entries covered (ten, none previously called from Fortran):
+! Entries covered (ten, none reached elsewhere from Fortran):
 !   cg_element_interpolation_distribution_write_f / _read_f
 !   cg_solution_interpolation_distribution_write_f / _read_f
 !   cg_solution_interpolation_find_f

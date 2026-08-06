@@ -21,7 +21,7 @@
 
 double solutionField(double x, double y);
 
-double solutionCtrlPoints(int i, double *x, double *y);
+void solutionCtrlPoints(int i, double *x, double *y);
 
 int main (int argc, char **argv)
 {
@@ -318,7 +318,7 @@ double solutionField(double x, double y)
   return sin(r);
 }
 
-double solutionCtrlPoints(int i, double *x, double *y)
+void solutionCtrlPoints(int i, double *x, double *y)
 {
   double U[16] = {-1    , 1    , 1    ,-1    ,
                   -1./3., 1./3., 1    , 1    ,

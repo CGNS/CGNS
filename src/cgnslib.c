@@ -17179,9 +17179,8 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
     cgns_array *lpts = ei->lagrangePts;
     
     /* has Lagrange Points ? */
-    if (!lpts) 
+    if (!lpts)
     {
-        //cgi_warning("ElementInterpolation Node does not have LagrangeControlPoints.");
         return CG_NODE_NOT_FOUND;
     }
     
@@ -17998,7 +17997,6 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     /* Has Node ? */
     if (!lpts)
     {
-        //cgi_warning("No LagrangreInterpolation Points for this solution interpolation node.");
         return CG_NODE_NOT_FOUND;
     }
 
@@ -18728,8 +18726,8 @@ int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *
     /* Multiply by temporal dimension (ot + 1), range-checking before the
      * narrowing store: os and ot are each bounded by CG_MAX_ORDER above, but
      * their product is not, and sz is an int the caller sizes a malloc with.
-     * (HEXA_8, os=1000, ot=1000) used to return CG_OK with sz = 332444957
-     * against a true 168168168168. */
+     * Without this check, (HEXA_8, os=1000, ot=1000) would silently truncate
+     * the true count of 168168168168 down to 332444957 and return CG_OK. */
     total = spatial_coeffs * (cgsize_t)(ot + 1);
     if (total > (cgsize_t)INT_MAX) {
         cgi_error("Monomial coefficient count %lld for element type %s at "

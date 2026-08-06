@@ -1827,10 +1827,9 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 /* Largest degree for which node sets are generated.  Well above any practical
  * interpolation degree; beyond it the comparison reports "not performed", which
- * is the conformant outcome.  Bounds the 1D work arrays too -- these were
- * previously sized by CG_MAX_ORDER (1000), an unrelated constant that put 8 KB
- * on the stack and let the guard admit degrees the rest of the code cannot
- * handle. */
+ * is the conformant outcome.  Also bounds the 1D work arrays: CG_MAX_ORDER
+ * (1000) is unrelated and would put 8 KB on the stack and let the guard admit
+ * degrees the rest of the code cannot handle. */
 #define HO_GEN_MAXP 32
 
 /* The comparison tolerance CPEX-0045 fixes for matching a stored point set

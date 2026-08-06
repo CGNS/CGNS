@@ -226,10 +226,9 @@ if (CGNS_ENABLE_TESTS)
   # ------------------------------------------------------------------------
   # Validate the high-order files with cgnscheck, in default and strict mode.
   #
-  # Nothing previously ran cgnscheck from the test suite, so CPEX-0045
-  # validation defects -- and the whole "cgnscheck -s" strict mode -- had no
-  # automated coverage at all.  cgnscheck always exits 0, so failure is
-  # detected from its output instead of its return code.
+  # This is the test suite's only automated coverage of CPEX-0045 validation
+  # defects and of "cgnscheck -s" strict mode.  cgnscheck always exits 0, so
+  # failure is detected from its output instead of its return code.
   #
   # Only files that carry a complete grid (coordinates + Elements_t) are listed
   # here; several high-order tests write family-level interpolation nodes only,
