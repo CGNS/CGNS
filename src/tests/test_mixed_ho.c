@@ -237,10 +237,47 @@ int test_mixed_ho_simple()
         return 1;
     }
 
+    /* The array length is the thing under test: in a heterogeneous section the
+     * library must resolve N_DOFs per element from the matching
+     * SolutionInterpolation_t and sum it, giving 2*6 + 1*9 = 21.  A section
+     * sized as if every element were a TRI (18) or a QUAD (27) would be a
+     * silent corruption, so read the length off disk rather than inferring it
+     * from the write having succeeded. */
+    {
+        int ndim;
+        cgsize_t dimv[3];
+
+        if (cg_goto(fn, bn, "Zone_t", zn, "FlowSolution_t", soln, NULL) ||
+            cg_array_info(1, fieldname, &datatype, &ndim, dimv)) {
+            printf("ERROR: Failed to read field array info: %s\n", cg_get_error());
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+        if (strcmp(fieldname, "Density")) {
+            printf("ERROR: Expected field 'Density', got '%s'\n", fieldname);
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+        if (ndim != 1 || dimv[0] != expected_size) {
+            printf("ERROR: field length on disk is %d, expected %ld "
+                   "(2 TRI_3 x 6 DOFs + 1 QUAD_4 x 9 DOFs)\n",
+                   (int)dimv[0], (long)expected_size);
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+        printf("  Field length on disk: %d (2x6 + 1x9)\n", (int)dimv[0]);
+    }
+
     /* Read back the field */
     cgsize_t range_min[1] = {1};
     cgsize_t range_max[1] = {expected_size};
     field_data = malloc(expected_size * sizeof(double));
+    for (i = 0; i < expected_size; i++) {
+        field_data[i] = -1.0;
+    }
     if (cg_field_read(fn, bn, zn, soln, "Density", CGNS_ENUMV(RealDouble),
                       range_min, range_max, field_data)) {
         printf("ERROR: Failed to read field: %s\n", cg_get_error());
@@ -250,9 +287,84 @@ int test_mixed_ho_simple()
         return 1;
     }
 
-    printf("  Successfully read high-order solution field (size=%ld)\n", (long)expected_size);
+    for (i = 0; i < expected_size; i++) {
+        if (field_data[i] != (double)i) {
+            printf("ERROR: field value %d is %g, expected %g\n",
+                   i, field_data[i], (double)i);
+            free(field_data);
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+    }
+    printf("  All %ld field values round-tripped\n", (long)expected_size);
 
     free(field_data);
+
+    /* The two SolutionInterpolation_t nodes the length was derived from must
+     * themselves come back as written -- the field length is only meaningful if
+     * the bases behind it are. */
+    {
+        struct { const char *name; CGNS_ENUMT(ElementType_t) type; int npts; }
+        want[2] = { { "Tri_P2",  CGNS_ENUMV(TRI_3),  6 },
+                    { "Quad_P2", CGNS_ENUMV(QUAD_4), 9 } };
+        int k;
+        int nsi = 0;
+
+        if (cg_nsolution_interpolation_read(fn, bn, 1, &nsi)) {
+            printf("ERROR: Failed to count SolutionInterpolation_t: %s\n",
+                   cg_get_error());
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+        if (nsi != 2) {
+            printf("ERROR: Expected 2 SolutionInterpolation_t nodes, got %d\n", nsi);
+            cg_close(fn);
+            failed_tests++;
+            return 1;
+        }
+
+        for (k = 0; k < 2; k++) {
+            char siname[33];
+            CGNS_ENUMT(ElementType_t) et;
+            CGNS_ENUMT(InterpolationType_t) it;
+            int os, ot, npts = 0;
+
+            if (cg_solution_interpolation_read(fn, bn, 1, k + 1, siname, &et,
+                                               &os, &ot, &it)) {
+                printf("ERROR: Failed to read SolutionInterpolation_t %d: %s\n",
+                       k + 1, cg_get_error());
+                cg_close(fn);
+                failed_tests++;
+                return 1;
+            }
+            if (strcmp(siname, want[k].name) || et != want[k].type ||
+                os != spatial_degree || ot != temporal_degree ||
+                it != CGNS_ENUMV(ParametricLagrange)) {
+                printf("ERROR: SolutionInterpolation_t %d is (%s,%s,%d,%d,%s), "
+                       "expected (%s,%s,%d,%d,ParametricLagrange)\n",
+                       k + 1, siname, cg_ElementTypeName(et), os, ot,
+                       cg_InterpolationTypeName(it), want[k].name,
+                       cg_ElementTypeName(want[k].type),
+                       spatial_degree, temporal_degree);
+                cg_close(fn);
+                failed_tests++;
+                return 1;
+            }
+            if (cg_solution_lagrange_interpolation_size(et, os, ot, &npts) ||
+                npts != want[k].npts) {
+                printf("ERROR: %s at degree %d should have %d DOFs, got %d\n",
+                       cg_ElementTypeName(et), os, want[k].npts, npts);
+                cg_close(fn);
+                failed_tests++;
+                return 1;
+            }
+            printf("  %s: %s degree %d -> %d DOFs\n",
+                   siname, cg_ElementTypeName(et), os, npts);
+        }
+    }
+
     cg_close(fn);
 
     printf("  ✓ Test PASSED: MIXED section with high-order solution\n");

@@ -41,19 +41,36 @@ int test_invalid_types(void)
     }
     printf("MIXED element type correctly rejected (error code: %d)\n", result);
 
-    printf("Testing invalid element type (NODE)...\n");
-    /* NODE element type should ideally be rejected */
-    result = cg_element_interpolation_write(cgfile, cgbase, cgfamily, "BadInterp",
+    /* NODE is a valid tag, not a degenerate one: it is 0-dimensional, so its
+     * basis has exactly one control point.  Accepting it is correct, and the
+     * cardinality is what makes that meaningful -- assert both. */
+    printf("Testing NODE element type (0-dimensional, one control point)...\n");
+    result = cg_element_interpolation_write(cgfile, cgbase, cgfamily, "NodeInterp",
                                            CGNS_ENUMV(NODE), &cgeinterp);
-    if (result == CG_OK)
+    if (result != CG_OK)
     {
-        printf("  ⚠ NODE element type accepted - API limitation (no validation for NODE)\n");
-        printf("    This is an API gap - NODE has no interpolation points\n");
+        fprintf(stderr, "ERROR: NODE element type should be accepted: %s\n",
+                cg_get_error());
+        cg_close(cgfile);
+        return 1;
     }
-    else
     {
-        printf("NODE element type correctly rejected (error code: %d)\n", result);
+        int nsize = -1;
+        if (cg_element_lagrange_interpolation_size(CGNS_ENUMV(NODE), &nsize))
+        {
+            fprintf(stderr, "ERROR: cannot size the NODE basis: %s\n", cg_get_error());
+            cg_close(cgfile);
+            return 1;
+        }
+        if (nsize != 1)
+        {
+            fprintf(stderr, "ERROR: NODE basis should have 1 control point, got %d\n",
+                    nsize);
+            cg_close(cgfile);
+            return 1;
+        }
     }
+    printf("NODE accepted with a 1-point basis (index=%d)\n", cgeinterp);
 
     printf("Testing out-of-range element type enum...\n");
     /* Completely invalid enum value */
@@ -73,16 +90,23 @@ int test_invalid_types(void)
     return 0;
 }
 
-/* Test 7.2: Mismatched Dimensions */
+/* Test 7.2: control-point array dimensions.
+ *
+ * The caller supplies the buffers, so the load-bearing contract is what the
+ * library puts on disk: LagrangeControlPoints must be shaped (dim, npts) with
+ * npts the cardinality of the element's basis and dim the element's parametric
+ * dimension.  A 2D element must store 2 rows even when the caller passes a pw
+ * array, because a 3-row array would make every reader mis-stride the data.
+ * Both the shape and the values are checked here. */
 int test_mismatched_dimensions(void)
 {
     int cgfile, cgbase, cgzone, cgfamily, cgeinterp, cgsinterp;
     cgsize_t size[9];
     double pu[25], pv[25], pw[25];
-    int i, result;
+    int i, nsize;
 
     printf("\n==============================================\n");
-    printf("  Test 7.2: Mismatched Dimensions\n");
+    printf("  Test 7.2: Control-Point Array Dimensions\n");
     printf("==============================================\n\n");
 
     /* Create basic CGNS structure */
@@ -99,8 +123,22 @@ int test_mismatched_dimensions(void)
         return 1;
     }
 
-    /* Test 1: Write valid ElementInterpolation but try to write wrong number of points */
-    printf("Testing wrong number of control points for ElementInterpolation...\n");
+    printf("QUAD_9 basis cardinality...\n");
+    if (cg_element_lagrange_interpolation_size(CGNS_ENUMV(QUAD_9), &nsize))
+    {
+        fprintf(stderr, "ERROR: cannot size the QUAD_9 basis: %s\n", cg_get_error());
+        cg_close(cgfile);
+        return 1;
+    }
+    if (nsize != 9)
+    {
+        fprintf(stderr, "ERROR: QUAD_9 basis should have 9 control points, got %d\n",
+                nsize);
+        cg_close(cgfile);
+        return 1;
+    }
+    printf("  %d control points\n", nsize);
+
     if (cg_element_interpolation_write(cgfile, cgbase, cgfamily, "QuadInterp",
                                       CGNS_ENUMV(QUAD_9), &cgeinterp))
     {
@@ -109,19 +147,11 @@ int test_mismatched_dimensions(void)
         return 1;
     }
 
-    /* Initialize only 4 points instead of 9 for QUAD_9 */
-    for (i = 0; i < 4; i++) {
-        pu[i] = pv[i] = (double)i;
-    }
-
-    /* This should fail because QUAD_9 expects 9 points, not 4 */
-    printf("  Note: API doesn't validate point count at write time\n");
-    printf("  Validation occurs at read time when dimensions are checked\n");
-
-    /* Fill correct number of points for actual write */
+    /* Distinct values per axis, so a transposed or mis-strided read is visible */
     for (i = 0; i < 9; i++) {
         pu[i] = (double)i;
-        pv[i] = (double)i;
+        pv[i] = 100.0 + (double)i;
+        pw[i] = 200.0 + (double)i;
     }
 
     if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, cgeinterp,
@@ -131,10 +161,9 @@ int test_mismatched_dimensions(void)
         cg_close(cgfile);
         return 1;
     }
-    printf("Control points written successfully\n");
+    printf("Control points written\n");
 
-    /* Test 2: Try to write 3D control points for 2D element with SolutionInterpolation */
-    printf("\nTesting 3D control points for 2D element...\n");
+    printf("\nPassing a pw array to a 2D element must not add a third row...\n");
     if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Solution2D",
                                        CGNS_ENUMV(QUAD_4), 2, 0,
                                        CGNS_ENUMV(ParametricLagrange), &cgsinterp))
@@ -143,13 +172,6 @@ int test_mismatched_dimensions(void)
         cg_close(cgfile);
         return 1;
     }
-
-    /* For QUAD (2D), pw should be NULL, but we'll pass it anyway */
-    for (i = 0; i < 9; i++) {
-        pw[i] = (double)i;
-    }
-
-    /* This writes successfully because the API accepts pw for 2D elements (it's just ignored) */
     if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
                                                pu, pv, pw, NULL))
     {
@@ -157,38 +179,116 @@ int test_mismatched_dimensions(void)
         cg_close(cgfile);
         return 1;
     }
-    printf("API accepts pw parameter for 2D elements (ignored in storage)\n");
 
     cg_close(cgfile);
 
-    /* Now test reading with wrong dimensions */
-    printf("\nTesting read with insufficient buffer size...\n");
     if (cg_open("test_error_dimensions.cgns", CG_MODE_READ, &cgfile))
     {
         fprintf(stderr, "ERROR: Failed to reopen file\n");
         return 1;
     }
 
-    double pu_read[4], pv_read[4];  /* Only 4 instead of 9 */
-
-    /* This will read into the small buffer - potential overflow but API doesn't check */
-    printf("  Note: API doesn't validate buffer size - caller must ensure adequate buffer\n");
-    printf("  Reading into properly sized buffer for safety\n");
-
-    double pu_safe[9], pv_safe[9];
-    if (cg_element_interpolation_points_read(cgfile, cgbase, cgfamily, cgeinterp,
-                                             pu_safe, pv_safe, NULL))
+    /* The on-disk shape of both LagrangeControlPoints arrays */
     {
-        fprintf(stderr, "ERROR: Failed to read control points\n");
-        cg_close(cgfile);
-        return 1;
+        struct { const char *label; const char *nodelabel; int npts; } shape[2] = {
+            { "ElementInterpolation_t",  "ElementInterpolation_t",  9 },
+            { "SolutionInterpolation_t", "SolutionInterpolation_t", 9 }
+        };
+        int s;
+        for (s = 0; s < 2; s++)
+        {
+            char aname[33];
+            int ndim;
+            cgsize_t dimv[3];
+            CGNS_ENUMT(DataType_t) dt;
+
+            if (cg_goto(cgfile, cgbase, "Family_t", cgfamily,
+                        shape[s].nodelabel, 1, NULL) ||
+                cg_array_info(1, aname, &dt, &ndim, dimv))
+            {
+                fprintf(stderr, "ERROR: cannot inspect %s array: %s\n",
+                        shape[s].label, cg_get_error());
+                cg_close(cgfile);
+                return 1;
+            }
+            if (strcmp(aname, "LagrangeControlPoints"))
+            {
+                fprintf(stderr, "ERROR: %s array is '%s', expected "
+                                "LagrangeControlPoints\n", shape[s].label, aname);
+                cg_close(cgfile);
+                return 1;
+            }
+            if (ndim != 2 || dimv[0] != 2 || dimv[1] != shape[s].npts)
+            {
+                fprintf(stderr, "ERROR: %s LagrangeControlPoints shape is "
+                                "%dD (%d,%d), expected 2D (2,%d)\n",
+                        shape[s].label, ndim, (int)dimv[0], (int)dimv[1],
+                        shape[s].npts);
+                cg_close(cgfile);
+                return 1;
+            }
+            printf("  %s: (%d,%d) as required\n",
+                   shape[s].label, (int)dimv[0], (int)dimv[1]);
+        }
     }
-    printf("Control points read successfully\n");
+
+    /* And the values survive the round trip on both axes */
+    {
+        double back_u[9], back_v[9], back_w[9];
+
+        if (cg_element_interpolation_points_read(cgfile, cgbase, cgfamily, cgeinterp,
+                                                 back_u, back_v, NULL))
+        {
+            fprintf(stderr, "ERROR: Failed to read element control points: %s\n",
+                    cg_get_error());
+            cg_close(cgfile);
+            return 1;
+        }
+        for (i = 0; i < 9; i++)
+        {
+            if (back_u[i] != pu[i] || back_v[i] != pv[i])
+            {
+                fprintf(stderr, "ERROR: element point %d = (%g,%g), wrote (%g,%g)\n",
+                        i, back_u[i], back_v[i], pu[i], pv[i]);
+                cg_close(cgfile);
+                return 1;
+            }
+        }
+
+        /* pw was supplied but must have been ignored: the reader fills only the
+         * two stored axes, so a third buffer is left untouched. */
+        for (i = 0; i < 9; i++) back_w[i] = -1.0;
+        if (cg_solution_interpolation_points_read(cgfile, cgbase, cgfamily, cgsinterp,
+                                                  back_u, back_v, back_w, NULL))
+        {
+            fprintf(stderr, "ERROR: Failed to read solution control points: %s\n",
+                    cg_get_error());
+            cg_close(cgfile);
+            return 1;
+        }
+        for (i = 0; i < 9; i++)
+        {
+            if (back_u[i] != pu[i] || back_v[i] != pv[i])
+            {
+                fprintf(stderr, "ERROR: solution point %d = (%g,%g), wrote (%g,%g)\n",
+                        i, back_u[i], back_v[i], pu[i], pv[i]);
+                cg_close(cgfile);
+                return 1;
+            }
+            if (back_w[i] != -1.0)
+            {
+                fprintf(stderr, "ERROR: a third axis was stored for a 2D element: "
+                                "back_w[%d] = %g\n", i, back_w[i]);
+                cg_close(cgfile);
+                return 1;
+            }
+        }
+    }
+    printf("Control points round-trip on both axes; pw was ignored\n");
 
     cg_close(cgfile);
 
-    printf("\nTEST 7.2 PASSED: Dimension Handling Tested\n");
-    printf("  Note: API relies on caller to provide correct buffer sizes\n");
+    printf("\nTEST 7.2 PASSED: Array Dimensions Verified\n");
     return 0;
 }
 
@@ -234,31 +334,68 @@ int test_out_of_range_orders(void)
     }
     printf("  accepted (constant per element)\n");
 
+    /* A negative degree must be refused at the point it would enter the file.
+     * Every path that later sizes the basis -- cg_npe_ho,
+     * cg_solution_lagrange_interpolation_size, cg_solution_monomial_size --
+     * rejects anything outside [0, CG_MAX_ORDER], so a writer that accepted one
+     * would produce a file it could not itself size on read. */
     printf("Testing negative spatial order (invalid)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "BadOrderNeg",
                                             CGNS_ENUMV(QUAD_4), -1, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result == CG_OK)
     {
-        printf("  ⚠ Negative spatial order accepted - API limitation (no sign validation)\n");
-        printf("    This is an API gap - negative orders are invalid\n");
+        fprintf(stderr, "ERROR: negative spatial order must be rejected\n");
+        cg_close(cgfile);
+        return 1;
     }
-    else
-    {
-        printf("Negative spatial order correctly rejected (error code: %d)\n", result);
-    }
+    printf("Negative spatial order correctly rejected (error code: %d)\n", result);
 
-    printf("Testing extremely high spatial order (100)...\n");
+    printf("Testing spatial order above CG_MAX_ORDER...\n");
+    result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "TooHigh",
+                                            CGNS_ENUMV(QUAD_4), CG_MAX_ORDER + 1, 0,
+                                            CGNS_ENUMV(ParametricLagrange), &cgsinterp);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: spatial order %d exceeds CG_MAX_ORDER (%d) and "
+                        "must be rejected\n", CG_MAX_ORDER + 1, CG_MAX_ORDER);
+        cg_close(cgfile);
+        return 1;
+    }
+    printf("Spatial order %d correctly rejected (error code: %d)\n",
+           CG_MAX_ORDER + 1, result);
+
+    /* Order 100 is inside CG_MAX_ORDER, so it must be accepted -- and the basis
+     * it names must size correctly: QUAD_4 Lagrange at degree p has (p+1)^2
+     * control points, so 101^2 = 10201. */
+    printf("Testing high but valid spatial order (100)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "HighOrder",
                                             CGNS_ENUMV(QUAD_4), 100, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result != CG_OK)
     {
-        printf("Very high order rejected (error code: %d)\n", result);
+        fprintf(stderr, "ERROR: order 100 is within CG_MAX_ORDER and must be "
+                        "accepted: %s\n", cg_get_error());
+        cg_close(cgfile);
+        return 1;
     }
-    else
     {
-        printf("  NOTE: order 100 accepted - within CG_MAX_ORDER limit\n");
+        int npts = 0;
+        if (cg_solution_lagrange_interpolation_size(CGNS_ENUMV(QUAD_4), 100, 0, &npts))
+        {
+            fprintf(stderr, "ERROR: cannot size the order-100 basis: %s\n",
+                    cg_get_error());
+            cg_close(cgfile);
+            return 1;
+        }
+        if (npts != 101 * 101)
+        {
+            fprintf(stderr, "ERROR: QUAD_4 at degree 100 should have %d control "
+                            "points, got %d\n", 101 * 101, npts);
+            cg_close(cgfile);
+            return 1;
+        }
+        printf("Order 100 accepted, basis has %d control points\n", npts);
     }
 
     /* INT_MAX spatial order via cg_solution_monomial_size: must not silently overflow
@@ -296,13 +433,11 @@ int test_out_of_range_orders(void)
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result == CG_OK)
     {
-        printf("  ⚠ Negative temporal order accepted - API limitation (no sign validation)\n");
-        printf("    This is an API gap - negative orders are invalid\n");
+        fprintf(stderr, "ERROR: negative temporal order must be rejected\n");
+        cg_close(cgfile);
+        return 1;
     }
-    else
-    {
-        printf("Negative temporal order correctly rejected (error code: %d)\n", result);
-    }
+    printf("Negative temporal order correctly rejected (error code: %d)\n", result);
 
     printf("\nTesting valid edge case: order = 1...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Order1",

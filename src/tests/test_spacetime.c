@@ -144,9 +144,22 @@ int test_temporal_degree1(void)
     printf("Family name: %s\n", familyname);
 
     /* Check SolutionInterpolation_t count */
-    /* NOTE: Skipping count validation as it requires fully loaded family data.
-     * The actual read operation below will validate that the node exists. */
-    printf("Skipping SolutionInterpolation_t node count validation...\n");
+    {
+        int nsi = 0;
+        if (cg_nsolution_interpolation_read(cgfile, cgbase, cgfamily, &nsi))
+        {
+            fprintf(stderr, "ERROR: Cannot count SolutionInterpolation_t nodes: %s\n",
+                    cg_get_error());
+            return 1;
+        }
+        if (nsi != 1)
+        {
+            fprintf(stderr, "ERROR: Expected 1 SolutionInterpolation_t node, got %d\n",
+                    nsi);
+            return 1;
+        }
+        printf("SolutionInterpolation_t node count: %d\n", nsi);
+    }
 
     /* Read SolutionInterpolation_t node */
     printf("Reading SolutionInterpolation_t properties...\n");

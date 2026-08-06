@@ -5,6 +5,7 @@
 ! Test program for pcgns library
 ! -- Create a CGNS file to exploit the high order implementation from CPEX045
 ! -- Write an unstructured QUAD_9 based mesh with 3rd order InterpolationPoints solution (ex: DGM)
+! -- Reopen it and check that what was written is what comes back
 !
 ! To visualize, the solution field, you could use GMSH with high order CGNS feature
 */
@@ -23,6 +24,22 @@ double solutionField(double x, double y);
 
 void solutionCtrlPoints(int i, double *x, double *y);
 
+/* Generators expressed in terms of the owning rank, so the verify phase can
+ * reproduce a zone it did not write. */
+static void zoneCoord(int owner, int iset, double *x, double *y, double *z);
+static double zoneFieldValue(int owner, int e, int i);
+
+static int mismatches = 0;
+
+static void mismatch(int rank, const char *what, long long index,
+                     double got, double expected)
+{
+  if (mismatches < 10)
+    printf("[rank %d] MISMATCH %s[%lld]: got %.17g, expected %.17g\n",
+           rank, what, index, got, expected);
+  mismatches++;
+}
+
 int main (int argc, char **argv)
 {
   int err;
@@ -37,7 +54,6 @@ int main (int argc, char **argv)
   char ZoneName[33];
   int zn;
   double *pu, *pv;
-  double xloc,yloc,r;
   
   
   // MPI Stuff
@@ -210,19 +226,11 @@ int main (int argc, char **argv)
     
     // [3.1] Fill Coordinates
     {
-      int i,j,iset = 0;
+      int iset;
       // [3.1.1] Fill Coordinates (shift for each process)
-      for (j=1; j <= 7; j++)
-      {
-        for (i=1; i <= 7; i++)
-        {
-          x[iset]=(double)i-1. + (comm_rank%2)*(7-1);
-          y[iset]=(double)j-1. + (comm_rank/2)*(7-1);
-          z[iset]= 0.;
-          iset=iset+1;
-        }
-      }
-      
+      for (iset = 0; iset < 7*7; iset++)
+        zoneCoord(comm_rank, iset, &x[iset], &y[iset], &z[iset]);
+
       // [3.1.2] Write Coordinates
       min = 1;
       max = 7*7;
@@ -276,13 +284,7 @@ int main (int argc, char **argv)
         for( i = 0 ; i < 16 ; i++)
         {
           n = i + 16*e;
-          
-          solutionCtrlPoints(i,&xloc,&yloc);
-          
-          xloc += 2.0 + (e%3)*2. + (comm_rank%2)*(7-1);
-          yloc += 2.0 + (e/3)*2. + (comm_rank/2)*(7-1);
-          
-          field[ n ] = solutionField(xloc,yloc);
+          field[ n ] = zoneFieldValue(comm_rank, e, i);
         }
       }
       
@@ -303,13 +305,166 @@ int main (int argc, char **argv)
   }
   
   // Close the file
-  if (cgp_close(fn)) 
+  if (cgp_close(fn))
     cgp_error_exit();
-  
-  // Finalize MPI
-  err = MPI_Finalize();
-  if(err!=MPI_SUCCESS) cgp_doError;
-  return 0;
+
+  // [4] Read the file back and check it against the generators.
+  //     Each rank verifies its neighbour's zone rather than its own: a rank that
+  //     re-read what it just wrote would agree with itself even if both sides
+  //     shared the same wrong offset, which is exactly the failure a parallel
+  //     test needs to catch.
+  {
+    int peer = (comm_rank + 1) % nzones;
+    double *x, *y, *z, *field;
+    cgsize_t *elements;
+    int i, e;
+
+    if (cgp_open("test_high_order.cgns", CG_MODE_READ, &fn))
+      cgp_error_exit();
+
+    Z = peer + 1;
+
+    // [4.1] The field length must be the one the library derived from the
+    //       interpolation degree: 9 elements x 16 DOFs at degree 3.  This is
+    //       the whole point of writing InterpolationDegrees before the field,
+    //       so it is checked on disk rather than assumed from the write.
+    {
+      char aname[33];
+      int ndim;
+      cgsize_t dimv[3];
+      CGNS_ENUMT(DataType_t) dt;
+
+      if (cg_goto(fn, B, "Zone_t", Z, "FlowSolution_t", 1, NULL) ||
+          cg_array_info(1, aname, &dt, &ndim, dimv))
+        cgp_error_exit();
+      if (ndim != 1 || dimv[0] != 9*16)
+        mismatch(comm_rank, "FieldLength", 0, (double)dimv[0], (double)(9*16));
+    }
+
+    // [4.2] Coordinates
+    x = (double*)malloc(7*7*sizeof(double));
+    y = (double*)malloc(7*7*sizeof(double));
+    z = (double*)malloc(7*7*sizeof(double));
+
+    min = 1;
+    max = 7*7;
+    if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,x) ||
+        cgp_coord_read_data(fn,B,Z,Cy,&min,&max,y) ||
+        cgp_coord_read_data(fn,B,Z,Cz,&min,&max,z))
+      cgp_error_exit();
+
+    for (i = 0; i < 7*7; i++)
+    {
+      double ex, ey, ez;
+      zoneCoord(peer, i, &ex, &ey, &ez);
+      if (x[i] != ex) mismatch(comm_rank, "CoordinateX", i, x[i], ex);
+      if (y[i] != ey) mismatch(comm_rank, "CoordinateY", i, y[i], ey);
+      if (z[i] != ez) mismatch(comm_rank, "CoordinateZ", i, z[i], ez);
+    }
+
+    free(x);
+    free(y);
+    free(z);
+
+    // [4.3] Connectivity.  The same 9x9 pattern in every zone, so the expected
+    //       values are rebuilt here the same way the writer built them.
+    elements = (cgsize_t *)malloc(9*9*sizeof(cgsize_t));
+    emin = 1;
+    emax = 9;
+    if (cgp_elements_read_data(fn,B,Z,S,emin,emax,elements))
+      cgp_error_exit();
+
+    {
+      int ii,jj,ee = 0;
+      for (jj = 0; jj < 3; jj++)
+      {
+        int nn = jj*7*2;
+        for (ii = 0; ii < 3; ii++)
+        {
+          cgsize_t expect[9];
+          int k;
+          expect[0] = 0  + nn + 1;
+          expect[1] = 2  + nn + 1;
+          expect[2] = 16 + nn + 1;
+          expect[3] = 14 + nn + 1;
+          expect[4] = 1  + nn + 1;
+          expect[5] = 9  + nn + 1;
+          expect[6] = 15 + nn + 1;
+          expect[7] = 7  + nn + 1;
+          expect[8] = 8  + nn + 1;
+          for (k = 0; k < 9; k++, ee++)
+            if (elements[ee] != expect[k])
+              mismatch(comm_rank, "Connectivity", ee,
+                       (double)elements[ee], (double)expect[k]);
+          nn = nn + 2;
+        }
+      }
+    }
+
+    free(elements);
+
+    // [4.4] Solution field
+    field = (double*)malloc(9*16*sizeof(double));
+    min = 1;
+    max = 9*16;
+    if (cgp_field_read_data(fn,B,Z,Sol,Fld,&min,&max,field))
+      cgp_error_exit();
+
+    for (e = 0; e < 9; e++)
+      for (i = 0; i < 16; i++)
+      {
+        int n = i + 16*e;
+        double expect = zoneFieldValue(peer, e, i);
+        if (field[n] != expect)
+          mismatch(comm_rank, "Density", n, field[n], expect);
+      }
+
+    free(field);
+
+    if (cgp_close(fn))
+      cgp_error_exit();
+  }
+
+  // [5] A mismatch anywhere fails the run everywhere
+  {
+    int total = 0;
+    err = MPI_Allreduce(&mismatches, &total, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) cgp_doError;
+
+    if (comm_rank == 0)
+    {
+      if (total == 0)
+        printf("para_high_order: PASSED (mesh and solution verified on read-back)\n");
+      else
+        printf("para_high_order: FAILED with %d mismatch(es)\n", total);
+    }
+
+    err = MPI_Finalize();
+    if(err!=MPI_SUCCESS) cgp_doError;
+    return total == 0 ? 0 : 1;
+  }
+}
+
+/* Zone coordinates as a function of the owning rank: a 7x7 lattice shifted onto
+ * the rank's quadrant of the 2x2 zone layout. */
+static void zoneCoord(int owner, int iset, double *x, double *y, double *z)
+{
+  int i = iset % 7;
+  int j = iset / 7;
+  *x = (double)i + (owner%2)*(7-1);
+  *y = (double)j + (owner/2)*(7-1);
+  *z = 0.;
+}
+
+/* Value of the analytic solution at control point i of element e in the zone
+ * owned by `owner`. */
+static double zoneFieldValue(int owner, int e, int i)
+{
+  double xloc, yloc;
+  solutionCtrlPoints(i, &xloc, &yloc);
+  xloc += 2.0 + (e%3)*2. + (owner%2)*(7-1);
+  yloc += 2.0 + (e/3)*2. + (owner/2)*(7-1);
+  return solutionField(xloc, yloc);
 }
 
 double solutionField(double x, double y)
