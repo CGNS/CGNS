@@ -315,11 +315,34 @@ if (CGNS_ENABLE_TESTS)
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
+  # CPEX-0045: Rind_t under GridLocation=InterpolationPoints must be reported.
+  # The node's presence is what is non-conformant, whatever its extents, so one
+  # file exercises both modes.
+  add_test(NAME cgnscheck_ho_rind_flagged
+           COMMAND cgnscheck test_ho_rind.cgns)
+  set_tests_properties(cgnscheck_ho_rind_flagged PROPERTIES
+    PASS_REGULAR_EXPRESSION "Rind_t has no meaning with GridLocation"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  add_test(NAME cgnscheck_ho_rind_flagged_strict
+           COMMAND cgnscheck -s test_ho_rind.cgns)
+  set_tests_properties(cgnscheck_ho_rind_flagged_strict PROPERTIES
+    PASS_REGULAR_EXPRESSION "Rind_t has no meaning with GridLocation"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # Every cgnscheck test needs the DLL directory on PATH for a Windows shared
+  # build.  Omitting a test here does not fail it cleanly: the loader cannot
+  # find cgns.dll, Windows raises a modal error dialog, and the test blocks
+  # until ctest kills it at its timeout with no output at all.
   if(CGNS_BUILD_SHARED)
     set_tests_properties(cgnscheck_dist_mismatch_strict_fails
                          cgnscheck_dist_wb_bad_strict_fails
                          cgnscheck_dist_wbtet_bad_strict_fails
                          cgnscheck_dist_mismatch_default_passes
+                         cgnscheck_ho_rind_flagged
+                         cgnscheck_ho_rind_flagged_strict
       PROPERTIES ENVIRONMENT_MODIFICATION
       "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
   endif()
