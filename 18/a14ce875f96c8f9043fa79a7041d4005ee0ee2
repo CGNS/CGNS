@@ -1,0 +1,23 @@
+src/cgns_internals.c
+  s_f0fb02e22d3ac0::t_b8506d376ffaf6 1829-1842,1844-1948,2105-2123,2185-2189,5283-5287,5293-5294,5325,5327-5331,5335,16776,16781,16786-16787,16789-16791
+src/cgnslib.c
+  s_f0fb02e22d3ac0::t_a5655d37cfe8ae 8905-8911,8921-8954,8973-8979,9158,9199-9204,9220,9231,9238,16999-17003,17322-17324,17860-17862,18157-18159,18431-18432,20367,23570
+src/tools/cgnscheck.c
+  s_f0fb02e22d3ac0::t_12ec35e6812386 5661-5677,5879-5882,5888-5890,5892,5903-5906
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "18a14ce875f96c8f9043fa79a7041d4005ee0ee2",
+  "prompts": {},
+  "sessions": {
+    "s_f0fb02e22d3ac0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1af2ea46-ec6a-4eec-8f89-c32c572f8503",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
