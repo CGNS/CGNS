@@ -1,0 +1,37 @@
+src/cgns_internals.c
+  s_f0fb02e22d3ac0::t_b8506d376ffaf6 1830,1839,1854,1858-1859,1864-1865,1870-1871,1877-1878,1894,1912-1914,1915,2130
+src/cgnslib.c
+  s_f0fb02e22d3ac0::t_a5655d37cfe8ae 8925,8929-8932,8934-8942,8944,8947-8949,8951-8952,8955,8975-8977,9232
+src/tools/cgnscheck.c
+  s_f0fb02e22d3ac0::t_12ec35e6812386 5871,5877,5889
+src/cgns_header.h
+  s_f0fb02e22d3ac0::t_e09b8bb1332dc6 1067-1069
+src/cgnstools/cgnsview/cgns.tcl
+  s_f0fb02e22d3ac0::t_34d9b99b1c9f93 183
+src/tests/test_degree_zero.c
+  s_f0fb02e22d3ac0::t_66671b1bff0172 107-109
+src/tests/test_error_handling.c
+  s_f0fb02e22d3ac0::t_144a03dad2308e 654-656,681,691
+src/tests/test_high_orderf.F90
+  s_f0fb02e22d3ac0::t_a70fb8caf9ab2e 162-164,173-174
+src/tests/test_ho_apif.F90
+  s_f0fb02e22d3ac0::t_0949ae28d1af07 126
+src/tests/test_modal_interpolation.c
+  s_f0fb02e22d3ac0::t_e526d044728777 83,140-143,195-196,198-202,204-209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "b52ccf7cab97a952649881fb5bf3a3d3e94b89ba",
+  "prompts": {},
+  "sessions": {
+    "s_f0fb02e22d3ac0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1af2ea46-ec6a-4eec-8f89-c32c572f8503",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}

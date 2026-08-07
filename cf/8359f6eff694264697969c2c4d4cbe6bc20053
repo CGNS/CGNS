@@ -1,0 +1,21 @@
+src/tests/CMakeLists.txt
+  s_f0fb02e22d3ac0::t_d760d1214a07a5 311-328
+src/tests/test_high_order.c
+  s_f0fb02e22d3ac0::t_d7287a264ea44c 744-803
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "cf8359f6eff694264697969c2c4d4cbe6bc20053",
+  "prompts": {},
+  "sessions": {
+    "s_f0fb02e22d3ac0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1af2ea46-ec6a-4eec-8f89-c32c572f8503",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
