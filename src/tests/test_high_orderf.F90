@@ -19,7 +19,6 @@
       real(kind=dp), allocatable :: pu(:), pv(:), pw(:), puu(:), pvv(:), pww(:)
       real(kind=dp), allocatable :: pt(:), ptt(:)
       real(kind=dp), allocatable :: r(:)
-      real(kind=dp), allocatable :: scoeff(:), scoeff_read(:)
       integer(cgsize_t), allocatable :: ielem(:)
       integer :: scoeff_size
 
@@ -412,8 +411,6 @@
 
       deallocate(pu, pv, pw, pt, puu, pvv, pww, ptt)
 
-      deallocate(scoeff_read)
-
       ! Test cg_sol_interpolation_degree_read_f
       write(*,*) 'Testing cg_sol_interpolation_degree_read_f ...'
       call cg_sol_interpolation_degree_read_f(cgfile, cgbase, cgzone, cgsol, &
@@ -522,7 +519,6 @@
       ! CLEANUP
       ! ========================================
       deallocate(x, y, ielem)
-      deallocate(scoeff)
 
       write(*,*) ''
       write(*,*) 'All Fortran high-order API tests passed!'

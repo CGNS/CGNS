@@ -5655,10 +5655,6 @@ CONTAINS
   END SUBROUTINE cg_solution_interpolation_find_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-
-!DEC$if defined(BUILD_CGNS_DLL)
-
-!DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_read_f
 !DEC$endif
   SUBROUTINE cg_sol_interpolation_degree_read_f(fn, B, Z, S, os, ot, ier)
