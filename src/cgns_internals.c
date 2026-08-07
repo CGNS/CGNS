@@ -5089,6 +5089,32 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
                 goto err_free;
             }
+            /* CPEX-0045: the extents must agree with the node that declares
+             * them.  Mesh interpolation is purely spatial, so the fast axis is
+             * the element dimension and the slow axis is the node count of the
+             * element's own tag -- which is exact here, serendipity element
+             * types carrying their own tag and hence their own cg_npe. */
+            {
+                int edim = 0, enpe = 0;
+                if (cg_element_dimension(eltinterpolation->type, &edim) == CG_OK &&
+                    eltinterpolation->lagrangePts[0].dim_vals[0] != (cgsize_t)edim) {
+                    cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
+                              " coordinates per point, expected %d for element type %s",
+                              eltinterpolation->name,
+                              eltinterpolation->lagrangePts[0].dim_vals[0], edim,
+                              cg_ElementTypeName(eltinterpolation->type));
+                    goto err_free;
+                }
+                if (cg_npe(eltinterpolation->type, &enpe) == CG_OK && enpe > 0 &&
+                    eltinterpolation->lagrangePts[0].dim_vals[1] != (cgsize_t)enpe) {
+                    cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
+                              " points, expected %d for element type %s",
+                              eltinterpolation->name,
+                              eltinterpolation->lagrangePts[0].dim_vals[1], enpe,
+                              cg_ElementTypeName(eltinterpolation->type));
+                    goto err_free;
+                }
+            }
         }
      /* MonomialCoefficients is not permitted here: mesh interpolation is nodal
       * only (CPEX-0045, the third v2 principle -- the mesh is always defined by
@@ -5264,6 +5290,47 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             if (sltinterpolation->lagrangePts->data_dim != 2) {
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
                 goto err_free;
+            }
+            /* CPEX-0045: three exactly-checkable extent conditions.  The last is
+             * an upper bound, not an equality: a serendipity space carries fewer
+             * points than the complete space of the same degree (an
+             * edge-serendipity QUAD at p=2 has 4p = 8 against (p+1)^2 = 9), so
+             * requiring equality would reject conforming files.  A set larger
+             * than the complete space cannot be unisolvent for a degree-p space
+             * and is always wrong. */
+            {
+                int edim = 0, q = sltinterpolation->temporaldegree;
+                int want, complete = 0;
+                cgsize_t npts = sltinterpolation->lagrangePts->dim_vals[1];
+
+                if (cg_element_dimension(sltinterpolation->type, &edim)) goto err_free;
+                want = edim + (q > 0 ? 1 : 0);
+                if (sltinterpolation->lagrangePts->dim_vals[0] != (cgsize_t)want) {
+                    cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
+                              " coordinates per point, expected %d (element dimension"
+                              "%s)", sltinterpolation->name,
+                              sltinterpolation->lagrangePts->dim_vals[0], want,
+                              q > 0 ? " plus one for parametric time" : "");
+                    goto err_free;
+                }
+                if (npts <= 0 || npts % (cgsize_t)(q + 1) != 0) {
+                    cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
+                              " points, which is not a positive multiple of "
+                              "TemporalDegree+1 = %d", sltinterpolation->name,
+                              npts, q + 1);
+                    goto err_free;
+                }
+                if (cg_solution_lagrange_interpolation_size(sltinterpolation->type,
+                        sltinterpolation->spatialdegree, 0, &complete) == CG_OK &&
+                    complete > 0 &&
+                    npts / (cgsize_t)(q + 1) > (cgsize_t)complete) {
+                    cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
+                              " spatial points, more than the %d of the complete "
+                              "space at degree %d; such a set cannot be unisolvent",
+                              sltinterpolation->name, npts / (cgsize_t)(q + 1),
+                              complete, sltinterpolation->spatialdegree);
+                    goto err_free;
+                }
             }
         }
      /* MonomialCoefficients is withdrawn (see above) */
