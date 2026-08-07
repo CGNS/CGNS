@@ -5224,16 +5224,18 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     
      /* DataArray_t:
      Required: none
-     Optional: LagrangeControlPoints, MonomialCoefficients,
-               ControlPointDistribution (CPEX-0045 §3.1.2)
+     Optional: LagrangeControlPoints, ControlPointDistribution (CPEX-0045 §3.1.2)
+
+     MonomialCoefficients is withdrawn: a modal basis is fixed entirely by the
+     element dimension, the two degrees and the Pascal traversal order, so it
+     stores no array.  A file carrying one is rejected below.
       */
     nnod = 0;
     sltinterpolation->lagrangePts = 0;
-    sltinterpolation->monomialCoeff = 0;
     sltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 3) {
-        cgi_error("Too many DataArray_t nodes (%d, max 3) under SolutionInterpolation_t '%s'",
+    if (nnod > 2) {
+        cgi_error("Too many DataArray_t nodes (%d, max 2) under SolutionInterpolation_t '%s'",
                   nnod, sltinterpolation->name);
         goto err_free;
     }
@@ -5264,29 +5266,17 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
                 goto err_free;
             }
         }
-     /* MonomialCoefficients */
+     /* MonomialCoefficients is withdrawn (see above) */
         else if (strcmp(temp_name,"MonomialCoefficients")==0) {
-            sltinterpolation->monomialCoeff = CGNS_NEW(cgns_array, 1);
-            sltinterpolation->monomialCoeff->id = id[i];
-            sltinterpolation->monomialCoeff->link = cgi_read_link(id[i]);
-            sltinterpolation->monomialCoeff->in_link = 0;
-            if (cgi_read_array(sltinterpolation->monomialCoeff,
-                "MonomialCoefficients", sltinterpolation->id)) goto err_free;
-
-             /* check data */
-            if (strcmp(sltinterpolation->monomialCoeff->data_type,"R8")) {
-                cgi_error("Error: Datatype %s not supported for %s",
-                sltinterpolation->monomialCoeff->data_type, temp_name);
-                goto err_free;
-            }
-            if (sltinterpolation->monomialCoeff->data_dim != 1) {
-                cgi_error("Error: %s incorrectly dimensioned node 'MonomialCoefficients'",temp_name);
-                goto err_free;
-            }
+            cgi_error("Error: 'MonomialCoefficients' is no longer a valid child of a "
+                      "SolutionInterpolation_t node; a modal basis is determined by the "
+                      "element dimension, the degrees and the Pascal traversal order and "
+                      "stores no array.");
+            goto err_free;
         }
         else
         {
-            cgi_error("Invalid DataArray_t node '%s' for SolutionInterpolation_t node (expected 'LagrangeControlPoints' or 'MonomialCoefficients').", temp_name);
+            cgi_error("Invalid DataArray_t node '%s' for SolutionInterpolation_t node (expected 'LagrangeControlPoints').", temp_name);
             goto err_free;
         }
     }   /* loop through DataArray_t */
@@ -16727,34 +16717,23 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
          * every output parameter left untouched. */
         else error2 = 1;
 
-    /* CPEX 045: 0,2 DataArray_t under SolutionInterpolation_t */
+    /* CPEX 045: 0,1 DataArray_t under SolutionInterpolation_t */
     } else if (strcmp(posit->label,"SolutionInterpolation_t")==0) {
         cgns_solutionInterpolation *si =
             (cgns_solutionInterpolation *)posit->posit;
         if (local_mode != CG_MODE_READ) {
-            cgi_error("use cg_solution_interpolation_points_write or "
-                      "cg_solution_interpolation_coefficients_write to write "
+            cgi_error("use cg_solution_interpolation_points_write to write "
                       "DataArray_t children of '%s'", posit->label);
             (*ier) = CG_ERROR;
             return CG_OK;
         }
-        /* Ordered slots: LagrangeControlPoints then MonomialCoefficients.
-         * Only one is ever present (nodal xor modal), so index 1 selects
-         * whichever the node carries. */
+        /* A SolutionInterpolation_t carries at most one DataArray_t --
+         * LagrangeControlPoints -- since modal bases store no array. */
         {
-            cgns_array *slot[2];
-            int nslot = 0;
-            if (si->lagrangePts)    slot[nslot++] = si->lagrangePts;
-            if (si->monomialCoeff)  slot[nslot++] = si->monomialCoeff;
-
-            if (given_no >= 1 && given_no <= nslot)
-                array = slot[given_no-1];
-            else if (si->lagrangePts &&
-                     strcmp(given_name,"LagrangeControlPoints")==0)
+            if (si->lagrangePts &&
+                (given_no == 1 ||
+                 strcmp(given_name,"LagrangeControlPoints")==0))
                 array = si->lagrangePts;
-            else if (si->monomialCoeff &&
-                     strcmp(given_name,"MonomialCoefficients")==0)
-                array = si->monomialCoeff;
             /* see the ElementInterpolation_t branch above */
             else error2 = 1;
         }
@@ -17897,11 +17876,6 @@ void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
       CGNS_FREE(sinterp->lagrangePts);
     }
     sinterp->lagrangePts = 0;
-    if (sinterp->monomialCoeff) {
-      cgi_free_array(sinterp->monomialCoeff);
-      CGNS_FREE(sinterp->monomialCoeff);
-    }
-    sinterp->monomialCoeff = 0;
     if (sinterp->lagrangeDist) {
       cgi_free_array(sinterp->lagrangeDist);
       CGNS_FREE(sinterp->lagrangeDist);

@@ -159,10 +159,9 @@
      &                                              pw, pt, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      ! Test cg_solution_interpolation_coefficients_write_f.
-      ! MonomialCoefficients belong only to the two modal interpolation types,
-      ! so they need their own node -- writing them onto the ParametricLagrange
-      ! node above is the invalid combination the library now rejects.
+      ! A modal SolutionInterpolation_t stores no array: CPEX-0045 withdraws
+      ! MonomialCoefficients because the basis is fixed by the element
+      ! dimension, the degrees and the Pascal traversal order.
       write(*,*) 'Writing modal solution interpolation ...'
       call cg_solution_interpolation_write_f(cgfile, cgbase, cgfamily, &
      &                                      '2ndOrderQuadModal', &
@@ -171,19 +170,11 @@
      &                                      cgsmodal, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      write(*,*) 'Writing solution interpolation coefficients ...'
+      ! The cardinality remains queryable: it is what sizes the FlowSolution_t
+      ! field arrays.
       call cg_solution_monomial_size_f(CGNS_ENUMV(QUAD_4), 2, 0, scoeff_size, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       write(*,*) 'Solution monomial size for QUAD_4, degree 2: ', scoeff_size
-      allocate(scoeff(scoeff_size))
-      do i = 1, scoeff_size
-        scoeff(i) = dble(i) * 0.001_dp
-      enddo
-      call cg_solution_interpolation_coefficients_write_f(cgfile, cgbase, &
-     &                                                    cgfamily, cgsmodal, &
-     &                                                    scoeff, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
-      write(*,*) 'Solution interpolation coefficients written successfully'
 
       ! Get Node Count
       call cg_nelement_interpolation_read_f(cgfile, cgbase, cgfamily, &
@@ -421,25 +412,6 @@
 
       deallocate(pu, pv, pw, pt, puu, pvv, pww, ptt)
 
-      ! Test cg_solution_interpolation_coefficients_read_f
-      write(*,*) 'Testing cg_solution_interpolation_coefficients_read_f ...'
-      allocate(scoeff_read(scoeff_size))
-      ! Read from the modal node: MonomialCoefficients exist only there.
-      call cg_solution_interpolation_coefficients_read_f(cgfile, cgbase, &
-     &                                                   cgfamily, cgsmodal, &
-     &                                                   scoeff_read, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
-
-      ! Validate coefficients
-      do i = 1, scoeff_size
-        if (abs(scoeff(i) - scoeff_read(i)) .gt. 1.d-10) then
-          write(*,*) 'ERROR: Solution coefficient mismatch at i=', i
-          write(*,*) '  expected: ', scoeff(i)
-          write(*,*) '  got:      ', scoeff_read(i)
-          stop 1
-        endif
-      enddo
-      write(*,*) 'All solution interpolation coefficients validated successfully'
       deallocate(scoeff_read)
 
       ! Test cg_sol_interpolation_degree_read_f

@@ -53,7 +53,6 @@ array set CGNSnodes {
   ElementInterpolation         {0 ElementInterpolation_t I4 1 1}
   SolutionInterpolation        {0 SolutionInterpolation_t I4 3 1}
   LagrangeControlPoints        {1 DataArray_t R8 {} 0}
-  MonomialCoefficients         {1 DataArray_t R8 {} 0}
   InterpolationType            {1 InterpolationType_t I4 1 0}
   ControlPointDistribution {1 ControlPointDistribution_t I4 1 0}
   InterpolationDegrees         {1 IndexArray_t I4 2 0}
@@ -181,7 +180,7 @@ array set CGNSnodeChildren {
       ElementInterpolation SolutionInterpolation}
   ElementInterpolation_t {LagrangeControlPoints ControlPointDistribution}
   SolutionInterpolation_t {InterpolationType LagrangeControlPoints \
-      MonomialCoefficients ControlPointDistribution}
+      ControlPointDistribution}
   FamilyBCDataSet_t {DataClass Descriptor DimensionalUnits DirichletData \
       NeumannData ReferenceState UserDefinedData}
   FlowEquationSet_t {ChemicalKineticsModel DataClass Descriptor \

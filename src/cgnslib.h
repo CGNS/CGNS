@@ -1310,9 +1310,7 @@ CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
 
 CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
 
-CGNSDLL int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff);
 
-CGNSDLL int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn, double *coeff);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)       *

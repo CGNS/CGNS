@@ -80,7 +80,7 @@ int test_solution_modal()
     int i, n;
     int ncoeff;
     int spatialdegree = 3, temporaldegree = 1;
-    double *coeff, *coeff_read;
+    double *coeff;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) type = CGNS_ENUMV(QUAD_4);
     CGNS_ENUMT(ElementType_t) type_read;
@@ -137,17 +137,10 @@ int test_solution_modal()
     }
     printf("SolutionInterpolation_t node created (index=%d)\n", cgsinterp);
 
-    /* Write monomial coefficients */
-    printf("Writing %d monomial coefficients...\n", ncoeff);
-    if (cg_solution_interpolation_coefficients_write(cgfile, cgbase, cgfamily,
-                                                     cgsinterp, coeff))
-    {
-        fprintf(stderr, "ERROR: Failed to write monomial coefficients\n");
-        free(coeff);
-        return 1;
-    }
-    printf("Written %d monomial coefficients\n", ncoeff);
-
+    /* A modal basis stores no array: CPEX-0045 withdraws MonomialCoefficients
+     * because the basis is determined entirely by the element dimension, the two
+     * degrees and the Pascal traversal order.  Writing the node above is the
+     * whole of the description. */
     cg_close(cgfile);
 
     /* Read back and validate */
@@ -199,42 +192,25 @@ int test_solution_modal()
     }
     printf("Interpolation type: ParametricMonomialsPascal\n");
 
-    coeff_read = (double*) malloc(ncoeff * sizeof(double));
-
-    /* Read coefficients */
-    printf("Reading monomial coefficients...\n");
-    if (cg_solution_interpolation_coefficients_read(cgfile, cgbase, cgfamily,
-                                                    cgsinterp, coeff_read))
+    /* The cardinality is still queryable -- cg_solution_monomial_size is what a
+     * caller needs in order to size the FlowSolution_t field arrays. */
     {
-        fprintf(stderr, "ERROR: Failed to read monomial coefficients\n");
-        free(coeff);
-        free(coeff_read);
-        return 1;
-    }
-
-    /* Validate coefficients */
-    printf("Validating coefficients...\n");
-    int failed = 0;
-    for (i = 0; i < ncoeff; i++) {
-        if (fabs(coeff[i] - coeff_read[i]) > 1.e-12) {
-            fprintf(stderr, "ERROR: Coefficient %d mismatch: %f != %f\n",
-                    i, coeff[i], coeff_read[i]);
-            failed++;
+        int sz = 0;
+        if (cg_solution_monomial_size(type, spatialdegree, temporaldegree, &sz)) {
+            fprintf(stderr, "ERROR: cg_solution_monomial_size failed\n");
+            free(coeff);
+            return 1;
         }
+        if (sz != ncoeff) {
+            fprintf(stderr, "ERROR: monomial size %d, expected %d\n", sz, ncoeff);
+            free(coeff);
+            return 1;
+        }
+        printf("Modal cardinality confirmed: %d\n", sz);
     }
-
-    if (failed > 0) {
-        fprintf(stderr, "ERROR: %d coefficients failed validation\n", failed);
-        free(coeff);
-        free(coeff_read);
-        return 1;
-    }
-
-    printf("All %d coefficients validated successfully\n", ncoeff);
 
     cg_close(cgfile);
     free(coeff);
-    free(coeff_read);
 
     printf("\nALL SOLUTION MODAL TESTS PASSED\n");
     return 0;

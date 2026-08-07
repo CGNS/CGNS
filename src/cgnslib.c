@@ -17064,10 +17064,10 @@ int cg_multifam_write(const char *name, const char *family)
  * \return     CG_OK on success, CG_ERROR on failure
  *
  * \details
- * This function reads metadata about element-level interpolation. For nodal
- * (Lagrange) interpolation, use cg_element_interpolation_points_read() to
- * retrieve the actual control point coordinates. For modal (monomial)
- * interpolation, use cg_element_interpolation_coefficients_read().
+ * This function reads metadata about element-level interpolation.  Use
+ * cg_element_interpolation_points_read() to retrieve the control point
+ * coordinates.  Mesh interpolation is nodal only (CPEX-0045), so there are no
+ * modal coefficients to read.
  *
  * Example:
  * \code
@@ -17386,9 +17386,9 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
  *
  * \details
  * This function creates the metadata node for element interpolation.
- * After calling this, use cg_element_interpolation_points_write() for
- * nodal (Lagrange) interpolation or cg_element_interpolation_coefficients_write()
- * for modal (monomial) interpolation to store the actual interpolation data.
+ * After calling this, use cg_element_interpolation_points_write() to store the
+ * control points.  Mesh interpolation is nodal only (CPEX-0045): neither modal
+ * type may be attached to an ElementInterpolation_t.
  *
  * The element type should be a high-order element such as QUAD_9, QUAD_16,
  * HEXA_27, HEXA_64, TRI_10, TETRA_20, etc.
@@ -17924,8 +17924,9 @@ int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
  * for space-time interpolation of flow variables.
  *
  * For nodal (Lagrange) interpolation, use cg_solution_interpolation_points_read()
- * to retrieve control point coordinates. For modal (monomial) interpolation,
- * use cg_solution_interpolation_coefficients_read().
+ * to retrieve control point coordinates. Modal (monomial) interpolation stores
+ * no array: the basis is fixed by the element dimension, the degrees and the
+ * Pascal traversal order, so there is nothing to read.
  *
  * Example:
  * \code
@@ -18220,8 +18221,9 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
  * \details
  * This function creates the metadata node for solution interpolation.
  * After calling this, use cg_solution_interpolation_points_write() for
- * nodal (Lagrange) interpolation or cg_solution_interpolation_coefficients_write()
- * for modal (monomial) interpolation.
+ * nodal (Lagrange) interpolation.  Modal (monomial) interpolation needs no
+ * further call: the basis is fully determined by the element dimension, the
+ * degrees and the Pascal traversal order.
  *
  * **Element Type:** Should be a high-order element such as QUAD_9, HEXA_27, TRI_10, etc.
  * The spatial order typically matches the element order (e.g., os=2 for QUAD_9).
@@ -18493,8 +18495,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     if (sinterp->interpolationName == CGNS_ENUMV(ParametricMonomialsPascal) ||
         sinterp->interpolationName == CGNS_ENUMV(CartesianMonomialsPascal)) {
         cgi_error("LagrangeControlPoints cannot be written to a SolutionInterpolation_t "
-                  "node whose InterpolationType is %s; use "
-                  "cg_solution_interpolation_coefficients_write() instead.",
+                  "node whose InterpolationType is %s; a modal basis stores no "
+                  "array.",
                   cg_InterpolationTypeName(sinterp->interpolationName));
         return CG_ERROR;
     }
@@ -18868,215 +18870,7 @@ int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *
     return CG_OK;
 }
 
-/**
- * \brief Write monomial coefficients for solution interpolation
- *
- * Writes the monomial coefficient array for modal solution interpolation,
- * including optional temporal coefficients for space-time interpolation.
- *
- * \param[in] fn    CGNS file index number
- * \param[in] bn    Base index number (1-based)
- * \param[in] fam   Family index number (1-based)
- * \param[in] sn    SolutionInterpolation index (1-based)
- * \param[in] coeff Monomial coefficients (allocated by caller)
- * \return    CG_OK on success, CG_ERROR on failure
- *
- * \details
- * Writes the MonomialCoefficients data array to a SolutionInterpolation_t node.
- * For space-time interpolation, coefficients represent the tensor product
- * of spatial and temporal modal bases.
- *
- * Array size must match cg_solution_monomial_size() for the element type
- * and interpolation orders.
- */
-int cg_solution_interpolation_coefficients_write(int fn, int bn, int fam, int sn, double *coeff)
-{
-    cgsize_t i;
-    int ncoeff;
-    double *data;
-    double dummy_id;
-    cgsize_t dim_vals[2];
-    cgns_family *family;
-    cgns_solutionInterpolation *sinterp;
 
-    cg = cgi_get_file(fn);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-
-    family = cgi_get_family(cg, bn, fam);
-    if (family==0) return CG_ERROR;
-
-    /* Check bounds */
-    if (sn > family->nsolutioninterpolation || sn <= 0)
-    {
-        cgi_error("Invalid solution interpolation index (%d/%d)", sn,
-                  family->nsolutioninterpolation);
-        return CG_ERROR;
-    }
-    sn--;  /* Adjust for C indexing */
-
-    sinterp = &family->solutioninterpolations[sn];
-
-    /* CPEX-0045: modal coefficients belong only to the two modal types.  The
-     * mirror-image guard is already present on
-     * cg_solution_interpolation_points_write. */
-    if (sinterp->interpolationName != CGNS_ENUMV(ParametricMonomialsPascal) &&
-        sinterp->interpolationName != CGNS_ENUMV(CartesianMonomialsPascal))
-    {
-        cgi_error("MonomialCoefficients cannot be written to a SolutionInterpolation_t "
-                  "whose InterpolationType is %s; write LagrangeControlPoints instead",
-                  cg_InterpolationTypeName(sinterp->interpolationName));
-        return CG_ERROR;
-    }
-
-    /* Reject a second MonomialCoefficients write only in CG_MODE_WRITE; in
-     * CG_MODE_MODIFY the existing node is deleted and replaced below. */
-    if (sinterp->monomialCoeff != NULL && cg->mode == CG_MODE_WRITE) {
-        cgi_error("MonomialCoefficients already written for "
-                  "SolutionInterpolation_t node '%s'. Open the file in "
-                  "CG_MODE_MODIFY to replace.", sinterp->name);
-        return CG_ERROR;
-    }
-
-    /* Get number of coefficients */
-    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialdegree,
-                                  sinterp->temporaldegree, &ncoeff) != CG_OK) {
-        return CG_ERROR;
-    }
-
-    /* Check input */
-    if (!coeff) {
-        cgi_error("NULL coefficient array");
-        return CG_ERROR;
-    }
-
-    /* Allocate and copy data */
-    data = (double *)malloc(ncoeff * sizeof(double));
-    if (!data) {
-        cgi_error("Error allocating monomial coefficients");
-        return CG_ERROR;
-    }
-
-    for (i = 0; i < ncoeff; i++) {
-        data[i] = coeff[i];
-    }
-
-    /* Replace any existing on-disk node and in-memory cache (CG_MODE_MODIFY). */
-    if (sinterp->monomialCoeff) {
-        cgi_delete_node(sinterp->id, sinterp->monomialCoeff->id);
-        /* frees ->data as before, and additionally ->link, which the read path
-         * populates via cgi_read_link() */
-        cgi_free_array(sinterp->monomialCoeff);
-        CGNS_FREE(sinterp->monomialCoeff);
-        sinterp->monomialCoeff = 0;
-    }
-
-    /* Write MonomialCoefficients data array */
-    dim_vals[0] = ncoeff;
-    if (cgi_new_node(sinterp->id, "MonomialCoefficients", "DataArray_t",
-                     &dummy_id, "R8", 1, dim_vals, data))
-    {
-        free(data);
-        return CG_ERROR;
-    }
-
-    /* Keep the in-memory cache consistent so a subsequent write in the same
-     * session correctly detects the existing node. */
-    sinterp->monomialCoeff = CGNS_NEW(cgns_array, 1);
-    memset(sinterp->monomialCoeff, 0, sizeof(cgns_array));
-    snprintf(sinterp->monomialCoeff->name, sizeof(sinterp->monomialCoeff->name),
-             "%s", "MonomialCoefficients");
-    snprintf(sinterp->monomialCoeff->data_type, sizeof(sinterp->monomialCoeff->data_type),
-             "%s", "R8");
-    sinterp->monomialCoeff->data_dim = 1;
-    sinterp->monomialCoeff->dim_vals[0] = ncoeff;
-    sinterp->monomialCoeff->id = dummy_id;
-    sinterp->monomialCoeff->data = data;
-
-    return CG_OK;
-}
-
-/**
- * \brief Read monomial coefficients for solution interpolation
- *
- * Reads the monomial coefficient array for modal solution interpolation.
- *
- * \param[in]  fn    CGNS file index number
- * \param[in]  bn    Base index number (1-based)
- * \param[in]  fam   Family index number (1-based)
- * \param[in]  sn    SolutionInterpolation index (1-based)
- * \param[out] coeff Monomial coefficients (allocated by caller)
- * \return     CG_OK on success, CG_ERROR on failure
- *
- * \details
- * Reads the MonomialCoefficients data array from a SolutionInterpolation_t node.
- * The caller must allocate the coefficient array using the size returned by
- * cg_solution_monomial_size().
- */
-int cg_solution_interpolation_coefficients_read(int fn, int bn, int fam, int sn, double *coeff)
-{
-    cgsize_t i;
-    int ncoeff;
-    cgns_family *family;
-    cgns_solutionInterpolation *sinterp;
-    cgns_array *mcoeff;
-
-    cg = cgi_get_file(fn);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
-
-    family = cgi_get_family(cg, bn, fam);
-    if (family==0) return CG_ERROR;
-
-    /* Check bounds */
-    if (sn > family->nsolutioninterpolation || sn <= 0)
-    {
-        cgi_error("Invalid solution interpolation index (%d/%d)", sn,
-                  family->nsolutioninterpolation);
-        return CG_ERROR;
-    }
-    sn--;  /* Adjust for C indexing */
-
-    sinterp = &family->solutioninterpolations[sn];
-    mcoeff = sinterp->monomialCoeff;
-
-    /* Check if coefficients exist */
-    if (!mcoeff)
-    {
-        cgi_error("No monomial coefficients for this solution interpolation node");
-        return CG_NODE_NOT_FOUND;
-    }
-
-    /* Get expected number of coefficients */
-    if (cg_solution_monomial_size(sinterp->type, sinterp->spatialdegree,
-                                  sinterp->temporaldegree, &ncoeff) != CG_OK) {
-        return CG_ERROR;
-    }
-
-    /* Sanity check */
-    if (mcoeff->dim_vals[0] != ncoeff)
-    {
-        cgi_error("Coefficient count mismatch: expected %" PRIdCGSIZE ", got %" PRIdCGSIZE,
-                  ncoeff, mcoeff->dim_vals[0]);
-        return CG_ERROR;
-    }
-
-    /* Check input */
-    if (!coeff) {
-        cgi_error("NULL coefficient array");
-        return CG_ERROR;
-    }
-
-    /* Copy data */
-    double *data = (double *)mcoeff->data;
-    for (i = 0; i < ncoeff; i++) {
-        coeff[i] = data[i];
-    }
-
-    return CG_OK;
-}
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
@@ -20637,7 +20431,7 @@ int cg_narrays(int *narrays)
     } else if (strcmp(posit->label,"SolutionInterpolation_t")==0) {
         cgns_solutionInterpolation *si =
             (cgns_solutionInterpolation *)posit->posit;
-        (*narrays) = (si->lagrangePts ? 1 : 0) + (si->monomialCoeff ? 1 : 0);
+        (*narrays) = (si->lagrangePts ? 1 : 0);
 
     } else if (strcmp(posit->label,"ParticleSolution_t")==0) {
        cgns_psol *sol = (cgns_psol *)posit->posit;
@@ -23840,8 +23634,7 @@ int cg_delete_node(const char *node_name)
          * keeps the two views consistent, and matches the read-only stance
          * cgi_array_address() already takes for these labels: use
          * cg_element_interpolation_points_write /
-         * cg_solution_interpolation_points_write /
-         * cg_solution_interpolation_coefficients_write to replace the contents,
+         * cg_solution_interpolation_points_write to replace the contents,
          * which maintain both views.  (The former narrower guards named
          * ElementType_t/InterpolationType_t, which are these nodes' own
          * payloads rather than children, and so never matched.) */

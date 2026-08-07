@@ -96,7 +96,6 @@ static cgsize_t write_case(const char *filename, int p, int q,
                   q > 0 ? pv : NULL), "lagrange points at degree 0")) return -1;
     } else {
         int nmodal = 0;
-        double *coeff;
         if (check(cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), p, q, &nmodal),
                   "monomial size at degree 0")) return -1;
         if (nmodal != (q + 1)) {
@@ -105,10 +104,9 @@ static cgsize_t write_case(const char *filename, int p, int q,
             failures++;
             return -1;
         }
-        coeff = (double *)calloc((size_t)nmodal, sizeof(double));
-        if (check(cg_solution_interpolation_coefficients_write(fn, B, F, si, coeff),
-                  "monomial coefficients")) { free(coeff); return -1; }
-        free(coeff);
+        /* A modal basis stores no array (CPEX-0045 withdraws
+         * MonomialCoefficients): the cardinality checked above is the whole of
+         * what the degree-0 modal case has to assert. */
     }
 
     if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S), "sol")) return -1;

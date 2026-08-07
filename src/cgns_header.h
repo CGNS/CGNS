@@ -1064,7 +1064,9 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     int temporaldegree;              /* Order of the temporal interpolation */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
-    cgns_array *monomialCoeff;      /* ptrs to in-mem. copy of monomial coefficients */
+    /* No monomialCoeff: MonomialCoefficients is withdrawn (CPEX-0045).  A modal
+     * basis is determined by the element dimension, the two degrees and the
+     * Pascal traversal order, so it stores no array. */
     cgns_array *lagrangeDist;       /* optional ControlPointDistribution: a labelled
                                      * ControlPointDistribution_t enum node with an I4
                                      * scalar payload (not a DataArray_t); NULL -> not recorded */

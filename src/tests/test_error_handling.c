@@ -610,7 +610,6 @@ int test_rewrite_guards(void)
     cgsize_t size[9];
     double pu[9] = {-1.,0.,1.,-1.,0.,1.,-1.,0.,1.};
     double pv[9] = {-1.,-1.,-1.,0.,0.,0.,1.,1.,1.};
-    double coeff[6] = {1.,2.,3.,4.,5.,6.};
     int result;
 
     printf("\n==============================================\n");
@@ -652,7 +651,9 @@ int test_rewrite_guards(void)
     }
     printf("  correctly rejected (error code: %d)\n", result);
 
-    /* --- SolutionInterpolation_t: MonomialCoefficients (modal) --- */
+    /* A modal SolutionInterpolation_t stores no array (CPEX-0045: the basis is
+     * fixed by element dimension, degrees and Pascal traversal order), so there
+     * is no second-write guard to exercise on it. */
     if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Quad_P2_modal",
                                         CGNS_ENUMV(QUAD_4), 2, 0,
                                         CGNS_ENUMV(ParametricMonomialsPascal), &sn))
@@ -660,22 +661,6 @@ int test_rewrite_guards(void)
         fprintf(stderr, "ERROR: solution_interpolation_write failed\n");
         cg_close(cgfile); return 1;
     }
-    if (cg_solution_interpolation_coefficients_write(cgfile, cgbase, cgfamily,
-                                                     sn, coeff))
-    {
-        fprintf(stderr, "ERROR: first coefficients write failed\n");
-        cg_close(cgfile); return 1;
-    }
-    printf("Testing second solution coefficients write in CG_MODE_WRITE...\n");
-    result = cg_solution_interpolation_coefficients_write(cgfile, cgbase,
-                                                          cgfamily, sn, coeff);
-    if (result == CG_OK)
-    {
-        fprintf(stderr, "ERROR: duplicate solution coefficients write should be "
-                        "rejected in CG_MODE_WRITE\n");
-        cg_close(cgfile); return 1;
-    }
-    printf("  correctly rejected (error code: %d)\n", result);
     cg_close(cgfile);
 
     /* --- CG_MODE_MODIFY must replace rather than reject --- */
@@ -693,15 +678,7 @@ int test_rewrite_guards(void)
                         "%s\n", cg_get_error());
         cg_close(cgfile); return 1;
     }
-    coeff[0] = 9.0;
-    if (cg_solution_interpolation_coefficients_write(cgfile, cgbase, cgfamily,
-                                                     sn, coeff))
-    {
-        fprintf(stderr, "ERROR: coefficients write in CG_MODE_MODIFY should "
-                        "succeed: %s\n", cg_get_error());
-        cg_close(cgfile); return 1;
-    }
-    printf("  both replacements accepted in CG_MODE_MODIFY\n");
+    printf("  replacement accepted in CG_MODE_MODIFY\n");
     cg_close(cgfile);
 
     /* --- and the replacement actually took effect --- */
@@ -711,7 +688,7 @@ int test_rewrite_guards(void)
         return 1;
     }
     {
-        double back_u[9], back_v[9], back_c[6];
+        double back_u[9], back_v[9];
         if (cg_element_interpolation_points_read(cgfile, cgbase, cgfamily, en,
                                                 back_u, back_v, NULL))
         {
@@ -722,18 +699,6 @@ int test_rewrite_guards(void)
         {
             fprintf(stderr, "ERROR: MODIFY did not replace points "
                             "(got %g, expected 0.25)\n", back_u[4]);
-            cg_close(cgfile); return 1;
-        }
-        if (cg_solution_interpolation_coefficients_read(cgfile, cgbase, cgfamily,
-                                                        sn, back_c))
-        {
-            fprintf(stderr, "ERROR: coefficients read failed\n");
-            cg_close(cgfile); return 1;
-        }
-        if (back_c[0] != 9.0)
-        {
-            fprintf(stderr, "ERROR: MODIFY did not replace coefficients "
-                            "(got %g, expected 9.0)\n", back_c[0]);
             cg_close(cgfile); return 1;
         }
     }

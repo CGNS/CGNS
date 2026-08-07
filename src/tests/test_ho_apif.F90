@@ -123,12 +123,7 @@
      &                        'QuadModal', CGNS_ENUMV(QUAD_4), 2, 0, &
      &                        CGNS_ENUMV(CartesianMonomialsPascal), cgsm, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      do i = 1, 6
-        coeff(i) = dble(i)*0.5_dp
-      enddo
-      call cg_solution_interpolation_coefficients_write_f(cgfile, cgbase, &
-     &                        cgfam, cgsm, coeff, ierr)
-      if (ierr .ne. CG_OK) call cg_error_exit_f
+      ! A modal SolutionInterpolation_t stores no array (CPEX-0045).
 
 ! ---- FlowSolution point set + degrees + characteristic length ------------
       prange(1) = 1

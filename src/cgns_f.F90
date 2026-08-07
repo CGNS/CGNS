@@ -5655,46 +5655,8 @@ CONTAINS
   END SUBROUTINE cg_solution_interpolation_find_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_coefficients_write_f
-!DEC$endif
-  SUBROUTINE cg_solution_interpolation_coefficients_write_f(fn, B, fam, sn, coeff, ier)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, fam, sn
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: coeff
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_solution_interpolation_coefficients_write(fn, bn, fam, sn, coeff) &
-          BIND(C, name="cg_solution_interpolation_coefficients_write")
-        IMPORT :: C_INT, C_DOUBLE
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: coeff
-      END FUNCTION cg_solution_interpolation_coefficients_write
-    END INTERFACE
-    ier = INT(cg_solution_interpolation_coefficients_write(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(sn,C_INT), coeff))
-  END SUBROUTINE cg_solution_interpolation_coefficients_write_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_coefficients_read_f
-!DEC$endif
-  SUBROUTINE cg_solution_interpolation_coefficients_read_f(fn, B, fam, sn, coeff, ier)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, fam, sn
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: coeff
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_solution_interpolation_coefficients_read(fn, bn, fam, sn, coeff) &
-          BIND(C, name="cg_solution_interpolation_coefficients_read")
-        IMPORT :: C_INT, C_DOUBLE
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: coeff
-      END FUNCTION cg_solution_interpolation_coefficients_read
-    END INTERFACE
-    ier = INT(cg_solution_interpolation_coefficients_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(sn,C_INT), coeff))
-  END SUBROUTINE cg_solution_interpolation_coefficients_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_read_f
