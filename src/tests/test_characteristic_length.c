@@ -1,9 +1,14 @@
 /*
- * CPEX-0045 v3 CharacteristicLength tests.
+ * CPEX-0045 v4 CharacteristicLength tests.
  *
  * CharacteristicLength records the per-element coordinate normalisation used
- * for CartesianMonomialsPascal interpolation. Two encodings are normative and
- * are distinguished by array rank:
+ * for CartesianMonomialsPascal interpolation. It is stored inside the
+ * InterpolationMetadata UserDefinedData_t child of the FlowSolution_t, never
+ * as a DataArray_t child of the FlowSolution_t itself: those are the solution
+ * fields, the library enumerates them by label, and an array stored there is
+ * counted by cg_nfields and rejected by the field size check.
+ *
+ * Two encodings are normative and are distinguished by array rank:
  *
  *   isotropic : R8, 1-D, [numElements]           (nscale == 1)
  *   per-axis  : R8, 2-D, [nscale, numElements]   (nscale == PhysDim)
@@ -19,8 +24,10 @@
  *   D - absent node returns CG_NODE_NOT_FOUND
  *   E - input validation (bad nscale, non-positive factors)
  *   F - re-write rejected in CG_MODE_WRITE, accepted in CG_MODE_MODIFY
- *   G - the node is not exposed as a FlowSolution field, and a file
- *       containing it still reopens under field size checking
+ *   G - the node is not a FlowSolution field and is not even a DataArray_t
+ *       child of it; the file reopens under field size checking
+ *   H - the superseded v3 layout (array directly under FlowSolution_t) is
+ *       rejected on reopen
  */
 
 #include <stdio.h>
@@ -108,7 +115,7 @@ static int make_file(const char *filename, int *fn, int *B, int *Z, int *S)
 static int test_not_a_field(void)
 {
     const char *filename = "test_charlen_field.cgns";
-    int fn, B, Z, S, nf, i;
+    int fn, B, Z, S, nf, i, narr;
     double h[PHYSDIM * N_ELEM];
 
     printf("\n--- G: CharacteristicLength is not a solution field ---\n");
@@ -128,7 +135,7 @@ static int test_not_a_field(void)
     if (check(cg_nfields(fn, B, Z, 1, &nf), "nfields")) return 1;
     if (nf != 1) {
         fprintf(stderr, "ERROR: expected exactly 1 solution field, got %d "
-                        "(CharacteristicLength must be excluded)\n", nf);
+                        "(CharacteristicLength must not be one)\n", nf);
         return 1;
     }
     {
@@ -142,10 +149,106 @@ static int test_not_a_field(void)
             return 1;
         }
     }
+
+    /* The v4 guarantee is structural, not a filtered field count: the array
+     * must not be a DataArray_t child of the FlowSolution_t at all. Checking
+     * cg_nfields alone would still pass if the library were filtering by
+     * name, so walk the raw children too. */
+    if (check(cg_goto(fn, B, "Zone_t", Z, "FlowSolution_t", 1, "end"),
+              "goto sol")) return 1;
+    if (check(cg_narrays(&narr), "narrays")) return 1;
+    if (narr != 1) {
+        fprintf(stderr, "ERROR: FlowSolution_t has %d DataArray_t children, "
+                        "expected 1 (Density only)\n", narr);
+        return 1;
+    }
+
+    /* ...and it must be present in the container, not merely missing.
+     * cg_user_data_read reads a child of the current node, so it is called
+     * at the FlowSolution_t; the goto below then descends into it. */
+    {
+        char uname[33];
+        int nud;
+        if (check(cg_nuser_data(&nud), "nuser_data")) return 1;
+        if (nud != 1) {
+            fprintf(stderr, "ERROR: FlowSolution_t has %d UserDefinedData_t "
+                            "children, expected 1\n", nud);
+            return 1;
+        }
+        if (check(cg_user_data_read(1, uname), "user_data_read")) return 1;
+        if (strcmp(uname, "InterpolationMetadata") != 0) {
+            fprintf(stderr, "ERROR: container is \"%s\", expected "
+                            "\"InterpolationMetadata\"\n", uname);
+            return 1;
+        }
+    }
+    if (check(cg_goto(fn, B, "Zone_t", Z, "FlowSolution_t", 1,
+                      "UserDefinedData_t", 1, "end"), "goto container"))
+        return 1;
+    if (check(cg_narrays(&narr), "narrays in container")) return 1;
+    if (narr != 1) {
+        fprintf(stderr, "ERROR: InterpolationMetadata has %d arrays, "
+                        "expected 1\n", narr);
+        return 1;
+    }
+    {
+        char aname[33];
+        CGNS_ENUMT(DataType_t) adt;
+        int andim;
+        cgsize_t adims[12];
+        if (check(cg_array_info(1, aname, &adt, &andim, adims), "array_info"))
+            return 1;
+        if (strcmp(aname, "CharacteristicLength") != 0) {
+            fprintf(stderr, "ERROR: container holds \"%s\", expected "
+                            "\"CharacteristicLength\"\n", aname);
+            return 1;
+        }
+    }
     if (check(cg_close(fn), "close R")) return 1;
 
     printf("  file with element sections reopens cleanly\n");
-    printf("  cg_nfields reports 1 field (Density); metadata excluded\n");
+    printf("  cg_nfields reports 1 field (Density)\n");
+    printf("  FlowSolution_t has 1 DataArray_t child; metadata is in the "
+           "container\n");
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* H - the superseded v3 layout must be rejected                       */
+/* ------------------------------------------------------------------ */
+static int test_v3_layout_rejected(void)
+{
+    const char *filename = "test_charlen_v3layout.cgns";
+    int fn, B, Z, S, i;
+    cgsize_t dims[2];
+    double h[PHYSDIM * N_ELEM];
+
+    printf("\n--- H: v3 layout (array under FlowSolution_t) is rejected ---\n");
+
+    for (i = 0; i < PHYSDIM * N_ELEM; i++) h[i] = 1.0 + i;
+
+    /* Hand-build the superseded layout: the accessor will not produce it, so
+     * write the array directly under the FlowSolution_t via cg_array_write. */
+    if (make_file(filename, &fn, &B, &Z, &S)) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, "FlowSolution_t", S, "end"),
+              "goto sol")) return 1;
+    dims[0] = PHYSDIM;
+    dims[1] = N_ELEM;
+    if (check(cg_array_write("CharacteristicLength", CGNS_ENUMV(RealDouble),
+                             2, dims, h), "array_write")) return 1;
+    if (check(cg_close(fn), "close W")) return 1;
+
+    /* The array is now one of the FlowSolution_t's DataArray_t children, so
+     * the field size check must reject it. Under v3 this file was accepted
+     * only because the library filtered the name out first. */
+    if (cg_open(filename, CG_MODE_READ, &fn) == CG_OK) {
+        fprintf(stderr, "ERROR: file with the v3 CharacteristicLength layout "
+                        "opened successfully; it must be rejected\n");
+        cg_close(fn);
+        return 1;
+    }
+
+    printf("  rejected on reopen: %s\n", cg_get_error());
     return 0;
 }
 
@@ -455,6 +558,7 @@ int main(void)
     if (test_validation())        errors++;
     if (test_rewrite_guard())     errors++;
     if (test_not_a_field())       errors++;
+    if (test_v3_layout_rejected()) errors++;
 
     printf("\n");
     printf("##################################################\n");

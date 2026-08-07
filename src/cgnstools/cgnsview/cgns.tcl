@@ -57,6 +57,7 @@ array set CGNSnodes {
   InterpolationType            {1 InterpolationType_t I4 1 0}
   ControlPointDistribution {1 ControlPointDistribution_t I4 1 0}
   InterpolationDegrees         {1 IndexArray_t I4 2 0}
+  InterpolationMetadata        {1 UserDefinedData_t MT {} 1}
   CharacteristicLength         {1 DataArray_t R8 {} 0}
   FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
   FlowSolution                 {0 FlowSolution_t MT {} 1}
@@ -189,7 +190,7 @@ array set CGNSnodeChildren {
       TurbulenceModel UserDefinedData ViscosityModel}
   FlowSolution_t {DataClass Descriptor DimensionalUnits \
       GridLocation Rind SolutionData UserDefinedData \
-      InterpolationDegrees CharacteristicLength}
+      InterpolationDegrees InterpolationMetadata}
   GasModel_t {DataArray DataClass Descriptor DimensionalUnits \
       UserDefinedData}
   GeometryReference_t {Descriptor GeometryEntity GeometryFile \
@@ -227,7 +228,8 @@ array set CGNSnodeChildren {
       DimensionalUnits UserDefinedData}
   TurbulenceModel_t {DataArray DataClass Descriptor DiffusionModel \
       DimensionalUnits UserDefinedData}
-  UserDefinedData_t {DataArray DataClass Descriptor DimensionalUnits}
+  UserDefinedData_t {DataArray DataClass Descriptor DimensionalUnits \
+      CharacteristicLength}
   ViscosityModel_t {DataArray DataClass Descriptor DimensionalUnits \
       UserDefinedData}
   WallFunction_t {Descriptor UserDefinedData WallFunctionType}
@@ -706,12 +708,17 @@ Constant or Frozen}}
 
       values are: 0:Null, 1:UserDefined, 2:GaussLobattoLegendre,\
       3:Equidistant, 4:GaussLegendre, 5:WarpAndBlend}}
+  InterpolationMetadata {InterpolationMetadata UserDefinedData_t {0,1} MT {} {} \
+      {Container for CPEX-0045 interpolation metadata under a FlowSolution_t.
+      Holds CharacteristicLength and nothing else. The container exists so
+      that the metadata is not one of the DataArray_t children of the
+      FlowSolution_t, which are the solution fields.}}
   CharacteristicLength {CharacteristicLength DataArray_t 1 R8 {} {} \
       {Per-element coordinate normalisation factors for Cartesian modal
-      interpolation. Rank selects the encoding: rank 1 is isotropic
-      ([NumElements]), rank 2 is per-axis ([PhysDim,NumElements]).
-      All factors must be strictly positive. This node is interpolation
-      metadata, not a solution field.}}
+      interpolation, stored under InterpolationMetadata. Rank selects the
+      encoding: rank 1 is isotropic ([NumElements]), rank 2 is per-axis
+      ([PhysDim,NumElements]). All factors must be strictly positive.
+      This node is interpolation metadata, not a solution field.}}
 }
 
 array set CGNSnodeRef {
@@ -942,7 +949,7 @@ proc cgns_init {{version ""}} {
         TurbulenceModel UserDefinedData ViscosityModel}
       FlowSolution_t {DataClass Descriptor DimensionalUnits \
         GridLocation Rind SolutionData UserDefinedData \
-      InterpolationDegrees CharacteristicLength}
+      InterpolationDegrees InterpolationMetadata}
       GasModel_t {DataArray DataClass Descriptor DimensionalUnits \
         UserDefinedData}
       GeometryReference_t {Descriptor GeometryEntity GeometryFile \
@@ -1113,7 +1120,7 @@ proc cgns_init {{version ""}} {
       FamilyBC_t {FamilyBCDataSet}
       FlowSolution_t {DataClass Descriptor DimensionalUnits \
         GridLocation PointList PointRange Rind SolutionData \
-        UserDefinedData InterpolationDegrees CharacteristicLength}
+        UserDefinedData InterpolationDegrees InterpolationMetadata}
       ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
         Descriptor DimensionalUnits FlowSolutionPointers \
         GridCoordinatesPointers RigidGridMotionPointers \

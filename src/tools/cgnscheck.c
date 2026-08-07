@@ -5859,19 +5859,22 @@ static void check_solution (int ns)
     if (nf == 0)
         warning (2, "no solution data arrays defined");
 
-    /* Iterate the raw DataArray_t children rather than 1..cg_nfields: the
-     * library excludes CPEX-0045 interpolation metadata from the field count,
-     * but cg_array_info still indexes every DataArray_t, so the two
-     * enumerations would otherwise disagree. */
     if (cg_narrays (&narr))
         error_exit("cg_narrays");
     for (n = 1; n <= narr; n++) {
         if (cg_array_info (n, name, &datatype, &ndim, dims))
             error_exit("cg_array_info");
-        /* Interpolation metadata carries its own shape and is validated
-         * separately below; it is not a solution field. */
-        if (strcmp (name, "CharacteristicLength") == 0)
+        /* CPEX-0045 v4: interpolation metadata belongs in the
+         * InterpolationMetadata container, not among the solution fields.
+         * A CharacteristicLength here is the superseded v3 layout, which
+         * puts a non-conforming array in the field list. */
+        if (strcmp (name, "CharacteristicLength") == 0) {
+            error("CharacteristicLength must be a child of the "
+                  "InterpolationMetadata UserDefinedData_t node, not of "
+                  "FlowSolution_t (CPEX-0045 v4 sec:cartesian-modal). This "
+                  "is the superseded v3 layout.");
             continue;
+        }
         printf ("    checking solution field \"%s\"\n", name);
         fflush (stdout);
         for (size = 1, id = 0; id < ndim; id++)
@@ -5882,10 +5885,10 @@ static void check_solution (int ns)
         check_quantity (n, name, dataclass, punits, 1, 6);
     }
 
-    /* CPEX-0045 v3 §3.3.1: CharacteristicLength shape check.
-     * If a "CharacteristicLength" DataArray_t is present under the
-     * FlowSolution_t, it must be R8, 1-D, and length equal to the number of
-     * elements covered by the block. We also cross-check against the
+    /* CPEX-0045 v4 §3.3.1: CharacteristicLength shape check.
+     * If a "CharacteristicLength" DataArray_t is present in the
+     * InterpolationMetadata container, it must be R8, rank 1 or 2, and cover
+     * the number of elements in the block. We also cross-check against the
      * zone's Family_t SolutionInterpolation_t entries: if the matching
      * entry (found via cg_solution_interpolation_find, which implements the
      * bidirectional-with-fallback lookup of §sec:solution-interpolation) has
@@ -6010,14 +6013,16 @@ static void check_solution (int ns)
                         it_found == CGNS_ENUMV(CartesianMonomialsPascal))
                     {
                         if (strict_cpex45)
-                            error("CPEX-0045 v3 sec:cartesian-modal: CharacteristicLength "
+                            error("CPEX-0045 v4 sec:cartesian-modal: the "
+                                  "InterpolationMetadata/CharacteristicLength node "
                                   "is mandatory when the associated SolutionInterpolation_t "
                                   "uses CartesianMonomialsPascal, but is absent from this "
                                   "FlowSolution_t.");
                         else
-                            warning(2, "CharacteristicLength is normally required for "
-                                       "CartesianMonomialsPascal interpolation but is "
-                                       "absent from this FlowSolution_t.");
+                            warning(2, "InterpolationMetadata/CharacteristicLength is "
+                                       "normally required for CartesianMonomialsPascal "
+                                       "interpolation but is absent from this "
+                                       "FlowSolution_t.");
                     }
                 }
             }

@@ -1822,13 +1822,97 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     return CG_OK;
 }
 
-/* CPEX-0045: some DataArray_t children of FlowSolution_t are interpolation
- * metadata rather than solution fields. They carry their own shapes, so they
- * must be excluded from the field list: otherwise cg_nfields reports them as
- * fields and the field size check below rejects the file outright. */
-static int cgi_is_sol_metadata_array(const char *name)
+/* CPEX-0045 v4: interpolation metadata is held in a UserDefinedData_t child of
+ * FlowSolution_t named "InterpolationMetadata", not among the DataArray_t
+ * children.  Every DataArray_t child of a FlowSolution_t is therefore a solution
+ * field again, and cg_nfields keeps its established meaning -- no name-based
+ * exclusion, and none of the per-file cost of looking for one.
+ *
+ * Shape validation runs here, at open time, so a malformed node is caught when
+ * the file is opened rather than when someone happens to read it.  It works from
+ * the structures cgi_read_user_data has already populated, so unlike the v3
+ * arrangement it issues no cgio calls of its own. */
+static int cgi_check_interp_metadata(const cgns_sol *sol, const cgns_zone *zone,
+                                     int Pdim, int Cdim)
 {
-    return (strcmp(name, "CharacteristicLength") == 0);
+    int u, a;
+
+    for (u = 0; u < sol->nuser_data; u++) {
+        const cgns_user_data *ud = &sol->user_data[u];
+        const cgns_array *cl = NULL;
+
+        if (strcmp(ud->name, "InterpolationMetadata")) continue;
+
+        for (a = 0; a < ud->narrays; a++) {
+            if (0 == strcmp(ud->array[a].name, "CharacteristicLength"))
+                cl = &ud->array[a];
+            else {
+                cgi_error("InterpolationMetadata in FlowSolution '%s' may not "
+                          "contain '%s'", sol->name, ud->array[a].name);
+                return CG_ERROR;
+            }
+        }
+        if (cl == NULL) {
+            cgi_error("InterpolationMetadata in FlowSolution '%s' must contain "
+                      "CharacteristicLength", sol->name);
+            return CG_ERROR;
+        }
+
+        if (strcmp(cl->data_type, "R8")) {
+            cgi_error("CharacteristicLength in FlowSolution '%s' must be "
+                      "R8, got %s", sol->name, cl->data_type);
+            return CG_ERROR;
+        }
+        if (cl->data_dim != 1 && cl->data_dim != 2) {
+            cgi_error("CharacteristicLength in FlowSolution '%s' must have "
+                      "rank 1 (isotropic) or 2 (per-axis), got %d",
+                      sol->name, cl->data_dim);
+            return CG_ERROR;
+        }
+        if (cl->data_dim == 2 && cl->dim_vals[0] != 1 &&
+            cl->dim_vals[0] != (cgsize_t)Pdim) {
+            cgi_error("CharacteristicLength in FlowSolution '%s': nscale must "
+                      "be 1 or PhysDim=%d, got %"PRIdCGSIZE,
+                      sol->name, Pdim, cl->dim_vals[0]);
+            return CG_ERROR;
+        }
+
+        /* Element count must agree with the block: the number of elements
+         * listed by the point set, or every cell of the zone for a whole-zone
+         * block. */
+        {
+            cgsize_t nelem = (cl->data_dim == 1) ? cl->dim_vals[0]
+                                                 : cl->dim_vals[1];
+            if (sol->ptset != NULL) {
+                if (nelem != sol->ptset->size_of_patch) {
+                    cgi_error("CharacteristicLength in FlowSolution '%s' covers %"
+                              PRIdCGSIZE " elements but the block lists %"
+                              PRIdCGSIZE, sol->name, nelem,
+                              sol->ptset->size_of_patch);
+                    return CG_ERROR;
+                }
+            }
+            else if (zone != NULL && zone->nsections > 0) {
+                cgsize_t ncell = 0;
+                int si, edim;
+                for (si = 0; si < zone->nsections; si++) {
+                    CGNS_ENUMT(ElementType_t) et = zone->section[si].el_type;
+                    if (et != CGNS_ENUMV(MIXED) &&
+                        cg_element_dimension(et, &edim) == CG_OK && edim < Cdim)
+                        continue;   /* boundary section: not a cell */
+                    ncell += zone->section[si].range[1] -
+                             zone->section[si].range[0] + 1;
+                }
+                if (nelem != ncell) {
+                    cgi_error("CharacteristicLength in FlowSolution '%s' covers %"
+                              PRIdCGSIZE " elements but the zone has %"
+                              PRIdCGSIZE " cells", sol->name, nelem, ncell);
+                    return CG_ERROR;
+                }
+            }
+        }
+    }
+    return CG_OK;
 }
 
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
@@ -1985,97 +2069,6 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
             &idf)) return CG_ERROR;
 
-     /* Drop interpolation-metadata arrays before they are treated as fields.
-      * idf is allocated whenever the raw count was non-zero, so it must still
-      * be released even if filtering leaves no fields behind. */
-        if (sol[0][s].nfields > 0) {
-            int nkept = 0;
-            for (z=0; z<sol[0][s].nfields; z++) {
-                char_33 aname;
-                if (cgio_get_name(cg->cgio, idf[z], aname)) {
-                    cg_io_error("cgio_get_name");
-                    CGNS_FREE(idf);
-                    return CG_ERROR;
-                }
-                if (!cgi_is_sol_metadata_array(aname))
-                    idf[nkept++] = idf[z];
-                else if (0 == strcmp(aname, "CharacteristicLength")) {
-                    /* Validate the shape while the node is in hand.  Only the
-                     * metadata is inspected -- datatype, rank, nscale and the
-                     * element count -- so this costs no data read.  Positivity of
-                     * the factors is checked in
-                     * cg_sol_characteristic_length_read(), which is where the
-                     * values are actually pulled. */
-                    char_33 cl_dtype;
-                    int cl_ndim;
-                    cgsize_t cl_dims[CGIO_MAX_DIMENSIONS];
-                    cgsize_t nelem;
-
-                    if (cgio_get_data_type(cg->cgio, idf[z], cl_dtype) ||
-                        cgio_get_dimensions(cg->cgio, idf[z], &cl_ndim, cl_dims)) {
-                        cg_io_error("cgio_get_data_type/dimensions");
-                        CGNS_FREE(idf);
-                        return CG_ERROR;
-                    }
-                    if (strcmp(cl_dtype, "R8")) {
-                        cgi_error("CharacteristicLength in FlowSolution '%s' must be "
-                                  "R8, got %s", sol[0][s].name, cl_dtype);
-                        CGNS_FREE(idf);
-                        return CG_ERROR;
-                    }
-                    if (cl_ndim != 1 && cl_ndim != 2) {
-                        cgi_error("CharacteristicLength in FlowSolution '%s' must have "
-                                  "rank 1 (isotropic) or 2 (per-axis), got %d",
-                                  sol[0][s].name, cl_ndim);
-                        CGNS_FREE(idf);
-                        return CG_ERROR;
-                    }
-                    if (cl_ndim == 2 && cl_dims[0] != 1 && cl_dims[0] != (cgsize_t)Pdim) {
-                        cgi_error("CharacteristicLength in FlowSolution '%s': nscale must "
-                                  "be 1 or PhysDim=%d, got %"PRIdCGSIZE,
-                                  sol[0][s].name, Pdim, cl_dims[0]);
-                        CGNS_FREE(idf);
-                        return CG_ERROR;
-                    }
-                    /* Element count must agree with the block: the number of
-                     * elements listed by the point set, or every cell of the zone
-                     * for a whole-zone block. */
-                    nelem = (cl_ndim == 1) ? cl_dims[0] : cl_dims[1];
-                    if (sol[0][s].ptset != NULL) {
-                        if (nelem != sol[0][s].ptset->size_of_patch) {
-                            cgi_error("CharacteristicLength in FlowSolution '%s' covers %"
-                                      PRIdCGSIZE " elements but the block lists %"
-                                      PRIdCGSIZE, sol[0][s].name, nelem,
-                                      sol[0][s].ptset->size_of_patch);
-                            CGNS_FREE(idf);
-                            return CG_ERROR;
-                        }
-                    }
-                    else if (zone != NULL && zone->nsections > 0) {
-                        cgsize_t ncell = 0;
-                        int si, edim;
-                        for (si = 0; si < zone->nsections; si++) {
-                            CGNS_ENUMT(ElementType_t) et = zone->section[si].el_type;
-                            if (et != CGNS_ENUMV(MIXED) &&
-                                cg_element_dimension(et, &edim) == CG_OK && edim < Cdim)
-                                continue;   /* boundary section: not a cell */
-                            ncell += zone->section[si].range[1] -
-                                     zone->section[si].range[0] + 1;
-                        }
-                        if (nelem != ncell) {
-                            cgi_error("CharacteristicLength in FlowSolution '%s' covers %"
-                                      PRIdCGSIZE " elements but the zone has %"
-                                      PRIdCGSIZE " cells", sol[0][s].name, nelem, ncell);
-                            CGNS_FREE(idf);
-                            return CG_ERROR;
-                        }
-                    }
-                }
-            }
-            sol[0][s].nfields = nkept;
-            if (nkept == 0) CGNS_FREE(idf);
-        }
-
         if (sol[0][s].nfields > 0) {
             sol[0][s].field = CGNS_NEW(cgns_array, sol[0][s].nfields);
             for (z=0; z<sol[0][s].nfields; z++) {
@@ -2134,7 +2127,11 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, sol[0][s].id, &sol[0][s].nuser_data,
             &sol[0][s].user_data)) return CG_ERROR;
-        
+
+     /* CPEX-0045 v4: validate InterpolationMetadata now that its arrays are
+      * in memory.  No cgio traffic: everything inspected was read above. */
+        if (cgi_check_interp_metadata(&sol[0][s], zone, Pdim, Cdim))
+            return CG_ERROR;
     }
 
     CGNS_FREE(id);

@@ -8900,10 +8900,11 @@ int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-/* CPEX-0045 v3 §3.3.1: per-element characteristic length(s) for        */
+/* CPEX-0045 v4 §3.3.1: per-element characteristic length(s) for        */
 /* Cartesian modal interpolation, stored as an R8 DataArray_t named     */
-/* "CharacteristicLength" under the parent FlowSolution_t. Two encodings*/
-/* are normative and are distinguished by array rank:                   */
+/* "CharacteristicLength" inside the "InterpolationMetadata"            */
+/* UserDefinedData_t child of the FlowSolution_t. Two encodings are     */
+/* normative and are distinguished by array rank:                       */
 /*   rank 1, [numElements]          -> isotropic, one h^e per element   */
 /*   rank 2, [nscale, numElements]  -> per-axis, nscale factors/element */
 /* The per-axis form matches the directional non-dimensionalisation used*/
@@ -8911,8 +8912,70 @@ int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
 /* and is what keeps the modal mass matrix well conditioned on          */
 /* high-aspect-ratio cells. Writers record the factors they actually    */
 /* used; readers must use the recorded values and never recompute them. */
+/*                                                                      */
+/* The container is what keeps these factors out of the solution-field  */
+/* list: every DataArray_t child of a FlowSolution_t is a field, and    */
+/* the library enumerates them by label, so an array stored directly    */
+/* there would be counted by cg_nfields and rejected by the field size  */
+/* check. Storing it one level down removes the collision rather than   */
+/* documenting an exception to it.                                      */
 
-static int cgi_find_sol_array(cgns_sol *sol, const char *name,
+#define CG_INTERP_METADATA_NAME "InterpolationMetadata"
+
+/* Locate the InterpolationMetadata container under a FlowSolution_t.
+ * Returns CG_NODE_NOT_FOUND if absent and create is 0; creates it if
+ * create is non-zero. */
+static int cgi_interp_metadata_node(cgns_sol *sol, int create, double *id_out)
+{
+    int nnodes, n;
+    double *ids = NULL;
+    char_33 nname;
+    int found = 0;
+
+    if (cgi_get_nodes(sol->id, "UserDefinedData_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, CG_INTERP_METADATA_NAME) == 0) {
+            *id_out = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (found) return CG_OK;
+    if (!create) return CG_NODE_NOT_FOUND;
+
+    if (cgi_new_node(sol->id, CG_INTERP_METADATA_NAME, "UserDefinedData_t",
+                     id_out, "MT", 0, NULL, NULL))
+        return CG_ERROR;
+
+    /* Register the new container in the in-memory model as well, so that a
+     * cg_goto/cg_nuser_data in the same session sees it.  Writing the node
+     * alone would leave the tree stale until the file was reopened. */
+    {
+        cgns_user_data *ud;
+        if (sol->nuser_data == 0)
+            sol->user_data = CGNS_NEW(cgns_user_data, 1);
+        else
+            sol->user_data = CGNS_RENEW(cgns_user_data, sol->nuser_data + 1,
+                                        sol->user_data);
+        ud = &sol->user_data[sol->nuser_data];
+        memset(ud, 0, sizeof(cgns_user_data));
+        strcpy(ud->name, CG_INTERP_METADATA_NAME);
+        ud->id = *id_out;
+        ud->data_class = CGNS_ENUMV(DataClassNull);
+        ud->location = CGNS_ENUMV(Vertex);
+        sol->nuser_data++;
+    }
+    return CG_OK;
+}
+
+static int cgi_find_sol_array(double parent_id, const char *name,
                               double *node_id_out, int *ndim_out,
                               cgsize_t *dim_vals_out)
 {
@@ -8930,7 +8993,7 @@ static int cgi_find_sol_array(cgns_sol *sol, const char *name,
     cgsize_t match_dimvals[CGIO_MAX_DIMENSIONS];
     int i;
 
-    if (cgi_get_nodes(sol->id, "DataArray_t", &nnodes, &ids))
+    if (cgi_get_nodes(parent_id, "DataArray_t", &nnodes, &ids))
         return CG_ERROR;
     for (n = 0; n < nnodes; n++) {
         if (cgio_get_name(cg->cgio, ids[n], nname)) {
@@ -8976,9 +9039,11 @@ static int cgi_find_sol_array(cgns_sol *sol, const char *name,
  * \ingroup FlowSolution
  * \brief Read the per-element characteristic length(s) from a FlowSolution_t.
  *
- * Reads the \c CharacteristicLength \c DataArray_t child of a FlowSolution_t
- * node. Required when the associated SolutionInterpolation_t uses
- * \c CartesianMonomialsPascal interpolation (CPEX-0045 v3 §3.3.1).
+ * Reads the \c CharacteristicLength \c DataArray_t held in the
+ * \c InterpolationMetadata \c UserDefinedData_t child of a FlowSolution_t node.
+ * Required when the associated SolutionInterpolation_t uses
+ * \c CartesianMonomialsPascal interpolation (CPEX-0045 v4 §3.3.1).
+ * Returns \c CG_NODE_NOT_FOUND if either the container or the array is absent.
  *
  * \param[in]  fn          CGNS file index number
  * \param[in]  B           Base index number (1-based)
@@ -9005,7 +9070,7 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
                                       double *h_e)
 {
     cgns_sol *sol;
-    double node_id;
+    double node_id, container_id;
     int ndim;
     cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
     int ierr;
@@ -9017,7 +9082,15 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol == 0) return CG_ERROR;
 
-    ierr = cgi_find_sol_array(sol, "CharacteristicLength", &node_id,
+    ierr = cgi_interp_metadata_node(sol, 0, &container_id);
+    if (ierr == CG_NODE_NOT_FOUND) {
+        if (nscale) *nscale = 0;
+        if (numElements) *numElements = 0;
+        return CG_NODE_NOT_FOUND;
+    }
+    if (ierr) return CG_ERROR;
+
+    ierr = cgi_find_sol_array(container_id, "CharacteristicLength", &node_id,
                               &ndim, dim_vals);
     if (ierr == CG_NODE_NOT_FOUND) {
         if (nscale) *nscale = 0;
@@ -9074,9 +9147,11 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
  * \ingroup FlowSolution
  * \brief Write the per-element characteristic length(s) on a FlowSolution_t.
  *
- * Writes a \c CharacteristicLength \c DataArray_t child of the FlowSolution_t
- * node. Required when the associated SolutionInterpolation_t uses
- * \c CartesianMonomialsPascal (CPEX-0045 v3 §3.3.1).
+ * Writes a \c CharacteristicLength \c DataArray_t into the
+ * \c InterpolationMetadata \c UserDefinedData_t child of the FlowSolution_t
+ * node, creating the container if it does not yet exist. Required when the
+ * associated SolutionInterpolation_t uses \c CartesianMonomialsPascal
+ * (CPEX-0045 v4 §3.3.1).
  *
  * \param[in] fn          CGNS file index number
  * \param[in] B           Base index number (1-based)
@@ -9109,7 +9184,7 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
     cgsize_t i, ntotal;
     int nnodes;
     double *ids = NULL;
-    double dummy_id;
+    double dummy_id, container_id;
     int n;
     char_33 nname;
 
@@ -9150,8 +9225,13 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
         }
     }
 
+    /* The factors live inside the InterpolationMetadata container, never
+     * directly under the FlowSolution_t, so that they are not one of its
+     * solution fields.  Create the container on first write. */
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
     /* Replace any existing CharacteristicLength child. */
-    if (cgi_get_nodes(sol->id, "DataArray_t", &nnodes, &ids))
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
         return CG_ERROR;
     for (n = 0; n < nnodes; n++) {
         if (cgio_get_name(cg->cgio, ids[n], nname)) {
@@ -9167,7 +9247,7 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
                 CGNS_FREE(ids);
                 return CG_ERROR;
             }
-            if (cgi_delete_node(sol->id, ids[n])) {
+            if (cgi_delete_node(container_id, ids[n])) {
                 CGNS_FREE(ids);
                 return CG_ERROR;
             }
@@ -9178,16 +9258,54 @@ int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
     /* Array rank encodes which convention was used. */
     if (nscale == 1) {
         dim_vals[0] = numElements;
-        if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
+        if (cgi_new_node(container_id, "CharacteristicLength", "DataArray_t",
                          &dummy_id, "R8", 1, dim_vals, (void *)h_e))
             return CG_ERROR;
     }
     else {
         dim_vals[0] = nscale;
         dim_vals[1] = numElements;
-        if (cgi_new_node(sol->id, "CharacteristicLength", "DataArray_t",
+        if (cgi_new_node(container_id, "CharacteristicLength", "DataArray_t",
                          &dummy_id, "R8", 2, dim_vals, (void *)h_e))
             return CG_ERROR;
+    }
+
+    /* Keep the in-memory container consistent with what was just written, so
+     * a same-session cg_goto/cg_narrays into it agrees with the file. */
+    for (n = 0; n < sol->nuser_data; n++) {
+        cgns_user_data *ud = &sol->user_data[n];
+        cgns_array *arr = NULL;
+        int a;
+
+        if (strcmp(ud->name, CG_INTERP_METADATA_NAME)) continue;
+
+        for (a = 0; a < ud->narrays; a++) {
+            if (0 == strcmp(ud->array[a].name, "CharacteristicLength")) {
+                arr = &ud->array[a];
+                break;
+            }
+        }
+        if (arr == NULL) {
+            if (ud->narrays == 0)
+                ud->array = CGNS_NEW(cgns_array, 1);
+            else
+                ud->array = CGNS_RENEW(cgns_array, ud->narrays + 1, ud->array);
+            arr = &ud->array[ud->narrays];
+            ud->narrays++;
+        }
+        memset(arr, 0, sizeof(cgns_array));
+        strcpy(arr->name, "CharacteristicLength");
+        strcpy(arr->data_type, "R8");
+        arr->id = dummy_id;
+        arr->data_dim = (nscale == 1) ? 1 : 2;
+        if (nscale == 1) {
+            arr->dim_vals[0] = numElements;
+        }
+        else {
+            arr->dim_vals[0] = nscale;
+            arr->dim_vals[1] = numElements;
+        }
+        break;
     }
 
     return CG_OK;
