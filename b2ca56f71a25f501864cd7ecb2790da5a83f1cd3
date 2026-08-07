@@ -1,0 +1,20 @@
+src/tools/cgnscheck.c
+  s_2487c6750a7f8e::t_2f08c2651c806e 6268-6272,6279-6281
+  s_2487c6750a7f8e::t_3d564d4328ae97 6380-6384,6390-6392
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b2ca56f71a25f501864cd7ecb2790da5a83f1cd3",
+  "prompts": {},
+  "sessions": {
+    "s_2487c6750a7f8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b5285565-c8a4-4b85-a0c6-590ae3fbf9b2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}

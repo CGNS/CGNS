@@ -1,0 +1,29 @@
+src/tests/test_ho_apif.F90
+  s_952a2af4cb3e63::t_bd7c262a559e41 11
+src/ptests/para_high_order.c
+  s_952a2af4cb3e63::t_3f62500e20b5b6 24
+  s_952a2af4cb3e63::t_78502387bf0c7d 321
+src/tools/cgnscheck.c
+  s_952a2af4cb3e63::t_de7d7fca78c234 1830-1832
+src/cgnslib.c
+  s_952a2af4cb3e63::t_a28279631d55ee 17182
+  s_952a2af4cb3e63::t_2a716f7da569a3 18729-18730
+src/tests/CMakeLists.txt
+  s_952a2af4cb3e63::t_52bd97b49b946c 229-231
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "ad135a0cfaca8c86a04b43724e471c8836c9f0af",
+  "prompts": {},
+  "sessions": {
+    "s_952a2af4cb3e63": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "81e218b2-91bc-42d1-86df-f052b4c84110",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
