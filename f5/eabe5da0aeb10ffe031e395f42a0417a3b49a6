@@ -1,0 +1,45 @@
+src/cgnstools/cgnsview/cgns.tcl
+  s_a9e5288dd61a6c::t_914bc6c2ccb305 711-715,718-721
+  s_a9e5288dd61a6c::t_77c85ade419d66 231-232
+  s_a9e5288dd61a6c::t_088df278c8e04f 60
+  s_a9e5288dd61a6c::t_c6b30792792149 193,952,1123
+src/tests/test_characteristic_length.c
+  s_a9e5288dd61a6c::t_18ef3476583736 561
+  s_a9e5288dd61a6c::t_52e34e1bc97da6 118,138,152-165,169-170,178-183,204-206,210-251
+  s_a9e5288dd61a6c::t_d14ff9d1041053 166-168,171-177,184-197,199-203
+  s_a9e5288dd61a6c::t_a9d4bcb3bc3e3b 198
+  s_a9e5288dd61a6c::t_b6a421deb8ac7a 2,5-11,27-30
+src/cgnslib.c
+  s_a9e5288dd61a6c::t_56f033fe83c0be 9187
+  s_a9e5288dd61a6c::t_cee20a5b81f2be 9228-9232,9234,9250,9261,9268
+  s_a9e5288dd61a6c::t_556e78923204bb 9042-9046
+  s_a9e5288dd61a6c::t_c5ddce265a689b 9273-9310
+  s_a9e5288dd61a6c::t_74a5b3b2c90070 9150-9154
+  s_a9e5288dd61a6c::t_0d978956caad25 8903,8905-8907,8915-8951,8953-8955,8975-8978,8996
+  s_a9e5288dd61a6c::t_706ae6acd740e5 8956-8974
+  s_a9e5288dd61a6c::t_617de3aa7d2bfe 9073
+  s_a9e5288dd61a6c::t_7c582de19c8b9c 9085-9093
+src/tools/cgnscheck.c
+  s_a9e5288dd61a6c::t_2c41775de5aa1f 6016-6017,6022-6025
+  s_a9e5288dd61a6c::t_1a91673164a882 5888-5891
+  s_a9e5288dd61a6c::t_579dcc51e67d6d 5867-5875,5877
+src/cgns_internals.c
+  s_a9e5288dd61a6c::t_aee8da5de60aa4 2130-2134
+  s_a9e5288dd61a6c::t_3c4d4434337d51 1825-1836,1838-1915
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "f5eabe5da0aeb10ffe031e395f42a0417a3b49a6",
+  "prompts": {},
+  "sessions": {
+    "s_a9e5288dd61a6c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4c1b3823-6ece-44d1-9f60-a11caaed5efc",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
