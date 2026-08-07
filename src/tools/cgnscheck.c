@@ -5666,15 +5666,10 @@ static void check_solution (int ns)
          * writer must not emit one.  Reported rather than treated as fatal: the
          * node carries no field data itself, so a reader can ignore it and still
          * recover every solution array correctly. */
-        if (location == CGNS_ENUMV(InterpolationPoints)) {
-            int rnz = 0;
-            for (n = 0; n < 2 * z->idim; n++)
-                if (rind[n] != 0) rnz = 1;
-            if (rnz || strict_cpex45)
-                error ("CPEX-0045: Rind_t has no meaning with GridLocation = "
-                       "InterpolationPoints and must not be written; the field "
-                       "array is a flat degree-of-freedom list, not an index space.");
-        }
+        if (location == CGNS_ENUMV(InterpolationPoints))
+            error ("CPEX-0045: Rind_t has no meaning with GridLocation = "
+                   "InterpolationPoints and must not be written; the field "
+                   "array is a flat degree-of-freedom list, not an index space.");
     }
 
     /* descriptors */

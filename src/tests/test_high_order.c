@@ -752,11 +752,11 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         int fr, br, zr, sr, fld, secr, ci;
         cgsize_t sz[3], conn[8];
         int rind[2];
-        double xyz[8], dens[9];
+        double xyz[8], dens[10];
         int k;
 
         for (k = 0; k < 8; k++) { xyz[k] = (double)k; conn[k] = k + 1; }
-        for (k = 0; k < 9; k++) dens[k] = (double)k;
+        for (k = 0; k < 10; k++) dens[k] = (double)k;
 
         sz[0] = 8; sz[1] = 1; sz[2] = 0;
         if (cg_open ("test_ho_rind.cgns", CG_MODE_WRITE, &fr) ||
@@ -789,7 +789,12 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             cg_sol_interpolation_degree_write (fr, br, zr, sr, 2, 0))
             cg_error_exit ();
 
-        /* The offending node. */
+        /* The offending node.  It has to carry a non-zero extent: the library
+         * does not emit a Rind_t whose planes are all zero, so a zero rind would
+         * leave nothing in the file to detect.  cg_field_write adds rind_planes
+         * to the high-order length, so the buffer above is sized 9 + 1 to match
+         * what the library will write -- 9 degrees of freedom for one QUAD_4 at
+         * degree 2, plus the one rind plane. */
         rind[0] = 1; rind[1] = 0;
         if (cg_goto (fr, br, "Zone_t", zr, "FlowSolution_t", sr, NULL) ||
             cg_rind_write (rind))
