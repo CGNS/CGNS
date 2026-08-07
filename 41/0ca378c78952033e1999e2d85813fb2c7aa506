@@ -1,0 +1,21 @@
+src/cgns_internals.c
+  s_f0fb02e22d3ac0::t_0931de0b92c98f 5227-5231,5237-5238,5269,5271-5275,5279,16720,16725,16730-16731,16733-16735
+src/cgnslib.c
+  s_f0fb02e22d3ac0::t_54d6973e5cab01 17067-17070,17389-17391,17927-17929,18224-18226,18498-18499,20434,23637
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "410ca378c78952033e1999e2d85813fb2c7aa506",
+  "prompts": {},
+  "sessions": {
+    "s_f0fb02e22d3ac0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1af2ea46-ec6a-4eec-8f89-c32c572f8503",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
