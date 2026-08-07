@@ -1571,6 +1571,10 @@ CGNSDLL int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
                                               int *nscale, cgsize_t *numElements,
                                               double *h_e);
 
+CGNSDLL int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
+	int nscale, cgsize_t numElements, cgsize_t rmin, cgsize_t rmax,
+	const double *h_e);
+
 CGNSDLL int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
                                                int nscale, cgsize_t numElements,
                                                const double *h_e);

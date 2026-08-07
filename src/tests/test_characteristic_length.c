@@ -543,6 +543,73 @@ static int test_rewrite_guard(void)
     return 0;
 }
 
+/* Write the factors in disjoint element ranges, the way a distributed writer
+ * would, and confirm the result is identical to a single whole-array write.
+ * This is the case cg_sol_characteristic_length_write cannot serve: it takes
+ * the entire array, which no rank of a partitioned run holds. */
+static int test_partial(void)
+{
+    int fn, B, Z, S, F, sec, ci, fam, si, nscale = 0;
+    cgsize_t sz[3], conn[8*N_ELEM], numElements = 0;
+    double coord[N_VERT], fld[N_ELEM], h[3*N_ELEM], back[3*N_ELEM];
+    cgsize_t i;
+    int k;
+
+    for (i = 0; i < N_VERT; i++) coord[i] = (double)i;
+    for (i = 0; i < 8*N_ELEM; i++) conn[i] = (cgsize_t)(i % N_VERT) + 1;
+    for (i = 0; i < N_ELEM; i++) fld[i] = (double)i;
+    for (i = 0; i < 3*N_ELEM; i++) h[i] = 1.0 + (double)i;
+
+    if (check(cg_open("test_charlen_partial.cgns", CG_MODE_WRITE, &fn), "open")) return 1;
+    if (check(cg_base_write(fn, "Base", 3, 3, &B), "base")) return 1;
+    sz[0] = N_VERT; sz[1] = N_ELEM; sz[2] = 0;
+    if (check(cg_zone_write(fn, B, "Zone", sz, CGNS_ENUMV(Unstructured), &Z), "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX", coord, &ci), "cx")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY", coord, &ci), "cy")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ", coord, &ci), "cz")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Hexas", CGNS_ENUMV(HEXA_8),
+              1, N_ELEM, 0, conn, &sec), "section")) return 1;
+    if (check(cg_family_write(fn, B, "CartFam", &fam), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto")) return 1;
+    if (check(cg_famname_write("CartFam"), "famname")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, fam, "Hex_P0",
+              CGNS_ENUMV(HEXA_8), 0, 0,
+              CGNS_ENUMV(CartesianMonomialsPascal), &si), "si")) return 1;
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S), "sol")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 0, 0), "degree")) return 1;
+    if (check(cg_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "Density", fld, &F), "field")) return 1;
+
+    /* Per-axis encoding, written as N_ELEM separate single-element ranges --
+     * the most fragmented pattern a partitioning could produce. */
+    for (k = 0; k < N_ELEM; k++) {
+        if (check(cg_sol_characteristic_length_partial_write(fn, B, Z, S, 3,
+                  (cgsize_t)N_ELEM, (cgsize_t)k+1, (cgsize_t)k+1, &h[3*k]),
+                  "partial write")) return 1;
+    }
+    if (check(cg_close(fn), "close")) return 1;
+
+    if (check(cg_open("test_charlen_partial.cgns", CG_MODE_READ, &fn), "reopen")) return 1;
+    if (check(cg_sol_characteristic_length_read(fn, 1, 1, 1, &nscale, &numElements, back),
+              "read back")) return 1;
+    if (nscale != 3 || numElements != N_ELEM) {
+        fprintf(stderr, "ERROR: partial write gave nscale=%d numElements=%ld, "
+                "expected 3 and %d\n", nscale, (long)numElements, N_ELEM);
+        cg_close(fn);
+        return 1;
+    }
+    for (i = 0; i < 3*N_ELEM; i++) {
+        if (back[i] != h[i]) {
+            fprintf(stderr, "ERROR: factor %ld is %g, expected %g\n",
+                    (long)i, back[i], h[i]);
+            cg_close(fn);
+            return 1;
+        }
+    }
+    if (check(cg_close(fn), "close2")) return 1;
+    printf("  partial write in %d disjoint ranges round-trips\n", N_ELEM);
+    return 0;
+}
+
 int main(void)
 {
     int errors = 0;
@@ -559,6 +626,7 @@ int main(void)
     if (test_rewrite_guard())     errors++;
     if (test_not_a_field())       errors++;
     if (test_v3_layout_rejected()) errors++;
+    if (test_partial())           errors++;
 
     printf("\n");
     printf("##################################################\n");

@@ -9144,6 +9144,158 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
 }
 
 /**
+ * \ingroup FlowSolutionData
+ *
+ * \brief Write part of the characteristic-length array.
+ *
+ * \details
+ * Writes the scale factors for elements \p rmin through \p rmax (1-based,
+ * inclusive) of a CharacteristicLength array whose full extent is \p numElements.
+ * The node is created at that full extent on the first call, so every caller must
+ * pass the same \p nscale and \p numElements; only the range differs.
+ *
+ * This is what a distributed writer needs.  The factors are per-element data --
+ * PhysDim values per cell in the per-axis encoding, the same order of magnitude
+ * as a solution field -- so requiring the whole array in one call would force
+ * every rank to gather it.  Element ranges map to contiguous storage, since
+ * \p nscale is the fast-varying axis, so a rank owning a contiguous run of
+ * elements writes one hyperslab.
+ *
+ * Positivity is checked on the supplied range only; a range that is never
+ * written leaves the file with undefined factors for those elements, which
+ * cgnscheck reports when it validates the array.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \FLOW_S
+ * \param[in] nscale 1 for the isotropic encoding, PhysDim for per-axis.
+ * \param[in] numElements Total number of elements the array covers.
+ * \param[in] rmin First element to write, 1-based inclusive.
+ * \param[in] rmax Last element to write, 1-based inclusive.
+ * \param[in] h_e nscale*(rmax-rmin+1) factors, all strictly positive.
+ * \return \ier
+ */
+int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
+                                               int nscale, cgsize_t numElements,
+                                               cgsize_t rmin, cgsize_t rmax,
+                                               const double *h_e)
+{
+    cgns_sol *sol;
+    cgns_base *base;
+    cgsize_t dim_vals[2], s_start[2], s_end[2], s_stride[2];
+    cgsize_t m_dims[2], m_start[2], m_end[2], m_stride[2];
+    cgsize_t i, ncount;
+    int nnodes, n, found = 0;
+    double *ids = NULL;
+    double node_id = 0, container_id;
+    char_33 nname;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+    if (rmin < 1 || rmax > numElements || rmin > rmax) {
+        cgi_error("CharacteristicLength: invalid element range [%" PRIdCGSIZE
+                  ",%" PRIdCGSIZE "] for %" PRIdCGSIZE " elements",
+                  rmin, rmax, numElements);
+        return CG_ERROR;
+    }
+    if (h_e == NULL) {
+        cgi_error("CharacteristicLength: h_e pointer must not be NULL");
+        return CG_ERROR;
+    }
+    ncount = (cgsize_t)nscale * (rmax - rmin + 1);
+    for (i = 0; i < ncount; i++) {
+        if (!(h_e[i] > 0.0)) {
+            cgi_error("CharacteristicLength: all scale factors must be > 0 "
+                      "(entry %" PRIdCGSIZE " of this range is %g)", i, h_e[i]);
+            return CG_ERROR;
+        }
+    }
+
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
+    /* Find an existing array, or create one at the full extent.  Rank selects
+     * the encoding exactly as it does for the whole-array writer. */
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            node_id = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    if (!found) {
+        /* Created with no data: the ranges written by this and the other
+         * ranks fill it.  Passing NULL leaves the extent declared and the
+         * contents unwritten, which is what a collective create needs. */
+        if (nscale == 1) {
+            dim_vals[0] = numElements;
+            if (cgi_new_node(container_id, "CharacteristicLength",
+                    "DataArray_t", &node_id, "R8", 1, dim_vals, NULL))
+                return CG_ERROR;
+        }
+        else {
+            dim_vals[0] = nscale;
+            dim_vals[1] = numElements;
+            if (cgi_new_node(container_id, "CharacteristicLength",
+                    "DataArray_t", &node_id, "R8", 2, dim_vals, NULL))
+                return CG_ERROR;
+        }
+    }
+
+    /* nscale is the fast-varying axis, so an element range is contiguous. */
+    if (nscale == 1) {
+        s_start[0]  = rmin;      s_end[0] = rmax;      s_stride[0] = 1;
+        m_dims[0]   = rmax - rmin + 1;
+        m_start[0]  = 1;         m_end[0] = m_dims[0]; m_stride[0] = 1;
+        if (cgio_write_data(cg->cgio, node_id, s_start, s_end, s_stride,
+                            1, m_dims, m_start, m_end, m_stride, h_e)) {
+            cg_io_error("cgio_write_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        s_start[0] = 1;    s_end[0] = nscale;  s_stride[0] = 1;
+        s_start[1] = rmin; s_end[1] = rmax;    s_stride[1] = 1;
+        m_dims[0]  = nscale;            m_dims[1] = rmax - rmin + 1;
+        m_start[0] = 1;                 m_start[1] = 1;
+        m_end[0]   = m_dims[0];         m_end[1]   = m_dims[1];
+        m_stride[0] = 1;                m_stride[1] = 1;
+        if (cgio_write_data(cg->cgio, node_id, s_start, s_end, s_stride,
+                            2, m_dims, m_start, m_end, m_stride, h_e)) {
+            cg_io_error("cgio_write_data");
+            return CG_ERROR;
+        }
+    }
+
+    return CG_OK;
+}
+
+/**
  * \ingroup FlowSolution
  * \brief Write the per-element characteristic length(s) on a FlowSolution_t.
  *
