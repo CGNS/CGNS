@@ -308,6 +308,24 @@ if (CGNS_ENABLE_TESTS)
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
+  # CPEX-0045: Rind_t under GridLocation=InterpolationPoints.  A non-zero rind
+  # is flagged in both modes; the rule is that the node must not be written at
+  # all, and a rind with extent is unambiguously wrong rather than merely
+  # non-conformant.
+  add_test(NAME cgnscheck_ho_rind_flagged
+           COMMAND cgnscheck test_ho_rind.cgns)
+  set_tests_properties(cgnscheck_ho_rind_flagged PROPERTIES
+    PASS_REGULAR_EXPRESSION "Rind_t has no meaning with GridLocation"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  add_test(NAME cgnscheck_ho_rind_flagged_strict
+           COMMAND cgnscheck -s test_ho_rind.cgns)
+  set_tests_properties(cgnscheck_ho_rind_flagged_strict PROPERTIES
+    PASS_REGULAR_EXPRESSION "Rind_t has no meaning with GridLocation"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
   add_test(NAME cgnscheck_dist_mismatch_default_passes
            COMMAND cgnscheck test_dist_mismatch.cgns)
   set_tests_properties(cgnscheck_dist_mismatch_default_passes PROPERTIES
