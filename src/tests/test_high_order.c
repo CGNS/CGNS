@@ -213,6 +213,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         cg_error_exit();
     }
     error = cg_solution_interpolation_points_write(cgfile, cgbase,cgfamily,cgsinterp,
+                                                   (order+1)*(order+1),
                                                    pu,pv,NULL,NULL);
     if (error)
     {
@@ -237,6 +238,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         cg_error_exit();
     }
     error = cg_solution_interpolation_points_write(cgfile, cgbase,cgfamily,cgsinterp,
+                                                   (order+1)*(order+1),
                                                    pu,pv,NULL,NULL);
     if (error)
     {
@@ -773,7 +775,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             cg_solution_interpolation_write (fr, br, famr, "Quad_P2",
                     CGNS_ENUMV(QUAD_4), 2, 0,
                     CGNS_ENUMV(ParametricLagrange), &sir) ||
-            cg_solution_interpolation_points_write (fr, br, famr, sir,
+            cg_solution_interpolation_points_write (fr, br, famr, sir, 9,
                     pu, pv, NULL, NULL) ||
             cg_sol_write (fr, br, zr, "FS", CGNS_ENUMV(InterpolationPoints), &sr) ||
             cg_sol_interpolation_degree_write (fr, br, zr, sr, 2, 0))

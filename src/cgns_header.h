@@ -1043,8 +1043,10 @@ typedef struct {                    /* ElementInterpolation_t Node */
     CGNS_ENUMT(ElementType_t) type; /* basic element type this block overrides */
     cgns_array *lagrangePts;        /* optional LagrangeControlPoints; NULL -> use standard layout (isoparametric) */
     cgns_array *lagrangeDist;       /* optional ControlPointDistribution: a labelled
-                                     * ControlPointDistribution_t enum node with an I4
-                                     * scalar payload (not a DataArray_t); NULL -> not recorded */
+                                     * ControlPointDistribution_t enum node whose on-disk
+                                     * payload is the enumerator's name as a C1 string
+                                     * (not a DataArray_t).  Held here decoded, as an I4
+                                     * scalar.  NULL -> not recorded */
     int isoparametric;              /* set when the node was created by
                                      * cg_element_isoparametric_write.  CPEX-0045 forbids a
                                      * following cg_element_interpolation_points_write, and
@@ -1068,8 +1070,10 @@ typedef struct {                    /* SolutionInterpolation_t Node */
      * basis is determined by the element dimension, the two degrees and the
      * Pascal traversal order, so it stores no array. */
     cgns_array *lagrangeDist;       /* optional ControlPointDistribution: a labelled
-                                     * ControlPointDistribution_t enum node with an I4
-                                     * scalar payload (not a DataArray_t); NULL -> not recorded */
+                                     * ControlPointDistribution_t enum node whose on-disk
+                                     * payload is the enumerator's name as a C1 string
+                                     * (not a DataArray_t).  Held here decoded, as an I4
+                                     * scalar.  NULL -> not recorded */
 } cgns_solutionInterpolation;
 
 typedef struct cgns_family_s {            /* Family_t node            */
@@ -1548,6 +1552,9 @@ CGNSDLL void cg_io_error(const char *routine_name);
 
 /* retrieve list number from list name */
 int cgi_GridLocation(char *GridLocationName, CGNS_ENUMT(GridLocation_t) *type);
+int cgi_InterpolationType(char *Name, CGNS_ENUMT(InterpolationType_t) *type);
+int cgi_ControlPointDistribution(char *Name,
+                 CGNS_ENUMT(ControlPointDistribution_t) *type);
 int cgi_GridConnectivityType(char *GridConnectivityName,
                  CGNS_ENUMT(GridConnectivityType_t) *type);
 int cgi_PointSetType(char *PointSetName, CGNS_ENUMT(PointSetType_t) *type);

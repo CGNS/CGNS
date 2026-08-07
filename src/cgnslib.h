@@ -1232,14 +1232,13 @@ CGNSDLL int cg_multifam_write(const char *name, const char *family);
  *      Read and write ElementInterpolation_t Nodes                      *
  *                     (CPEX 045)                                        *
  *                                                                       *
- *  Per CPEX-0045 §3.1.3, Cartesian modal interpolation applies only to  *
- *  solutions. Accordingly, ElementInterpolation_t carries no explicit   *
- *  InterpolationType child: the type is implied by which optional       *
- *  children are present (LagrangeControlPoints -> ParametricLagrange,   *
- *  MonomialCoefficients -> ParametricMonomialsPascal, neither ->        *
- *  IsoParametric). There is therefore no public API that can attach     *
- *  CartesianMonomialsPascal to a mesh element, and                       *
- *  cg_element_interpolation_type_read() never returns it.               *
+ *  Per CPEX-0045, mesh interpolation is nodal only: the mesh is always  *
+ *  defined by control points in parametric space, so neither modal type *
+ *  can be attached to an ElementInterpolation_t.  Accordingly the node  *
+ *  carries no explicit InterpolationType child; the type is implied by  *
+ *  whether the one optional array is present (LagrangeControlPoints ->  *
+ *  ParametricLagrange, absent -> IsoParametric), and                    *
+ *  cg_element_interpolation_type_read() returns only those two.         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
@@ -1294,8 +1293,22 @@ CGNSDLL int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(E
 CGNSDLL int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
                                             CGNS_ENUMT(ElementType_t) et, int os, int ot, CGNS_ENUMT(InterpolationType_t) it, int *sn );
 
+/* npts is the number of control points the caller supplies, i.e. the slow axis
+ * of the LagrangeControlPoints array it is about to create.  It is an argument
+ * rather than a quantity the library derives because (basic element type,
+ * SpatialDegree) does not determine it: this standard supports incomplete
+ * (serendipity) spaces, where an edge-serendipity QUAD at p=2 carries 4p = 8
+ * control points against the complete space's (p+1)^2 = 9.  It is also what
+ * bounds the read of the caller's buffers.
+ *
+ * For a space-time node it is the full count, N_spatial*(TemporalDegree+1).
+ * cg_solution_interpolation_npoints_read returns it again on the way back. */
 CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn,
+                                                   int npts,
                                                    double *pu, double *pv, double *pw, double *pt);
+
+CGNSDLL int cg_solution_interpolation_npoints_read(int fn, int bn, int fam, int sn,
+                                                   int *npts);
 
 CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
 
@@ -1318,12 +1331,13 @@ CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int o
  *  When the InterpolationType is ParametricLagrange, the parametric-    *
  *  space distribution of the control points may be recorded as a        *
  *  labelled enumeration node named "ControlPointDistribution"           *
- *  of label ControlPointDistribution_t, holding an I4 scalar,           *
- *  child of the ElementInterpolation_t / SolutionInterpolation_t node.  *
- *  This is the InterpolationType_t convention, NOT the name-matched     *
- *  DataArray_t convention used by LagrangeControlPoints: the only       *
- *  DataArray_t names permitted under those nodes are                    *
- *  LagrangeControlPoints and MonomialCoefficients.                      *
+ *  of label ControlPointDistribution_t, whose payload is the            *
+ *  enumerator's name as a C1 string -- as GridLocation_t and            *
+ *  DataClass_t are stored -- child of the ElementInterpolation_t /      *
+ *  SolutionInterpolation_t node.  This is the InterpolationType_t       *
+ *  convention, NOT the name-matched DataArray_t convention used by      *
+ *  LagrangeControlPoints, which is the only DataArray_t name permitted  *
+ *  under those nodes.                                                   *
  *                                                                       *
  *  The attribute is recommended, not required -- the stored coordinates  *
  *  alone determine the basis, and on conflict the coordinates win.      *
@@ -1547,10 +1561,12 @@ CGNSDLL int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S,
 CGNSDLL int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
                                              int spatialDegree, int  temporalDegree);
 
-/* CPEX-0045 v3 §3.3.1: per-element coordinate normalisation factors for
- * Cartesian modal interpolation, stored as an R8 DataArray_t named
- * "CharacteristicLength" under the parent FlowSolution_t. Required when the
- * associated SolutionInterpolation_t uses CartesianMonomialsPascal.
+/* CPEX-0045: per-element coordinate normalisation factors for Cartesian modal
+ * interpolation, stored as an R8 DataArray_t named "CharacteristicLength" in a
+ * UserDefinedData_t child of the FlowSolution_t named "InterpolationMetadata"
+ * -- one level below the field list, so that cg_nfields keeps its established
+ * meaning.  Required when the associated SolutionInterpolation_t uses
+ * CartesianMonomialsPascal.
  *
  * Two encodings are normative, distinguished by array rank:
  *   nscale == 1        -> isotropic: R8, 1-D, [numElements]

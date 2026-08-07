@@ -130,7 +130,7 @@
 
       call cg_element_interpolation_points_write_f(cgfile, cgbase, cgfamily, &
      &                                             cgeinterp, pu, pv, &
-     &                                             pw, ierr)
+     &                                             ier=ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       ! No element interpolation coefficients are written: mesh interpolation is
@@ -154,8 +154,8 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_solution_interpolation_points_write_f(cgfile, cgbase, cgfamily, &
-     &                                              cgsinterp, pu, pv, &
-     &                                              pw, pt, ierr)
+     &                                              cgsinterp, 5*5, pu, pv, &
+     &                                              ier=ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       ! A modal SolutionInterpolation_t stores no array: CPEX-0045 withdraws

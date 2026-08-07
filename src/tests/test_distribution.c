@@ -7,11 +7,12 @@
  * encoding.
  *
  * The attribute is a *labelled enumeration* node -- name
- * "ControlPointDistribution", label "ControlPointDistribution_t",
- * I4 scalar -- following the InterpolationType_t convention and deliberately not
+ * "ControlPointDistribution", label "ControlPointDistribution_t", whose payload
+ * is the enumerator's name as a C1 string -- following the InterpolationType_t
+ * convention and deliberately not
  * the name-matched DataArray_t convention used by LagrangeControlPoints.  The
  * distinction is load-bearing: a conforming reader must reject any DataArray_t
- * child of these nodes other than LagrangeControlPoints or MonomialCoefficients,
+ * child of these nodes other than LagrangeControlPoints,
  * so writing the distribution as a DataArray_t produces a file the standard says
  * to reject.
  *
@@ -128,7 +129,7 @@ static int write_wb_case(const char *filename, int p, int npts,
     if (check(cg_solution_interpolation_write(fn, B, F, "Tri",
               CGNS_ENUMV(TRI_3), p, 0,
               CGNS_ENUMV(ParametricLagrange), &si), "sol interp H")) return 1;
-    if (check(cg_solution_interpolation_points_write(fn, B, F, si,
+    if (check(cg_solution_interpolation_points_write(fn, B, F, si, npts,
               au, av, NULL, NULL), "sol points H")) return 1;
     if (check(cg_solution_interpolation_distribution_write(fn, B, F, si,
               CGNS_ENUMV(WarpAndBlend)), "distribution H")) return 1;
@@ -191,7 +192,7 @@ static int write_wb_tet_case(const char *filename, int p, int npts,
     if (check(cg_solution_interpolation_write(fn, B, F, "Tet",
               CGNS_ENUMV(TETRA_4), p, 0,
               CGNS_ENUMV(ParametricLagrange), &si), "sol interp tet")) return 1;
-    if (check(cg_solution_interpolation_points_write(fn, B, F, si,
+    if (check(cg_solution_interpolation_points_write(fn, B, F, si, npts,
               au, av, aw, NULL), "sol points tet")) return 1;
     if (check(cg_solution_interpolation_distribution_write(fn, B, F, si,
               CGNS_ENUMV(WarpAndBlend)), "distribution tet")) return 1;
@@ -225,7 +226,7 @@ int main(void)
         if (check(cg_solution_interpolation_write(fn, B, F, "QuadSol",
                   CGNS_ENUMV(QUAD_4), 1, 0,
                   CGNS_ENUMV(ParametricLagrange), &sn), "solution interp")) return 1;
-        if (check(cg_solution_interpolation_points_write(fn, B, F, sn,
+        if (check(cg_solution_interpolation_points_write(fn, B, F, sn, 4,
                   pu, pv, NULL, NULL), "solution points")) return 1;
         if (check(cg_solution_interpolation_distribution_write(fn, B, F, sn,
                   named[i]), "solution distribution write")) return 1;
@@ -366,7 +367,7 @@ int main(void)
             if (check(cg_solution_interpolation_write(fn, B, F, "Q3",
                       CGNS_ENUMV(QUAD_4), 3, 0,
                       CGNS_ENUMV(ParametricLagrange), &sn), "sol interp G")) return 1;
-            if (check(cg_solution_interpolation_points_write(fn, B, F, sn,
+            if (check(cg_solution_interpolation_points_write(fn, B, F, sn, 16,
                       qu, qv, NULL, NULL), "sol points G")) return 1;
             if (check(cg_solution_interpolation_distribution_write(fn, B, F, sn,
                       cases[c].name_it), "distribution G")) return 1;

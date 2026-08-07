@@ -172,7 +172,7 @@ int test_mismatched_dimensions(void)
         cg_close(cgfile);
         return 1;
     }
-    if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+    if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp, 9,
                                                pu, pv, pw, NULL))
     {
         fprintf(stderr, "ERROR: Failed to write solution control points\n");
@@ -561,7 +561,7 @@ int test_null_pointers(void)
     }
 
     printf("Testing NULL pu parameter (required)...\n");
-    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp, 9,
                                                     NULL, pv, NULL, NULL);
     if (result == CG_OK)
     {
@@ -572,7 +572,7 @@ int test_null_pointers(void)
     printf("NULL pu correctly rejected (error code: %d)\n", result);
 
     printf("Testing NULL pv parameter (required for 2D)...\n");
-    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp, 9,
                                                     pu, NULL, NULL, NULL);
     if (result == CG_OK)
     {
@@ -583,7 +583,7 @@ int test_null_pointers(void)
     printf("NULL pv correctly rejected (error code: %d)\n", result);
 
     printf("Testing NULL pw parameter (allowed for 2D)...\n");
-    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+    result = cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp, 9,
                                                     pu, pv, NULL, NULL);
     if (result != CG_OK)
     {
@@ -949,6 +949,116 @@ int test_interpolation_order_location(void)
     return 0;
 }
 
+/* CPEX-0045: CartesianMonomialsPascal is defined only where the base's
+ * CellDimension equals its PhysDim.  On a surface mesh the monomials of the
+ * physical frame restricted to the cell are linearly dependent, so the modal
+ * cardinality does not describe a determined space. */
+int test_cartesian_modal_surface_base(void)
+{
+    int fn, B, F, si;
+    int errors = 0;
+
+    printf("\n=== Test: CartesianMonomialsPascal on a CellDim<PhysDim base ===\n");
+
+    if (cg_open("test_cartesian_surface.cgns", CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 2, 3, &B) ||          /* CellDim 2, PhysDim 3 */
+        cg_family_write(fn, B, "Fam", &F))
+    {
+        fprintf(stderr, "ERROR: Failed to create file structure\n");
+        return 1;
+    }
+
+    if (cg_solution_interpolation_write(fn, B, F, "SurfCartesian",
+                                        CGNS_ENUMV(QUAD_4), 2, 0,
+                                        CGNS_ENUMV(CartesianMonomialsPascal),
+                                        &si) == CG_OK)
+    {
+        fprintf(stderr, "ERROR: CartesianMonomialsPascal should be rejected "
+                        "when CellDimension != PhysDim\n");
+        errors++;
+    }
+    else
+        printf("CartesianMonomialsPascal correctly rejected on a surface base\n");
+
+    /* The parametric types carry no such restriction: they live in the
+     * reference domain, whose dimension is the element dimension. */
+    if (cg_solution_interpolation_write(fn, B, F, "SurfParametric",
+                                        CGNS_ENUMV(QUAD_4), 2, 0,
+                                        CGNS_ENUMV(ParametricMonomialsPascal),
+                                        &si))
+    {
+        fprintf(stderr, "ERROR: ParametricMonomialsPascal should be accepted: %s\n",
+                cg_get_error());
+        errors++;
+    }
+    else
+        printf("ParametricMonomialsPascal correctly accepted on the same base\n");
+
+    cg_close(fn);
+    return errors;
+}
+
+/* CPEX-0045: a family-level IsoParametric points read has no element, so where
+ * the family carries several geometric orders of one element family the mesh
+ * node it refers to is ambiguous and must be reported rather than guessed. */
+int test_isoparametric_ambiguous_reference(void)
+{
+    int fn, B, F, e1, e2, si;
+    int errors = 0;
+    double pu[35], pv[35], pw[35];
+    int i;
+
+    printf("\n=== Test: ambiguous IsoParametric reference ===\n");
+
+    for (i = 0; i < 35; i++) { pu[i] = pv[i] = pw[i] = 0.0; }
+
+    if (cg_open("test_isoparam_ambig.cgns", CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 3, 3, &B) ||
+        cg_family_write(fn, B, "Fam", &F))
+    {
+        fprintf(stderr, "ERROR: Failed to create file structure\n");
+        return 1;
+    }
+
+    /* Two geometric orders of the same element family */
+    if (cg_element_interpolation_write(fn, B, F, "Tet10", CGNS_ENUMV(TETRA_10), &e1) ||
+        cg_element_interpolation_points_write(fn, B, F, e1, pu, pv, pw) ||
+        cg_element_interpolation_write(fn, B, F, "Tet35", CGNS_ENUMV(TETRA_35), &e2) ||
+        cg_element_interpolation_points_write(fn, B, F, e2, pu, pv, pw))
+    {
+        fprintf(stderr, "ERROR: Failed to write mesh bases: %s\n", cg_get_error());
+        cg_close(fn);
+        return 1;
+    }
+
+    /* One IsoParametric solution node, stored under the basic tag */
+    if (cg_solution_interpolation_write(fn, B, F, "TetIso", CGNS_ENUMV(TETRA_4),
+                                        2, 0, CGNS_ENUMV(IsoParametric), &si))
+    {
+        fprintf(stderr, "ERROR: Failed to write solution basis: %s\n", cg_get_error());
+        cg_close(fn);
+        return 1;
+    }
+    cg_close(fn);
+
+    if (cg_open("test_isoparam_ambig.cgns", CG_MODE_READ, &fn))
+    {
+        fprintf(stderr, "ERROR: Failed to reopen: %s\n", cg_get_error());
+        return 1;
+    }
+    if (cg_solution_interpolation_points_read(fn, B, F, si, pu, pv, pw, NULL) != CG_ERROR)
+    {
+        fprintf(stderr, "ERROR: an ambiguous IsoParametric reference should be "
+                        "reported, not resolved to whichever node comes first\n");
+        errors++;
+    }
+    else
+        printf("Ambiguous IsoParametric reference correctly reported\n");
+
+    cg_close(fn);
+    return errors;
+}
+
 int main(int argc, char **argv)
 {
     int errors = 0;
@@ -982,11 +1092,17 @@ int main(int argc, char **argv)
     if (test_interpolation_order_location())
         errors++;
 
+    if (test_cartesian_modal_surface_base())
+        errors++;
+
+    if (test_isoparametric_ambiguous_reference())
+        errors++;
+
     printf("\n");
     printf("##################################################\n");
     if (errors == 0)
     {
-        printf("#ALL ERROR HANDLING TESTS PASSED (8/8)     #\n");
+        printf("#ALL ERROR HANDLING TESTS PASSED (10/10)   #\n");
     }
     else
     {

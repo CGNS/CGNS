@@ -146,7 +146,7 @@ int main (int argc, char **argv)
           solutionCtrlPoints(i,&pu[i],&pv[i]);
         
         // [2.3.2.3] Write the Lagrange Control Points (2D, thus only u and v are required)
-        if (cg_solution_interpolation_points_write(fn,B,Fam,Si,pu,pv,NULL,NULL))
+        if (cg_solution_interpolation_points_write(fn,B,Fam,Si,16,pu,pv,NULL,NULL))
           cgp_error_exit();
         
         free(pu);

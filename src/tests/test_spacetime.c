@@ -114,7 +114,7 @@ int test_temporal_degree1(void)
     printf("  Format: 9 spatial nodes × 2 temporal levels\n");
     /* For 2D elements with temporal dimension, pass NULL for pw and pt as 4th parameter */
     if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
-                                               pu, pv, NULL, pt))
+                                               npts_total, pu, pv, NULL, pt))
     {
         fprintf(stderr, "ERROR: Failed to write Lagrange control points\n");
         return 1;
@@ -420,7 +420,7 @@ int test_temporal_higher_orders(void)
         printf("Writing space-time Lagrange control points (%d total points)...\n", npts_total);
         /* For 2D elements with temporal dimension, pass NULL for pw and pt as 4th parameter */
         if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
-                                                   pu, pv, NULL, pt))
+                                                   npts_total, pu, pv, NULL, pt))
         {
             fprintf(stderr, "ERROR: Failed to write Lagrange control points\n");
             return 1;

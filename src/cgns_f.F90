@@ -5250,21 +5250,32 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_points_read_f
 !DEC$endif
   SUBROUTINE cg_element_interpolation_points_read_f(fn, B, fam, en, pu, pv, pw, ier)
+    !! pv and pw are OPTIONAL: the C entry takes NULL for a coordinate the
+    !! element does not have (pv on 1D, pw on 1D or 2D), and Fortran has no null
+    !! array argument.  Omitting the argument passes a null pointer through, so a
+    !! caller never has to invent an array it has no data for.
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, fam, en
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu, pv, pw
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), OPTIONAL, TARGET :: pv, pw
     INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_element_interpolation_points_read(fn, bn, fam, en, pu, pv, pw) &
           BIND(C, name="cg_element_interpolation_points_read")
-        IMPORT :: C_INT, C_DOUBLE
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu, pv, pw
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw
       END FUNCTION cg_element_interpolation_points_read
     END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
     ier = INT(cg_element_interpolation_points_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(en,C_INT), pu, pv, pw))
+              INT(fam,C_INT), INT(en,C_INT), pu, c_pv, c_pw))
   END SUBROUTINE cg_element_interpolation_points_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
@@ -5300,21 +5311,29 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_points_write_f
 !DEC$endif
   SUBROUTINE cg_element_interpolation_points_write_f(fn, B, fam, en, pu, pv, pw, ier)
+    !! pv and pw are OPTIONAL; see cg_element_interpolation_points_read_f.
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, fam, en
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu, pv, pw
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), OPTIONAL, TARGET :: pv, pw
     INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_element_interpolation_points_write(fn, bn, fam, en, pu, pv, pw) &
           BIND(C, name="cg_element_interpolation_points_write")
-        IMPORT :: C_INT, C_DOUBLE
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu, pv, pw
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw
       END FUNCTION cg_element_interpolation_points_write
     END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
     ier = INT(cg_element_interpolation_points_write(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(en,C_INT), pu, pv, pw))
+              INT(fam,C_INT), INT(en,C_INT), pu, c_pv, c_pw))
   END SUBROUTINE cg_element_interpolation_points_write_f
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -5386,22 +5405,58 @@ CONTAINS
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_points_read_f
 !DEC$endif
   SUBROUTINE cg_solution_interpolation_points_read_f(fn, B, fam, sn, pu, pv, pw, pt, ier)
+    !! pv, pw and pt are OPTIONAL: the C entry takes NULL for a coordinate the
+    !! node does not have (pv on 1D, pw on 1D or 2D, pt when TemporalDegree = 0),
+    !! and Fortran has no null array argument.  Omitting the argument passes a
+    !! null pointer through.
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn, B, fam, sn
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu, pv, pw, pt
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), OPTIONAL, TARGET :: pv, pw, pt
     INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw, c_pt
     INTERFACE
       INTEGER(C_INT) FUNCTION cg_solution_interpolation_points_read(fn, bn, fam, sn, pu, pv, pw, pt) &
           BIND(C, name="cg_solution_interpolation_points_read")
-        IMPORT :: C_INT, C_DOUBLE
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
         IMPLICIT NONE
         INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu, pv, pw, pt
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw, pt
       END FUNCTION cg_solution_interpolation_points_read
     END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    c_pt = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    IF (PRESENT(pt)) c_pt = C_LOC(pt(1))
     ier = INT(cg_solution_interpolation_points_read(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(sn,C_INT), pu, pv, pw, pt))
+              INT(fam,C_INT), INT(sn,C_INT), pu, c_pv, c_pw, c_pt))
   END SUBROUTINE cg_solution_interpolation_points_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_npoints_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_npoints_read_f(fn, B, fam, sn, npts, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER, INTENT(OUT) :: npts
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_npts
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_npoints_read(fn, bn, fam, sn, npts) &
+          BIND(C, name="cg_solution_interpolation_npoints_read")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(C_INT), INTENT(OUT) :: npts
+      END FUNCTION cg_solution_interpolation_npoints_read
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_npoints_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), c_npts))
+    npts = INT(c_npts)
+  END SUBROUTINE cg_solution_interpolation_npoints_read_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_write_f
@@ -5439,22 +5494,32 @@ CONTAINS
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_points_write_f
 !DEC$endif
-  SUBROUTINE cg_solution_interpolation_points_write_f(fn, B, fam, sn, pu, pv, pw, pt, ier)
+  SUBROUTINE cg_solution_interpolation_points_write_f(fn, B, fam, sn, npts, pu, pv, pw, pt, ier)
+    !! pv, pw and pt are OPTIONAL; see cg_solution_interpolation_points_read_f.
     IMPLICIT NONE
-    INTEGER, INTENT(IN) :: fn, B, fam, sn
-    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu, pv, pw, pt
+    INTEGER, INTENT(IN) :: fn, B, fam, sn, npts
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), OPTIONAL, TARGET :: pv, pw, pt
     INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw, c_pt
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_solution_interpolation_points_write(fn, bn, fam, sn, pu, pv, pw, pt) &
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_points_write(fn, bn, fam, sn, npts, pu, pv, pw, pt) &
           BIND(C, name="cg_solution_interpolation_points_write")
-        IMPORT :: C_INT, C_DOUBLE
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
         IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
-        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu, pv, pw, pt
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn, npts
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw, pt
       END FUNCTION cg_solution_interpolation_points_write
     END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    c_pt = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    IF (PRESENT(pt)) c_pt = C_LOC(pt(1))
     ier = INT(cg_solution_interpolation_points_write(INT(fn,C_INT), INT(B,C_INT), &
-              INT(fam,C_INT), INT(sn,C_INT), pu, pv, pw, pt))
+              INT(fam,C_INT), INT(sn,C_INT), INT(npts,C_INT), pu, c_pv, c_pw, c_pt))
   END SUBROUTINE cg_solution_interpolation_points_write_f
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *

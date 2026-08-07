@@ -443,6 +443,122 @@ int test_hexa20_serendipity()
     return 0;
 }
 
+/* Test 6.3: an edge-serendipity space on the *solution* side.
+ *
+ * CPEX-0045 Table "Lagrange functional spaces per element and interpolation
+ * type" offers edge serendipity for solution interpolation as well as for the
+ * mesh, and the reader's extent rule is an upper bound rather than an equality
+ * so that those files are not rejected.  Nothing about the element type says
+ * which space is meant here: a SolutionInterpolation_t stores the *basic* tag
+ * (QUAD_4) plus the degree, and (QUAD_4, p=2) covers both the complete space of
+ * 9 control points and the edge-serendipity space of 4p = 8.  The stored point
+ * count is the only record of the difference, which is why it is an argument to
+ * the writer and readable back through cg_solution_interpolation_npoints_read.
+ */
+int test_quad8_solution_serendipity(void)
+{
+    int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
+    int i, npts_read = 0;
+    const int npts = 8;
+    double pu[8], pv[8], puu[8], pvv[8];
+    cgsize_t size[3];
+    char filename[] = "test_quad8_sol.cgns";
+
+    printf("\n==============================================\n");
+    printf("  Test 6.3: QUAD edge-serendipity solution basis\n");
+    printf("==============================================\n\n");
+
+    fillQuad8LagrangePoints(pu, pv);
+
+    size[0] = 8; size[1] = 1; size[2] = 0;
+    if (cg_open(filename, CG_MODE_WRITE, &cgfile) ||
+        cg_base_write(cgfile, "Base", 2, 2, &cgbase) ||
+        cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV(Unstructured), &cgzone) ||
+        cg_family_write(cgfile, cgbase, "SerFamily", &cgfamily))
+    {
+        fprintf(stderr, "ERROR: Failed to create file structure\n");
+        return 1;
+    }
+
+    if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "QuadP2Serendipity",
+                                        CGNS_ENUMV(QUAD_4), 2, 0,
+                                        CGNS_ENUMV(ParametricLagrange), &cgsinterp))
+    {
+        fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t: %s\n",
+                cg_get_error());
+        cg_close(cgfile);
+        return 1;
+    }
+
+    /* 8 points against a complete space of 9 */
+    if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+                                               npts, pu, pv, NULL, NULL))
+    {
+        fprintf(stderr, "ERROR: Failed to write serendipity control points: %s\n",
+                cg_get_error());
+        cg_close(cgfile);
+        return 1;
+    }
+    printf("Wrote %d control points for a complete space of 9\n", npts);
+
+    /* More than the complete space is never unisolvent and must be refused */
+    if (cg_solution_interpolation_points_write(cgfile, cgbase, cgfamily, cgsinterp,
+                                               10, pu, pv, NULL, NULL) == CG_OK)
+    {
+        fprintf(stderr, "ERROR: npts above the complete space should be rejected\n");
+        cg_close(cgfile);
+        return 1;
+    }
+    printf("A count above the complete space is rejected\n");
+
+    if (cg_close(cgfile)) { fprintf(stderr, "ERROR: close\n"); return 1; }
+
+    if (cg_open(filename, CG_MODE_READ, &cgfile))
+    {
+        fprintf(stderr, "ERROR: Failed to reopen: %s\n", cg_get_error());
+        return 1;
+    }
+    if (cg_solution_interpolation_npoints_read(cgfile, cgbase, cgfamily, cgsinterp,
+                                               &npts_read))
+    {
+        fprintf(stderr, "ERROR: npoints_read failed: %s\n", cg_get_error());
+        cg_close(cgfile);
+        return 1;
+    }
+    if (npts_read != npts)
+    {
+        fprintf(stderr, "ERROR: stored count %d, expected %d\n", npts_read, npts);
+        cg_close(cgfile);
+        return 1;
+    }
+    printf("Read back a stored count of %d\n", npts_read);
+
+    if (cg_solution_interpolation_points_read(cgfile, cgbase, cgfamily, cgsinterp,
+                                              puu, pvv, NULL, NULL))
+    {
+        fprintf(stderr, "ERROR: points_read rejected a serendipity node: %s\n",
+                cg_get_error());
+        cg_close(cgfile);
+        return 1;
+    }
+    for (i = 0; i < npts; i++)
+    {
+        if (fabs(puu[i]-pu[i]) > 1e-12 || fabs(pvv[i]-pv[i]) > 1e-12)
+        {
+            fprintf(stderr, "ERROR: point %d round-tripped as (%g,%g), expected (%g,%g)\n",
+                    i, puu[i], pvv[i], pu[i], pv[i]);
+            cg_close(cgfile);
+            return 1;
+        }
+    }
+    printf("All %d control points round-tripped exactly\n", npts);
+
+    if (cg_close(cgfile)) { fprintf(stderr, "ERROR: close\n"); return 1; }
+
+    printf("\nQUAD SOLUTION SERENDIPITY TEST PASSED\n");
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int errors = 0;
@@ -460,15 +576,19 @@ int main(int argc, char **argv)
     if (test_hexa20_serendipity())
         errors++;
 
+    /* Test 6.3: edge-serendipity solution basis */
+    if (test_quad8_solution_serendipity())
+        errors++;
+
     printf("\n");
     printf("##################################################\n");
     if (errors == 0)
     {
-        printf("#ALL SERENDIPITY TESTS PASSED (2/2)        #\n");
+        printf("#ALL SERENDIPITY TESTS PASSED (3/3)        #\n");
     }
     else
     {
-        printf("#  ✗ SERENDIPITY TESTS FAILED (%d/2)             #\n", errors);
+        printf("#  ✗ SERENDIPITY TESTS FAILED (%d/3)             #\n", errors);
     }
     printf("##################################################\n");
     printf("\n");

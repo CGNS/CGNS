@@ -144,7 +144,7 @@ int test_mixed_ho_simple()
         if (cg_solution_interpolation_write(fn, bn, fam, "Tri_P2",
                 CGNS_ENUMV(TRI_3), spatial_degree, temporal_degree,
                 CGNS_ENUMV(ParametricLagrange), &si) ||
-            cg_solution_interpolation_points_write(fn, bn, fam, si,
+            cg_solution_interpolation_points_write(fn, bn, fam, si, 6,
                 tri_u, tri_v, NULL, NULL)) {
             printf("ERROR: Failed to write TRI interpolation: %s\n", cg_get_error());
             cg_close(fn); failed_tests++; return 1;
@@ -152,7 +152,7 @@ int test_mixed_ho_simple()
         if (cg_solution_interpolation_write(fn, bn, fam, "Quad_P2",
                 CGNS_ENUMV(QUAD_4), spatial_degree, temporal_degree,
                 CGNS_ENUMV(ParametricLagrange), &si) ||
-            cg_solution_interpolation_points_write(fn, bn, fam, si,
+            cg_solution_interpolation_points_write(fn, bn, fam, si, 9,
                 quad_u, quad_v, NULL, NULL)) {
             printf("ERROR: Failed to write QUAD interpolation: %s\n", cg_get_error());
             cg_close(fn); failed_tests++; return 1;

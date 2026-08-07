@@ -100,7 +100,7 @@
      &                                      'QuadMesh', CGNS_ENUMV(QUAD_4), cgei, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_element_interpolation_points_write_f(cgfile, cgbase, cgfam, &
-     &                                             cgei, pu, pv, pw, ierr)
+     &                                             cgei, pu, pv, ier=ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_element_interpolation_distribution_write_f(cgfile, cgbase, &
      &                          cgfam, cgei, CGNS_ENUMV(Equidistant), ierr)
@@ -111,8 +111,11 @@
      &                        'QuadSol', CGNS_ENUMV(QUAD_4), 1, 0, CGNS_ENUMV(ParametricLagrange), &
      &                        cgsi, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
+      ! pw and pt are omitted rather than passed as dummy arrays: the binding
+      ! declares them OPTIONAL and passes a null pointer through, which is what
+      ! the C entry takes for a coordinate a 2D steady element does not have.
       call cg_solution_interpolation_points_write_f(cgfile, cgbase, cgfam, &
-     &                        cgsi, pu, pv, pw, pt, ierr)
+     &                        cgsi, 4, pu, pv, ier=ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_solution_interpolation_distribution_write_f(cgfile, cgbase, &
      &                        cgfam, cgsi, CGNS_ENUMV(Equidistant), ierr)

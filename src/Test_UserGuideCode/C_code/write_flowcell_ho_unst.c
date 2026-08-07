@@ -71,7 +71,7 @@ int main()
     solutionLagrangeBasis(&pu,&pv);
 /* write Lagrange Control Points */
     if (cg_solution_interpolation_points_write(index_file,index_base,index_family,
-                                               index_interp,pu,pv,NULL,NULL)) cg_error_exit();
+                                               index_interp,16,pu,pv,NULL,NULL)) cg_error_exit();
 /* allocate fields */
     rho  = createField(ni*nj);
     pres = createField(ni*nj);

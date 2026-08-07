@@ -92,7 +92,7 @@ static cgsize_t write_case(const char *filename, int p, int q,
             return -1;
         }
         for (i = 0; i < (int)npts; i++) { pu[i] = 0.0; pv[i] = 0.0; }
-        if (check(cg_solution_interpolation_points_write(fn, B, F, si, pu, pv, NULL,
+        if (check(cg_solution_interpolation_points_write(fn, B, F, si, npts, pu, pv, NULL,
                   q > 0 ? pv : NULL), "lagrange points at degree 0")) return -1;
     } else {
         int nmodal = 0;

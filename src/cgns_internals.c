@@ -1997,13 +1997,29 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 checksize = 0;
             }
 
-            /* add rinds (only when DataSize was actually computed) */
-            if (checksize) {
-                for (j=0; j<Idim; j++) DataSize[j] = DataSize[j]
-                                                   + sol[0][s].rind_planes[2*j]
-                                                   + sol[0][s].rind_planes[2*j+1];
+            /* No rind contribution.  CPEX-0045 gives Rind_t no meaning under
+             * InterpolationPoints -- rind planes are an index-space concept and
+             * the field array is a flat degree-of-freedom list -- and a
+             * conforming writer must not emit one.  Adding the planes here would
+             * give the node the meaning the standard denies it, and would make
+             * the library disagree with cgnscheck, which reports its presence.
+             *
+             * A file that carries one was written to a rule this standard does
+             * not define, so its field length cannot be checked against L.  That
+             * disables the check rather than failing the open, for the reason
+             * the unresolvable-basis branch above gives: the extents are on
+             * disk, so what is lost is the ability to verify the length, not the
+             * ability to read the arrays. */
+            for (j=0; j<2*Idim; j++) {
+                if (sol[0][s].rind_planes[j] != 0) {
+                    cgi_warning("FlowSolution '%s': Rind_t has no meaning under "
+                                "GridLocation=InterpolationPoints and must not be "
+                                "written; field lengths are not validated",
+                                sol[0][s].name);
+                    checksize = 0;
+                    break;
+                }
             }
-            
         }
         else {
      /* Determine data size (1st Order solution) */
@@ -4904,10 +4920,11 @@ int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
 /* CPEX-0045: read the optional ControlPointDistribution child.
  *
  * The attribute is a *labelled enumeration* node -- name
- * "ControlPointDistribution", label "ControlPointDistribution_t",
- * an I4 scalar holding the enumerator -- following the same convention as
- * InterpolationType_t, and deliberately not the name-matched DataArray_t
- * convention used by the sibling LagrangeControlPoints.
+ * "ControlPointDistribution", label "ControlPointDistribution_t", whose payload
+ * is the enumerator's name as a C1 string, exactly as GridLocation_t and
+ * DataClass_t are stored -- and deliberately not the name-matched DataArray_t
+ * convention used by the sibling LagrangeControlPoints.  It is held in memory
+ * decoded, as an I4 scalar.
  *
  * Absence is normal and carries no meaning beyond "not recorded": the stored
  * coordinates alone determine the basis, so no warning is warranted.
@@ -4916,10 +4933,11 @@ static int cgi_read_distribution_node(double parent_id, const char *parent_label
                                       const char *parent_name, cgns_array **dist)
 {
     double *id = 0;
-    int nnod = 0, ndim, val;
-    char_33 name, data_type;
-    cgsize_t dim_vals[12];
-    void *vdata = 0;
+    int nnod = 0;
+    char_33 name;
+    char *dist_name = 0;    /* allocated in cgi_read_string */
+    CGNS_ENUMT(ControlPointDistribution_t) val;
+    int *vdata = 0;
 
     *dist = 0;
     if (cgi_get_nodes(parent_id, "ControlPointDistribution_t", &nnod, &id))
@@ -4946,33 +4964,22 @@ static int cgi_read_distribution_node(double parent_id, const char *parent_label
         return CG_ERROR;
     }
 
-    if (cgi_read_node(id[0], name, data_type, &ndim, dim_vals, &vdata, READ_DATA)) {
+    /* C1 payload: cgi_read_string rejects anything else and NUL-terminates. */
+    if (cgi_read_string(id[0], name, &dist_name)) {
         cgi_error("Error reading ControlPointDistribution under %s '%s'",
                   parent_label, parent_name);
-        /* cgi_read_node() allocates the payload before its last failure point
-         * (the cgio_read_all_data_type call), so vdata can be non-NULL here --
-         * as the very next error branch already assumes. */
-        if (vdata) CGNS_FREE(vdata);
         CGNS_FREE(id);
         return CG_ERROR;
     }
-    if (strcmp(data_type, "I4") || ndim != 1 || dim_vals[0] != 1) {
-        cgi_error("ControlPointDistribution under %s '%s' must be an I4 "
-                  "scalar (got %s, ndim %d)", parent_label, parent_name,
-                  data_type, ndim);
-        if (vdata) CGNS_FREE(vdata);
+    if (cgi_ControlPointDistribution(dist_name, &val)) {
+        CGNS_FREE(dist_name);
         CGNS_FREE(id);
         return CG_ERROR;
     }
+    CGNS_FREE(dist_name);
 
-    val = ((int *)vdata)[0];
-    if (INVALID_ENUM(val, NofValidControlPointDistributions)) {
-        cgi_error("Invalid ControlPointDistribution value %d under %s '%s'",
-                  val, parent_label, parent_name);
-        CGNS_FREE(vdata);
-        CGNS_FREE(id);
-        return CG_ERROR;
-    }
+    vdata = CGNS_NEW(int, 1);
+    vdata[0] = (int)val;
 
     *dist = CGNS_NEW(cgns_array, 1);
     (*dist)->id = id[0];
@@ -5212,29 +5219,23 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             goto err_free;
         }
         if (strcmp(temp_name,"InterpolationType")==0) {
-          
-            vdata = 0;
-            if (cgi_read_node(id[0], temp_name, data_type,
-                &ndim, dim_vals, &vdata, READ_DATA)) {
+
+            /* A labelled enumeration node: the payload is the enumerator's name
+             * as a C1 string, exactly as GridLocation_t and DataClass_t are
+             * stored.  cgi_read_string rejects any other datatype and
+             * NUL-terminates, so nothing here dereferences an unchecked
+             * payload. */
+            char *it_name = 0;
+            if (cgi_read_string(id[0], temp_name, &it_name)) {
                 cgi_error("Error reading InterpolationType_t node");
-                if (vdata) CGNS_FREE(vdata);
                 goto err_free;
             }
-            /* The payload must be validated before it is dereferenced.
-             * cgi_read_node() leaves *data untouched for datatype MT, and
-             * allocates nothing for a datatype it does not recognise, so a
-             * corrupt or crafted file would otherwise reach a wild pointer
-             * here.  The sibling payload reads are guarded the same way. */
-            if (strcmp(data_type,"I4") || ndim != 1 || dim_vals[0] < 1 || vdata == 0) {
-                cgi_error("InterpolationType under SolutionInterpolation_t '%s' must "
-                          "be an I4 scalar (got %s, ndim %d)",
-                          sltinterpolation->name, data_type, ndim);
-                if (vdata) CGNS_FREE(vdata);
+            if (cgi_InterpolationType(it_name,
+                    &sltinterpolation->interpolationName)) {
+                CGNS_FREE(it_name);
                 goto err_free;
             }
-            edata = (int *)vdata;
-            sltinterpolation->interpolationName = (CGNS_ENUMT(InterpolationType_t))edata[0];
-            CGNS_FREE(vdata);
+            CGNS_FREE(it_name);
             if (INVALID_ENUM(sltinterpolation->interpolationName, NofValidInterpolationTypes)) {
                 cgi_error("Invalid interpolation type %d in SolutionInterpolation_t node '%s'",
                           (int)sltinterpolation->interpolationName, sltinterpolation->name);
@@ -5260,8 +5261,9 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     sltinterpolation->lagrangePts = 0;
     sltinterpolation->lagrangeDist = 0;
     cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
-    if (nnod > 2) {
-        cgi_error("Too many DataArray_t nodes (%d, max 2) under SolutionInterpolation_t '%s'",
+    if (nnod > 1) {
+        cgi_error("Too many DataArray_t nodes (%d, max 1) under SolutionInterpolation_t '%s'; "
+                  "LagrangeControlPoints is the only one permitted",
                   nnod, sltinterpolation->name);
         goto err_free;
     }
@@ -5348,6 +5350,20 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
         }
     }   /* loop through DataArray_t */
     if (nnod) CGNS_FREE(id);
+
+ /* CPEX-0045: only ParametricLagrange stores LagrangeControlPoints.  Its absence
+  * there is legal and means the complete space of the declared degree on the
+  * standard lattice; what the array adds is the freedom to place the points
+  * elsewhere, and -- since the count is then whatever the array says -- to
+  * describe an incomplete (serendipity) space.  The DataArray_t loop above only
+  * sees arrays that are present, so the forbidden direction is checked here. */
+    if (sltinterpolation->interpolationName != CGNS_ENUMV(ParametricLagrange) &&
+        sltinterpolation->lagrangePts != NULL) {
+        cgi_error("SolutionInterpolation_t '%s' has InterpolationType %s, which "
+                  "stores no LagrangeControlPoints", sltinterpolation->name,
+                  cg_InterpolationTypeName(sltinterpolation->interpolationName));
+        return CG_ERROR;
+    }
 
  /* ControlPointDistribution: labelled enumeration node (see the
   * element-side reader for the convention). */
@@ -8400,6 +8416,8 @@ static int cgi_ho_ndofs(const cgns_family *family,
  * and summing the per-element DOF count for each element.
  *
  * \param[in]  section      Pointer to MIXED element section
+ * \param[in]  cell_dim     Base CellDimension; elements below it are boundary
+ *                          faces or edges and carry no solution DOFs
  * \param[in]  family       Family resolved from the zone's FamilyName_t
  * \param[in]  spatialDegree Spatial interpolation degree
  * \param[in]  temporalDegree Temporal interpolation degree
@@ -8407,7 +8425,8 @@ static int cgi_ho_ndofs(const cgns_family *family,
  * \return CG_OK on success, CG_NODE_NOT_FOUND when the basis is unresolvable,
  *         CG_ERROR on failure
  */
-static int cgi_ho_datasize_mixed(cgns_section *section, const cgns_family *family,
+static int cgi_ho_datasize_mixed(cgns_section *section, int cell_dim,
+                                 const cgns_family *family,
                                  int spatialDegree, int temporalDegree, cgsize_t *DataSize)
 {
     cgsize_t ne, pos = 0;
@@ -8415,7 +8434,7 @@ static int cgi_ho_datasize_mixed(cgns_section *section, const cgns_family *famil
     const cgsize_t *connect;
     cgsize_t conn_size;
     int needs_free = 0;
-    int npe, base_npe;
+    int npe, base_npe, edim;
     int ndofs_ret;
     CGNS_ENUMT(ElementType_t) elem_type;
 
@@ -8459,17 +8478,22 @@ static int cgi_ho_datasize_mixed(cgns_section *section, const cgns_family *famil
         /* Extract element type from connectivity */
         elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
 
-        /* Per-element DOF count from the family's SolutionInterpolation_t */
-        ndofs_ret = cgi_ho_ndofs(family, elem_type, spatialDegree, temporalDegree, &npe);
-        if (ndofs_ret != CG_OK) {
-            if (needs_free) CGNS_FREE((void*)connect);
-            if (ndofs_ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
-            cgi_error("Failed to resolve DOF count for element type %s (degree %d) in MIXED section '%s'",
-                      cg_ElementTypeName(elem_type), spatialDegree, section->name);
-            return CG_ERROR;
-        }
+        /* The location domain is the zone's cells, so the dimension filter is
+         * per *element* here, not per section: a MIXED section may legally hold
+         * boundary faces alongside volume cells, and those carry no DOFs. */
+        if (cg_element_dimension(elem_type, &edim) == CG_OK && edim >= cell_dim) {
+            /* Per-element DOF count from the family's SolutionInterpolation_t */
+            ndofs_ret = cgi_ho_ndofs(family, elem_type, spatialDegree, temporalDegree, &npe);
+            if (ndofs_ret != CG_OK) {
+                if (needs_free) CGNS_FREE((void*)connect);
+                if (ndofs_ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
+                cgi_error("Failed to resolve DOF count for element type %s (degree %d) in MIXED section '%s'",
+                          cg_ElementTypeName(elem_type), spatialDegree, section->name);
+                return CG_ERROR;
+            }
 
-        *DataSize += npe;
+            *DataSize += npe;
+        }
 
         /* Skip past connectivity nodes for this element */
         if (cg_npe(elem_type, &base_npe) != CG_OK || base_npe <= 0) {
@@ -8497,13 +8521,15 @@ static int cgi_ho_datasize_mixed(cgns_section *section, const cgns_family *famil
  * For MIXED sections, iterate only through elements in the specified range.
  *
  * \param[in]  section      Pointer to MIXED element section
+ * \param[in]  cell_dim     Base CellDimension; see cgi_ho_datasize_mixed
  * \param[in]  spatialDegree Spatial interpolation order
  * \param[in]  rmin         First element in range (global indexing)
  * \param[in]  rmax         Last element in range (global indexing)
  * \param[out] DataSize     Computed data size for this range
  * \return CG_OK on success, CG_ERROR on failure
  */
-static int cgi_ho_datasize_mixed_range(cgns_section *section, const cgns_family *family,
+static int cgi_ho_datasize_mixed_range(cgns_section *section, int cell_dim,
+                                       const cgns_family *family,
                                        int spatialDegree, int temporalDegree,
                                        cgsize_t rmin, cgsize_t rmax, cgsize_t *DataSize)
 {
@@ -8514,7 +8540,7 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, const cgns_family 
     const cgsize_t *connect;
     cgsize_t conn_size;
     int needs_free = 0;
-    int npe, base_npe;
+    int npe, base_npe, edim;
     int ndofs_ret;
     CGNS_ENUMT(ElementType_t) elem_type;
 
@@ -8555,8 +8581,10 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, const cgns_family 
         }
         elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
 
-        /* Check if this element is within the requested range */
-        if (elem_idx >= first_elem_offset && elem_idx <= last_elem_offset) {
+        /* Check if this element is within the requested range.  Boundary faces
+         * inside a MIXED section carry no DOFs (see cgi_ho_datasize_mixed). */
+        if (elem_idx >= first_elem_offset && elem_idx <= last_elem_offset &&
+            cg_element_dimension(elem_type, &edim) == CG_OK && edim >= cell_dim) {
             ndofs_ret = cgi_ho_ndofs(family, elem_type, spatialDegree,
                                      temporalDegree, &npe);
             if (ndofs_ret != CG_OK) {
@@ -8629,7 +8657,7 @@ int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
         if (type == CGNS_ENUMV(MIXED)) {
             // MIXED section: must iterate through connectivity to get individual element types
             cgsize_t mixed_size = 0;
-            ret = cgi_ho_datasize_mixed(section, family, spatialDegree,
+            ret = cgi_ho_datasize_mixed(section, cell_dim, family, spatialDegree,
                                         temporalDegree, &mixed_size);
             if (ret != CG_OK) return ret;
             for (j = 0 ; j < id_dim ; j++) DataSize[j] += mixed_size;
@@ -8714,7 +8742,7 @@ int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone 
         if (type == CGNS_ENUMV(MIXED)) {
             // MIXED section: iterate through connectivity for range
             cgsize_t mixed_size = 0;
-            ret = cgi_ho_datasize_mixed_range(section, family, spatialDegree,
+            ret = cgi_ho_datasize_mixed_range(section, cell_dim, family, spatialDegree,
                                               temporalDegree, rmin, rmax, &mixed_size);
             if (ret != CG_OK) return ret;
             *DataSize += mixed_size;
@@ -8849,24 +8877,32 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
                 }
                 /* Get element info from stream */
                 CGNS_ENUMT(ElementType_t) elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
-                int base_npe;
+                int base_npe, mix_edim;
+                /* Boundary faces inside a MIXED section carry no DOFs
+                 * (see cgi_ho_datasize_mixed). */
+                int mix_is_cell = (cg_element_dimension(elem_type, &mix_edim) == CG_OK &&
+                                   mix_edim >= cell_dim);
 
                 /* Check if this element is in our requested list */
                 /* Handle duplicates in sorted_list if PointList has them */
                 while (list_idx < npts && sorted_list[list_idx] == current_elem_id) {
-                    /* Element Match! Accumulate Size */
-                    int ho_npe;
-                    ret = cgi_ho_ndofs(family, elem_type, spatialDegree,
-                                       temporalDegree, &ho_npe);
-                    if (ret != CG_OK) {
-                        if (connect_buf) CGNS_FREE(connect_buf);
-                        CGNS_FREE(sorted_list);
-                        if (ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
-                        cgi_error("Failed to resolve the DOF count for element type %s at degree %d",
-                                  cg_ElementTypeName(elem_type), spatialDegree);
-                        return CG_ERROR;
+                    /* Element Match! Accumulate Size.  A listed face contributes
+                     * nothing but must still consume its list entry, or the
+                     * zipper below loses sync with the connectivity stream. */
+                    if (mix_is_cell) {
+                        int ho_npe;
+                        ret = cgi_ho_ndofs(family, elem_type, spatialDegree,
+                                           temporalDegree, &ho_npe);
+                        if (ret != CG_OK) {
+                            if (connect_buf) CGNS_FREE(connect_buf);
+                            CGNS_FREE(sorted_list);
+                            if (ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
+                            cgi_error("Failed to resolve the DOF count for element type %s at degree %d",
+                                      cg_ElementTypeName(elem_type), spatialDegree);
+                            return CG_ERROR;
+                        }
+                        *DataSize += ho_npe;
                     }
-                    *DataSize += ho_npe;
 
                     list_idx++; /* Move to next request */
                 }
@@ -8946,7 +8982,16 @@ int cgi_check_dimensions(int ndim, cglong_t *dims)
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc)
 {
-    if (loc == CGNS_ENUMV(Vertex) || loc == CGNS_ENUMV(CellCenter) || loc == CGNS_ENUMV(InterpolationPoints))
+    if (loc == CGNS_ENUMV(InterpolationPoints)) {
+        /* CPEX-0045: the field-array length is a sum over an element list, which
+         * a Structured zone does not have, so the location is invalid there. */
+        if (type == CGNS_ENUMV(Structured)) {
+            cgi_error("GridLocation InterpolationPoints is not valid for a Structured zone");
+            return CG_ERROR;
+        }
+        return CG_OK;
+    }
+    if (loc == CGNS_ENUMV(Vertex) || loc == CGNS_ENUMV(CellCenter))
         return CG_OK;
     if (loc == CGNS_ENUMV(EdgeCenter)) {
         if (dim >= 2) return CG_OK;
@@ -19117,6 +19162,48 @@ int cgi_GridLocation(char *LocationName, CGNS_ENUMT(GridLocation_t) *type)
         return CG_OK;
     }
     cgi_error("Unrecognized GridLocation: %s", LocationName);
+    return CG_ERROR;
+}
+
+/* CPEX-0045: the two enumeration nodes this extension introduces are stored the
+ * way every other CGNS enumeration node is -- the label carries the type and the
+ * payload is the enumerator's name as a C1 string.  The numeric value is a
+ * source-level constant and never reaches the file, which is what keeps a later
+ * extension inserting an enumerator from changing how existing files read. */
+
+int cgi_InterpolationType(char *Name, CGNS_ENUMT(InterpolationType_t) *type)
+{
+    int i;
+    for (i=0; i<NofValidInterpolationTypes; i++) {
+        if (strcmp(Name, InterpolationTypeName[i])==0) {
+            (*type) = (CGNS_ENUMV( InterpolationType_t ))i;
+            return CG_OK;
+        }
+    }
+    if (cg->version > CGNSLibVersion) {
+        (*type) = CGNS_ENUMV( InterpolationTypeUserDefined );
+        cgi_warning("Unrecognized InterpolationType '%s' replaced with 'UserDefined'", Name);
+        return CG_OK;
+    }
+    cgi_error("Unrecognized InterpolationType: %s", Name);
+    return CG_ERROR;
+}
+
+int cgi_ControlPointDistribution(char *Name, CGNS_ENUMT(ControlPointDistribution_t) *type)
+{
+    int i;
+    for (i=0; i<NofValidControlPointDistributions; i++) {
+        if (strcmp(Name, ControlPointDistributionName[i])==0) {
+            (*type) = (CGNS_ENUMV( ControlPointDistribution_t ))i;
+            return CG_OK;
+        }
+    }
+    if (cg->version > CGNSLibVersion) {
+        (*type) = CGNS_ENUMV( ControlPointDistributionUserDefined );
+        cgi_warning("Unrecognized ControlPointDistribution '%s' replaced with 'UserDefined'", Name);
+        return CG_OK;
+    }
+    cgi_error("Unrecognized ControlPointDistribution: %s", Name);
     return CG_ERROR;
 }
 

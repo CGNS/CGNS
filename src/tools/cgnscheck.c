@@ -4100,6 +4100,13 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
             if (z->type != CGNS_ENUMV(Unstructured)) {
                 error ("InterpolationPoints location is compatible only with Unstructured grids");
             }
+            /* CPEX-0045 scopes the location to FlowSolution_t.  A BC_t or
+             * BCDataSet_t is not sized by the location domain the way a
+             * FlowSolution_t is, so the field-length rule has nothing to attach
+             * to there. */
+            if (is_boco)
+                error ("CPEX-0045: GridLocation=InterpolationPoints is valid only "
+                       "on FlowSolution_t nodes");
             return location;
         default:
             error ("invalid grid location");
@@ -7037,7 +7044,7 @@ static void check_family (int fam)
     int ierr, j, n,ndim, nbc, ngeo, nparts,npe;
     int ordinal;
     cgsize_t i;
-    int npt;
+    int npt, npts_stored;
     CGNS_ENUMT(BCType_t) bctype;
     CGNS_ENUMT(ElementType_t) etype,btype;
     CGNS_ENUMT(InterpolationType_t) it;
@@ -7138,7 +7145,7 @@ static void check_family (int fam)
     for (n = 1; n <= ninterp; n++) {
         CGNS_ENUMT(InterpolationType_t) eit;
         CGNS_ENUMT(ControlPointDistribution_t) edist;
-        int dist_ierr;
+        int dist_ierr = CG_NODE_NOT_FOUND;
         if (cg_element_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype) )
           error_exit("cg_element_interpolation_read");
         if (verbose) {
@@ -7319,6 +7326,15 @@ static void check_family (int fam)
             continue;
         }
 
+        /* The *stored* point count, not the complete-space cardinality: an
+         * incomplete (serendipity) space carries fewer, and comparing i entries
+         * of a buffer only npts_stored of which were filled would read
+         * uninitialised memory and report a spurious mismatch. */
+        npts_stored = i;
+        if (cg_solution_interpolation_npoints_read(cgnsfn, cgnsbase, fam, n,
+                                                   &npts_stored) != CG_OK)
+            npts_stored = i;
+
         pu = (double*) malloc((cgsize_t) i * sizeof(double) );
         pv = (double*) malloc((cgsize_t) i * sizeof(double) );
         pw = (double*) malloc((cgsize_t) i * sizeof(double) );
@@ -7335,7 +7351,7 @@ static void check_family (int fam)
             if (sdist_ierr == CG_OK) {
                 if (ot == 0)
                     ho_check_distribution("SolutionInterpolation", name, etype,
-                                          sdist, os, (int)i, pu, pv, pw);
+                                          sdist, os, npts_stored, pu, pv, pw);
                 else
                     warning (3, "SolutionInterpolation \"%s\": space-time node; the "
                                 "stored coordinates are not checked against the named "
