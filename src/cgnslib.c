@@ -18269,10 +18269,35 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
             return CG_ERROR;
         }
         if (nmatch == 1) {
-            if (family->elementinterpolations[match].lagrangePts == NULL) {
+            cgns_elementInterpolation *ei = &family->elementinterpolations[match];
+            int have, want;
+
+            if (ei->lagrangePts == NULL) {
                 /* Mesh node is itself IsoParametric -- reduces to the mesh case */
                 return CG_NODE_NOT_FOUND;
             }
+
+            /* cg_element_interpolation_points_read() below fills pu/pv/pw with
+             * cg_npe(ei->type) points -- the mesh node's exact (possibly
+             * high-order) point count -- while the caller sized those buffers
+             * from cg_solution_lagrange_interpolation_size(es->type, so, to),
+             * the documented sizing contract for this function.  Nothing ties
+             * "so" to the geometric order of the ElementInterpolation_t this
+             * IsoParametric node happens to resolve to, so without this check
+             * a caller whose degree does not match the mesh order gets a
+             * buffer overrun instead of a diagnosable error. */
+            if (cg_npe(ei->type, &have) != CG_OK) return CG_ERROR;
+            if (cg_solution_lagrange_interpolation_size(es->type, so, to, &want) != CG_OK)
+                return CG_ERROR;
+            if (have != want) {
+                cgi_error("SolutionInterpolation '%s' is IsoParametric at degree %d "
+                          "(%d control points expected) but resolves to "
+                          "ElementInterpolation_t '%s' of type %s, which carries %d; "
+                          "the degrees must agree", es->name, so, want, ei->name,
+                          cg_ElementTypeName(ei->type), have);
+                return CG_ERROR;
+            }
+
             return cg_element_interpolation_points_read(fn, bn, fam, match + 1,
                                                        pu, pv, pw);
         }

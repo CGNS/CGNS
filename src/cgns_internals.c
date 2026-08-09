@@ -5026,15 +5026,18 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     if (strcmp(data_type,"I4")!=0) {
         cgi_error("Unsupported data type for ElementInterpolation_t node = %s",
                 data_type);
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     if (ndim!=1) {
         cgi_error("Wrong number of dimension for ElementInterpolation_t node =%d != 1",
             ndim);
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     if (dim_vals[0]!=1) {
         cgi_error("Wrong dimension value for ElementInterpolation_t node.");
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     edata = (int *)vdata;
@@ -5182,15 +5185,18 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     if (strcmp(data_type,"I4")!=0) {
         cgi_error("Unsupported data type for SolutionInterpolation_t node = %s",
                 data_type);
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     if (ndim!=1) {
         cgi_error("Wrong number of dimension for SolutionInterpolation_t node =%d != 1",
             ndim);
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     if (dim_vals[0]!=3) {
         cgi_error("Wrong dimension value for SolutionInterpolation_t node. requires 3 values");
+        if (vdata) CGNS_FREE(vdata);
         return CG_ERROR;
     }
     edata = (int *)vdata;
@@ -5201,6 +5207,22 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     if (INVALID_ENUM(sltinterpolation->type, NofValidElementTypes)) {
         cgi_error("Invalid element type %d in SolutionInterpolation_t node '%s'",
                   (int)sltinterpolation->type, sltinterpolation->name);
+        return CG_ERROR;
+    }
+    /* Bound the degrees as they leave the file, mirroring the check
+     * cg_solution_interpolation_write() applies as they enter it.  Both are
+     * used below to size and divide: the extent check divides by
+     * TemporalDegree+1, so a stored -1 would be a division by zero rather
+     * than a diagnosable error. */
+    if (sltinterpolation->spatialdegree  < 0 ||
+        sltinterpolation->spatialdegree  > CG_MAX_ORDER ||
+        sltinterpolation->temporaldegree < 0 ||
+        sltinterpolation->temporaldegree > CG_MAX_ORDER) {
+        cgi_error("Interpolation degrees (spatial=%d, temporal=%d) of "
+                  "SolutionInterpolation_t node '%s' out of valid range [0, %d]",
+                  sltinterpolation->spatialdegree,
+                  sltinterpolation->temporaldegree,
+                  sltinterpolation->name, CG_MAX_ORDER);
         return CG_ERROR;
     }
 
