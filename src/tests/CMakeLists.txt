@@ -332,6 +332,51 @@ if (CGNS_ENABLE_TESTS)
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
+  # CPEX-0045 S3.2.2: the leading LagrangeControlPoints of an
+  # ElementInterpolation_t must be the principal vertices of the linear element
+  # in Figure 1 order.  These fixtures all violated it until the generators were
+  # corrected, so guard against a silent regression.  They cannot be added to
+  # CGNSCHECK_HO_FILES above: they are metadata-only files that legitimately
+  # report "no element sets found"/"no grid coordinates defined", which would
+  # trip that group's blanket FAIL_REGULAR_EXPRESSION "ERROR".  Asserting on the
+  # ordering diagnostic specifically is what this rule needs anyway.
+  set(CGNSCHECK_ORDERING_FILES
+      test_QUAD_16.cgns        # test_high_order_quad
+      test_QUAD_25.cgns        # test_high_order_quad
+      test_HEXA_64.cgns        # test_high_order_hexa
+      test_HEXA_125.cgns       # test_high_order_hexa
+      test_hexa27.cgns         # test_hexa_order2
+      test_TETRA_20.cgns       # test_3d_elements (bi-unit simplex)
+      test_PENTA_18.cgns       # test_3d_elements (bi-unit simplex)
+      test_PYRA_14.cgns        # test_3d_elements (bi-unit pyramid)
+      test_error_dimensions.cgns  # test_error_handling
+      test_error_rewrite.cgns     # test_error_handling
+      test_isoparam_ambig.cgns    # test_error_handling
+  )
+  set_tests_properties(test_high_order_quad test_high_order_hexa
+                       test_hexa_order2 test_3d_elements test_error_handling
+                       PROPERTIES FIXTURES_SETUP HO_ORDERING_FILES)
+
+  foreach(ORDFILE IN LISTS CGNSCHECK_ORDERING_FILES)
+    # Driven through a script wrapper rather than invoking cgnscheck directly:
+    # these files exit non-zero for unrelated reasons (see above), which ctest
+    # would report as a failure regardless of the rule under test.  The wrapper
+    # ignores the exit status and fails only on the ordering diagnostic.
+    add_test(NAME cgnscheck_ordering_${ORDFILE}
+             COMMAND ${CMAKE_COMMAND}
+                     -DCGNSCHECK=$<TARGET_FILE:cgnscheck>
+                     -DFIXTURE=${ORDFILE}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/run_cgnscheck_ordering.cmake)
+    set_tests_properties(cgnscheck_ordering_${ORDFILE} PROPERTIES
+      FIXTURES_REQUIRED HO_ORDERING_FILES
+      TIMEOUT 120)
+    if(CGNS_BUILD_SHARED)
+      set_tests_properties(cgnscheck_ordering_${ORDFILE} PROPERTIES
+        ENVIRONMENT_MODIFICATION
+        "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
+    endif()
+  endforeach()
+
   # Every cgnscheck test needs the DLL directory on PATH for a Windows shared
   # build.  Omitting a test here does not fail it cleanly: the loader cannot
   # find cgns.dll, Windows raises a modal error dialog, and the test blocks

@@ -82,6 +82,13 @@ int main(int argc, char **argv)
     pw = (double*) malloc(n * sizeof(double));
 
     fillHexaLagrangePoints(order, pu, pv, pw);
+    /* CPEX-0045 S3.2.2: leading points must be the HEXA_8 principal vertices
+     * in Figure 1 order; the lattice above is lexicographic. */
+    if (ho_reorder_corners_first(CGNS_ENUMV(HEXA_8), n, pu, pv, pw))
+    {
+        fprintf(stderr, "ERROR: could not order control points corner-first\n");
+        cg_error_exit();
+    }
 
     printf("Writing Lagrange control points (27 points)...\n");
     if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, cgeinterp,
@@ -180,6 +187,13 @@ int main(int argc, char **argv)
 
     /* Fill expected values */
     fillHexaLagrangePoints(order, pu, pv, pw);
+    /* CPEX-0045 S3.2.2: leading points must be the HEXA_8 principal vertices
+     * in Figure 1 order; the lattice above is lexicographic. */
+    if (ho_reorder_corners_first(CGNS_ENUMV(HEXA_8), (int)nsize, pu, pv, pw))
+    {
+        fprintf(stderr, "ERROR: could not order control points corner-first\n");
+        cg_error_exit();
+    }
 
     /* Read control points */
     printf("Reading Lagrange control points...\n");
@@ -215,35 +229,43 @@ int main(int argc, char **argv)
     }
     printf("All %d control points validated successfully\n", (int)nsize);
 
-    /* Verify some key points explicitly */
-    printf("Verifying key control point positions...\n");
-    /* Corner points in parametric space should be at (-1,-1,-1) to (1,1,1) */
-    if (fabs(pu[0] + 1.0) > 1.e-06 || fabs(pv[0] + 1.0) > 1.e-06 || fabs(pw[0] + 1.0) > 1.e-06)
+    /* Verify the leading points are the HEXA_8 principal vertices in
+     * Figure 1 order, as CPEX-0045 S3.2.2 requires. */
+    printf("Verifying principal-vertex ordering...\n");
     {
-        fprintf(stderr, "ERROR: First point should be (-1,-1,-1)\n");
-        cg_error_exit();
+        static const double cu[8] = {-1., 1., 1.,-1.,-1., 1., 1.,-1.};
+        static const double cv[8] = {-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+        static const double cw[8] = {-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+        int c;
+        for (c = 0; c < 8; c++)
+        {
+            if (fabs(puu[c] - cu[c]) > 1.e-06 || fabs(pvv[c] - cv[c]) > 1.e-06 ||
+                fabs(pww[c] - cw[c]) > 1.e-06)
+            {
+                fprintf(stderr, "ERROR: control point %d should be the HEXA_8 "
+                        "vertex (%g, %g, %g), got (%g, %g, %g)\n",
+                        c, cu[c], cv[c], cw[c], puu[c], pvv[c], pww[c]);
+                cg_error_exit();
+            }
+            printf("Point %d (vertex %d): (%g, %g, %g)\n", c, c+1,
+                   puu[c], pvv[c], pww[c]);
+        }
     }
-    printf("Point 0 (corner): (%g, %g, %g)\n", puu[0], pvv[0], pww[0]);
 
-    /* Center point should be at (0,0,0) - index 13 for 3x3x3 */
-    int center_idx = 13; /* k=1, j=1, i=1 in 3x3x3 grid */
-    if (fabs(puu[center_idx]) > 1.e-06 || fabs(pvv[center_idx]) > 1.e-06 ||
-        fabs(pww[center_idx]) > 1.e-06)
+    /* The centre (0,0,0) is present at order 2; locate it rather than assuming
+     * lattice index 13, since the set is no longer in lattice order. */
     {
-        fprintf(stderr, "ERROR: Center point should be (0,0,0)\n");
-        cg_error_exit();
+        int c, found = 0;
+        for (c = 0; c < (int)nsize; c++)
+            if (fabs(puu[c]) < 1.e-06 && fabs(pvv[c]) < 1.e-06 &&
+                fabs(pww[c]) < 1.e-06) { found = 1; break; }
+        if (!found)
+        {
+            fprintf(stderr, "ERROR: HEXA_27 must contain the centre (0,0,0)\n");
+            cg_error_exit();
+        }
+        printf("Point %d (centre): (%g, %g, %g)\n", c, puu[c], pvv[c], pww[c]);
     }
-    printf("Point %d (center): (%g, %g, %g)\n", center_idx,
-           puu[center_idx], pvv[center_idx], pww[center_idx]);
-
-    /* Last point should be at (1,1,1) - index 26 */
-    if (fabs(puu[26] - 1.0) > 1.e-06 || fabs(pvv[26] - 1.0) > 1.e-06 ||
-        fabs(pww[26] - 1.0) > 1.e-06)
-    {
-        fprintf(stderr, "ERROR: Last point should be (1,1,1)\n");
-        cg_error_exit();
-    }
-    printf("Point 26 (corner): (%g, %g, %g)\n", puu[26], pvv[26], pww[26]);
 
     printf("\nClosing file...\n");
     cg_close(cgfile);

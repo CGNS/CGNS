@@ -528,7 +528,8 @@
       subroutine fillQuadLagrangePoints(ord, u, v)
         integer, intent(in) :: ord
         real(kind=dp), intent(out) :: u(*), v(*)
-        integer :: ii, jj, idx
+        integer :: ii, jj, kk, idx, npt
+        real(kind=dp) :: cu(4), cv(4), tu, tv
 
         idx = 0
         do jj = 0, ord
@@ -536,6 +537,35 @@
             idx = idx + 1
             u(idx) = -1.0_dp + dble(ii)*2.0_dp/dble(ord)
             v(idx) = -1.0_dp + dble(jj)*2.0_dp/dble(ord)
+          enddo
+        enddo
+
+!       CPEX-0045 S3.2.2: the leading control points of an
+!       ElementInterpolation_t must be the principal vertices of the
+!       corresponding linear element, in Figure 1 order.  The lattice built
+!       above is lexicographic, so permute the four QUAD_4 vertices to the
+!       front; the remaining points keep the same set.
+        cu(1) = -1.0_dp
+        cv(1) = -1.0_dp
+        cu(2) =  1.0_dp
+        cv(2) = -1.0_dp
+        cu(3) =  1.0_dp
+        cv(3) =  1.0_dp
+        cu(4) = -1.0_dp
+        cv(4) =  1.0_dp
+        npt = (ord+1)*(ord+1)
+        do kk = 1, 4
+          do jj = kk, npt
+            if (abs(u(jj)-cu(kk)) .lt. 1.0d-10 .and.                        &
+     &          abs(v(jj)-cv(kk)) .lt. 1.0d-10) then
+              tu = u(kk)
+              u(kk) = u(jj)
+              u(jj) = tu
+              tv = v(kk)
+              v(kk) = v(jj)
+              v(jj) = tv
+              exit
+            endif
           enddo
         enddo
       end subroutine fillQuadLagrangePoints

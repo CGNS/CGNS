@@ -40,10 +40,24 @@ void fillTetraLagrangePoints(int order, double *r, double *s, double *t)
     r[idx] = 0.333; s[idx] = 0.0; t[idx] = 0.333; idx++;
     r[idx] = 0.0; s[idx] = 0.333; t[idx] = 0.333; idx++;
     r[idx] = 0.333; s[idx] = 0.333; t[idx] = 0.333;
+
+    /* The points above are laid out on the UNIT simplex {r,s,t >= 0,
+     * r+s+t <= 1}.  CPEX-0045 (Section "Coordinate-System Conventions", and
+     * Figure 1) fixes the reference tetrahedron as the BI-UNIT simplex
+     * {u,v,w >= -1, u+v+w <= -1}; the CGNS documentation states this as a
+     * Critical Interoperability Requirement, since a [0,1]-based writer
+     * produces files that read back as a different element.  The affine map
+     * x -> 2x-1 carries one onto the other and sends the four leading
+     * vertices to exactly the TETRA_4 principal vertices of Figure 1. */
+    for (idx = 0; idx < 20; idx++) {
+        r[idx] = 2.0 * r[idx] - 1.0;
+        s[idx] = 2.0 * s[idx] - 1.0;
+        t[idx] = 2.0 * t[idx] - 1.0;
+    }
 }
 
 /* Fill parametric coordinates for PENTA_18 (order 2 prism/wedge)
- * Parametric space: (r,s,t) where r,s >= 0, r+s <= 1, and -1 <= t <= 1
+ * Parametric space: bi-unit triangle in (r,s) extruded along t in [-1,1]
  * 18 nodes: 6 vertices + 9 edge midpoints + 3 face centers
  */
 void fillPentaLagrangePoints(int order, double *r, double *s, double *t)
@@ -79,11 +93,21 @@ void fillPentaLagrangePoints(int order, double *r, double *s, double *t)
     r[idx] = 0.5; s[idx] = 0.0; t[idx] = 0.0; idx++;
     r[idx] = 0.5; s[idx] = 0.5; t[idx] = 0.0; idx++;
     r[idx] = 0.0; s[idx] = 0.5; t[idx] = 0.0;
+
+    /* (r,s) above are on the UNIT triangle {r,s >= 0, r+s <= 1} while t is
+     * already on [-1,1].  CPEX-0045 fixes the reference prism as the BI-UNIT
+     * triangle extruded along w in [-1,1], so only the triangular coordinates
+     * are remapped; x -> 2x-1 sends the six leading vertices to exactly the
+     * PENTA_6 principal vertices of Figure 1. */
+    for (idx = 0; idx < 18; idx++) {
+        r[idx] = 2.0 * r[idx] - 1.0;
+        s[idx] = 2.0 * s[idx] - 1.0;
+    }
 }
 
 /* Fill parametric coordinates for PYRA_14 (order 2 pyramid)
- * Parametric space: (r,s,t) where -1 <= r,s <= 1, 0 <= t <= 1
- * with degeneration at apex (t=1 forces r=s=0)
+ * Parametric space: {-1 <= t <= 1, |r| <= (1-t)/2, |s| <= (1-t)/2},
+ * the square base at t = -1 contracting to the apex (0,0,1)
  * 14 nodes: 5 corners + 8 edge midpoints + 1 base center
  */
 void fillPyraLagrangePoints(int order, double *r, double *s, double *t)
@@ -113,6 +137,17 @@ void fillPyraLagrangePoints(int order, double *r, double *s, double *t)
 
     /* 1 base center */
     r[idx] = 0.0; s[idx] = 0.0; t[idx] = 0.0;
+
+    /* (r,s) above are already on [-1,1] but t is on [0,1].  CPEX-0045 fixes
+     * the reference pyramid as {-1 <= w <= 1, |u| <= (1-w)/2, |v| <= (1-w)/2}
+     * -- the square base at w = -1 contracting to the apex (0,0,1) -- so only
+     * the axial coordinate is remapped.  t -> 2t-1 sends the five leading
+     * vertices to exactly the PYRA_5 principal vertices of Figure 1, and puts
+     * the lateral edge midpoints on the lateral edges (at w = 0 the section
+     * half-width is 1/2, which is where those points sit). */
+    for (idx = 0; idx < 14; idx++) {
+        t[idx] = 2.0 * t[idx] - 1.0;
+    }
 }
 
 /* Test a single 3D element type */

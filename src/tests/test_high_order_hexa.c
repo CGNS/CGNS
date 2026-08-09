@@ -90,6 +90,14 @@ int test_hexa_element(CGNS_ENUMT(ElementType_t) type, const char* name,
 
     fillHexaLagrangePoints(order, pu, pv, pw);
 
+    /* CPEX-0045 S3.2.2 requires the leading points to be the principal
+     * vertices in Figure 1 order; the lattice above is lexicographic. */
+    if (ho_reorder_corners_first(CGNS_ENUMV(HEXA_8), npts, pu, pv, pw))
+    {
+        fprintf(stderr, "ERROR: could not order control points corner-first\n");
+        return 1;
+    }
+
     printf("Writing Lagrange control points (%d points)...\n", npts);
     if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, cgeinterp,
                                               pu, pv, pw))
@@ -211,51 +219,48 @@ int test_hexa_element(CGNS_ENUMT(ElementType_t) type, const char* name,
     }
     printf("All %d control points validated successfully\n", (int)nsize);
 
-    /* Verify corner and center points */
-    printf("Verifying key control point positions...\n");
-
-    /* Bottom-left-back corner (-1, -1, -1) */
-    if (fabs(puu[0] + 1.0) > 1.e-06 || fabs(pvv[0] + 1.0) > 1.e-06 || fabs(pww[0] + 1.0) > 1.e-06)
+    /* Verify the leading points are the HEXA_8 principal vertices in
+     * Figure 1 order, as CPEX-0045 S3.2.2 requires. */
+    printf("Verifying principal-vertex ordering...\n");
     {
-        fprintf(stderr, "ERROR: Corner point should be (-1, -1, -1)\n");
-        cg_close(cgfile);
-        free(pu); free(pv); free(pw); free(puu); free(pvv); free(pww);
-        return 1;
+        static const double cu[8] = {-1., 1., 1.,-1.,-1., 1., 1.,-1.};
+        static const double cv[8] = {-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+        static const double cw[8] = {-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+        int c;
+        for (c = 0; c < 8; c++)
+        {
+            if (fabs(puu[c] - cu[c]) > 1.e-06 || fabs(pvv[c] - cv[c]) > 1.e-06 ||
+                fabs(pww[c] - cw[c]) > 1.e-06)
+            {
+                fprintf(stderr, "ERROR: control point %d should be the HEXA_8 "
+                        "vertex (%g, %g, %g), got (%g, %g, %g)\n",
+                        c, cu[c], cv[c], cw[c], puu[c], pvv[c], pww[c]);
+                cg_close(cgfile);
+                free(pu); free(pv); free(pw); free(puu); free(pvv); free(pww);
+                return 1;
+            }
+            printf("Point %d (vertex %d): (%g, %g, %g)\n", c, c+1,
+                   puu[c], pvv[c], pww[c]);
+        }
     }
-    printf("Point 0 (bottom-left-back corner): (%g, %g, %g)\n", puu[0], pvv[0], pww[0]);
 
-    /* Center point (0, 0, 0) - only exists for even orders (odd order+1) */
+    /* The centre (0,0,0) exists for even orders; find it rather than assuming
+     * a lattice position, since the set is no longer in lattice order. */
     if (order % 2 == 0)
     {
-        /* Even order: (order+1) is odd, so there's a center point */
-        int center_idx = (order + 1) * (order + 1) * (order/2) + (order + 1) * (order/2) + (order/2);
-        if (fabs(puu[center_idx]) > 1.e-06 || fabs(pvv[center_idx]) > 1.e-06 || fabs(pww[center_idx]) > 1.e-06)
+        int c, found = 0;
+        for (c = 0; c < npts; c++)
+            if (fabs(puu[c]) < 1.e-06 && fabs(pvv[c]) < 1.e-06 &&
+                fabs(pww[c]) < 1.e-06) { found = 1; break; }
+        if (!found)
         {
-            fprintf(stderr, "ERROR: Center point should be (0, 0, 0)\n");
+            fprintf(stderr, "ERROR: even order %d must contain the centre (0,0,0)\n", order);
             cg_close(cgfile);
             free(pu); free(pv); free(pw); free(puu); free(pvv); free(pww);
             return 1;
         }
-        printf("Point %d (center): (%g, %g, %g)\n", center_idx, puu[center_idx], pvv[center_idx], pww[center_idx]);
+        printf("Point %d (centre): (%g, %g, %g)\n", c, puu[c], pvv[c], pww[c]);
     }
-    else
-    {
-        /* Odd order: (order+1) is even, no exact center point */
-        /* Check a mid-face point instead */
-        int mid_face_idx = (order + 1) * (order + 1) * (order/2);  /* Middle of bottom face */
-        printf("Point %d (mid-face): (%g, %g, %g)\n", mid_face_idx, puu[mid_face_idx], pvv[mid_face_idx], pww[mid_face_idx]);
-    }
-
-    /* Top-right-front corner (1, 1, 1) */
-    int last_idx = npts - 1;
-    if (fabs(puu[last_idx] - 1.0) > 1.e-06 || fabs(pvv[last_idx] - 1.0) > 1.e-06 || fabs(pww[last_idx] - 1.0) > 1.e-06)
-    {
-        fprintf(stderr, "ERROR: Last point should be (1, 1, 1)\n");
-        cg_close(cgfile);
-        free(pu); free(pv); free(pw); free(puu); free(pvv); free(pww);
-        return 1;
-    }
-    printf("Point %d (top-right-front corner): (%g, %g, %g)\n", last_idx, puu[last_idx], pvv[last_idx], pww[last_idx]);
 
     printf("Closing file...\n");
     cg_close(cgfile);

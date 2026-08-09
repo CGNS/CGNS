@@ -147,11 +147,23 @@ int test_mismatched_dimensions(void)
         return 1;
     }
 
-    /* Distinct values per axis, so a transposed or mis-strided read is visible */
-    for (i = 0; i < 9; i++) {
-        pu[i] = (double)i;
-        pv[i] = 100.0 + (double)i;
-        pw[i] = 200.0 + (double)i;
+    /* CPEX-0045 S3.2.2: the leading points of an ElementInterpolation_t must be
+     * the QUAD_4 principal vertices in Figure 1 order.  The remaining points
+     * keep distinct values per axis, so a transposed or mis-strided read is
+     * still visible. */
+    {
+        static const double cu[4] = {-1., 1., 1.,-1.};
+        static const double cv[4] = {-1.,-1., 1., 1.};
+        for (i = 0; i < 4; i++) {
+            pu[i] = cu[i];
+            pv[i] = cv[i];
+            pw[i] = 200.0 + (double)i;
+        }
+        for (i = 4; i < 9; i++) {
+            pu[i] = (double)i;
+            pv[i] = 100.0 + (double)i;
+            pw[i] = 200.0 + (double)i;
+        }
     }
 
     if (cg_element_interpolation_points_write(cgfile, cgbase, cgfamily, cgeinterp,
@@ -608,8 +620,10 @@ int test_rewrite_guards(void)
 {
     int cgfile, cgbase, cgzone, cgfamily, en, sn;
     cgsize_t size[9];
-    double pu[9] = {-1.,0.,1.,-1.,0.,1.,-1.,0.,1.};
-    double pv[9] = {-1.,-1.,-1.,0.,0.,0.,1.,1.,1.};
+    /* QUAD_4 principal vertices first (CPEX-0045 S3.2.2), then the remaining
+     * five points of the 3x3 lattice. */
+    double pu[9] = {-1., 1., 1.,-1.,  0., 1., 0.,-1., 0.};
+    double pv[9] = {-1.,-1., 1., 1., -1., 0., 1., 0., 0.};
     int result;
 
     printf("\n==============================================\n");
@@ -1010,7 +1024,14 @@ int test_isoparametric_ambiguous_reference(void)
 
     printf("\n=== Test: ambiguous IsoParametric reference ===\n");
 
-    for (i = 0; i < 35; i++) { pu[i] = pv[i] = pw[i] = 0.0; }
+    /* The values are immaterial to this test -- it exercises the ambiguity of
+     * two geometric orders under one basic type -- but the file must still be
+     * conformant, so the leading points are the TETRA_4 principal vertices in
+     * Figure 1 order (CPEX-0045 S3.2.2). */
+    for (i = 0; i < 35; i++) { pu[i] = pv[i] = pw[i] = -1.0; }
+    pu[1] =  1.0;
+    pv[2] =  1.0;
+    pw[3] =  1.0;
 
     if (cg_open("test_isoparam_ambig.cgns", CG_MODE_WRITE, &fn) ||
         cg_base_write(fn, "Base", 3, 3, &B) ||
