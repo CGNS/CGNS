@@ -43,12 +43,17 @@ CALL = \
 	test_back_comp$(EXE) \
 	test_complex$(EXE) \
 	test_mixed_ho$(EXE) \
+	test_3d_elements$(EXE) \
 	test_characteristic_length$(EXE) \
 	test_degree_zero$(EXE) \
 	test_distribution$(EXE) \
 	test_error_handling$(EXE) \
+	test_hexa_order2$(EXE) \
+	test_high_order_hexa$(EXE) \
+	test_high_order_quad$(EXE) \
 	test_isoparametric$(EXE) \
 	test_modal_interpolation$(EXE) \
+	test_serendipity$(EXE) \
 	test_spacetime$(EXE) \
 	test_variable_order$(EXE)
 
@@ -344,6 +349,36 @@ test_modal_interpolation$(EXE) : test_modal_interpolation.c utils.$(O) $(CGNSLIB
 
 test_spacetime$(EXE) : test_spacetime.c utils.$(O) $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_spacetime.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_3d_elements$(EXE) : test_3d_elements.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_3d_elements.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_hexa_order2$(EXE) : test_hexa_order2.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_hexa_order2.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order_hexa$(EXE) : test_high_order_hexa.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_hexa.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order_quad$(EXE) : test_high_order_quad.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_quad.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_serendipity$(EXE) : test_serendipity.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_serendipity.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
 	$(STRIP) $@
 
 #----------

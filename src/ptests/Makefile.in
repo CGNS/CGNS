@@ -28,6 +28,7 @@ CALL =	pcgns_ctest$(EXE) \
         Metadata_Stressing$(EXE) \
 	test_poly_unstructured$(EXE) \
 	para_high_order$(EXE) \
+	test_high_order_parallel$(EXE) \
 	test_mixed_par_ser$(EXE) \
 	thesis_benchmark$(EXE)
 
@@ -130,6 +131,12 @@ test : $(TESTS)
 
 para_high_order$(EXE) : para_high_order.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ para_high_order.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_high_order_parallel$(EXE) : test_high_order_parallel.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_parallel.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
