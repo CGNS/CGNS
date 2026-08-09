@@ -75,6 +75,10 @@ typedef struct {
     int ib;
     cgsize_t nv, ns, ne, nn;
     cgsize_t *elements;
+    cgsize_t datasize;   /* number of entries allocated at *elements, from
+                          * cg_ElementDataSize(); used to bounds-check a
+                          * file-supplied ElementStartOffset before it is
+                          * used to index *elements (see ho_section_size). */
     cgsize_t *offsets;
     cgsize_t *parent;
     int rind[2];
@@ -1304,6 +1308,14 @@ static void read_zone (int nz)
 
     for (es = z->sets, ns = 1; ns <= nsets; ns++, es++) {
         es->invalid = 0;
+        /* z->sets comes from malloc, so these start as garbage.  Clear them
+         * before the se == 0 continue below: a section with an empty
+         * connectivity skips the allocations, and consumers that only test
+         * these for NULL would otherwise follow an uninitialized pointer. */
+        es->elements = NULL;
+        es->parent = NULL;
+        es->offsets = NULL;
+        es->datasize = 0;
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns, es->name,
                 &es->type, &es->is, &es->ie, &es->ib, &hasparent))
             error_exit("cg_section_read");
@@ -1313,16 +1325,15 @@ static void read_zone (int nz)
         if (cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &se))
             error_exit ("cg_ElementDataSize");
         if (se == 0) continue;
+        es->datasize = se;
         es->elements = (cgsize_t *) malloc (((size_t)se) * sizeof(cgsize_t));
         if (NULL == es->elements)
             fatal_error("malloc failed for elements\n");
-        es->parent = NULL;
         if (hasparent) {
             es->parent = (cgsize_t *) malloc (((size_t)(4 * nelem)) * sizeof(cgsize_t));
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
-        es->offsets = NULL;
         if (es->type == CGNS_ENUMV(MIXED) ||
             es->type == CGNS_ENUMV(NFACE_n) ||
             es->type == CGNS_ENUMV(NGON_n)) {
@@ -2574,6 +2585,44 @@ static int ho_ndofs (int fnum, CGNS_ENUMT(ElementType_t) el_type,
     return -1;
 }
 
+/* Memoized wrapper around ho_ndofs().  A MIXED section's connectivity is
+ * walked element by element, and ho_ndofs() resolves a SolutionInterpolation_t
+ * by cg_goto()/cg_narrays()/cg_array_info() every time it is called -- on a
+ * multi-million element mesh that turns cgnscheck into a multi-million-lookup
+ * HDF5 traversal even though the answer depends only on the element type for
+ * a given (base, family, spatialDegree, temporalDegree).  Cache on that key,
+ * indexed by the bounded ElementType_t enum. */
+static int ho_ndofs_cached (int fnum, CGNS_ENUMT(ElementType_t) el_type,
+                            int spatialDegree, int temporalDegree,
+                            cgsize_t *ndofs)
+{
+    static int cache_fnum = -1, cache_base = -1, cache_os = -1, cache_ot = -1;
+    static cgsize_t cache_ndofs[NofValidElementTypes];
+    static signed char cache_state[NofValidElementTypes]; /* 0=unknown, 1=ok, -1=error */
+
+    if (el_type < 0 || el_type >= NofValidElementTypes) return -1;
+
+    if (fnum != cache_fnum || cgnsbase != cache_base ||
+        spatialDegree != cache_os || temporalDegree != cache_ot) {
+        memset (cache_state, 0, sizeof(cache_state));
+        cache_fnum = fnum;
+        cache_base = cgnsbase;
+        cache_os = spatialDegree;
+        cache_ot = temporalDegree;
+    }
+
+    if (cache_state[el_type] == 0) {
+        cgsize_t v = 0;
+        cache_state[el_type] =
+            ho_ndofs (fnum, el_type, spatialDegree, temporalDegree, &v) ? -1 : 1;
+        cache_ndofs[el_type] = v;
+    }
+
+    if (cache_state[el_type] < 0) return -1;
+    *ndofs = cache_ndofs[el_type];
+    return 0;
+}
+
 /* Accumulate DOFs for the elements of one section that fall in [rmin,rmax].
  * Handles MIXED by walking the connectivity element by element. */
 static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
@@ -2590,9 +2639,25 @@ static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
         if (set->elements == NULL || set->offsets == NULL) return -1;
         for (e = rmin; e <= rmax; e++) {
             cgsize_t off = set->offsets[e - set->is];
-            CGNS_ENUMT(ElementType_t) et =
-                (CGNS_ENUMT(ElementType_t))set->elements[off];
-            if (ho_ndofs (fnum, et, spatialDegree, temporalDegree, &ndofs)) return -1;
+            CGNS_ENUMT(ElementType_t) et;
+            /* ElementStartOffset comes straight from the file: bounds-check
+             * it before using it to index *elements.  A corrupt or
+             * hand-edited offset here would otherwise be an out-of-bounds
+             * read, and the type it names determines everything downstream. */
+            if (off < 0 || off >= set->datasize) {
+                error ("element set \"%s\": ElementStartOffset[%" PRIdCGSIZE
+                       "] = %" PRIdCGSIZE " is outside the connectivity "
+                       "array (size %" PRIdCGSIZE ")",
+                       set->name, e - set->is, off, set->datasize);
+                return -1;
+            }
+            et = (CGNS_ENUMT(ElementType_t))set->elements[off];
+            if (et < CGNS_ENUMV(NODE) || et >= NofValidElementTypes) {
+                error ("element set \"%s\": element %" PRIdCGSIZE
+                       " has invalid element type %d", set->name, e, (int)et);
+                return -1;
+            }
+            if (ho_ndofs_cached (fnum, et, spatialDegree, temporalDegree, &ndofs)) return -1;
             *datasize += ndofs;
         }
         return 0;
@@ -6952,12 +7017,21 @@ static void check_gravity (float *vector)
 
 /*-----------------------------------------------------------------------*/
 
-static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type, 
-                                        double *u, double *v, double *w)
+static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
+                                        int npe, double *u, double *v, double *w)
 {
     CGNS_ENUMT(ElementType_t) btype;
+    int ncorner;
     cg_element_basic_element_type(type,&btype);
-  
+
+    /* Each case below indexes u/v/w up to the basic type's corner count
+     * (e.g. QUAD_4 reads u[0..3]).  At SpatialDegree=0 there is exactly one
+     * stored point -- valid per CPEX-0045 -- and fewer than that in general
+     * whenever npe is smaller than the corner count, which is a heap
+     * over-read waiting to happen rather than an orderable case: a single
+     * point cannot "be" four distinct corners, so the check does not apply. */
+    if (cg_npe(btype, &ncorner) != CG_OK || npe < ncorner) return CG_OK;
+
     switch(btype)
     {
       case (CGNS_ENUMV(NODE)): return CG_OK;
@@ -7222,17 +7296,35 @@ static void check_family (int fam)
                       name, ndim, cg_ElementTypeName(etype));
             }
 
-            if (verbose) 
+            /* CPEX-0045 S3.2.2 (ElementInterpolation_t): "it is assumed that
+             * the first points correspond to the principal vertices of the
+             * corresponding linear element, in the same order, cf. Figure 1."
+             * This is a genuine conformance requirement, not a debugging aid,
+             * so unlike the dump below it runs whether or not -v was given.
+             * (The parallel check formerly applied to SolutionInterpolation_t
+             * has been removed: S3.2.4/S5.2 state no ordering requirement
+             * there -- that block is selected by (element type, order) alone,
+             * not by array position.) */
+            cg_element_basic_element_type(etype, &btype);
+            if (check_element_nodes_ordering(btype, npt, pu, pv, pw)) {
+                if (strict_cpex45)
+                    error("ElementInterpolation \"%s\": the leading control points do "
+                          "not correspond to the corner nodes of %s in standard order.",
+                          name, cg_ElementTypeName(btype));
+                else
+                    warning(1, "ElementInterpolation \"%s\": the leading control points "
+                               "do not correspond to the corner nodes of %s in standard "
+                               "order.", name, cg_ElementTypeName(btype));
+            }
+
+            if (verbose)
         {
             printf ("    ElementInterpolation Lagrange Points Defined \n");
-            
-            /* Checking 1st order points */
-            cg_element_basic_element_type(etype,&btype);
-            
+
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
             cg_npe(etype,&npt);
-            
+
             if (ndim>0) {
               printf("      u = ");
               for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
@@ -7248,9 +7340,6 @@ static void check_family (int fam)
               for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
               printf("\n");
             }
-            
-            if ( check_element_nodes_ordering(btype,pu,pv,pw) )
-              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
         }
         }
         else if (ierr == CG_ERROR)
@@ -7372,12 +7461,19 @@ static void check_family (int fam)
                  * but we validated this in the library already */
             }
 
-            if (verbose) 
+            /* Unlike ElementInterpolation_t (CPEX-0045 S3.2.2: "it is assumed
+             * that the first points correspond to the principal vertices ...
+             * in the same order, cf. Figure 1"), the spec's SolutionInterpolation_t
+             * text (S3.2.4, S5.2) states no ordering requirement on
+             * LagrangeControlPoints -- the block is selected by (element type,
+             * order) alone, not by position within the array.  So there is no
+             * corner-ordering check here; btype is still needed below for the
+             * verbose dump. */
+            cg_element_basic_element_type(etype, &btype);
+
+            if (verbose)
         {
             printf ("    SolutionInterpolation Lagrange Points Defined \n");
-            
-            /* Checking 1st order points */
-            cg_element_basic_element_type(etype,&btype);
 
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
@@ -7400,9 +7496,6 @@ static void check_family (int fam)
               for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
               printf("\n");
             }
-            
-            if ( check_element_nodes_ordering(btype,pu,pv,pw) != CG_OK)
-              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
         }
         }
         else if (ierr == CG_ERROR)
