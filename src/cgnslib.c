@@ -10031,7 +10031,6 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     cgns_sol *sol;
     int s_numdim;
     int status;
-    int j;
 
     HDF5storage_type = CG_CONTIGUOUS;
 
@@ -10065,61 +10064,21 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol == 0) return CG_ERROR;
 
-     /* file dimension is dependent on multidim or ptset */
+     /* File dimension is dependent on multidim or ptset, and on whether this is
+      * a high-order solution.  cgi_sol_size() is the single place that decides
+      * all three, and is what cg_sol_size() and cg_field_write() already use;
+      * the ptset branch here called it too.  This function used to repeat the
+      * non-ptset case inline, and the copy had drifted: it added the rind planes
+      * to a GridLocation=InterpolationPoints length, which cgi_sol_size() and
+      * cgi_read_sol() both deliberately do not -- CPEX-0045 gives Rind_t no
+      * meaning there, and the reader warns and stops validating lengths if one
+      * is present.  A writer that sized a field differently from the reader
+      * would produce a file the library itself rejects, so the copy is gone. */
     cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-    if (sol->ptset == NULL) {
-        s_numdim = zone->index_dim;     
-        
-        /* CPEX 045 */
-        /* Determine data size (HO solution case) */
-        if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
-
-            if (sol->spatialDegree < 0)
-            {
-                cgi_error("FlowSolution: InterpolationPoints solution field requires definition of interpolationOrders first");
-                return CG_ERROR;
-            }
-            
-            {
-                const cgns_family *hofam =
-                    cgi_ho_find_family(&cg->base[B-1], zone->family_name);
-                int hret = cgi_ho_datasize(s_numdim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
-                                           sol->temporalDegree, s_dimvals);
-                if (hret == CG_NODE_NOT_FOUND) {
-                    cgi_error("GridLocation=InterpolationPoints field length is defined by the "
-                              "SolutionInterpolation_t matching each element, but none was found: "
-                              "the zone needs a FamilyName_t naming a Family_t that carries a "
-                              "SolutionInterpolation_t for the element type at degree (%d,%d)",
-                              sol->spatialDegree, sol->temporalDegree);
-                    return CG_ERROR;
-                }
-                if (hret != CG_OK) return CG_ERROR;
-            }
-            
-            /* add rinds */
-            for (j=0; j<s_numdim; j++) s_dimvals[j] = s_dimvals[j] 
-                                                    + sol->rind_planes[2*j] 
-                                                    + sol->rind_planes[2*j+1];
-        }
-        else {
-        /* Determine data size (1st Order solution) */
-            if (cgi_datasize(s_numdim, zone->nijk, sol->location,
-                sol->rind_planes, s_dimvals)) return CG_ERROR;
-        }
-        
-    } else {
-        s_numdim = 1;
-        s_dimvals[0] = sol->ptset->size_of_patch;
-        /* CPEX 045 */
-        if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
-          // Override based on range or list
-          if ( cgi_sol_size(fn, B, Z, S, &s_numdim, &s_dimvals[0]) ) {
-            cg_error_print();
-            cgi_error("FlowSolution: Unable to retrieve field size to write");
-            return CG_ERROR;
-          }
-
-        }
+    if (cgi_sol_size(fn, B, Z, S, &s_numdim, &s_dimvals[0])) {
+        cg_error_print();
+        cgi_error("FlowSolution: Unable to retrieve field size to write");
+        return CG_ERROR;
     }
 
     status= cgi_array_general_write(sol->id, &(sol->nfields),

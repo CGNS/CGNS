@@ -8431,109 +8431,42 @@ static int cgi_ho_ndofs(const cgns_family *family,
     return CG_OK;
 }
 
-/**
- * \brief Compute high-order data size for a MIXED element section
- *
- * Iterates through MIXED connectivity array, extracting element types
- * and summing the per-element DOF count for each element.
- *
- * \param[in]  section      Pointer to MIXED element section
- * \param[in]  cell_dim     Base CellDimension; elements below it are boundary
- *                          faces or edges and carry no solution DOFs
- * \param[in]  family       Family resolved from the zone's FamilyName_t
- * \param[in]  spatialDegree Spatial interpolation degree
- * \param[in]  temporalDegree Temporal interpolation degree
- * \param[out] DataSize     Computed data size for this section
- * \return CG_OK on success, CG_NODE_NOT_FOUND when the basis is unresolvable,
- *         CG_ERROR on failure
- */
-static int cgi_ho_datasize_mixed(cgns_section *section, int cell_dim,
-                                 const cgns_family *family,
-                                 int spatialDegree, int temporalDegree, cgsize_t *DataSize)
+/* Connectivity of a MIXED section, cached if the section already carries it and
+ * read from file otherwise.  Two call sites loaded it with the same fifteen
+ * lines; sharing them keeps the ownership rule (*needs_free) in one place. */
+static int cgi_ho_mixed_connect(cgns_section *section, const cgsize_t **connect,
+                                cgsize_t *conn_size, int *needs_free)
 {
-    cgsize_t ne, pos = 0;
-    cgsize_t nelems = section->range[1] - section->range[0] + 1;
-    const cgsize_t *connect;
-    cgsize_t conn_size;
-    int needs_free = 0;
-    int npe, base_npe, edim;
-    int ndofs_ret;
-    CGNS_ENUMT(ElementType_t) elem_type;
+    cgsize_t *buf;
 
-    *DataSize = 0;
+    *connect = NULL;
+    *conn_size = 0;
+    *needs_free = 0;
 
-    /* Get connectivity - use cached if available, otherwise read from file */
-    if (section->connect && section->connect->data) {
-        connect = (const cgsize_t *)section->connect->data;
-        conn_size = section->connect->dim_vals[0];
-    } else {
-        /* Need to read connectivity from file */
-        if (!section->connect) {
-            cgi_error("MIXED section '%s' has no connectivity data", section->name);
-            return CG_ERROR;
-        }
-        conn_size = section->connect->dim_vals[0];
-        cgsize_t *connect_buf = CGNS_NEW(cgsize_t, conn_size);
-        if (!connect_buf) {
-            cgi_error("Memory allocation failed for MIXED connectivity");
-            return CG_ERROR;
-        }
-        if (cgi_read_int_data(section->connect->id, section->connect->data_type,
-                              conn_size, connect_buf) != CG_OK) {
-            CGNS_FREE(connect_buf);
-            cgi_error("Failed to read connectivity for MIXED section '%s'", section->name);
-            return CG_ERROR;
-        }
-        connect = connect_buf;
-        needs_free = 1;
+    if (!section->connect) {
+        cgi_error("MIXED section '%s' has no connectivity data", section->name);
+        return CG_ERROR;
+    }
+    *conn_size = section->connect->dim_vals[0];
+
+    if (section->connect->data) {
+        *connect = (const cgsize_t *)section->connect->data;
+        return CG_OK;
     }
 
-    /* Iterate through MIXED connectivity */
-    for (ne = 0; ne < nelems; ne++) {
-        /* Bounds check before reading element type tag */
-        if (pos >= conn_size) {
-            if (needs_free) CGNS_FREE((void*)connect);
-            cgi_error("MIXED section '%s' connectivity truncated at element %"PRIdCGSIZE,
-                      section->name, ne);
-            return CG_ERROR;
-        }
-        /* Extract element type from connectivity */
-        elem_type = (CGNS_ENUMT(ElementType_t))connect[pos++];
-
-        /* The location domain is the zone's cells, so the dimension filter is
-         * per *element* here, not per section: a MIXED section may legally hold
-         * boundary faces alongside volume cells, and those carry no DOFs. */
-        if (cg_element_dimension(elem_type, &edim) == CG_OK && edim >= cell_dim) {
-            /* Per-element DOF count from the family's SolutionInterpolation_t */
-            ndofs_ret = cgi_ho_ndofs(family, elem_type, spatialDegree, temporalDegree, &npe);
-            if (ndofs_ret != CG_OK) {
-                if (needs_free) CGNS_FREE((void*)connect);
-                if (ndofs_ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
-                cgi_error("Failed to resolve DOF count for element type %s (degree %d) in MIXED section '%s'",
-                          cg_ElementTypeName(elem_type), spatialDegree, section->name);
-                return CG_ERROR;
-            }
-
-            *DataSize += npe;
-        }
-
-        /* Skip past connectivity nodes for this element */
-        if (cg_npe(elem_type, &base_npe) != CG_OK || base_npe <= 0) {
-            if (needs_free) CGNS_FREE((void*)connect);
-            cgi_error("Failed to get base npe for element type %s in MIXED section '%s'",
-                      cg_ElementTypeName(elem_type), section->name);
-            return CG_ERROR;
-        }
-        pos += base_npe;
-        if (pos > conn_size) {
-            if (needs_free) CGNS_FREE((void*)connect);
-            cgi_error("MIXED section '%s' connectivity overrun after element %"PRIdCGSIZE,
-                      section->name, ne);
-            return CG_ERROR;
-        }
+    buf = CGNS_NEW(cgsize_t, *conn_size);
+    if (!buf) {
+        cgi_error("Memory allocation failed for MIXED connectivity");
+        return CG_ERROR;
     }
-
-    if (needs_free) CGNS_FREE((void*)connect);
+    if (cgi_read_int_data(section->connect->id, section->connect->data_type,
+                          *conn_size, buf) != CG_OK) {
+        CGNS_FREE(buf);
+        cgi_error("Failed to read connectivity for MIXED section '%s'", section->name);
+        return CG_ERROR;
+    }
+    *connect = buf;
+    *needs_free = 1;
     return CG_OK;
 }
 
@@ -8543,7 +8476,8 @@ static int cgi_ho_datasize_mixed(cgns_section *section, int cell_dim,
  * For MIXED sections, iterate only through elements in the specified range.
  *
  * \param[in]  section      Pointer to MIXED element section
- * \param[in]  cell_dim     Base CellDimension; see cgi_ho_datasize_mixed
+ * \param[in]  cell_dim     Base CellDimension; boundary faces inside a MIXED
+ *                          section carry no DOFs
  * \param[in]  spatialDegree Spatial interpolation order
  * \param[in]  rmin         First element in range (global indexing)
  * \param[in]  rmax         Last element in range (global indexing)
@@ -8568,30 +8502,7 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int cell_dim,
 
     *DataSize = 0;
 
-    /* Get connectivity */
-    if (section->connect && section->connect->data) {
-        connect = (const cgsize_t *)section->connect->data;
-        conn_size = section->connect->dim_vals[0];
-    } else {
-        if (!section->connect) {
-            cgi_error("MIXED section '%s' has no connectivity data", section->name);
-            return CG_ERROR;
-        }
-        conn_size = section->connect->dim_vals[0];
-        cgsize_t *connect_buf = CGNS_NEW(cgsize_t, conn_size);
-        if (!connect_buf) {
-            cgi_error("Memory allocation failed for MIXED connectivity");
-            return CG_ERROR;
-        }
-        if (cgi_read_int_data(section->connect->id, section->connect->data_type,
-                              conn_size, connect_buf) != CG_OK) {
-            CGNS_FREE(connect_buf);
-            cgi_error("Failed to read connectivity for MIXED section '%s'", section->name);
-            return CG_ERROR;
-        }
-        connect = connect_buf;
-        needs_free = 1;
-    }
+    if (cgi_ho_mixed_connect(section, &connect, &conn_size, &needs_free)) return CG_ERROR;
 
     /* Iterate through ALL elements, but only accumulate size for those in range */
     for (elem_idx = 0; elem_idx < nelems_section; elem_idx++) {
@@ -8679,8 +8590,11 @@ int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
         if (type == CGNS_ENUMV(MIXED)) {
             // MIXED section: must iterate through connectivity to get individual element types
             cgsize_t mixed_size = 0;
-            ret = cgi_ho_datasize_mixed(section, cell_dim, family, spatialDegree,
-                                        temporalDegree, &mixed_size);
+            /* The whole section is just the range [range[0], range[1]]; the
+             * two used to be separate near-identical functions. */
+            ret = cgi_ho_datasize_mixed_range(section, cell_dim, family, spatialDegree,
+                                              temporalDegree, section->range[0],
+                                              section->range[1], &mixed_size);
             if (ret != CG_OK) return ret;
             for (j = 0 ; j < id_dim ; j++) DataSize[j] += mixed_size;
         } else {
@@ -8853,32 +8767,13 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
 
             /* 1. LOAD CONNECTIVITY ONCE */
             cgsize_t conn_size_list;
-            if (section->connect && section->connect->data) {
-                connect = (const cgsize_t *)section->connect->data;
-                conn_size_list = section->connect->dim_vals[0];
-            } else {
-                if (!section->connect) {
-                    CGNS_FREE(sorted_list);
-                    cgi_error("MIXED section '%s' has no connectivity data", section->name);
-                    return CG_ERROR;
-                }
-                conn_size_list = section->connect->dim_vals[0];
-                cgsize_t conn_size = conn_size_list;
-                connect_buf = CGNS_NEW(cgsize_t, conn_size);
-                if (!connect_buf) {
-                    CGNS_FREE(sorted_list);
-                    cgi_error("Memory allocation failed for MIXED connectivity");
-                    return CG_ERROR;
-                }
-                if (cgi_read_int_data(section->connect->id, section->connect->data_type,
-                                      conn_size, connect_buf) != CG_OK) {
-                    CGNS_FREE(connect_buf);
-                    CGNS_FREE(sorted_list);
-                    cgi_error("Failed to read connectivity for MIXED section '%s'", section->name);
-                    return CG_ERROR;
-                }
-                connect = connect_buf;
+            int owns_connect = 0;
+            if (cgi_ho_mixed_connect(section, &connect, &conn_size_list,
+                                     &owns_connect)) {
+                CGNS_FREE(sorted_list);
+                return CG_ERROR;
             }
+            if (owns_connect) connect_buf = (cgsize_t *)connect;
 
             /* 2. ZIPPER TRAVERSAL: Walk connectivity and sorted list simultaneously */
             /* Fast forward list_idx to the first point >= sect_start */
