@@ -1926,11 +1926,17 @@ int cgp_field_write(int fn, int B, int Z, int S,
  * already exist, created collectively by cg_sol_characteristic_length_create(),
  * and each rank then writes only the elements it owns.
  *
- * The serial ranged writer cannot serve this case.  It writes through the
- * serial cgio path, which in an MPI-IO file does not compose across ranks: with
- * four ranks writing disjoint ranges, only the last rank's elements survived and
- * the rest read back as zero.  Writing through the same MPI-IO path the field
- * arrays use is what makes the disjoint ranges compose.
+ * This is a performance variant, not a correctness requirement.  Once the array
+ * is created contiguously -- which cg_sol_characteristic_length_create() ensures,
+ * and which is what actually fixed the distributed case -- the serial ranged
+ * writer also composes correctly across ranks, since HDF5 independent writes to
+ * disjoint hyperslabs of a contiguous dataset are well defined.  Verified: the
+ * parallel test passes with either call.
+ *
+ * What this adds is the collective-capable MPI-IO path the field arrays use,
+ * which matters at scale: the factors are per-element data, so on a large mesh
+ * they are the same order of magnitude as a solution field, and collective I/O
+ * outperforms independent writes there.
  *
  * To indicate that a rank contributes no data, pass \p h_e = NULL; \p rmin and
  * \p rmax are then ignored.  The call remains collective.
