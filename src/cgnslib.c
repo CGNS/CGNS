@@ -8972,6 +8972,40 @@ static int cgi_interp_metadata_node(cgns_sol *sol, int create, double *id_out)
     return CG_OK;
 }
 
+/* Locate an existing CharacteristicLength DataArray_t under a FlowSolution_t's
+ * InterpolationMetadata container, without creating anything.  Exposed to the
+ * parallel layer, which needs the node's id to write a hyperslab through the
+ * MPI-IO path rather than the serial one. */
+int cgi_charlen_node_id(cgns_sol *sol, double *id_out)
+{
+    double container_id, *ids = NULL;
+    int nnodes, n, found = 0;
+    char_33 nname;
+
+    if (sol == 0 || id_out == 0) return CG_ERROR;
+    if (cgi_interp_metadata_node(sol, 0, &container_id)) return CG_ERROR;
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids)) return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            *id_out = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (!found) {
+        cgi_error("CharacteristicLength array not found; call "
+                  "cg_sol_characteristic_length_create() first");
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
 static int cgi_find_sol_array(double parent_id, const char *name,
                               double *node_id_out, int *ndim_out,
                               cgsize_t *dim_vals_out)
@@ -9173,6 +9207,115 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
  * \param[in] h_e nscale*(rmax-rmin+1) factors, all strictly positive.
  * \return \ier
  */
+/**
+ * \ingroup FlowSolution
+ * \brief Create an empty CharacteristicLength array at its full extent.
+ *
+ * \param[in] fn          CGNS file index number
+ * \param[in] B           Base index number (1-based)
+ * \param[in] Z           Zone index number (1-based)
+ * \param[in] S           FlowSolution index (1-based)
+ * \param[in] nscale      1 (isotropic) or PhysDim (per-axis)
+ * \param[in] numElements Number of elements the block covers
+ * \return    CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Creates the \c CharacteristicLength \c DataArray_t inside the
+ * \c InterpolationMetadata container at its full extent, with its contents
+ * left unwritten.  The factors are then supplied by one or more calls to
+ * cg_sol_characteristic_length_partial_write().
+ *
+ * This exists to separate the *creation* of the array from the *writing* of
+ * its contents, which a distributed writer must be able to do independently.
+ * Creating a node is a collective operation: every rank must call this, with
+ * identical arguments, including a rank that owns no elements of the block.
+ * The subsequent range writes are independent, each rank supplying only the
+ * elements it owns.
+ *
+ * Calling it when the array already exists is not an error and does not
+ * disturb the contents, so a serial writer may call it unconditionally.
+ */
+int cg_sol_characteristic_length_create(int fn, int B, int Z, int S,
+                                        int nscale, cgsize_t numElements)
+{
+    cgns_sol *sol;
+    cgns_base *base;
+    cgsize_t dim_vals[2];
+    int nnodes, n, found = 0;
+    double *ids = NULL;
+    double node_id = 0, container_id;
+    char_33 nname;
+    int HDF5storage_type_original = HDF5storage_type;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    if (found) return CG_OK;   /* idempotent: contents left alone */
+
+    /* The array must be CONTIGUOUS, not the CG_COMPACT default.  A compact
+     * dataset lives inside the HDF5 object header, so each rank's write
+     * rewrites the whole object rather than its own hyperslab: on four ranks
+     * writing disjoint element ranges, only the last rank's factors survived
+     * and every other element read back as zero.  cgi_array_general_write and
+     * the point-list writer make the same switch for the same reason.
+     *
+     * NULL data declares the extent and leaves the contents unwritten, which
+     * is what the range writes then fill in. */
+    HDF5storage_type = CG_CONTIGUOUS;
+    if (nscale == 1) {
+        dim_vals[0] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength",
+                "DataArray_t", &node_id, "R8", 1, dim_vals, NULL)) {
+            HDF5storage_type = HDF5storage_type_original;
+            return CG_ERROR;
+        }
+    }
+    else {
+        dim_vals[0] = nscale;
+        dim_vals[1] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength",
+                "DataArray_t", &node_id, "R8", 2, dim_vals, NULL)) {
+            HDF5storage_type = HDF5storage_type_original;
+            return CG_ERROR;
+        }
+    }
+    HDF5storage_type = HDF5storage_type_original;
+    return CG_OK;
+}
+
 int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
                                                int nscale, cgsize_t numElements,
                                                cgsize_t rmin, cgsize_t rmax,
@@ -9180,7 +9323,7 @@ int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
 {
     cgns_sol *sol;
     cgns_base *base;
-    cgsize_t dim_vals[2], s_start[2], s_end[2], s_stride[2];
+    cgsize_t s_start[2], s_end[2], s_stride[2];
     cgsize_t m_dims[2], m_start[2], m_end[2], m_stride[2];
     cgsize_t i, ncount;
     int nnodes, n, found = 0;
@@ -9246,22 +9389,17 @@ int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
     if (ids) CGNS_FREE(ids);
 
     if (!found) {
-        /* Created with no data: the ranges written by this and the other
-         * ranks fill it.  Passing NULL leaves the extent declared and the
-         * contents unwritten, which is what a collective create needs. */
-        if (nscale == 1) {
-            dim_vals[0] = numElements;
-            if (cgi_new_node(container_id, "CharacteristicLength",
-                    "DataArray_t", &node_id, "R8", 1, dim_vals, NULL))
-                return CG_ERROR;
-        }
-        else {
-            dim_vals[0] = nscale;
-            dim_vals[1] = numElements;
-            if (cgi_new_node(container_id, "CharacteristicLength",
-                    "DataArray_t", &node_id, "R8", 2, dim_vals, NULL))
-                return CG_ERROR;
-        }
+        /* Deliberately not created here.  Creating a node is collective, so a
+         * distributed writer that let every rank create-then-write would have
+         * later creates wipe earlier ranks' ranges -- which is exactly what
+         * happened before cg_sol_characteristic_length_create() existed: on
+         * four ranks only the last rank's elements survived, the rest read
+         * back as zero.  Requiring the array up front makes the collective
+         * step explicit and the correct usage the only usage. */
+        cgi_error("CharacteristicLength: the array does not exist yet; call "
+                  "cg_sol_characteristic_length_create() first (collectively, "
+                  "on every rank, in a parallel run) before writing ranges");
+        return CG_ERROR;
     }
 
     /* nscale is the fast-varying axis, so an element range is contiguous. */

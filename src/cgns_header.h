@@ -1303,6 +1303,7 @@ CGNSDLL cgns_pequations *cgi_get_particle_equations(cgns_file *cg, int B, int P)
 CGNSDLL int cgi_update_posit(int cnt, int *index, char **label);
 CGNSDLL int cgi_set_posit(int fn, int B, int n, int *index, char **label);
 CGNSDLL int cgi_posit_id(double *posit_id);
+CGNSDLL int cgi_charlen_node_id(cgns_sol *sol, double *id_out);
 CGNSDLL cgns_posit *cgi_get_posit(void);
 CGNSDLL int cgi_posit_index_dim(void);
 

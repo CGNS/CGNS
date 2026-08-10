@@ -40,6 +40,7 @@ set(C_PTESTS_LIST
 	comm_test
         para_high_order
 	test_high_order_parallel
+	test_charlen_parallel
 	test_base
 	test_unstructured
 	test_unstruc_quad
@@ -103,6 +104,7 @@ if (CGNS_ENABLE_TESTS)
   set(C_PTEST_NPROCS_CONFIG
       "para_high_order:4"
       "test_high_order_parallel:4"
+      "test_charlen_parallel:4"
   )
 
   # Build lookup table for custom processor counts

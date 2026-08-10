@@ -1904,6 +1904,95 @@ int cgp_field_write(int fn, int B, int Z, int S,
  *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_LOC(rmin), C_LOC(rmax), C_LOC(data(1)), ier) \endcode
  *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Write a range of CharacteristicLength factors in parallel.
+ *
+ * \param[in]  fn     \FILE_fn
+ * \param[in]  B      \B_Base
+ * \param[in]  Z      \Z_Zone
+ * \param[in]  S      \PSOL_S
+ * \param[in]  nscale 1 (isotropic) or PhysDim (per-axis)
+ * \param[in]  rmin   first element of this rank's range (1-based, inclusive)
+ * \param[in]  rmax   last element of this rank's range (1-based, inclusive)
+ * \param[in]  h_e    factors for this range, nscale per element
+ * \return \ier
+ *
+ * \details
+ * The Cartesian modal normalisation factors are per-element data, so in a
+ * partitioned run no rank holds the whole array.  This is the parallel
+ * counterpart of cg_sol_characteristic_length_partial_write(): the array must
+ * already exist, created collectively by cg_sol_characteristic_length_create(),
+ * and each rank then writes only the elements it owns.
+ *
+ * The serial ranged writer cannot serve this case.  It writes through the
+ * serial cgio path, which in an MPI-IO file does not compose across ranks: with
+ * four ranks writing disjoint ranges, only the last rank's elements survived and
+ * the rest read back as zero.  Writing through the same MPI-IO path the field
+ * arrays use is what makes the disjoint ranges compose.
+ *
+ * To indicate that a rank contributes no data, pass \p h_e = NULL; \p rmin and
+ * \p rmax are then ignored.  The call remains collective.
+ */
+int cgp_sol_characteristic_length_write_data(int fn, int B, int Z, int S,
+    int nscale, cgsize_t rmin, cgsize_t rmax, const double *h_e)
+{
+    hid_t hid;
+    cgns_sol *sol;
+    cgns_base *base;
+    double node_id = 0;
+    cgsize_t s_rmin[2], s_rmax[2];
+    int ndims;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+    if (h_e != NULL && (rmin < 1 || rmin > rmax)) {
+        cgi_error("CharacteristicLength: invalid element range [%" PRIdCGSIZE
+                  ",%" PRIdCGSIZE "]", rmin, rmax);
+        return CG_ERROR;
+    }
+
+    /* Use the id from this rank's own create, exactly as cgp_field_write_data
+     * uses the id cached when cgp_field_write created the array.  A fresh
+     * lookup can hand back a different handle. */
+    if (cgi_charlen_node_id(sol, &node_id)) return CG_ERROR;
+
+    /* nscale is the fast-varying axis, so an element range is contiguous. */
+    if (nscale == 1) {
+        ndims = 1;
+        s_rmin[0] = rmin;  s_rmax[0] = rmax;
+    }
+    else {
+        ndims = 2;
+        s_rmin[0] = 1;     s_rmax[0] = nscale;
+        s_rmin[1] = rmin;  s_rmax[1] = rmax;
+    }
+
+    to_HDF_ID(node_id, hid);
+
+    cg_rw_t Data;
+    Data.u.wbuf = h_e;
+    return readwrite_data_parallel(hid, CGNS_ENUMV(RealDouble),
+                                   ndims, s_rmin, s_rmax, &Data, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
+
 int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
 {

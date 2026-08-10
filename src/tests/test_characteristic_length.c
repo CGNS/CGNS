@@ -579,6 +579,13 @@ static int test_partial(void)
     if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 0, 0), "degree")) return 1;
     if (check(cg_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "Density", fld, &F), "field")) return 1;
 
+    /* The array is created once, then filled by ranges.  The two steps are
+     * separate because creating a node is collective: a distributed writer
+     * must create before any rank writes, or later creates wipe earlier
+     * ranges.  A serial writer follows the same contract. */
+    if (check(cg_sol_characteristic_length_create(fn, B, Z, S, 3,
+              (cgsize_t)N_ELEM), "charlen create")) return 1;
+
     /* Per-axis encoding, written as N_ELEM separate single-element ranges --
      * the most fragmented pattern a partitioning could produce. */
     for (k = 0; k < N_ELEM; k++) {
