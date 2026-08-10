@@ -5827,6 +5827,61 @@ CONTAINS
   END SUBROUTINE cg_sol_characteristic_length_write_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_create_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_create_f(fn, B, Z, S, nscale, numElements, ier)
+!   Declares the array at its full extent with its contents unwritten; the
+!   factors are then supplied by cg_sol_characteristic_length_partial_write_f.
+!   Creating a node is collective, so in a parallel run every rank calls this,
+!   with identical arguments, including a rank that owns no elements.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
+    INTEGER(cgsize_t), INTENT(IN) :: numElements
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_create &
+          (fn, B, Z, S, nscale, numElements) &
+          BIND(C, name="cg_sol_characteristic_length_create")
+        IMPORT :: C_INT, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
+        INTEGER(cgsize_t), VALUE :: numElements
+      END FUNCTION cg_sol_characteristic_length_create
+    END INTERFACE
+    ier = INT(cg_sol_characteristic_length_create(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements))
+  END SUBROUTINE cg_sol_characteristic_length_create_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_partial_write_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_partial_write_f(fn, B, Z, S, nscale, &
+                                                          numElements, rmin, rmax, h_e, ier)
+!   Writes one element range only.  The array must already exist; create it with
+!   cg_sol_characteristic_length_create_f first.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
+    INTEGER(cgsize_t), INTENT(IN) :: numElements, rmin, rmax
+    REAL(C_DOUBLE), INTENT(IN), TARGET :: h_e(*)
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_partial_write &
+          (fn, B, Z, S, nscale, numElements, rmin, rmax, h_e) &
+          BIND(C, name="cg_sol_characteristic_length_partial_write")
+        IMPORT :: C_INT, C_DOUBLE, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
+        INTEGER(cgsize_t), VALUE :: numElements, rmin, rmax
+        REAL(C_DOUBLE) :: h_e(*)
+      END FUNCTION cg_sol_characteristic_length_partial_write
+    END INTERFACE
+    ier = INT(cg_sol_characteristic_length_partial_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements, rmin, rmax, h_e))
+  END SUBROUTINE cg_sol_characteristic_length_partial_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_solution_monomial_size_f
 !DEC$endif
   SUBROUTINE cg_solution_monomial_size_f(etype, os, ot, nsize, ier)

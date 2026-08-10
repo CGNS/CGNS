@@ -47,6 +47,7 @@ CALL = \
 	test_characteristic_length$(EXE) \
 	test_degree_zero$(EXE) \
 	test_distribution$(EXE) \
+	test_element_traits$(EXE) \
 	test_error_handling$(EXE) \
 	test_hexa_order2$(EXE) \
 	test_high_order_bar$(EXE) \
@@ -320,6 +321,12 @@ test_characteristic_length$(EXE) : test_characteristic_length.c $(CGNSLIB)
 
 test_degree_zero$(EXE) : test_degree_zero.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_degree_zero.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_element_traits$(EXE) : test_element_traits.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_element_traits.c $(LDLIBS) $(CLIBS) -lm
 	$(STRIP) $@
 
 #----------

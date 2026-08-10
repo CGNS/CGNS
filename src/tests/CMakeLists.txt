@@ -63,6 +63,7 @@ set(test_variable_order_FILES test_variable_order.c)
 set(test_characteristic_length_FILES test_characteristic_length.c)
 set(test_degree_zero_FILES test_degree_zero.c)
 set(test_distribution_FILES test_distribution.c)
+set(test_element_traits_FILES test_element_traits.c)
 set(test_unicode_FILES test_unicode.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
@@ -102,6 +103,7 @@ set(C_TESTS_LIST
     test_family_tree test_bbox test_complex test_convert_elem
     test_back_comp test_particle test_error_handling test_variable_order
     test_characteristic_length test_degree_zero test_distribution
+    test_element_traits
 )
 foreach(t IN LISTS C_TESTS_LIST)
     add_executable(${t} ${${t}_FILES})

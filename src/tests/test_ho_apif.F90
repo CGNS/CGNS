@@ -148,6 +148,22 @@
      &                        cgsol, 1, nelem, hwrite, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
+!     The create/ranged-write pair, which is what a distributed writer uses:
+!     declare the array once, then fill it a range at a time.  Exercised here
+!     serially -- the Fortran binding is what is under test, not MPI -- writing
+!     each element separately, the most fragmented pattern a partitioning can
+!     produce.  Overwrites the values just written with the same numbers, so
+!     the read-back below covers both paths.
+      call cg_sol_characteristic_length_create_f(cgfile, cgbase, cgzone, &
+     &                        cgsol, 1, nelem, ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      do i = 1, 4
+        call cg_sol_characteristic_length_partial_write_f(cgfile, cgbase, &
+     &         cgzone, cgsol, 1, nelem, INT(i,cgsize_t), INT(i,cgsize_t), &
+     &         hwrite(i), ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+      enddo
+
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
