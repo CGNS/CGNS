@@ -51,6 +51,7 @@ set(HO_TESTS
     test_high_order test_hexa_order2 test_3d_elements
     test_high_order_quad test_high_order_hexa test_modal_interpolation
     test_spacetime test_serendipity test_isoparametric test_mixed_ho
+    test_high_order_bar
 )
 set(test_family_tree_FILES test_family_tree.c)
 set(test_complex_FILES test_complex.c)
@@ -352,9 +353,13 @@ if (CGNS_ENABLE_TESTS)
       test_error_dimensions.cgns  # test_error_handling
       test_error_rewrite.cgns     # test_error_handling
       test_isoparam_ambig.cgns    # test_error_handling
+      test_BAR_3.cgns          # test_high_order_bar (1-D path)
+      test_BAR_4.cgns          # test_high_order_bar
+      test_BAR_5.cgns          # test_high_order_bar
   )
   set_tests_properties(test_high_order_quad test_high_order_hexa
                        test_hexa_order2 test_3d_elements test_error_handling
+                       test_high_order_bar
                        PROPERTIES FIXTURES_SETUP HO_ORDERING_FILES)
 
   foreach(ORDFILE IN LISTS CGNSCHECK_ORDERING_FILES)
