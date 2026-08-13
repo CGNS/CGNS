@@ -8379,7 +8379,7 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
 static int cgi_sol_size(int fn, int B, int Z, int S,
                         int *data_dim, cgsize_t *dim_vals)
 {
-    int j,ret;
+    int ret;
     cgns_sol *sol;
 
     cg = cgi_get_file(fn);
@@ -9861,7 +9861,7 @@ int cg_field_write(int fn, int B, int Z, int S,
 {
     cgns_zone *zone;
     cgns_sol *sol;
-    int n, j, m_numdim;
+    int n, m_numdim;
 
     HDF5storage_type = CG_CONTIGUOUS;
 
@@ -17875,22 +17875,20 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
 int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
                                            double *pu, double *pv, double *pw)
 {
-    int n, edim;
+    int edim;
     int nnodes;
-    double *ids, *data;
-    double dummy_id;
-    cgsize_t dim_vals;
+    double *data;
     cgns_family *family;
     cgns_elementInterpolation *einterp;
-    
+
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
-    
+
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    
+
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
-    
+
     // Check
     if (en > family->nelementinterpolation || en <= 0)
     {
@@ -18616,8 +18614,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
                                     CGNS_ENUMT(ElementType_t) et, int os, int ot,
                                     CGNS_ENUMT(InterpolationType_t) it, int *sn )
 {
-    int n,nnodes;
-    double *ids;
+    int n;
     double dummy_id;
     int array[3];
     cgsize_t dim_vals;
@@ -18844,11 +18841,9 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
                                            double *pu, double *pv, double *pw,
                                            double *pt)
 {
-    int ot,os,n,edim;
+    int ot,os,edim;
     int nnodes;
-    double *ids, *data;
-    double dummy_id;
-    cgsize_t dim_vals;
+    double *data;
     cgns_family *family;
     cgns_solutionInterpolation *sinterp;
     
