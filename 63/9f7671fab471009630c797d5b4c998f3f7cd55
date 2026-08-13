@@ -1,0 +1,23 @@
+src/cgnslib.c
+  s_b155049efd8a1d::t_92f8a0c880a5f2 9864
+  s_b155049efd8a1d::t_f2939872299a52 8382
+  s_b155049efd8a1d::t_5fff8991f5c898 18844,18846
+  s_b155049efd8a1d::t_2164d2e174d419 17878,17880,17883,17886,17888,17891
+  s_b155049efd8a1d::t_748a1ccf4a4da7 18617
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "639f7671fab471009630c797d5b4c998f3f7cd55",
+  "prompts": {},
+  "sessions": {
+    "s_b155049efd8a1d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "66ada73d-d3eb-497b-83f6-4c4fb628220f",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
