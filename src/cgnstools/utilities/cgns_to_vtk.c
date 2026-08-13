@@ -340,6 +340,7 @@ static int get_variables (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *siz
     char name[33];
     int n, len, nv, nsols;
     int rind[6];
+    cgsize_t ndata_full;
     CGNS_ENUMT(DataType_t) datatype;
 
     nvars = 0;
@@ -373,16 +374,17 @@ static int get_variables (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *siz
             varrng[0][n] = 1;
             varrng[1][n] = 1;
         }
-        ndata = 1;
+        ndata_full = 1;
         for (n = 0; n < CellDim; n++) {
             varrng[0][n] = rind[2*n] + 1;
             varrng[1][n] = rind[2*n] + sizes[n+nv];
             if (sizes[n+nv] > INT_MAX)
                 FATAL ("Solution data size exceeds INT_MAX for VTK converter");
-            ndata *= (int)sizes[n+nv];
+            ndata_full *= sizes[n+nv];
+            if (ndata_full > INT_MAX)
+                FATAL ("Total solution data count exceeds INT_MAX for VTK converter");
         }
-        if (ndata > INT_MAX)
-            FATAL ("Total solution data count exceeds INT_MAX for VTK converter");
+        ndata = (int)ndata_full;
     }
     else {
         nv = varloc == CGNS_ENUMV(Vertex) ? 0 : 1;

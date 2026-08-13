@@ -1833,7 +1833,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
  * the structures cgi_read_user_data has already populated, so unlike the v3
  * arrangement it issues no cgio calls of its own. */
 static int cgi_check_interp_metadata(const cgns_sol *sol, const cgns_zone *zone,
-                                     int Pdim, int Cdim)
+                                     int phys_dim, int cell_dim)
 {
     int u, a;
 
@@ -1870,10 +1870,10 @@ static int cgi_check_interp_metadata(const cgns_sol *sol, const cgns_zone *zone,
             return CG_ERROR;
         }
         if (cl->data_dim == 2 && cl->dim_vals[0] != 1 &&
-            cl->dim_vals[0] != (cgsize_t)Pdim) {
+            cl->dim_vals[0] != (cgsize_t)phys_dim) {
             cgi_error("CharacteristicLength in FlowSolution '%s': nscale must "
                       "be 1 or PhysDim=%d, got %"PRIdCGSIZE,
-                      sol->name, Pdim, cl->dim_vals[0]);
+                      sol->name, phys_dim, cl->dim_vals[0]);
             return CG_ERROR;
         }
 
@@ -1898,7 +1898,7 @@ static int cgi_check_interp_metadata(const cgns_sol *sol, const cgns_zone *zone,
                 for (si = 0; si < zone->nsections; si++) {
                     CGNS_ENUMT(ElementType_t) et = zone->section[si].el_type;
                     if (et != CGNS_ENUMV(MIXED) &&
-                        cg_element_dimension(et, &edim) == CG_OK && edim < Cdim)
+                        cg_element_dimension(et, &edim) == CG_OK && edim < cell_dim)
                         continue;   /* boundary section: not a cell */
                     ncell += zone->section[si].range[1] -
                              zone->section[si].range[0] + 1;

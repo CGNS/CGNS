@@ -5365,7 +5365,7 @@ static void check_connectivity (int nzc)
 static void check_arbitrary_motion (int na)
 {
     char name[33];
-    int ierr, n, nd, ns, os, ot, id, rind[6];
+    int ierr, n, nd, id, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -5560,7 +5560,7 @@ static void check_rigid_motion (int nr)
 static void check_discrete (int ndis)
 {
     char name[33];
-    int n, nd, ns, os, ot, id, ierr, rind[6];
+    int n, nd, id, ierr, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -5675,7 +5675,6 @@ static void check_solution (int ns)
     int os,ot;
     int has_interp_order;
     int hofam;
-    cgsize_t ds[3];
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
@@ -5848,12 +5847,9 @@ static void check_solution (int ns)
                    "which is probably not what was intended.");
     }
 
-    /* CPEX 0045 Consistency Check: CellCenter with InterpolationDegrees requires PointSet */
-    if (location == CGNS_ENUMV(CellCenter) && ierr == CG_OK)
-    {
-        /* Check will be performed below when reading PointSet */
-        /* Deferred to avoid reading PointSet twice */
-    }
+    /* CPEX 0045 Consistency Check: CellCenter with InterpolationDegrees requires
+     * PointSet -- deferred to when the PointSet is read below, to avoid reading
+     * it twice. */
 
     /* PointSet if exists */
     ierr = cg_sol_ptset_info(cgnsfn, cgnsbase, cgnszone,ns,&ptsettype,&npts);
@@ -7115,7 +7111,7 @@ static void check_family (int fam)
     CGNS_ENUMT(ControlPointDistribution_t) sdist = CGNS_ENUMV(ControlPointDistributionNull);
     int sdist_ierr = CG_NODE_NOT_FOUND;
     char famname[33], name[33], cad[33], *filename;
-    int ierr, j, n,ndim, nbc, ngeo, nparts,npe;
+    int ierr, j, n,ndim, nbc, ngeo, nparts;
     int ordinal;
     cgsize_t i;
     int npt, npts_stored;
@@ -7454,12 +7450,9 @@ static void check_family (int fam)
                       name, ndim, cg_ElementTypeName(etype));
             }
 
-            /* Validate: For TemporalOrder=0, temporal coordinates should not be present
-             * For TemporalOrder>0, they must be present */
-            if (ot == 0) {
-                /* Note: We can't directly check if pt array has meaningful data,
-                 * but we validated this in the library already */
-            }
+            /* Validate: For TemporalOrder=0, temporal coordinates should not be present;
+             * for TemporalOrder>0, they must be present. Not checked here -- the pt
+             * array's content was already validated in the library. */
 
             /* Unlike ElementInterpolation_t (CPEX-0045 S3.2.2: "it is assumed
              * that the first points correspond to the principal vertices ...

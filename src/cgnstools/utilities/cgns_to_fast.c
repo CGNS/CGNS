@@ -361,7 +361,7 @@ static int sort_tris (const void *v1, const void *v2)
 static void boundary_elements (void)
 {
     int ns, nsect, nf, nn_int, ip_int;
-    cgsize_t nn, ip;
+    cgsize_t nn;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     cgsize_t *conn_offset;
