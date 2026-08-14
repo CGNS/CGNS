@@ -1,0 +1,45 @@
+src/tools/cgnscheck.c
+  s_353521f9a844c1::t_956c3222fd0481 6050-6054
+  s_353521f9a844c1::t_3b88c2d6a20bab 2682-2715
+  s_353521f9a844c1::t_09112e77902d8a 2643
+  s_353521f9a844c1::t_28dfa44665d3c9 2661-2665
+src/cgnslib.c
+  s_353521f9a844c1::t_8886b7ebb89008 9286-9320
+src/tests/CMakeLists.txt
+  s_353521f9a844c1::t_da4e1d5708265c 254-257
+  s_353521f9a844c1::t_f85d66c1458146 263
+src/pcgnslib.c
+  s_353521f9a844c1::t_f881758fe8daef 1907-1946
+release_docs/RELEASE.txt
+  s_353521f9a844c1::t_02b71c841cb376 34-85
+  s_353521f9a844c1::t_3551a48e010f8e 93-105
+src/cgns_internals.c
+  s_353521f9a844c1::t_9501610c98eedc 8423-8436
+  s_353521f9a844c1::t_c721e2111c5302 8479-8543
+  s_353521f9a844c1::t_abb2ea53465595 24
+  s_353521f9a844c1::t_1457896a106b56 1898
+src/cgns_f.F90
+  s_353521f9a844c1::t_6de921bbc0a59d 899-902
+src/tests/test_characteristic_length.c
+  s_353521f9a844c1::t_8a1c7ebdfa8fcf 760
+  s_353521f9a844c1::t_93806e9941a4c1 31-32
+  s_353521f9a844c1::t_06c2fdcf7becab 622-742
+src/cgns_header.h
+  s_353521f9a844c1::t_26e0f9d925ccc4 1448-1452
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e4f232a743cebcba2a8a917b67014b4ecd756de2",
+  "prompts": {},
+  "sessions": {
+    "s_353521f9a844c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a10d454d-b312-41e1-b7eb-19d938d3c51f",
+        "model": "claude-opus-5"
+      },
+      "human_author": "M. Scot Breitenfeld <brtnfld@hdfgroup.org>"
+    }
+  }
+}
