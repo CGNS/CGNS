@@ -1,0 +1,313 @@
+name: Dependabot auto-merge
+
+# Approves and squash-merges Dependabot pull requests once every check run and
+# commit status on the PR head commit has completed successfully.
+#
+# This workflow waits for the checks itself rather than using GitHub's native
+# auto-merge (`gh pr merge --auto`) because:
+#   * "Allow auto-merge" is disabled on this repository, and
+#   * branch protection on `develop` lists no required status checks, so native
+#     auto-merge would merge as soon as the review requirement was satisfied,
+#     without waiting for CI to finish.
+#
+# `pull_request_target` is used so the token has write access on Dependabot
+# PRs. The PR branch is NEVER checked out and no PR-controlled code is ever
+# executed here; the job only talks to the GitHub API.
+#
+# Before anything is merged the "Security gate" step below enforces that the PR
+# really is an untampered Dependabot update touching only allowlisted paths.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number to evaluate"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: Dependabot auto-merge
+    runs-on: ubuntu-latest
+    # Long enough to outlast the slowest matrix (Intel / Windows builds).
+    timeout-minutes: 120
+    if: >-
+      github.repository == 'CGNS/CGNS' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.actor == 'dependabot[bot]' && github.event.pull_request.draft == false))
+    env:
+      # Falls back to GITHUB_TOKEN. Set the DEPENDABOT_AUTOMERGE_TOKEN secret to
+      # a PAT/App token if GitHub refuses to let the default token merge PRs
+      # that modify files under .github/workflows/.
+      GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      # Name of this job's own check run, excluded when tallying results.
+      SELF_CHECK: Dependabot auto-merge
+
+      # ---- Security gate configuration -----------------------------------
+      # Glob patterns (bash [[ == ]] matching, so '*' also spans '/') for the
+      # only paths a Dependabot PR is allowed to touch. Extend this list when a
+      # new ecosystem is added to .github/dependabot.yml.
+      ALLOWED_PATHS: |
+        .github/workflows/*
+        .github/actions/*
+      # Refuse anything suspiciously large for a dependency bump.
+      MAX_CHANGED_FILES: "20"
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          PR_INPUT: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          set -euo pipefail
+          {
+            read -r number
+            read -r sha
+            read -r author
+            read -r head_repo
+            read -r head_ref
+            read -r base_ref
+          } < <(
+            gh pr view "$PR_INPUT" --repo "$REPO" \
+              --json number,headRefOid,author,headRepositoryOwner,headRepository,headRefName,baseRefName \
+              --jq '.number,
+                    .headRefOid,
+                    .author.login,
+                    "\(.headRepositoryOwner.login)/\(.headRepository.name)",
+                    .headRefName,
+                    .baseRefName'
+          )
+          echo "number=$number"   >> "$GITHUB_OUTPUT"
+          echo "sha=$sha"         >> "$GITHUB_OUTPUT"
+          echo "author=$author"   >> "$GITHUB_OUTPUT"
+          echo "head_repo=$head_repo" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$head_ref"   >> "$GITHUB_OUTPUT"
+          echo "base_ref=$base_ref"   >> "$GITHUB_OUTPUT"
+          echo "PR #${number}  ${head_repo}:${head_ref} -> ${base_ref}  @ ${sha}  by ${author}"
+
+      # Everything below runs before any wait, so a PR that fails the gate is
+      # rejected immediately rather than after a two-hour CI wait.
+      - name: Security gate
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+          AUTHOR: ${{ steps.pr.outputs.author }}
+          HEAD_REPO: ${{ steps.pr.outputs.head_repo }}
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::Security gate: $*"; exit 1; }
+
+          # 1. The PR must have been opened by Dependabot itself.
+          case "$AUTHOR" in
+            "dependabot[bot]"|"app/dependabot") ;;
+            *) fail "PR #${PR} was opened by '${AUTHOR}', not Dependabot." ;;
+          esac
+
+          # 2. It must come from a branch in this repository, not a fork. A fork
+          #    branch named dependabot/... would otherwise impersonate one.
+          [ "$HEAD_REPO" = "$REPO" ] \
+            || fail "head is '${HEAD_REPO}', not '${REPO}'; fork PRs are never auto-merged."
+
+          # 3. Branch naming must match what Dependabot actually creates.
+          case "$HEAD_REF" in
+            dependabot/*) ;;
+            *) fail "head branch '${HEAD_REF}' is not a dependabot/* branch." ;;
+          esac
+
+          # 4. Only merge into the branches Dependabot is configured to target.
+          case "$BASE_REF" in
+            develop|master) ;;
+            *) fail "base branch '${BASE_REF}' is not develop or master." ;;
+          esac
+
+          # 5. Every commit must be authored by Dependabot AND carry a verified
+          #    signature. This is the check that catches a third party pushing
+          #    extra commits onto an otherwise legitimate Dependabot branch.
+          bad_commits=$(
+            gh api "repos/${REPO}/pulls/${PR}/commits" --paginate \
+              --jq '.[]
+                    | select((.author.login // "") != "dependabot[bot]"
+                             or .commit.verification.verified != true)
+                    | "  \(.sha[0:12]) author=\(.author.login // "unknown") verified=\(.commit.verification.verified) reason=\(.commit.verification.reason)"'
+          )
+          if [ -n "$bad_commits" ]; then
+            echo "$bad_commits"
+            fail "PR contains commits that are not verified Dependabot commits."
+          fi
+
+          # 6. Changed files must all fall inside the allowlist, and there must
+          #    not be an implausible number of them.
+          files=$(gh api "repos/${REPO}/pulls/${PR}/files" --paginate --jq '.[].filename')
+          count=$(printf '%s\n' "$files" | grep -c . || true)
+          [ "$count" -gt 0 ] || fail "PR changes no files."
+          [ "$count" -le "$MAX_CHANGED_FILES" ] \
+            || fail "PR changes ${count} files, more than the ${MAX_CHANGED_FILES} allowed."
+
+          disallowed=""
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            ok=false
+            while IFS= read -r pattern; do
+              [ -n "$pattern" ] || continue
+              # shellcheck disable=SC2053  # unquoted RHS is intentional glob matching
+              if [[ "$f" == $pattern ]]; then ok=true; break; fi
+            done <<< "$ALLOWED_PATHS"
+            $ok || disallowed+="  $f"$'\n'
+          done <<< "$files"
+
+          if [ -n "$disallowed" ]; then
+            echo "Paths outside the allowlist:"
+            printf '%s' "$disallowed"
+            echo "Allowlist:"
+            printf '%s\n' "$ALLOWED_PATHS" | sed '/^$/d; s/^/  /'
+            fail "PR touches files that Dependabot is not permitted to change here."
+          fi
+
+          echo "Security gate passed: ${count} file(s), all within the allowlist."
+          printf '%s\n' "$files" | sed 's/^/  /'
+
+      - name: Wait for all checks to pass
+        env:
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          POLL_SECONDS=30
+          # Number of consecutive polls that must agree before the result is
+          # accepted, so that workflows which register late are not missed.
+          STABLE_POLLS=2
+
+          summarize() {
+            gh api --paginate \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${REPO}/commits/${SHA}/check-runs?per_page=100" \
+              --jq '.check_runs[]
+                    | select(.name != env.SELF_CHECK)
+                    | [.name, .status, (.conclusion // "")]
+                    | @tsv'
+          }
+
+          stable=0
+          while :; do
+            checks="$(summarize)"
+            total=$(printf '%s\n' "$checks" | grep -c . || true)
+
+            pending=$(printf '%s\n' "$checks" | awk -F'\t' 'NF && $2 != "completed" { print $1 }')
+            failed=$(printf '%s\n' "$checks" \
+              | awk -F'\t' 'NF && $2 == "completed" && $3 != "success" && $3 != "neutral" && $3 != "skipped" { print $1" ("$3")" }')
+
+            # Commit statuses (as opposed to check runs) posted by integrations.
+            read -r status_state status_count < <(
+              gh api "repos/${REPO}/commits/${SHA}/status" \
+                --jq '[.state, (.statuses | length)] | @tsv'
+            )
+
+            if [ -n "$failed" ]; then
+              echo "::error::The following checks did not pass:"
+              printf '%s\n' "$failed"
+              exit 1
+            fi
+
+            if [ "$status_count" -gt 0 ] && [ "$status_state" = "failure" ]; then
+              echo "::error::Commit status state is 'failure'."
+              gh api "repos/${REPO}/commits/${SHA}/status" \
+                --jq '.statuses[] | select(.state == "failure") | "  \(.context): \(.description // "")"'
+              exit 1
+            fi
+
+            statuses_pending=false
+            if [ "$status_count" -gt 0 ] && [ "$status_state" = "pending" ]; then
+              statuses_pending=true
+            fi
+
+            if [ "$total" -eq 0 ]; then
+              echo "No check runs registered yet for ${SHA}; waiting."
+              stable=0
+            elif [ -n "$pending" ] || [ "$statuses_pending" = true ]; then
+              echo "Waiting on $(printf '%s\n' "$pending" | grep -c . || true) of ${total} check(s):"
+              printf '%s\n' "$pending" | sed '/^$/d; s/^/  /'
+              stable=0
+            else
+              stable=$((stable + 1))
+              echo "All ${total} check(s) complete and passing (confirmation ${stable}/${STABLE_POLLS})."
+              if [ "$stable" -ge "$STABLE_POLLS" ]; then
+                break
+              fi
+            fi
+
+            sleep "$POLL_SECONDS"
+          done
+
+      - name: Verify head commit is unchanged
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # Guards against a push landing after the security gate ran: the
+          # approval and merge below must apply to the exact commit that was
+          # inspected and tested.
+          current=$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq '.headRefOid')
+          if [ "$current" != "$SHA" ]; then
+            echo "::error::Head moved from ${SHA} to ${current} while waiting. A newer run will handle it."
+            exit 1
+          fi
+
+      - name: Approve
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          approved=$(
+            gh api "repos/${REPO}/pulls/${PR}/reviews" --paginate \
+              --jq '[.[] | select(.user.login == "github-actions[bot]" and .state == "APPROVED")] | length' \
+              | awk '{ sum += $1 } END { print sum + 0 }'
+          )
+          if [ "$approved" -gt 0 ]; then
+            echo "Already approved by github-actions[bot]."
+          else
+            gh pr review "$PR" --repo "$REPO" --approve \
+              --body "All checks passed and the security gate is satisfied. Approving automatically."
+          fi
+
+      - name: Merge
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          state=$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus')
+          echo "Merge state: ${state}"
+
+          case "$state" in
+            DIRTY)
+              gh pr comment "$PR" --repo "$REPO" \
+                --body "Auto-merge blocked: this branch has conflicts with the base branch. @dependabot recreate"
+              echo "::error::PR has merge conflicts."
+              exit 1
+              ;;
+            BEHIND)
+              # `develop` requires branches to be up to date. Ask Dependabot to
+              # rebase; the resulting push re-triggers this workflow.
+              gh pr comment "$PR" --repo "$REPO" \
+                --body "Auto-merge: branch is behind the base branch. @dependabot rebase"
+              echo "Requested a rebase; a later run will merge."
+              exit 0
+              ;;
+          esac
+
+          # --match-head-commit makes the merge itself atomic with respect to
+          # the SHA that was reviewed and tested.
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch --match-head-commit "$SHA"
+          echo "Merged PR #${PR} at ${SHA}."
