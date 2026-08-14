@@ -2640,6 +2640,7 @@ static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
         for (e = rmin; e <= rmax; e++) {
             cgsize_t off = set->offsets[e - set->is];
             CGNS_ENUMT(ElementType_t) et;
+            int eldim;
             /* ElementStartOffset comes straight from the file: bounds-check
              * it before using it to index *elements.  A corrupt or
              * hand-edited offset here would otherwise be an out-of-bounds
@@ -2657,6 +2658,11 @@ static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
                        " has invalid element type %d", set->name, e, (int)et);
                 return -1;
             }
+            /* A boundary face inside a MIXED section is not part of the
+             * location domain, so it carries no DOFs -- the same per-element
+             * test the non-MIXED branch below applies per section. */
+            if (cg_element_dimension (et, &eldim) == CG_OK && eldim < CellDim)
+                continue;
             if (ho_ndofs_cached (fnum, et, spatialDegree, temporalDegree, &ndofs)) return -1;
             *datasize += ndofs;
         }
@@ -2671,6 +2677,40 @@ static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
     if (ho_ndofs (fnum, set->type, spatialDegree, temporalDegree, &ndofs)) return -1;
     *datasize += (rmax - rmin + 1) * ndofs;
     return 0;
+}
+
+/* Number of cells in a zone: elements whose dimension equals CellDim.  This is
+ * the element set a high-order FlowSolution_t covers, so it is what both the
+ * field arrays and CharacteristicLength are sized against.  Returns -1 if a
+ * MIXED section cannot be walked. */
+static cgsize_t ho_zone_ncells (ZONE *z)
+{
+    int i, eldim;
+    cgsize_t ncells = 0, e;
+
+    for (i = 0; i < z->nsets; i++) {
+        ELEMSET *set = &z->sets[i];
+
+        if (set->type != CGNS_ENUMV(MIXED)) {
+            if (cg_element_dimension (set->type, &eldim) == CG_OK &&
+                eldim < CellDim) continue;
+            ncells += set->ie - set->is + 1;
+            continue;
+        }
+
+        if (set->elements == NULL || set->offsets == NULL) return -1;
+        for (e = set->is; e <= set->ie; e++) {
+            cgsize_t off = set->offsets[e - set->is];
+            CGNS_ENUMT(ElementType_t) et;
+
+            if (off < 0 || off >= set->datasize) return -1;
+            et = (CGNS_ENUMT(ElementType_t))set->elements[off];
+            if (et < CGNS_ENUMV(NODE) || et >= NofValidElementTypes) return -1;
+            if (cg_element_dimension (et, &eldim) == CG_OK && eldim >= CellDim)
+                ncells++;
+        }
+    }
+    return ncells;
 }
 
 static cgsize_t get_ho_data_size (ZONE *z, int fnum, int spatialDegree, int temporalDegree)
@@ -6007,11 +6047,11 @@ static void check_solution (int ns)
             } else if (npts > 0 && ptsettype == CGNS_ENUMV(PointList)) {
                 expected = npts;
             } else {
-                /* whole-zone block: total cells across all sections */
-                cgsize_t i;
-                expected = 0;
-                for (i = 0; i < z->nsets; i++)
-                    expected += (z->sets[i].ie - z->sets[i].is + 1);
+                /* Whole-zone block: the zone's cells.  Boundary sections, and
+                 * boundary faces inside a MIXED section, are not part of the
+                 * location domain and are not counted. */
+                cgsize_t n = ho_zone_ncells (z);
+                expected = (n < 0) ? 0 : n;
             }
             /* All factors must be strictly positive.  This needs the values,
              * so the shape-only query above is repeated with a buffer -- a

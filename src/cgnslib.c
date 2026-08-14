@@ -9175,39 +9175,6 @@ int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
 }
 
 /**
- * \ingroup FlowSolutionData
- *
- * \brief Write part of the characteristic-length array.
- *
- * \details
- * Writes the scale factors for elements \p rmin through \p rmax (1-based,
- * inclusive) of a CharacteristicLength array whose full extent is \p numElements.
- * The node is created at that full extent on the first call, so every caller must
- * pass the same \p nscale and \p numElements; only the range differs.
- *
- * This is what a distributed writer needs.  The factors are per-element data --
- * PhysDim values per cell in the per-axis encoding, the same order of magnitude
- * as a solution field -- so requiring the whole array in one call would force
- * every rank to gather it.  Element ranges map to contiguous storage, since
- * \p nscale is the fast-varying axis, so a rank owning a contiguous run of
- * elements writes one hyperslab.
- *
- * Positivity is checked on the supplied range only; a range that is never
- * written leaves the file with undefined factors for those elements, which
- * cgnscheck reports when it validates the array.
- *
- * \param[in] fn \FILE_fn
- * \param[in] B \B_Base
- * \param[in] Z \Z_Zone
- * \param[in] S \FLOW_S
- * \param[in] nscale 1 for the isotropic encoding, PhysDim for per-axis.
- * \param[in] numElements Total number of elements the array covers.
- * \param[in] rmin First element to write, 1-based inclusive.
- * \param[in] rmax Last element to write, 1-based inclusive.
- * \param[in] h_e nscale*(rmax-rmin+1) factors, all strictly positive.
- * \return \ier
- */
-/**
  * \ingroup FlowSolution
  * \brief Create an empty CharacteristicLength array at its full extent.
  *
@@ -9316,6 +9283,41 @@ int cg_sol_characteristic_length_create(int fn, int B, int Z, int S,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief Write part of the characteristic-length array.
+ *
+ * \details
+ * Writes the scale factors for elements \p rmin through \p rmax (1-based,
+ * inclusive) of a CharacteristicLength array whose full extent is \p numElements.
+ * The array must already exist: create it with
+ * cg_sol_characteristic_length_create(), which every caller must invoke with the
+ * same \p nscale and \p numElements before any range is written.  Creating a node
+ * is a collective operation, so a distributed writer that created it here would
+ * have later creates discard earlier ranks' ranges.
+ *
+ * The factors are per-element data -- PhysDim values per cell in the per-axis
+ * encoding, the same order of magnitude as a solution field -- so requiring the
+ * whole array in one call would force every rank to gather it.  Element ranges
+ * map to contiguous storage, since \p nscale is the fast-varying axis, so a rank
+ * owning a contiguous run of elements writes one hyperslab.
+ *
+ * Positivity is checked on the supplied range only; a range that is never
+ * written leaves the file with undefined factors for those elements, which
+ * cgnscheck reports when it validates the array.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \FLOW_S
+ * \param[in] nscale 1 for the isotropic encoding, PhysDim for per-axis.
+ * \param[in] numElements Total number of elements the array covers.
+ * \param[in] rmin First element to write, 1-based inclusive.
+ * \param[in] rmax Last element to write, 1-based inclusive.
+ * \param[in] h_e nscale*(rmax-rmin+1) factors, all strictly positive.
+ * \return \ier
+ */
 int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
                                                int nscale, cgsize_t numElements,
                                                cgsize_t rmin, cgsize_t rmax,

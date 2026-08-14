@@ -896,6 +896,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(IsoParametric)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: InterpolationTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *

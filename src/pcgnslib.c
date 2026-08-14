@@ -1904,6 +1904,46 @@ int cgp_field_write(int fn, int B, int Z, int S,
  *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_LOC(rmin), C_LOC(rmax), C_LOC(data(1)), ier) \endcode
  *       \code call cgp_field_write_data_f(fn, B, Z, S, F, C_NULL_PTR, C_NULL_PTR, C_NULL_PTR, ier) \endcode
  */
+/*---------------------------------------------------------*/
+
+int cgp_field_write_data(int fn, int B, int Z, int S, int F,
+    const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
+{
+    int n;
+    hid_t hid;
+    cgns_array *field = NULL;
+    CGNS_ENUMT(DataType_t) type;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    field = cgi_get_field(cg, B, Z, S, F);
+    if (field==0) return CG_ERROR;
+
+     /* verify that range requested does not exceed range stored */
+    if (data) {
+      for (n = 0; n < field->data_dim; n++) {
+        if (rmin[n] > rmax[n] ||
+            rmax[n] > field->dim_vals[n] ||
+            rmin[n] < 1) {
+          cgi_error("Invalid range of data requested");
+          return CG_ERROR;
+        }
+      }
+    }
+    type = cgi_datatype(field->data_type);
+
+    to_HDF_ID(field->id,hid);
+
+    cg_rw_t Data;
+    Data.u.wbuf = data;
+    return readwrite_data_parallel(hid, type,
+			       field->data_dim, rmin, rmax, &Data, CG_PAR_WRITE);
+}
+
 /**
  * \ingroup SolutionData
  *
@@ -1995,46 +2035,6 @@ int cgp_sol_characteristic_length_write_data(int fn, int B, int Z, int S,
     Data.u.wbuf = h_e;
     return readwrite_data_parallel(hid, CGNS_ENUMV(RealDouble),
                                    ndims, s_rmin, s_rmax, &Data, CG_PAR_WRITE);
-}
-
-/*---------------------------------------------------------*/
-
-int cgp_field_write_data(int fn, int B, int Z, int S, int F,
-    const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
-{
-    int n;
-    hid_t hid;
-    cgns_array *field = NULL;
-    CGNS_ENUMT(DataType_t) type;
-
-    cg = cgi_get_file(fn);
-    if (check_parallel(cg)) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
-        return CG_ERROR;
-
-    field = cgi_get_field(cg, B, Z, S, F);
-    if (field==0) return CG_ERROR;
-
-     /* verify that range requested does not exceed range stored */
-    if (data) {
-      for (n = 0; n < field->data_dim; n++) {
-        if (rmin[n] > rmax[n] ||
-            rmax[n] > field->dim_vals[n] ||
-            rmin[n] < 1) {
-          cgi_error("Invalid range of data requested");
-          return CG_ERROR;
-        }
-      }
-    }
-    type = cgi_datatype(field->data_type);
-
-    to_HDF_ID(field->id,hid);
-
-    cg_rw_t Data;
-    Data.u.wbuf = data;
-    return readwrite_data_parallel(hid, type,
-			       field->data_dim, rmin, rmax, &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/

@@ -1445,6 +1445,11 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
                          const int temporalDegree, const cgsize_t *list, const cgsize_t npts,
                          cgsize_t *DataSize);
 
+/* Number of cells in a zone: elements whose dimension equals CellDimension.
+ * This is the element set |E| that CPEX-0045 sizes a high-order block over, so
+ * the field arrays and CharacteristicLength must both be measured against it. */
+int cgi_ho_zone_ncells(const cgns_zone *zone, int cell_dim, cgsize_t *ncells);
+
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);
 int cgi_read_node_data(double node_id, char_33 data_type,

@@ -28,6 +28,8 @@
  *       child of it; the file reopens under field size checking
  *   H - the superseded v3 layout (array directly under FlowSolution_t) is
  *       rejected on reopen
+ *   I - |E| is the zone's cells: boundary faces do not count, whether they sit
+ *       in their own section or inside a MIXED one
  */
 
 #include <stdio.h>
@@ -617,6 +619,127 @@ static int test_partial(void)
     return 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* I - |E| counts cells, not every Elements_t entry                    */
+/* ------------------------------------------------------------------ */
+
+/* CPEX-0045 v4 clause (1): a high-order block is sized over the zone's cells,
+ * so boundary faces contribute nothing -- and the test is per element, not per
+ * section, since a MIXED section may hold faces alongside cells.  Both layouts
+ * below are conformant with |E| = N_ELEM, and both must survive a reopen (which
+ * validates the CharacteristicLength shape) and cgnscheck.
+ *
+ * mixed == 0: a separate QUAD_4 boundary section beside the HEXA_8 cells.
+ * mixed == 1: one MIXED section holding the cells and the faces together. */
+static int make_file_with_faces(const char *filename, int mixed)
+{
+    int fn, B, Z, S, F, si, sec, ci, fi, i, k = 0;
+    const int nface = 2;
+    cgsize_t size[3], conn[N_ELEM * 8], qconn[2 * 4];
+    cgsize_t mconn[N_ELEM * 9 + 2 * 5], off[N_ELEM + 2 + 1];
+    double coord[N_VERT], fld[N_ELEM * N_DOF], h[N_ELEM];
+
+    for (i = 0; i < N_VERT; i++)          coord[i] = (double)i;
+    for (i = 0; i < N_ELEM * 8; i++)      conn[i]  = (i % N_VERT) + 1;
+    for (i = 0; i < nface * 4; i++)       qconn[i] = (i % N_VERT) + 1;
+    for (i = 0; i < N_ELEM * N_DOF; i++)  fld[i]   = (double)i;
+    for (i = 0; i < N_ELEM; i++)          h[i]     = 1.0 + i;
+
+    for (i = 0; i < N_ELEM; i++) {
+        int j;
+        mconn[k++] = CGNS_ENUMV(HEXA_8);
+        for (j = 0; j < 8; j++) mconn[k++] = (j % N_VERT) + 1;
+    }
+    for (i = 0; i < nface; i++) {
+        int j;
+        mconn[k++] = CGNS_ENUMV(QUAD_4);
+        for (j = 0; j < 4; j++) mconn[k++] = (j % N_VERT) + 1;
+    }
+    off[0] = 0;
+    for (i = 0; i < N_ELEM; i++) off[i + 1] = off[i] + 9;
+    for (i = 0; i < nface; i++)  off[N_ELEM + i + 1] = off[N_ELEM + i] + 5;
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open W")) return 1;
+    if (check(cg_base_write(fn, "Base", 3, PHYSDIM, &B), "base")) return 1;
+    size[0] = N_VERT; size[1] = N_ELEM; size[2] = 0;
+    if (check(cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX",
+              coord, &ci), "coordX")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY",
+              coord, &ci), "coordY")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ",
+              coord, &ci), "coordZ")) return 1;
+
+    if (mixed) {
+        if (check(cg_poly_section_write(fn, B, Z, "Cells", CGNS_ENUMV(MIXED),
+                  1, N_ELEM + nface, 0, mconn, off, &sec), "mixed section"))
+            return 1;
+    }
+    else {
+        if (check(cg_section_write(fn, B, Z, "Hexas", CGNS_ENUMV(HEXA_8),
+                  1, N_ELEM, 0, conn, &sec), "hex section")) return 1;
+        if (check(cg_section_write(fn, B, Z, "Faces", CGNS_ENUMV(QUAD_4),
+                  N_ELEM + 1, N_ELEM + nface, nface, qconn, &sec),
+                  "face section")) return 1;
+    }
+
+    if (check(cg_family_write(fn, B, "CartFam", &F), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto zone")) return 1;
+    if (check(cg_famname_write("CartFam"), "famname")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, F, "Hex_P2",
+              CGNS_ENUMV(HEXA_8), 2, 0,
+              CGNS_ENUMV(CartesianMonomialsPascal), &si), "SI")) return 1;
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S),
+              "sol")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0), "degree"))
+        return 1;
+    if (check(cg_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "Density",
+              fld, &fi), "field")) return 1;
+    if (check(cg_sol_characteristic_length_write(fn, B, Z, S, 1, N_ELEM, h),
+              "charlen")) return 1;
+    if (check(cg_close(fn), "close W")) return 1;
+    return 0;
+}
+
+static int test_faces_not_cells(void)
+{
+    static const char *names[2] = { "test_charlen_bndsec.cgns",
+                                    "test_charlen_mixedsec.cgns" };
+    static const char *what[2]  = { "separate boundary section",
+                                    "MIXED section of cells and faces" };
+    int mixed, fn, nscale, rc = 0;
+    cgsize_t numElements;
+
+    printf("\n--- I: |E| counts cells, not every Elements_t entry ---\n");
+
+    for (mixed = 0; mixed < 2; mixed++) {
+        if (make_file_with_faces(names[mixed], mixed)) return 1;
+
+        /* The reopen is the assertion: it revalidates the CharacteristicLength
+         * extent against the zone's cell count.  Counting the faces made the
+         * library reject a file it had just written. */
+        if (check(cg_open(names[mixed], CG_MODE_READ, &fn), "reopen")) {
+            fprintf(stderr, "ERROR: %s -- conformant file did not reopen\n",
+                    what[mixed]);
+            return 1;
+        }
+        if (check(cg_sol_characteristic_length_read(fn, 1, 1, 1, &nscale,
+                  &numElements, NULL), "shape query")) { cg_close(fn); return 1; }
+        if (nscale != 1 || numElements != N_ELEM) {
+            fprintf(stderr, "ERROR: %s -- read back nscale=%d numElements=%ld, "
+                    "expected 1 and %d\n", what[mixed], nscale,
+                    (long)numElements, N_ELEM);
+            rc = 1;
+        }
+        else {
+            printf("  %s: reopens, |E| = %d\n", what[mixed], N_ELEM);
+        }
+        if (check(cg_close(fn), "close")) return 1;
+    }
+    return rc;
+}
+
 int main(void)
 {
     int errors = 0;
@@ -634,6 +757,7 @@ int main(void)
     if (test_not_a_field())       errors++;
     if (test_v3_layout_rejected()) errors++;
     if (test_partial())           errors++;
+    if (test_faces_not_cells())   errors++;
 
     printf("\n");
     printf("##################################################\n");

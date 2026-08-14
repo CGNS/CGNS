@@ -31,6 +31,58 @@ New Features
 
     Library:
     --------
+    - CPEX-0045: high-order polynomial interpolation for elements and
+      solutions. Adopted by the CGNS Steering Committee on 2026-08-04
+      (v3.0), with the v4 corrections amendment applied.
+
+      SIDS additions:
+        ElementInterpolation_t and SolutionInterpolation_t, both optional
+          list children of Family_t, describing the mesh and solution
+          interpolation bases per element type and degree.
+        InterpolationType_t enumeration: ParametricLagrange,
+          ParametricMonomialsPascal, CartesianMonomialsPascal,
+          IsoParametric.
+        ControlPointDistribution_t enumeration: GaussLobattoLegendre,
+          Equidistant, GaussLegendre, WarpAndBlend. Recommended, not
+          required; the stored coordinates are authoritative.
+        GridLocation_t gains InterpolationPoints (value 9), required for
+          all high-order FlowSolution_t nodes. Field arrays then have
+          length sum(N_DOFs(e)) over the zone's cells, not one value per
+          cell. NofValidGridLocation is now 10.
+        FlowSolution_t gains an InterpolationDegrees IndexArray_t child
+          and, for Cartesian modal interpolation, an InterpolationMetadata
+          UserDefinedData_t container holding CharacteristicLength.
+
+      New API (C, with _f Fortran bindings for each):
+        cg_element_interpolation_{read,write}
+        cg_element_interpolation_type_read
+        cg_element_interpolation_points_{read,write}
+        cg_element_interpolation_distribution_{read,write}
+        cg_element_isoparametric_write
+        cg_element_lagrange_interpolation_{size,count}
+        cg_nelement_interpolation_read
+        cg_solution_interpolation_{read,write,find}
+        cg_solution_interpolation_points_{read,write}
+        cg_solution_interpolation_npoints_read
+        cg_solution_interpolation_distribution_{read,write}
+        cg_solution_lagrange_interpolation_{size,count}
+        cg_solution_monomial_size
+        cg_nsolution_interpolation_read
+        cg_sol_interpolation_degree_{read,write}
+        cg_sol_characteristic_length_{read,write,create,partial_write}
+        cg_InterpolationTypeName, cg_ControlPointDistributionName
+
+      cgnscheck validates the new nodes and gains a -s option for strict
+      CPEX-0045 conformance, which promotes the soft checks (degree
+      ranges, CellCenter used with InterpolationDegrees, a stored control
+      point set disagreeing with its named distribution) to errors.
+
+      Reading a file that uses these features requires a library
+      implementing CPEX-0045. An earlier library does not skip the
+      high-order solution: an unrecognised GridLocation_t makes cg_open
+      fail for the whole file. Producers serving mixed-version readers
+      should place high-order solutions in a linked file.
+
     - Added test for Unicode (UTF-8) filepath support (CGNS-98/GitHub #494).
       The test verifies creating, reading, and modifying CGNS files with
       non-ASCII characters in directory and filenames, as well as external
@@ -38,6 +90,19 @@ New Features
 
     Parallel Library:
     -----------------
+    - CPEX-0045 parallel support. High-order field arrays are written
+      through the existing cgp_field_write / cgp_field_write_data pair;
+      the interpolation descriptions live in Family_t and are written
+      collectively through the serial calls with identical arguments on
+      every rank.
+
+      Added cgp_sol_characteristic_length_write_data, which writes one
+      rank's element range of CharacteristicLength through the
+      collective-capable MPI-IO path. The array must first be created
+      collectively by cg_sol_characteristic_length_create; node creation
+      is collective, so a rank that creates after another has written
+      would discard that rank's range.
+
     - Added parallel Unicode (UTF-8) filepath test using cgp_open
       (GitHub #494). Verifies parallel coordinate I/O through paths
       containing non-ASCII characters. Requires HDF5 >= 2.0.0.

@@ -21,6 +21,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 #include <sys/types.h>
 
@@ -1894,15 +1895,7 @@ static int cgi_check_interp_metadata(const cgns_sol *sol, const cgns_zone *zone,
             }
             else if (zone != NULL && zone->nsections > 0) {
                 cgsize_t ncell = 0;
-                int si, edim;
-                for (si = 0; si < zone->nsections; si++) {
-                    CGNS_ENUMT(ElementType_t) et = zone->section[si].el_type;
-                    if (et != CGNS_ENUMV(MIXED) &&
-                        cg_element_dimension(et, &edim) == CG_OK && edim < cell_dim)
-                        continue;   /* boundary section: not a cell */
-                    ncell += zone->section[si].range[1] -
-                             zone->section[si].range[0] + 1;
-                }
+                if (cgi_ho_zone_ncells(zone, cell_dim, &ncell)) return CG_ERROR;
                 if (nelem != ncell) {
                     cgi_error("CharacteristicLength in FlowSolution '%s' covers %"
                               PRIdCGSIZE " elements but the zone has %"
@@ -8427,7 +8420,20 @@ static int cgi_ho_ndofs(const cgns_family *family,
         return CG_ERROR;
     }
 
-    *ndofs = npe * (temporalDegree + 1);
+    /* npe and temporalDegree are each bounded, their product is not, and the
+     * result sizes a field array.  cg_solution_monomial_size() guards the same
+     * multiplication for the same reason. */
+    {
+        cgsize_t total = (cgsize_t)npe * (cgsize_t)(temporalDegree + 1);
+        if (total > (cgsize_t)INT_MAX) {
+            cgi_error("Degree-of-freedom count %lld for element type %s at "
+                      "(spatial=%d, temporal=%d) exceeds INT_MAX",
+                      (long long)total, cg_ElementTypeName(el_type),
+                      spatialDegree, temporalDegree);
+            return CG_ERROR;
+        }
+        *ndofs = (int)total;
+    }
     return CG_OK;
 }
 
@@ -8467,6 +8473,71 @@ static int cgi_ho_mixed_connect(cgns_section *section, const cgsize_t **connect,
     }
     *connect = buf;
     *needs_free = 1;
+    return CG_OK;
+}
+
+int cgi_ho_zone_ncells(const cgns_zone *zone, int cell_dim, cgsize_t *ncells)
+{
+    int i, edim;
+
+    *ncells = 0;
+    if (zone == NULL) return CG_ERROR;
+
+    for (i = 0; i < zone->nsections; i++) {
+        cgns_section *section = &((cgns_zone *)zone)->section[i];
+
+        if (section->el_type != CGNS_ENUMV(MIXED)) {
+            if (cg_element_dimension(section->el_type, &edim) == CG_OK &&
+                edim < cell_dim)
+                continue;
+            *ncells += section->range[1] - section->range[0] + 1;
+            continue;
+        }
+
+        /* The test is per element, not per section: a MIXED section may hold
+         * boundary faces alongside cells, and only the cells belong to the
+         * location domain a FlowSolution_t is defined over. */
+        {
+            const cgsize_t *connect;
+            cgsize_t conn_size, pos = 0, e;
+            cgsize_t nelems = section->range[1] - section->range[0] + 1;
+            int needs_free = 0, base_npe;
+
+            if (cgi_ho_mixed_connect(section, &connect, &conn_size, &needs_free))
+                return CG_ERROR;
+
+            for (e = 0; e < nelems; e++) {
+                CGNS_ENUMT(ElementType_t) et;
+
+                if (pos >= conn_size) {
+                    if (needs_free) CGNS_FREE((void *)connect);
+                    cgi_error("MIXED section '%s' connectivity truncated at "
+                              "element %"PRIdCGSIZE, section->name, e);
+                    return CG_ERROR;
+                }
+                et = (CGNS_ENUMT(ElementType_t))connect[pos++];
+
+                if (cg_element_dimension(et, &edim) == CG_OK && edim >= cell_dim)
+                    (*ncells)++;
+
+                if (cg_npe(et, &base_npe) != CG_OK || base_npe <= 0) {
+                    if (needs_free) CGNS_FREE((void *)connect);
+                    cgi_error("Failed to get base npe for element type %s in "
+                              "MIXED section '%s'", cg_ElementTypeName(et),
+                              section->name);
+                    return CG_ERROR;
+                }
+                pos += base_npe;
+                if (pos > conn_size) {
+                    if (needs_free) CGNS_FREE((void *)connect);
+                    cgi_error("MIXED section '%s' connectivity overrun after "
+                              "element %"PRIdCGSIZE, section->name, e);
+                    return CG_ERROR;
+                }
+            }
+            if (needs_free) CGNS_FREE((void *)connect);
+        }
+    }
     return CG_OK;
 }
 

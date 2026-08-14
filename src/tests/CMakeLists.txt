@@ -251,12 +251,16 @@ if (CGNS_ENABLE_TESTS)
       test_dist_wb_p4.cgns             # test_distribution: WarpAndBlend p=4
       test_dist_wbtet_p2.cgns          # test_distribution: TETRA W&B p=2
       test_dist_wbtet_p3.cgns          # test_distribution: TETRA W&B p=3
+      test_charlen_bndsec.cgns         # test_characteristic_length: cells + a
+                                       #   separate QUAD_4 boundary section
+      test_charlen_mixedsec.cgns       # test_characteristic_length: one MIXED
+                                       #   section of cells and faces
   )
   # A fixture, not DEPENDS: ctest honours FIXTURES_REQUIRED even when the run is
   # filtered with -R, so the producers cannot be skipped, leaving a cgnscheck
   # test to run against a file that was never written.
   set_tests_properties(test_high_order test_mixed_ho test_degree_zero
-                       test_distribution
+                       test_distribution test_characteristic_length
                        PROPERTIES FIXTURES_SETUP HO_TEST_FILES)
 
   foreach(HOFILE IN LISTS CGNSCHECK_HO_FILES)
