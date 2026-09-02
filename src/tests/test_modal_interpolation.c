@@ -77,10 +77,8 @@ int test_monomial_size()
 int test_solution_modal()
 {
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
-    int i, n;
     int ncoeff;
     int spatialdegree = 3, temporaldegree = 1;
-    double *coeff;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) type = CGNS_ENUMV(QUAD_4);
     CGNS_ENUMT(ElementType_t) type_read;
@@ -93,16 +91,16 @@ int test_solution_modal()
     printf("  Testing Solution Modal Interpolation\n");
     printf("==============================================\n\n");
 
-    /* Get number of coefficients for order 3 spatial, order 1 temporal */
-    cg_solution_monomial_size(type, spatialdegree, temporaldegree, &ncoeff);
+    /* Get number of coefficients for order 3 spatial, order 1 temporal.  The
+     * basis stores no array (MonomialCoefficients is withdrawn), so this
+     * cardinality is the whole of what a caller needs; it is re-queried after
+     * the round trip below and compared against this value. */
+    if (cg_solution_monomial_size(type, spatialdegree, temporaldegree, &ncoeff)) {
+        fprintf(stderr, "ERROR: cg_solution_monomial_size failed\n");
+        return 1;
+    }
     printf("Creating CGNS file with %d monomial coefficients...\n", ncoeff);
     printf("  (spatial order %d, temporal order %d)\n", spatialdegree, temporaldegree);
-
-    /* Allocate and fill coefficient array */
-    coeff = (double*) malloc(ncoeff * sizeof(double));
-    for (i = 0; i < ncoeff; i++) {
-        coeff[i] = (double)(i + 1) * 0.25;  /* Simple test values */
-    }
 
     /* Create CGNS file */
     size[0] = 4;  /* vertex size */
@@ -114,7 +112,6 @@ int test_solution_modal()
         cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV(Unstructured), &cgzone))
     {
         fprintf(stderr, "ERROR: Failed to create file structure\n");
-        free(coeff);
         return 1;
     }
 
@@ -122,7 +119,6 @@ int test_solution_modal()
     if (cg_family_write(cgfile, cgbase, "SolutionFamily", &cgfamily))
     {
         fprintf(stderr, "ERROR: Failed to write Family_t node\n");
-        free(coeff);
         return 1;
     }
 
@@ -132,7 +128,6 @@ int test_solution_modal()
                                        CGNS_ENUMV(ParametricMonomialsPascal), &cgsinterp))
     {
         fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t node\n");
-        free(coeff);
         return 1;
     }
     printf("SolutionInterpolation_t node created (index=%d)\n", cgsinterp);
@@ -148,7 +143,6 @@ int test_solution_modal()
     if (cg_open(filename, CG_MODE_READ, &cgfile))
     {
         fprintf(stderr, "ERROR: Failed to open file\n");
-        free(coeff);
         return 1;
     }
 
@@ -158,21 +152,18 @@ int test_solution_modal()
                                       sinterpname, &type_read, &os_read, &ot_read, &itype_read))
     {
         fprintf(stderr, "ERROR: Failed to read SolutionInterpolation_t node\n");
-        free(coeff);
         return 1;
     }
 
     /* Validate properties */
     if (strcmp(sinterpname, "ModalSolutionInterp") != 0) {
         fprintf(stderr, "ERROR: Wrong interpolation name: %s\n", sinterpname);
-        free(coeff);
         return 1;
     }
     printf("Interpolation name: %s\n", sinterpname);
 
     if (type_read != type) {
         fprintf(stderr, "ERROR: Wrong element type\n");
-        free(coeff);
         return 1;
     }
     printf("Element type: %s\n", cg_ElementTypeName(type_read));
@@ -180,14 +171,12 @@ int test_solution_modal()
     if (os_read != spatialdegree || ot_read != temporaldegree) {
         fprintf(stderr, "ERROR: Wrong orders: spatial=%d (expected %d), temporal=%d (expected %d)\n",
                 os_read, spatialdegree, ot_read, temporaldegree);
-        free(coeff);
         return 1;
     }
     printf("Orders: spatial=%d, temporal=%d\n", os_read, ot_read);
 
     if (itype_read != CGNS_ENUMV(ParametricMonomialsPascal)) {
         fprintf(stderr, "ERROR: Wrong interpolation type\n");
-        free(coeff);
         return 1;
     }
     printf("Interpolation type: ParametricMonomialsPascal\n");
@@ -198,19 +187,16 @@ int test_solution_modal()
         int sz = 0;
         if (cg_solution_monomial_size(type, spatialdegree, temporaldegree, &sz)) {
             fprintf(stderr, "ERROR: cg_solution_monomial_size failed\n");
-            free(coeff);
             return 1;
         }
         if (sz != ncoeff) {
             fprintf(stderr, "ERROR: monomial size %d, expected %d\n", sz, ncoeff);
-            free(coeff);
             return 1;
         }
         printf("Modal cardinality confirmed: %d\n", sz);
     }
 
     cg_close(cgfile);
-    free(coeff);
 
     printf("\nALL SOLUTION MODAL TESTS PASSED\n");
     return 0;
