@@ -5722,6 +5722,7 @@ static void check_solution (int ns)
     ZONE *z = &Zones[cgnszone-1];
     /* Point Set */
     cgsize_t npts;
+    int has_ptset;
     CGNS_ENUMT(PointSetType_t) ptsettype;
     cgsize_t *ptsetlist = NULL;
     /* PointRange bounds, kept after ptsetlist is released so the
@@ -5891,28 +5892,33 @@ static void check_solution (int ns)
      * PointSet -- deferred to when the PointSet is read below, to avoid reading
      * it twice. */
 
-    /* PointSet if exists */
+    /* PointSet if exists.  cg_sol_ptset_info() reports absence as
+     * PointSetTypeNull with a CG_OK return; it never returns CG_NODE_NOT_FOUND,
+     * so that is not the test for "no point set". */
     ierr = cg_sol_ptset_info(cgnsfn, cgnsbase, cgnszone,ns,&ptsettype,&npts);
-    if (ierr != CG_NODE_NOT_FOUND) {
-
+    has_ptset = (ierr == CG_OK && ptsettype != CGNS_ENUMV(PointSetTypeNull) &&
+                 npts > 0);
+    if (has_ptset) {
+      /* cg_sol_ptset_read() returns npts * IndexDimension values, not npts:
+       * a structured zone stores one index per dimension for every point.
+       * Sizing this buffer as npts overruns it on any zone with idim > 1. */
+      ptsetlist = (cgsize_t *)malloc( (size_t)(npts * z->idim) * sizeof(cgsize_t));
+      if (!ptsetlist) {
+          error("memory allocation failed for %s ptsetlist of size %"PRIdCGSIZE,
+                cg_PointSetTypeName(ptsettype), npts);
+          return;
+      }
+      if (cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist)) {
+          free(ptsetlist);
+          error("cg_sol_ptset_read failed for solution \"%s\"", name);
+          return;
+      }
       if (ptsettype == CGNS_ENUMV(PointRange)) {
-        ptsetlist = (cgsize_t *)malloc( 2 * sizeof(cgsize_t));
-        if (!ptsetlist) {
-            error("memory allocation failed for PointRange ptsetlist");
-            return;
-        }
-      }
-      else if (ptsettype == CGNS_ENUMV(PointList)) {
-        ptsetlist = (cgsize_t *)malloc( npts * sizeof(cgsize_t));
-        if (!ptsetlist && npts > 0) {
-            error("memory allocation failed for PointList ptsetlist of size %"PRIdCGSIZE, npts);
-            return;
-        }
-      }
-      cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist);
-      if (ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange)) {
+          /* [idim,2]: the two bounds are idim apart, so the upper bound is at
+           * [z->idim], which is [1] on the unstructured zones the high-order
+           * paths below run on. */
           cl_range[0] = ptsetlist[0];
-          cl_range[1] = ptsetlist[1];
+          cl_range[1] = ptsetlist[z->idim];
       }
     }
 
@@ -5924,7 +5930,7 @@ static void check_solution (int ns)
         int ierr_order = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &temp_os, &temp_ot);
         has_order = (ierr_order == CG_OK && (temp_os > 0 || temp_ot > 0));
 
-        if (has_order && ierr == CG_NODE_NOT_FOUND)
+        if (has_order && !has_ptset)
         {
             error("CPEX 0045 Section 3.2.5: Variable order solutions (GridLocation=CellCenter "
                   "with SpatialOrder=%d or TemporalOrder=%d) require PointRange or PointList "
@@ -5952,7 +5958,7 @@ static void check_solution (int ns)
        * size it like InterpolationPoints so cgnscheck does not flag a
        * spurious size mismatch on the field arrays. */
       if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
-        datasize = get_ho_data_size_range(z,hofam,os,ot,ptsetlist);
+        datasize = get_ho_data_size_range(z,hofam,os,ot,cl_range);
       else if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointList) )
         datasize = get_ho_data_size_list(z,hofam,os,ot,ptsetlist,npts);
       else
