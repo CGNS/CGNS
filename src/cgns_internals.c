@@ -8625,8 +8625,9 @@ static int cgi_ho_datasize_mixed_range(cgns_section *section, int cell_dim,
             return CG_ERROR;
         }
 
-        /* Early exit if we've passed the range */
-        if (elem_idx > last_elem_offset) break;
+        /* The last requested element has now been accumulated and stepped
+         * over, so stop here rather than parsing one element past the range. */
+        if (elem_idx >= last_elem_offset) break;
     }
 
     if (needs_free) CGNS_FREE((void*)connect);
@@ -8782,6 +8783,21 @@ int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone 
     return CG_OK;
 }
 
+/* First index of a sorted array whose value is >= key (npts when none is).
+ * Lets a uniform section count its listed elements in O(log M) rather than
+ * rescanning the whole list, which is the point of sorting it. */
+static cgsize_t cgi_ho_lower_bound(const cgsize_t *a, cgsize_t n, cgsize_t key)
+{
+    cgsize_t lo = 0, hi = n;
+
+    while (lo < hi) {
+        cgsize_t mid = lo + (hi - lo) / 2;
+        if (a[mid] < key) lo = mid + 1;
+        else              hi = mid;
+    }
+    return lo;
+}
+
 /* Helper comparator for qsort - used to optimize MIXED section PointList queries */
 static int compare_cgsize(const void *a, const void *b) {
     cgsize_t arg1 = *(const cgsize_t *)a;
@@ -8925,9 +8941,9 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
             if (connect_buf) CGNS_FREE(connect_buf);
         }
         else {
-            /* UNIFORM SECTION: Calculation is O(1) per point found in range */
+            /* UNIFORM SECTION: O(log M) to bracket the listed elements */
             int ho_npe, edim;
-            cgsize_t p;
+            cgsize_t first, last;
 
             /* Boundary/edge sections hold no solution DOFs (see cgi_ho_datasize) */
             if (cg_element_dimension(type, &edim) == CG_OK && edim < cell_dim)
@@ -8942,12 +8958,11 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
                 return CG_ERROR;
             }
 
-            /* Iterate through sorted list - can optimize with binary search for range start/end */
-            for(p = 0; p < npts; p++) {
-                if (sorted_list[p] >= sect_start && sorted_list[p] <= sect_end) {
-                    *DataSize += ho_npe;
-                }
-            }
+            /* The list is sorted, so the entries falling in this section are
+             * one contiguous run; bracket it instead of rescanning. */
+            first = cgi_ho_lower_bound(sorted_list, npts, sect_start);
+            last  = cgi_ho_lower_bound(sorted_list, npts, sect_end + 1);
+            *DataSize += (last - first) * (cgsize_t)ho_npe;
         }
     }
 
