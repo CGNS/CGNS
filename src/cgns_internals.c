@@ -2055,7 +2055,10 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
               }
               // Override based on list
               else if (sol[0][s].ptset->type == CGNS_ENUMV(PointList)) {
-                cgsize_t *pnts = CGNS_NEW(cgsize_t,sol[0][s].ptset->npts);
+                /* The node holds Idim indices per point, and
+                 * cgi_read_int_data() reads the whole array, so the buffer
+                 * must be npts * Idim -- not npts. */
+                cgsize_t *pnts = CGNS_NEW(cgsize_t,sol[0][s].ptset->npts * Idim);
                 
                 ret = cgi_read_int_data(sol[0][s].ptset->id, sol[0][s].ptset->data_type,
                                         sol[0][s].ptset->npts * Idim, pnts);
@@ -12656,7 +12659,10 @@ int cgi_ptset_range(cgns_ptset *ptset, cgsize_t *range_min, cgsize_t *range_max)
   
   if (!ptset->npts) return CG_ERROR;
   
-  pnts = CGNS_NEW(cgsize_t,ptset->npts);
+  /* Idim indices per bound, and cgi_read_int_data() reads the whole array:
+   * the buffer must hold npts * Idim, and the loop below indexes up to
+   * pnts[2*Idim-1]. */
+  pnts = CGNS_NEW(cgsize_t,ptset->npts * Idim);
   
   ret = cgi_read_int_data(ptset->id, ptset->data_type,
                           ptset->npts * Idim, pnts);

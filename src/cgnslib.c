@@ -8458,7 +8458,9 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
             if (sol->ho_ptset_datasize >= 0) {
               dim_vals[0] = sol->ho_ptset_datasize;
             } else {
-              cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts);
+              /* index_dim indices per point, and cgi_read_int_data() reads
+               * the whole array: size the buffer accordingly. */
+              cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts * zone->index_dim);
 
               ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
                                       sol->ptset->npts * zone->index_dim, pnts);
