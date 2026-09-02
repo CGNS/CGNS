@@ -943,9 +943,11 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
          /* read & save ElementInterpolation_t */
         family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation);
         for (n=0; n<family->nelementinterpolation; n++) {
-            memset(&family->elementinterpolations[n],0,sizeof(cgns_elementInterpolation));
             family->elementinterpolations[n].id = id[n];
-            if (cgi_read_element_interpolation(&family->elementinterpolations[n])) return CG_ERROR;
+            if (cgi_read_element_interpolation(&family->elementinterpolations[n])) {
+                CGNS_FREE(id);
+                return CG_ERROR;
+            }
         }
         CGNS_FREE(id);
         /* Check Uniqueness of the ElementInterpolation_t nodes */
@@ -968,9 +970,11 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
          /* read & save ElementInterpolation_t */
         family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation);
         for (n=0; n<family->nsolutioninterpolation; n++) {
-            memset(&family->solutioninterpolations[n],0,sizeof(cgns_solutionInterpolation));
             family->solutioninterpolations[n].id = id[n];
-            if (cgi_read_solution_interpolation(&family->solutioninterpolations[n])) return CG_ERROR;
+            if (cgi_read_solution_interpolation(&family->solutioninterpolations[n])) {
+                CGNS_FREE(id);
+                return CG_ERROR;
+            }
         }
         CGNS_FREE(id);
         /* Check Uniqueness of the SolutionInterpolation_t nodes */
@@ -2167,7 +2171,9 @@ int cgi_read_solution_order(cgns_sol *sol)
     /* spatial and temporal orders IndexArray_t */
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
     
-    /* Check ZoneType and existence of Orders node */
+    /* Check ZoneType and existence of Orders node.  A FlowSolution_t on any
+     * zone can carry IndexArray_t children (PointList is one), so the list has
+     * to be released whether or not this branch is taken. */
     if (nIA > 0 && ( CurrentZoneType ==  CGNS_ENUMV( Unstructured ) ) )
     {
         for (n=0;n<nIA;n++) {
@@ -2217,8 +2223,8 @@ int cgi_read_solution_order(cgns_sol *sol)
                 CGNS_FREE(vdata);
             }
         }
-        CGNS_FREE(idf);
     }
+    if (nIA > 0) CGNS_FREE(idf);
     return CG_OK;
 }
 
