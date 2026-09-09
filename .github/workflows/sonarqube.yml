@@ -7,6 +7,9 @@ on:
 env:
   BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
 
+permissions:
+  contents: read
+
 jobs:
   sonarqube:
     name: SonarQube Scan
@@ -18,11 +21,17 @@ jobs:
       SONAR_HOST_URL: https://sonarcloud.io
 
     steps:
-      - name: Checkout repository at triggering commit
+      - name: Checkout repository at base ref
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha }}
+          # Deliberately no ref: here. This job holds SONAR_TOKEN and
+          # GITHUB_TOKEN and is reachable via a fork PR's workflow_run;
+          # checking out github.event.workflow_run.head_sha would run the
+          # scanner (and any repo-controlled sonar-project.properties)
+          # against attacker-authored content in a privileged context.
+          # The compile_commands.json / coverage from the untrusted build
+          # come from the downloaded artifact instead.
 
       - name: Download SonarQube artifacts
         uses: actions/download-artifact@v4
@@ -32,21 +41,39 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Set SonarQube analysis parameters
+        env:
+          # Bound via env: and only ever referenced as "$VAR" below --
+          # never interpolated into the script body -- so a crafted fork
+          # branch name (which may contain `, $, ;, &, | ...) is inert.
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           if [ -f pr_number.txt ]; then
-            echo "SONAR_EXTRA_ARGS=-Dsonar.pullrequest.key=$(cat pr_number.txt) \
-              -Dsonar.pullrequest.branch=$(cat pr_head_ref.txt) \
-              -Dsonar.pullrequest.base=$(cat pr_base_ref.txt)" >> $GITHUB_ENV
-          else
-            echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
-          fi
+            PR_NUMBER="$(cat pr_number.txt)"
+            PR_HEAD_REF="$(cat pr_head_ref.txt)"
+            PR_BASE_REF="$(cat pr_base_ref.txt)"
 
-      - name: Set SonarQube analysis parameters
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "SONAR_EXTRA_ARGS=-Dsonar.pullrequest.key=${{ github.event.pull_request.number }} -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+            # These three files come from the untrusted, secret-free build
+            # job of a fork PR (sonarqube-build.yml), which the PR author
+            # also controls. Validate before use: an attacker who could get
+            # e.g. a newline into one of these values could inject
+            # arbitrary extra GITHUB_ENV entries in this (privileged) job.
+            if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+              echo "::error::invalid PR number in sonarqube-artifacts: $PR_NUMBER"
+              exit 1
+            fi
+            ref_pattern='^[A-Za-z0-9._/-]+$'
+            if ! [[ "$PR_HEAD_REF" =~ $ref_pattern ]]; then
+              echo "::error::invalid PR head ref in sonarqube-artifacts: $PR_HEAD_REF"
+              exit 1
+            fi
+            if ! [[ "$PR_BASE_REF" =~ $ref_pattern ]]; then
+              echo "::error::invalid PR base ref in sonarqube-artifacts: $PR_BASE_REF"
+              exit 1
+            fi
+
+            echo "SONAR_EXTRA_ARGS=-Dsonar.pullrequest.key=$PR_NUMBER -Dsonar.pullrequest.branch=$PR_HEAD_REF -Dsonar.pullrequest.base=$PR_BASE_REF" >> "$GITHUB_ENV"
           else
-            echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "SONAR_EXTRA_ARGS=-Dsonar.branch.name=$HEAD_BRANCH" >> "$GITHUB_ENV"
           fi
 
       - name: Run SonarQube Scan

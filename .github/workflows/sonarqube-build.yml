@@ -10,22 +10,32 @@ env:
   BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
   hdf5_vers: 1_14_4
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Save PR context
         if: github.event_name == 'pull_request'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          echo "${{ github.event.pull_request.number }}" > pr_number.txt
-          echo "${{ github.event.pull_request.head.ref }}"  > pr_head_ref.txt
-          echo "${{ github.event.pull_request.base.ref }}"  > pr_base_ref.txt
+          # Values come from a fork PR and must never be interpolated
+          # directly into a run: script (ref names permit `, $, ;, & ...).
+          # Bind them via env: above and pass through the shell as data.
+          printf '%s\n' "$PR_NUMBER" > pr_number.txt
+          printf '%s\n' "$PR_HEAD_REF" > pr_head_ref.txt
+          printf '%s\n' "$PR_BASE_REF" > pr_base_ref.txt
 
       - name: Install system dependencies
         run: |
