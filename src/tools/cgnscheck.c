@@ -4698,6 +4698,12 @@ static void check_discrete (int ndis)
         arraydim = z->idim;
     }
     else {
+        for (n = 0; n < 2 * z->idim; n++) {
+            if (rind[n]) {
+                error ("rind not valid with point set data");
+                break;
+            }
+        }
         datasize = check_ptset_data_size (z, location, ptype, npts,
                                           cg_discrete_ptset_read, ndis);
         arraydim = 1;
@@ -4819,6 +4825,12 @@ static void check_solution (int ns)
         arraydim = z->idim;
     }
     else {
+        for (n = 0; n < 2 * z->idim; n++) {
+            if (rind[n]) {
+                error ("rind not valid with point set data");
+                break;
+            }
+        }
         datasize = check_ptset_data_size (z, location, ptype, npts,
                                           cg_sol_ptset_read, ns);
         arraydim = 1;
