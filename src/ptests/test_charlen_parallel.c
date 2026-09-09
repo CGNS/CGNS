@@ -152,6 +152,24 @@ int main(int argc, char *argv[])
     CHECK_ERROR(cgp_sol_characteristic_length_write_data(fn, B, Z, S, NSCALE,
                     rmin, rmax, h), "characteristic length parallel write");
 
+    /* Negative-path check: an invalid element range must be rejected, not
+     * silently produce wrong data. cgp_sol_characteristic_length_write_data()
+     * validates rmin/rmax before touching the collective I/O path, so every
+     * rank can make this call independently and return -- unlike a
+     * collective-ordering violation, it needs no cross-rank coordination and
+     * so cannot deadlock the MPI-IO write below it. */
+    {
+        cgsize_t bad_min = rmax, bad_max = rmin;  /* swapped: rmin > rmax */
+        int bad_ier = cgp_sol_characteristic_length_write_data(fn, B, Z, S,
+                          NSCALE, bad_min, bad_max, h);
+        if (bad_ier != CG_ERROR) {
+            printf("[rank %d] ERROR: expected CG_ERROR for invalid range "
+                   "[%ld,%ld], got %d\n", comm_rank, (long)bad_min,
+                   (long)bad_max, bad_ier);
+            local_bad++;
+        }
+    }
+
     CHECK_ERROR(cgp_close(fn), "cgp_close");
 
     /* ----------------------------------------------------------------- read */
