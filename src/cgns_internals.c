@@ -2243,6 +2243,22 @@ int cgi_read_solution_order(cgns_sol *sol)
                 sol->spatialDegree  = edata[0];
                 sol->temporalDegree = edata[1];
                 CGNS_FREE(vdata);
+                /* Bound as they leave the file, mirroring
+                 * cgi_read_solution_interpolation(): these values size and
+                 * divide downstream (cgi_ho_ndofs), so an out-of-range or
+                 * negative-but-not-sentinel value must be rejected here
+                 * rather than trusted at the trust boundary. */
+                if (sol->spatialDegree  < 0 ||
+                    sol->spatialDegree  > CG_MAX_ORDER ||
+                    sol->temporalDegree < 0 ||
+                    sol->temporalDegree > CG_MAX_ORDER) {
+                    cgi_error("InterpolationDegrees (spatial=%d, temporal=%d) "
+                              "of FlowSolution '%s' out of valid range [0, %d]",
+                              sol->spatialDegree, sol->temporalDegree,
+                              sol->name, CG_MAX_ORDER);
+                    CGNS_FREE(idf);
+                    return CG_ERROR;
+                }
             }
         }
     }
@@ -5087,7 +5103,8 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
      * when nnod > 0, hence the "if (nnod)" on every free.  Errors inside the loop
      * must go through err_free or the id list leaks -- this is the path an
      * old-format file takes, so it is not a rare one. */
-    cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
+    if (cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id))
+        goto err_free;
     if (nnod > 3) {
         cgi_error("Too many DataArray_t nodes (%d, max 3) under ElementInterpolation_t '%s'",
                   nnod, eltinterpolation->name);
@@ -5251,7 +5268,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
      Required: InterpolationType
       */
     nnod = 0;
-    cgi_get_nodes(sltinterpolation->id, "InterpolationType_t", &nnod, &id);
+    if (cgi_get_nodes(sltinterpolation->id, "InterpolationType_t", &nnod, &id))
+        goto err_free;
     if (nnod != 1) {
       cgi_error("InterpolationType_t node required in SolutionInterpolation_t node.");
       goto err_free;
@@ -5303,7 +5321,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     nnod = 0;
     sltinterpolation->lagrangePts = 0;
     sltinterpolation->lagrangeDist = 0;
-    cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
+    if (cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id))
+        goto err_free;
     if (nnod > 1) {
         cgi_error("Too many DataArray_t nodes (%d, max 1) under SolutionInterpolation_t '%s'; "
                   "LagrangeControlPoints is the only one permitted",
@@ -8366,7 +8385,7 @@ static int cgi_ho_ndofs(const cgns_family *family,
 {
     CGNS_ENUMT(ElementType_t) basic;
     const cgns_solutionInterpolation *si = NULL;
-    int n, npe, dim;
+    int n, npe;
 
     *ndofs = 0;
     if (family == NULL) return CG_NODE_NOT_FOUND;
@@ -8408,15 +8427,18 @@ static int cgi_ho_ndofs(const cgns_family *family,
 
     case CGNS_ENUMV(ParametricMonomialsPascal):
     case CGNS_ENUMV(CartesianMonomialsPascal):
-        if (cg_element_dimension(basic, &dim)) return CG_ERROR;
-        /* C(p+d,d) computed incrementally to avoid factorial overflow */
+        /* Route through the guarded implementation instead of reimplementing
+         * C(p+d,d) inline: cg_solution_monomial_size() bounds spatialDegree/
+         * temporalDegree to [0, CG_MAX_ORDER] and range-checks the product
+         * before narrowing to int, where this branch previously computed
+         * num*(spatialDegree+k) in a plain int with no bound at all. */
         {
-            int k, num = 1;
-            for (k = 1; k <= dim; k++)
-                num = num * (spatialDegree + k) / k;
-            npe = num;
+            int total;
+            if (cg_solution_monomial_size(basic, spatialDegree, temporalDegree,
+                    &total)) return CG_ERROR;
+            *ndofs = total;
+            return CG_OK;
         }
-        break;
 
     case CGNS_ENUMV(IsoParametric):
         {

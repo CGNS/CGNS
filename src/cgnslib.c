@@ -8458,12 +8458,31 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
             if (sol->ho_ptset_datasize >= 0) {
               dim_vals[0] = sol->ho_ptset_datasize;
             } else {
-              /* index_dim indices per point, and cgi_read_int_data() reads
-               * the whole array: size the buffer accordingly. */
-              cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts * zone->index_dim);
+              /* cgi_read_int_data() reads the node's entire declared payload
+               * regardless of the count passed to it, so the on-disk shape
+               * must be validated -- not assumed to be npts * index_dim --
+               * before the buffer is sized. */
+              int pl_ndim;
+              cgsize_t pl_dim_vals[CGIO_MAX_DIMENSIONS];
+              cgsize_t *pnts;
+
+              if (cgio_get_dimensions(cg->cgio, sol->ptset->id,
+                      &pl_ndim, pl_dim_vals)) {
+                cg_io_error("cgio_get_dimensions");
+                return CG_ERROR;
+              }
+              if (pl_ndim != 2 || pl_dim_vals[0] != zone->index_dim ||
+                  pl_dim_vals[1] != sol->ptset->npts) {
+                cgi_error("Invalid dimensions for PointList '%s': "
+                    "expected [%d, %" PRIdCGSIZE "]", sol->ptset->name,
+                    zone->index_dim, sol->ptset->npts);
+                return CG_ERROR;
+              }
+
+              pnts = CGNS_NEW(cgsize_t, pl_dim_vals[0] * pl_dim_vals[1]);
 
               ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
-                                      sol->ptset->npts * zone->index_dim, pnts);
+                                      pl_dim_vals[0] * pl_dim_vals[1], pnts);
 
               if (ret == CG_ERROR) {
                 cgi_error("Unable to read PointList for solution %s",sol->name);
@@ -17447,6 +17466,29 @@ static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
     }
 }
 
+/* Validate that spatial coordinate pointer arguments satisfy dimensionality constraints.
+ * Shared by cg_element_interpolation_points_read and cg_solution_interpolation_points_read. */
+static int cgi_validate_spatial_ptrs(int dim, CGNS_ENUMT(ElementType_t) type,
+                                      const double *pu, const double *pv, const double *pw)
+{
+    if (!pu) {
+        cgi_error("pu parameter cannot be NULL for element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 1 && !pv) {
+        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 2 && !pw) {
+        cgi_error("pw parameter cannot be NULL for 3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
 /**
  * \ingroup ElementInterpolation
  * \brief Read Lagrange control points for element interpolation
@@ -17502,29 +17544,6 @@ static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
  * free(pu); free(pv);
  * \endcode
  */
-/* Validate that spatial coordinate pointer arguments satisfy dimensionality constraints.
- * Shared by cg_element_interpolation_points_read and cg_solution_interpolation_points_read. */
-static int cgi_validate_spatial_ptrs(int dim, CGNS_ENUMT(ElementType_t) type,
-                                      const double *pu, const double *pv, const double *pw)
-{
-    if (!pu) {
-        cgi_error("pu parameter cannot be NULL for element type %s",
-                  cg_ElementTypeName(type));
-        return CG_ERROR;
-    }
-    if (dim > 1 && !pv) {
-        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
-                  cg_ElementTypeName(type));
-        return CG_ERROR;
-    }
-    if (dim > 2 && !pw) {
-        cgi_error("pw parameter cannot be NULL for 3D element type %s",
-                  cg_ElementTypeName(type));
-        return CG_ERROR;
-    }
-    return CG_OK;
-}
-
 int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
                                   double *pu, double *pv, double *pw)
 {
@@ -17953,7 +17972,7 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     // Allocate and fill memory structure
     if (einterp->lagrangePts)
     {
-      cgi_delete_node(einterp->id,einterp->lagrangePts->id);
+      if (cgi_delete_node(einterp->id,einterp->lagrangePts->id)) return CG_ERROR;
       /* The node being replaced may have been read from the file, in which case
        * it owns ->data (and ->link); freeing only the struct leaks those. */
       cgi_free_array(einterp->lagrangePts);
@@ -18693,7 +18712,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
             // Modify existing ?
             else if ( cg->mode==CG_MODE_MODIFY )
             {
-                cgi_delete_node(family->id,tmpinterp->id);
+                if (cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
                 cgi_free_solution_interpolation(tmpinterp);
                 sinterp = tmpinterp;
                 *sn = n+1;
@@ -18883,6 +18902,12 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
                   cg_InterpolationTypeName(sinterp->interpolationName));
         return CG_ERROR;
     }
+    if (sinterp->interpolationName == CGNS_ENUMV(IsoParametric)) {
+        cgi_error("LagrangeControlPoints cannot be written to a SolutionInterpolation_t "
+                  "node whose InterpolationType is IsoParametric; an IsoParametric "
+                  "solution takes its points from the mesh node it resolves to.");
+        return CG_ERROR;
+    }
 
     if ( cg_element_dimension(sinterp->type,&edim)) {
          return CG_ERROR;
@@ -18943,7 +18968,7 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     // Allocate and fill memory structure
     if (sinterp->lagrangePts)
     {
-        cgi_delete_node(sinterp->id,sinterp->lagrangePts->id);
+        if (cgi_delete_node(sinterp->id,sinterp->lagrangePts->id)) return CG_ERROR;
         /* see cg_element_interpolation_points_write: the replaced node may own
          * ->data and ->link if it came from the file */
         cgi_free_array(sinterp->lagrangePts);
@@ -19159,8 +19184,17 @@ int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
     int error;
     cgsize_t total;
 
-    /* os reaches cg_npe_ho(), which bounds it; ot was unbounded here, and the
-     * product below is what callers pass to malloc(). */
+    /* cgi_get_basis_size() treats any os < 0 as the "infer from element type"
+     * sentinel (routing to cg_npe instead of cg_npe_ho) rather than rejecting
+     * it, so a negative os here silently succeeds with the element's basic
+     * node count instead of failing. Unlike cg_element_lagrange_interpolation_size(),
+     * which deliberately always passes -1 for that inference, this function
+     * exposes os to the caller and so must bound it itself. */
+    if (os < 0 || os > CG_MAX_ORDER) {
+        cgi_error("Spatial interpolation order %d out of valid range [0, %d]",
+                  os, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
     if (ot < 0 || ot > CG_MAX_ORDER) {
         cgi_error("Temporal interpolation order %d out of valid range [0, %d]",
                   ot, CG_MAX_ORDER);
@@ -19489,6 +19523,12 @@ int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn
                   "InterpolationType=ParametricLagrange (node '%s' has %s).",
                   sinterp->name,
                   cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+
+    if (sinterp->lagrangePts == 0) {
+        cgi_error("Cannot attach ControlPointDistribution: SolutionInterpolation_t '%s' "
+                  "has no LagrangeControlPoints.", sinterp->name);
         return CG_ERROR;
     }
 
