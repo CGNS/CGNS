@@ -2056,22 +2056,41 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
               // Override based on list
               else if (sol[0][s].ptset->type == CGNS_ENUMV(PointList)) {
                 /* The node holds Idim indices per point, and
-                 * cgi_read_int_data() reads the whole array, so the buffer
-                 * must be npts * Idim -- not npts. */
-                cgsize_t *pnts = CGNS_NEW(cgsize_t,sol[0][s].ptset->npts * Idim);
-                
+                 * cgi_read_int_data() reads the node's entire declared
+                 * payload regardless of the count passed to it, so the
+                 * on-disk shape must be validated -- not assumed to be
+                 * npts * Idim -- before the buffer is sized. */
+                int pl_ndim;
+                cgsize_t pl_dim_vals[CGIO_MAX_DIMENSIONS];
+                cgsize_t *pnts;
+
+                if (cgio_get_dimensions(cg->cgio, sol[0][s].ptset->id,
+                        &pl_ndim, pl_dim_vals)) {
+                  cg_io_error("cgio_get_dimensions");
+                  return CG_ERROR;
+                }
+                if (pl_ndim != 2 || pl_dim_vals[0] != Idim ||
+                    pl_dim_vals[1] != sol[0][s].ptset->npts) {
+                  cgi_error("Invalid dimensions for PointList '%s': "
+                      "expected [%d, %" PRIdCGSIZE "]", sol[0][s].ptset->name,
+                      Idim, sol[0][s].ptset->npts);
+                  return CG_ERROR;
+                }
+
+                pnts = CGNS_NEW(cgsize_t, pl_dim_vals[0] * pl_dim_vals[1]);
+
                 ret = cgi_read_int_data(sol[0][s].ptset->id, sol[0][s].ptset->data_type,
-                                        sol[0][s].ptset->npts * Idim, pnts);
-                
+                                        pl_dim_vals[0] * pl_dim_vals[1], pnts);
+
                 if (ret == CG_ERROR) {
                   CGNS_FREE(pnts);
                   return CG_ERROR;
                 }
-                
+
                 ret = cgi_ho_datasize_list(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
                                   sol[0][s].temporalDegree, pnts,
                                   sol[0][s].ptset->npts, &DataCount);
-                
+
                 CGNS_FREE(pnts);
               }
               
@@ -12665,35 +12684,48 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
 /* Get the range for the given point set */
 int cgi_ptset_range(cgns_ptset *ptset, cgsize_t *range_min, cgsize_t *range_max)
 {
-  int i, ret;
+  int i, ret, ndim;
+  cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
   cgsize_t *pnts;
-  
+
   if (!ptset || !range_min || !range_max) return CG_ERROR;
 
   if (ptset->type != CGNS_ENUMV(PointRange) && ptset->type != CGNS_ENUMV(ElementRange)) return CG_ERROR;
-  
+
   if (!ptset->npts) return CG_ERROR;
-  
-  /* Idim indices per bound, and cgi_read_int_data() reads the whole array:
-   * the buffer must hold npts * Idim, and the loop below indexes up to
-   * pnts[2*Idim-1]. */
-  pnts = CGNS_NEW(cgsize_t,ptset->npts * Idim);
-  
+
+  /* cgi_read_int_data() reads the node's entire declared payload
+   * regardless of the count passed to it, so the buffer must be sized
+   * from the node's own dimensions -- not assumed to be npts * Idim --
+   * and that shape must hold [Idim, 2] before the min/max unpacking
+   * below indexes up to pnts[2*Idim-1]. */
+  if (cgio_get_dimensions(cg->cgio, ptset->id, &ndim, dim_vals)) {
+    cg_io_error("cgio_get_dimensions");
+    return CG_ERROR;
+  }
+  if (ndim != 2 || dim_vals[0] != Idim || dim_vals[1] != 2) {
+    cgi_error("Invalid dimensions for point set '%s': expected [%d, 2]",
+        ptset->name, Idim);
+    return CG_ERROR;
+  }
+
+  pnts = CGNS_NEW(cgsize_t, dim_vals[0] * dim_vals[1]);
+
   ret = cgi_read_int_data(ptset->id, ptset->data_type,
-                          ptset->npts * Idim, pnts);
-  
+                          dim_vals[0] * dim_vals[1], pnts);
+
   if (ret == CG_ERROR) {
     CGNS_FREE(pnts);
     return CG_ERROR;
   }
-  
+
   for (i=0; i<Idim; i++) {
     range_min[i] = pnts[i];
     range_max[i] = pnts[i+Idim];
   }
-  
+
   CGNS_FREE(pnts);
-  
+
   return CG_OK;
 }
 

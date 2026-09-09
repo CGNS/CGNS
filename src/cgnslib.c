@@ -17769,17 +17769,17 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
  *
  * This function:
  * - Creates ElementInterpolation_t node with element type
- * - Sets InterpolationType_t = IsoParametric
  * - Does NOT write LagrangeControlPoints (uses grid coordinates)
  *
- * After calling this, you can write InterpolationDegrees if needed using
- * cg_element_interpolation_order_write().
+ * Per CPEX-0045, IsoParametric is recorded implicitly by the absence of a
+ * LagrangeControlPoints child -- there is no explicit InterpolationType_t
+ * node to set. On disk, the result is identical to a plain
+ * ElementInterpolation_t node.
  *
  * Example:
  * \code
  * int einterp;
  * cg_element_isoparametric_write(fn, bn, fam, "QUAD9_IsoParam", QUAD_9, &einterp);
- * // InterpolationDegrees can optionally be set separately
  * \endcode
  */
 /* Per CPEX-0045 §3.2.2, absence of a LagrangeControlPoints child implies
