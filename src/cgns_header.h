@@ -1062,8 +1062,8 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
-    int spatialdegree;               /* Order of the spatial interpolation */
-    int temporaldegree;              /* Order of the temporal interpolation */
+    int spatialdegree;               /* Degree of the spatial interpolation */
+    int temporaldegree;              /* Degree of the temporal interpolation */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
     /* No monomialCoeff: MonomialCoefficients is withdrawn (CPEX-0045).  A modal

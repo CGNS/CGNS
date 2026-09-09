@@ -68,12 +68,6 @@ extern int HDF5storage_type;
 int Idim;           /* current IndexDimension          */
 int Cdim;           /* current CellDimension           */
 int Pdim;           /* current PhysicalDimension           */
-/* NOTE: CurrentZonePtr follows the same file-scope global convention as CurrentDim and
- * CurrentZoneType (both pre-existing). It is set once per cgi_read_zone() call and used
- * only within that same sequential read pass. Unlike the scalar/array globals it carries
- * a dangling-pointer risk if a zone struct is ever freed mid-read; ensure zone lifetime
- * spans the entire read pass before touching this. Not thread-safe by design (matches the
- * rest of this layer). */
 /* CurrentZonePtr removed: zone is now passed explicitly to cgi_read_sol */
 cgsize_t CurrentDim[9]; /* current vertex, cell & bnd zone size*/
 cgsize_t CurrentParticleSize; /* current size of ParticleZone_t node */
@@ -1960,7 +1954,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
 
             if (sol[0][s].spatialDegree < 0)
             {
-                cgi_error("FlowSolution: InterpolationPoints solution requires interpolationOrders");
+                cgi_error("FlowSolution: InterpolationPoints solution requires an InterpolationDegrees child node");
                 return CG_ERROR;
             }
             

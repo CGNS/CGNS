@@ -8358,22 +8358,6 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     return CG_OK;
 }
 
-/**
- * \ingroup FlowSolution
- *
- * \brief Get the dimensions of a FlowSolution_t node
- *
- * \param[in]  fn       \FILE_fn
- * \param[in]  B        \B_Base
- * \param[in]  Z        \Z_Zone
- * \param[in]  S        \SOL_S
- * \param[out] data_dim Number of dimensions defining the solution data. If a point set has been
- *                      defined, this will be 1, otherwise this will be the current zone index
- *                      dimension.
- * \param[out] dim_vals The array of data_dim dimensions for the solution data.
- * \return \ier
- *
- */
 /* Internal version without mode check - used by cg_field_write() and
  * cg_field_general_write() which need to query solution size during writes */
 static int cgi_sol_size(int fn, int B, int Z, int S,
@@ -8399,7 +8383,7 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
 
             if (sol->spatialDegree < 0)
             {
-                cgi_error("FlowSolution: InterpolationPoints solution requires definition of interpolationOrders");
+                cgi_error("FlowSolution: InterpolationPoints solution requires an InterpolationDegrees child node");
                 return CG_ERROR;
             }
 
@@ -8514,6 +8498,22 @@ static int cgi_sol_size(int fn, int B, int Z, int S,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief Get the dimensions of a FlowSolution_t node
+ *
+ * \param[in]  fn       \FILE_fn
+ * \param[in]  B        \B_Base
+ * \param[in]  Z        \Z_Zone
+ * \param[in]  S        \SOL_S
+ * \param[out] data_dim Number of dimensions defining the solution data. If a point set has been
+ *                      defined, this will be 1, otherwise this will be the current zone index
+ *                      dimension.
+ * \param[out] dim_vals The array of data_dim dimensions for the solution data.
+ * \return \ier
+ *
+ */
 /* Public API - requires file to be open for reading (CG_MODE_READ or CG_MODE_MODIFY) */
 int cg_sol_size(int fn, int B, int Z, int S,
                 int *data_dim, cgsize_t *dim_vals)
