@@ -2782,8 +2782,10 @@ static cgsize_t get_ho_data_size_list (ZONE *z, int fnum, int spatialDegree, int
         break;
       }
 
-      if (done == 0)
+      if (done == 0) {
         error("Element %"PRIdCGSIZE" from ptset PointList not found in Elements_t",id);
+        return -1;
+      }
     }
 
     return datasize;
@@ -5914,6 +5916,12 @@ static void check_solution (int ns)
           return;
       }
       if (ptsettype == CGNS_ENUMV(PointRange)) {
+          if (npts != 2) {
+              free(ptsetlist);
+              error("PointRange for solution \"%s\" has %"PRIdCGSIZE" points, expected 2",
+                    name, npts);
+              return;
+          }
           /* [idim,2]: the two bounds are idim apart, so the upper bound is at
            * [z->idim], which is [1] on the unstructured zones the high-order
            * paths below run on. */
@@ -7064,7 +7072,10 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
 {
     CGNS_ENUMT(ElementType_t) btype;
     int ncorner;
-    cg_element_basic_element_type(type,&btype);
+    if (cg_element_basic_element_type(type,&btype) != CG_OK) {
+        error("cg_element_basic_element_type");
+        return CG_ERROR;
+    }
 
     /* Each case below indexes u/v/w up to the basic type's corner count
      * (e.g. QUAD_4 reads u[0..3]).  At SpatialDegree=0 there is exactly one
@@ -7293,7 +7304,11 @@ static void check_family (int fam)
 
         /* Validate: Get expected size for this element type */
         int tmp_i;
-        cg_element_lagrange_interpolation_size(etype,&tmp_i);
+        if (cg_element_lagrange_interpolation_size(etype,&tmp_i) != CG_OK) {
+            error("ElementInterpolation \"%s\": cg_element_lagrange_interpolation_size "
+                  "failed for element type %s", name, cg_ElementTypeName(etype));
+            continue;
+        }
         i = tmp_i;
         if (i <= 0) {
             error("ElementInterpolation \"%s\": Invalid size %lld for element type %s",
@@ -7311,6 +7326,12 @@ static void check_family (int fam)
         pu = (double*) malloc((cgsize_t) i * sizeof(double) );
         pv = (double*) malloc((cgsize_t) i * sizeof(double) );
         pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        if (!pu || !pv || !pw) {
+            free(pu); free(pv); free(pw);
+            error("ElementInterpolation \"%s\": memory allocation failed for %lld points",
+                  name, (long long)i);
+            continue;
+        }
 
         ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw);
         if (ierr == CG_OK) {
@@ -7347,8 +7368,11 @@ static void check_family (int fam)
              * has been removed: S3.2.4/S5.2 state no ordering requirement
              * there -- that block is selected by (element type, order) alone,
              * not by array position.) */
-            cg_element_basic_element_type(etype, &btype);
-            if (check_element_nodes_ordering(btype, npt, pu, pv, pw)) {
+            if (cg_element_basic_element_type(etype, &btype) != CG_OK) {
+                error("ElementInterpolation \"%s\": cg_element_basic_element_type failed "
+                      "for type %s", name, cg_ElementTypeName(etype));
+            }
+            else if (check_element_nodes_ordering(btype, npt, pu, pv, pw)) {
                 if (strict_cpex45)
                     error("ElementInterpolation \"%s\": the leading control points do "
                           "not correspond to the corner nodes of %s in standard order.",
@@ -7470,7 +7494,12 @@ static void check_family (int fam)
         pv = (double*) malloc((cgsize_t) i * sizeof(double) );
         pw = (double*) malloc((cgsize_t) i * sizeof(double) );
         pt = (double*) malloc((cgsize_t) i * sizeof(double) );
-
+        if (!pu || !pv || !pw || !pt) {
+            free(pu); free(pv); free(pw); free(pt);
+            error("SolutionInterpolation \"%s\": memory allocation failed for %lld points",
+                  name, (long long)i);
+            continue;
+        }
 
         ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw,pt);
         if (ierr == CG_OK) {
@@ -7508,16 +7537,23 @@ static void check_family (int fam)
              * order) alone, not by position within the array.  So there is no
              * corner-ordering check here; btype is still needed below for the
              * verbose dump. */
-            cg_element_basic_element_type(etype, &btype);
-
-            if (verbose)
+            if (cg_element_basic_element_type(etype, &btype) != CG_OK) {
+                error("SolutionInterpolation \"%s\": cg_element_basic_element_type failed "
+                      "for type %s", name, cg_ElementTypeName(etype));
+            }
+            else if (verbose)
         {
             printf ("    SolutionInterpolation Lagrange Points Defined \n");
 
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
             int npt_size;
-            cg_solution_lagrange_interpolation_size(btype,os,ot,&npt_size);
+            if (cg_solution_lagrange_interpolation_size(btype,os,ot,&npt_size) != CG_OK) {
+                error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size "
+                      "failed for type %s (os=%d, ot=%d)", name,
+                      cg_ElementTypeName(btype), os, ot);
+            }
+            else {
             npt = (int)npt_size;
 
             if (ndim>0) {
@@ -7534,6 +7570,7 @@ static void check_family (int fam)
               printf("      w = ");
               for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
               printf("\n");
+            }
             }
         }
         }

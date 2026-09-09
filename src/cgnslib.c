@@ -8598,6 +8598,26 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
         return CG_ERROR;
     }
     cg_index_dim(fn, B, Z, &dim);
+
+    /* cgi_read_int_data() reads the node's entire declared payload
+     * regardless of the count passed to it, so the caller-supplied pnts
+     * buffer -- sized by the documented contract as npts * index_dim --
+     * is only safe if the on-disk node actually has that shape. Validate
+     * it before reading rather than trusting dim*npts. */
+    {
+        int ndim;
+        cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
+        if (cgio_get_dimensions(cg->cgio, sol->ptset->id, &ndim, dim_vals)) {
+            cg_io_error("cgio_get_dimensions");
+            return CG_ERROR;
+        }
+        if (ndim != 2 || dim_vals[0] != dim || dim_vals[1] != sol->ptset->npts) {
+            cgi_error("Invalid dimensions for point set of FlowSolution node %d: "
+                      "expected [%d, %" PRIdCGSIZE "]", S, dim, sol->ptset->npts);
+            return CG_ERROR;
+        }
+    }
+
     if (cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
             sol->ptset->npts * dim, pnts)) return CG_ERROR;
     return CG_OK;
