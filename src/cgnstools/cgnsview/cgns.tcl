@@ -1166,11 +1166,12 @@ element types are:
         Family_t {Descriptor FamilyBC FamilyNameReference GeometryReference \
           Ordinal RotatingCoordinates ElementInterpolation SolutionInterpolation \
           UserDefinedData}
-        ElementInterpolation_t {LagrangeControlPoints}
-        SolutionInterpolation_t {InterpolationType LagrangeControlPoints}
+        ElementInterpolation_t {LagrangeControlPoints ControlPointDistribution}
+        SolutionInterpolation_t {InterpolationType LagrangeControlPoints \
+          ControlPointDistribution}
         UserDefinedData_t {AdditionalFamilyName DataArray DataClass Descriptor \
           DimensionalUnits FamilyName GridLocation Ordinal PointList \
-          PointRange UserDefinedData}
+          PointRange UserDefinedData CharacteristicLength}
         Zone_t {AdditionalFamilyName ArbitraryGridMotion DataClass Descriptor \
           DiscreteData DimensionalUnits Elements FamilyName FlowEquationSet \
           FlowSolution GridCoordinates IntegralData Ordinal ReferenceState \

@@ -758,7 +758,9 @@ extern CGNSDLL const char * DataTypeName[NofValidDataTypes];
  *      Element types                                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/* PLEASE ALSO UPDATE the cgnslib.h/el_size static table */
+/* PLEASE ALSO UPDATE ElementType_MAX, ElementTypeName (cgnslib.c),
+ * cgi_element_traits (cgnslib.c), and ElementTypeName + the ENUM block
+ * in cgns_f.F90 */
 
 /*
  * CRITICAL: ElementType_t enum values are part of the CGNS file format
@@ -1270,6 +1272,10 @@ CGNSDLL int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write SolutionInterpolation_t Nodes                     *
  *                     (CPEX 045)                                        *
+ *                                                                       *
+ *      os/ot below are the same quantity as spatialDegree/temporalDegree*
+ *      in cg_sol_interpolation_degree_read/write: an incomplete          *
+ *      order-to-degree rename left both spellings in the public API.    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,

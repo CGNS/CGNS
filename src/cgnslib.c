@@ -8862,9 +8862,9 @@ int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
      * files written under earlier drafts; cgnscheck strict CPEX-0045 mode
      * flags it as non-conformant.
      *
-     * DEPRECATION: CellCenter fallback will be removed in a future release
-     * once the Steering Committee finalises the v3 spec. New code should
-     * always write GridLocation = InterpolationPoints.
+     * DEPRECATION: the CellCenter fallback is deprecated as of CGNS 5.0 and
+     * may be removed in a future major release. New code should always
+     * write GridLocation = InterpolationPoints.
      */
     if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
         !(sol->location == CGNS_ENUMV(CellCenter) &&
@@ -8902,7 +8902,15 @@ int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
     /* spatialDegree >= 0 marks "InterpolationDegrees present". */
     sol->spatialDegree = spatialDegree;
     sol->temporalDegree= temporalDegree;
-    
+
+    /* cgi_sol_size() caches the PointList-based field length in
+     * ho_ptset_datasize the first time it is computed (e.g. on the first
+     * cg_field_write() call). If the degree is (re)written after that, the
+     * cache must be invalidated or later cg_field_write()/
+     * cg_field_general_write() calls silently reuse the stale, wrong-degree
+     * size. */
+    sol->ho_ptset_datasize = -1;
+
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nnodes, &ids)) 
       return CG_ERROR;
     if (nnodes)
@@ -17405,11 +17413,14 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_
  * \param[in]  fam       Family index number (1-based)
  * \param[in]  en        ElementInterpolation index (1-based)
  * \param[out] it        Interpolation type (IsoParametric, ParametricLagrange, etc.)
- * \return     CG_OK on success, CG_NODE_NOT_FOUND if no InterpolationType_t node, CG_ERROR on failure
+ * \return     CG_OK on success, CG_ERROR on failure
  *
  * \details
- * This function reads the InterpolationType_t child node if present. If not present,
- * returns CG_NODE_NOT_FOUND (which typically means ParametricLagrange is assumed).
+ * Per CPEX-0045 S3.2.2, ElementInterpolation_t has no explicit InterpolationType_t
+ * child node; the type is derived from whether the optional LagrangeControlPoints
+ * array is present. This function always returns CG_OK (or CG_ERROR on failure)
+ * with *it set accordingly -- it never returns CG_NODE_NOT_FOUND, and neither
+ * modal type is ever returned here since mesh interpolation is nodal only.
  *
  * Interpolation types:
  * - IsoParametric: Element's own node coordinates are used (no LagrangeControlPoints)
@@ -17914,6 +17925,12 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
  *
  * \note Refer to CPEX0045 specification for detailed ordering conventions and
  * parametric coordinate definitions for each element type.
+ *
+ * \note An ElementInterpolation_t created by cg_element_isoparametric_write()
+ * rejects a LagrangeControlPoints write only within the CURRENT session: the
+ * on-disk forms of "isoparametric" and "no LagrangeControlPoints yet" are
+ * identical, so after a close and reopen in CG_MODE_MODIFY this function no
+ * longer knows the node was created as IsoParametric and the write succeeds.
  */
 int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
                                            double *pu, double *pv, double *pw)
@@ -23830,6 +23847,19 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
     return CG_OK;
 }
 
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the number of nodes for a high-order element type at a given order.
+ *
+ * \param[in]  basicType Basic (order-1) element type; a high-order tag is
+ *                       resolved to its basic type internally via
+ *                       cg_element_basic_element_type().
+ * \param[in]  order     Interpolation order (degree). Must be in [0, CG_MAX_ORDER].
+ * \param[out] npe       Number of nodes for the element at the given order.
+ * \return \ier
+ *
+ */
 int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
 {
     CGNS_ENUMT(ElementType_t) tmpType;
@@ -23922,6 +23952,18 @@ int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
     return CG_OK;
 }
 
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the parametric dimension of an element type.
+ *
+ * \param[in]  type Type of element. See the eligible types for ElementType_t in the Typedefs
+ *                  section.
+ * \param[out] dim  Dimension of the element (1 for BAR, 2 for TRI/QUAD, 3 for
+ *                  TETRA/PENTA/PYRA/HEXA), including their high-order tags.
+ * \return \ier
+ *
+ */
 int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
 {
     /* Use centralized element property accessor from cgns_header.h
@@ -23936,6 +23978,18 @@ int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
     return CG_OK;
 }
 
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the basic (order-1) element type underlying a high-order tag.
+ *
+ * \param[in]  type  Type of element, high-order or basic. See the eligible
+ *                   types for ElementType_t in the Typedefs section.
+ * \param[out] basic Basic element type (e.g. QUAD_9 -> QUAD_4). Set equal to
+ *                   type itself if type is already a basic type.
+ * \return \ier
+ *
+ */
 int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(ElementType_t) *basic)
 {
     *basic = type;

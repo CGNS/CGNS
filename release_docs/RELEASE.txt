@@ -53,6 +53,22 @@ New Features
           and, for Cartesian modal interpolation, an InterpolationMetadata
           UserDefinedData_t container holding CharacteristicLength.
 
+      Proposal S3.2.5 and standard section S5.3 disagree on the shape of
+      per-element variable order: S3.2.5 shows scalar SpatialOrder/
+      TemporalOrder fields, while S5.3 specifies a single InterpolationDegrees
+      array. This implementation follows S5.3. A file from an implementation
+      that instead followed S3.2.5 cannot be read by this library.
+
+      Changes to existing API:
+        CG_MAX_ORDER, CG_MAX_NAME_LENGTH, and ElementType_MAX are new public
+          symbols. ElementType_MAX is a sentinel value (57), not a valid
+          element type; an exhaustive switch over ElementType_t built with
+          -Wswitch -Werror and no default case will need updating.
+        NofValidElementTypes is now CGNS_ENUMV(ElementType_MAX) rather than
+          the integer literal 57, so it is no longer usable in a
+          preprocessor #if and may not be parsed by binding generators that
+          scan the header textually rather than compiling it.
+
       New API (C, with _f Fortran bindings for each):
         cg_element_interpolation_{read,write}
         cg_element_interpolation_type_read

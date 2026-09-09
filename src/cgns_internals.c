@@ -8956,7 +8956,7 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
                 }
 
                 /* Advance connectivity pointer */
-                if (cg_npe(elem_type, &base_npe) != CG_OK) {
+                if (cg_npe(elem_type, &base_npe) != CG_OK || base_npe <= 0) {
                     if (connect_buf) CGNS_FREE(connect_buf);
                     CGNS_FREE(sorted_list);
                     cgi_error("Failed to get base npe for element type %s",
