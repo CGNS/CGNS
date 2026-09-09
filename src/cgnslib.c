@@ -115,6 +115,7 @@ freely, subject to the following restrictions:
 #include <stdarg.h>
 #include <ctype.h>
 #include <limits.h>
+#include <assert.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -399,13 +400,26 @@ const ElementTraits cgi_element_traits[NofValidElementTypes] = {
     {CGNS_ENUMV(HEXA_125), "HEXA_125", 125, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)}
 };
 
-/* Compile-time verification that element traits table matches enum size.
- * This catches mismatches when new element types are added to the enum
- * but not to the traits table. Uses C11 _Static_assert if available. */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(cgi_element_traits)/sizeof(cgi_element_traits[0]) == NofValidElementTypes,
-               "cgi_element_traits array size must match NofValidElementTypes enum");
-#endif
+/* The array is declared with explicit size [NofValidElementTypes], so a
+ * _Static_assert on sizeof(...)/sizeof(...[0]) == NofValidElementTypes is
+ * tautologically true by construction and catches nothing: too many
+ * initializers is already a hard compile error independently, and too few
+ * silently zero-fills the trailing rows (type=ElementTypeNull, npe=0,
+ * dim=0) with no diagnostic. The real invariant -- that row i actually
+ * describes element type i, not some other type shifted into that slot --
+ * can only be checked at runtime, since a misaligned row is otherwise
+ * indistinguishable from a correct one at compile time. */
+static void cgi_verify_element_traits_alignment(void)
+{
+    static int checked = 0;
+    int i;
+
+    if (checked) return;
+    checked = 1;
+    for (i = 0; i < NofValidElementTypes; i++) {
+        assert(cgi_element_traits[i].type == (CGNS_ENUMT(ElementType_t))i);
+    }
+}
 
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
@@ -17566,7 +17580,7 @@ static int cgi_validate_spatial_ptrs(int dim, CGNS_ENUMT(ElementType_t) type,
  *
  * Example:
  * \code
- * cgsize_t npts;
+ * int npts;
  * cg_element_lagrange_interpolation_size(QUAD_9, &npts);  // npts = 9
  * double *pu = malloc(npts * sizeof(double));
  * double *pv = malloc(npts * sizeof(double));
@@ -17916,7 +17930,7 @@ int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_na
  *
  * **Example for QUAD_9 (tensor product, u varies fastest):**
  * \code
- * cgsize_t npts;
+ * int npts;
  * cg_element_lagrange_interpolation_size(QUAD_9, &npts);  // npts = 9
  * double pu[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};  // u = -1,0,1 repeated for each v
  * double pv[9] = {-1,-1,-1,  0, 0, 0,  1, 1, 1};  // v = -1,0,1 (each repeated 3 times)
@@ -18190,7 +18204,7 @@ static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, int *sz)
  *
  * **Memory Allocation:** To allocate an array in bytes:
  * \code
- * cgsize_t npts;
+ * int npts;
  * cg_element_lagrange_interpolation_size(QUAD_9, &npts);
  * double *pu = malloc(npts * sizeof(double));
  * \endcode
@@ -18338,7 +18352,7 @@ int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node
  *
  * Example for QUAD_9 with temporal_degree=1:
  * \code
- * cgsize_t npts;
+ * int npts;
  * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
  * double *pu = malloc(npts * sizeof(double));
  * double *pv = malloc(npts * sizeof(double));
@@ -18869,7 +18883,7 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
  * **Example for QUAD_9 with TemporalOrder=1 (18 total points):**
  * \code
  * // 9 spatial points × 2 temporal levels = 18 total points
- * cgsize_t npts;
+ * int npts;
  * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
  * double pu[18], pv[18], pt[18];
  * int idx = 0;
@@ -19207,7 +19221,7 @@ int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementTy
  *
  * **Memory Allocation:** To allocate arrays in bytes:
  * \code
- * cgsize_t npts;
+ * int npts;
  * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
  * double *pu = malloc(npts * sizeof(double));
  * double *pv = malloc(npts * sizeof(double));
@@ -23837,10 +23851,12 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 {
     /* Use centralized element property accessor from cgns_header.h
      * Inline function provides zero overhead in optimized builds */
-    int result = cgi_element_npe(type);
+    int result;
+    cgi_verify_element_traits_alignment();
+    result = cgi_element_npe(type);
     if (result < 0) {
         *npe = -1;
-        cgi_error("Invalid element type");
+        cgi_error("Invalid element type %d", (int)type);
         return CG_ERROR;
     }
     *npe = result;
@@ -23971,7 +23987,7 @@ int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
     int result = cgi_element_dimension(type);
     if (result < 0) {
         *dim = -1;
-        cgi_error("Invalid element type");
+        cgi_error("Invalid element type %d", (int)type);
         return CG_ERROR;
     }
     *dim = result;
@@ -23995,14 +24011,14 @@ int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(El
     *basic = type;
     
     if ( INVALID_ENUM(type,NofValidElementTypes) ) {
-        cgi_error("Invalid element type");
+        cgi_error("Invalid element type %d", (int)type);
         return CG_ERROR;
     }
-    
+
     /* Look up basic type from centralized element traits table */
     *basic = cgi_element_basic_type(type);
     if (*basic == CGNS_ENUMV(ElementTypeNull)) {
-        cgi_error("Invalid element type");
+        cgi_error("Invalid element type %d", (int)type);
         return CG_ERROR;
     }
     

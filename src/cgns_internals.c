@@ -8760,7 +8760,8 @@ int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone 
 
     if (!zone->nsections)
     {
-      cgi_error("Zone requires Element_t nodes for cgi_ho_datasize_range.");
+      cgi_error("Zone '%s' has no Element_t nodes; cannot size a high-order "
+                "solution over an element range without them.", zone->name);
       return CG_NODE_NOT_FOUND;
     }
 

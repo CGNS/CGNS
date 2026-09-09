@@ -82,9 +82,7 @@ src/cgnstools/make.defs
 
 # Doxygen/Sphinx build outputs that get generated in-tree
 src/doxygen/conf.py
-src/doxygen/conf.py.bk
 src/doxygen/index.rst
-src/doxygen/index.rst.bk
 src/doxygen/make.bat
 
 # Timing output from running the test suites in-tree

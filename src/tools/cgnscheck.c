@@ -7355,8 +7355,11 @@ static void check_family (int fam)
         }
 
         /* Validate: Get actual number of points from stored data */
-        cg_npe(etype, &npt);
-        if (npt != i) {
+        if (cg_npe(etype, &npt) != CG_OK) {
+            error("ElementInterpolation \"%s\": invalid element type %s",
+                  name, cg_ElementTypeName(etype));
+        }
+        else if (npt != i) {
             error("ElementInterpolation \"%s\": Point count mismatch - expected %lld for %s, got %lld",
                   name, (long long)i, cg_ElementTypeName(etype), (long long)npt);
         }
@@ -7427,7 +7430,9 @@ static void check_family (int fam)
 
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
-            cg_npe(etype,&npt);
+            if (cg_npe(etype,&npt) != CG_OK)
+                error("ElementInterpolation \"%s\": invalid element type %s",
+                      name, cg_ElementTypeName(etype));
 
             if (ndim>0) {
               printf("      u = ");
