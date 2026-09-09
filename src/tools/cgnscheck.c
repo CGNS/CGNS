@@ -2575,9 +2575,47 @@ static int ho_ndofs (int fnum, CGNS_ENUMT(ElementType_t) el_type,
         return 0;
     }
 
-    /* IsoParametric: the solution reuses the mesh basis. */
+    /* IsoParametric: the solution reuses the mesh basis. The mesh's own
+     * ElementInterpolation_t may carry an explicit LagrangeControlPoints
+     * array for an incomplete/serendipity control-point set, whose stored
+     * point count -- not the complete-space cg_npe() count -- is the basis
+     * actually resolved, exactly as the library's cgi_ho_ndofs() resolves
+     * it (cgns_internals.c). Fall back to cg_npe() only when no such
+     * node/array is found. */
     if (it == CGNS_ENUMV(IsoParametric)) {
-        if (cg_npe (el_type, &npe) != CG_OK) return -1;
+        int ne, n2;
+        cgsize_t mesh_npe = 0;
+
+        if (fnum > 0 && cg_nelement_interpolation_read(cgnsfn, cgnsbase,
+                fnum, &ne) == CG_OK) {
+            for (n2 = 1; n2 <= ne; n2++) {
+                char ename[33];
+                CGNS_ENUMT(ElementType_t) eet;
+                char aname[33];
+                int nd, na;
+                cgsize_t dv[3];
+                CGNS_ENUMT(DataType_t) dt;
+
+                if (cg_element_interpolation_read(cgnsfn, cgnsbase, fnum, n2,
+                        ename, &eet) != CG_OK || eet != el_type)
+                    continue;
+
+                if (cg_goto(cgnsfn, cgnsbase, "Family_t", fnum,
+                            "ElementInterpolation_t", n2, NULL) == CG_OK &&
+                    cg_narrays(&na) == CG_OK && na >= 1 &&
+                    cg_array_info(1, aname, &dt, &nd, dv) == CG_OK &&
+                    0 == strcmp(aname, "LagrangeControlPoints") && nd == 2) {
+                    mesh_npe = dv[1];
+                }
+                break;
+            }
+        }
+
+        if (mesh_npe > 0) {
+            npe = (int)mesh_npe;
+        }
+        else if (cg_npe (el_type, &npe) != CG_OK) return -1;
+
         *ndofs = (cgsize_t)npe * (temporalDegree + 1);
         return 0;
     }
