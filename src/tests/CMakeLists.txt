@@ -388,6 +388,20 @@ if (CGNS_ENABLE_TESTS)
     endif()
   endforeach()
 
+  # cgnslib.c's ElementTypeName[] and cgns_f.F90's ElementTypeName DATA
+  # statement are two hand-maintained lists of the same NofValidElementTypes
+  # strings; nothing else checks they stay in sync (the C side's own
+  # _Static_assert on array length says nothing about Fortran). A pure
+  # source-level comparison, so it needs no built binary and runs regardless
+  # of Fortran being enabled to build.
+  if (CGNS_ENABLE_FORTRAN)
+    add_test(NAME compare_element_type_names
+             COMMAND ${CMAKE_COMMAND}
+                     -DCGNSLIB_C=${CMAKE_CURRENT_SOURCE_DIR}/../cgnslib.c
+                     -DCGNS_F90=${CMAKE_CURRENT_SOURCE_DIR}/../cgns_f.F90
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/compare_element_type_names.cmake)
+  endif()
+
   # Every cgnscheck test needs the DLL directory on PATH for a Windows shared
   # build.  Omitting a test here does not fail it cleanly: the loader cannot
   # find cgns.dll, Windows raises a modal error dialog, and the test blocks

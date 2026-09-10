@@ -53,6 +53,22 @@ New Features
           and, for Cartesian modal interpolation, an InterpolationMetadata
           UserDefinedData_t container holding CharacteristicLength.
 
+      Proposal S3.2.5 and standard section S5.3 disagree on the shape of
+      per-element variable order: S3.2.5 shows scalar SpatialOrder/
+      TemporalOrder fields, while S5.3 specifies a single InterpolationDegrees
+      array. This implementation follows S5.3. A file from an implementation
+      that instead followed S3.2.5 cannot be read by this library.
+
+      Changes to existing API:
+        CG_MAX_ORDER, CG_MAX_NAME_LENGTH, and ElementType_MAX are new public
+          symbols. ElementType_MAX is a sentinel value (57), not a valid
+          element type; an exhaustive switch over ElementType_t built with
+          -Wswitch -Werror and no default case will need updating.
+        NofValidElementTypes is now CGNS_ENUMV(ElementType_MAX) rather than
+          the integer literal 57, so it is no longer usable in a
+          preprocessor #if and may not be parsed by binding generators that
+          scan the header textually rather than compiling it.
+
       New API (C, with _f Fortran bindings for each):
         cg_element_interpolation_{read,write}
         cg_element_interpolation_type_read
@@ -77,11 +93,7 @@ New Features
       ranges, CellCenter used with InterpolationDegrees, a stored control
       point set disagreeing with its named distribution) to errors.
 
-      Reading a file that uses these features requires a library
-      implementing CPEX-0045. An earlier library does not skip the
-      high-order solution: an unrecognised GridLocation_t makes cg_open
-      fail for the whole file. Producers serving mixed-version readers
-      should place high-order solutions in a linked file.
+      See Known Problems for interoperability with CGNS 4.x libraries.
 
     - Added test for Unicode (UTF-8) filepath support (CGNS-98/GitHub #494).
       The test verifies creating, reading, and modifying CGNS files with
@@ -220,6 +232,17 @@ Bug Fixes since CGNS 4.5.0 release
 
 Known Problems
 ==============
+
+    * A file written by the CGNS 5.0 library cannot be opened by any
+      CGNS 4.x library, regardless of whether it uses CPEX-0045
+      high-order features. cg_open()'s major-version guard rejects any
+      file whose CGNSLibraryVersion major digit exceeds the reading
+      library's, and every file this library writes is stamped 5.00.
+      Placing high-order solutions in a linked file does not work around
+      this: the base file itself is still stamped 5.00, so a 4.x reader
+      fails on the base file before ever following the link. Producers
+      serving mixed-version readers need to keep a separate CGNS 4.x
+      copy of the file.
 
     * Parallel I/O (cgp_open) does not support Unicode (UTF-8) file
       paths on Windows. MPI_File_open passes filenames to Windows ANSI
