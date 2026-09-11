@@ -50,6 +50,7 @@ int main()
 /* read ReferenceState under Base */
     cg_state_read(&state);
     printf("\nReferenceState = %s\n",state);
+    cg_free(state);
 /* Go to ReferenceState node, read Mach array and its dataclass */
     cg_goto(index_file,index_base,"ReferenceState_t",1,"end");
 /* find out how many data arrays */

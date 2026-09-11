@@ -37,6 +37,12 @@ freely, subject to the following restrictions:
  * needs to be added to cgns_f.F90 in order to maintain Fortran
  * compatibility.
  *
+ * (2) UNMAINTAINED / SUPERSEDED: this file is not #included anywhere under
+ * src/ and is not part of the CMake install list, and has fallen out of
+ * sync with cgnslib.h (e.g. GridLocation_t ends at EdgeCenter here, and
+ * NofValidElementTypes is 24 vs cgnslib.h's current value). Do not treat it
+ * as an authoritative keyword registry; consult cgnslib.h instead.
+ *
  */
 
 #ifndef CGNSLIB_KEYWORDS_H

@@ -145,6 +145,81 @@ int write_test_header(char *title_header, int len)
   return 0;
 }
 
+/* CPEX-0045 S3.2.2: the first points of an ElementInterpolation_t's
+ * LagrangeControlPoints must be the principal vertices of the corresponding
+ * linear element, in Figure 1 order.  A generator that emits a plain
+ * lexicographic lattice does not satisfy that, so it must permute the set
+ * before writing.  The corner tables below are the same ones cgnscheck's
+ * check_element_nodes_ordering() validates against.
+ *
+ * Returns 0 on success, or 1 if the point set does not contain every corner
+ * (which means the generator, not the ordering, is wrong -- callers should
+ * fail loudly rather than write a non-conforming file).
+ * v and w may be NULL for 1-D and 2-D element types. */
+int ho_reorder_corners_first(CGNS_ENUMT(ElementType_t) basic, int npts,
+                             double *u, double *v, double *w)
+{
+    /* Figure 1 principal-vertex coordinates, indexed as in the linear tag. */
+    static const double bar_u[]  = {-1., 1.};
+    static const double tri_u[]  = {-1., 1.,-1.}, tri_v[]  = {-1.,-1., 1.};
+    static const double quad_u[] = {-1., 1., 1.,-1.}, quad_v[] = {-1.,-1., 1., 1.};
+    static const double tet_u[]  = {-1., 1.,-1.,-1.};
+    static const double tet_v[]  = {-1.,-1., 1.,-1.};
+    static const double tet_w[]  = {-1.,-1.,-1., 1.};
+    static const double hex_u[]  = {-1., 1., 1.,-1.,-1., 1., 1.,-1.};
+    static const double hex_v[]  = {-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    static const double hex_w[]  = {-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+    static const double pen_u[]  = {-1., 1.,-1.,-1., 1.,-1.};
+    static const double pen_v[]  = {-1.,-1., 1.,-1.,-1., 1.};
+    static const double pen_w[]  = {-1.,-1.,-1., 1., 1., 1.};
+    static const double pyr_u[]  = {-1., 1., 1.,-1., 0.};
+    static const double pyr_v[]  = {-1.,-1., 1., 1., 0.};
+    static const double pyr_w[]  = {-1.,-1.,-1.,-1., 1.};
+
+    const double *cu = NULL, *cv = NULL, *cw = NULL;
+    int ncorner = 0, k, j;
+    const double tol = 1.e-10;
+
+    switch (basic) {
+        case CGNS_ENUMV(BAR_2):
+            cu = bar_u;  ncorner = 2; break;
+        case CGNS_ENUMV(TRI_3):
+            cu = tri_u;  cv = tri_v;  ncorner = 3; break;
+        case CGNS_ENUMV(QUAD_4):
+            cu = quad_u; cv = quad_v; ncorner = 4; break;
+        case CGNS_ENUMV(TETRA_4):
+            cu = tet_u;  cv = tet_v;  cw = tet_w;  ncorner = 4; break;
+        case CGNS_ENUMV(HEXA_8):
+            cu = hex_u;  cv = hex_v;  cw = hex_w;  ncorner = 8; break;
+        case CGNS_ENUMV(PENTA_6):
+            cu = pen_u;  cv = pen_v;  cw = pen_w;  ncorner = 6; break;
+        case CGNS_ENUMV(PYRA_5):
+            cu = pyr_u;  cv = pyr_v;  cw = pyr_w;  ncorner = 5; break;
+        default:
+            return 1;
+    }
+    if (npts < ncorner) return 1;
+
+    for (k = 0; k < ncorner; k++) {
+        int found = -1;
+        for (j = k; j < npts; j++) {
+            if (fabs(u[j] - cu[k]) > tol) continue;
+            if (cv && v && fabs(v[j] - cv[k]) > tol) continue;
+            if (cw && w && fabs(w[j] - cw[k]) > tol) continue;
+            found = j;
+            break;
+        }
+        if (found < 0) return 1;
+        if (found != k) {
+            double t;
+            t = u[k]; u[k] = u[found]; u[found] = t;
+            if (v) { t = v[k]; v[k] = v[found]; v[found] = t; }
+            if (w) { t = w[k]; w[k] = w[found]; w[found] = t; }
+        }
+    }
+    return 0;
+}
+
 int write_test_status( int test_result, char *test_title, char *cause)
 {
 

@@ -38,6 +38,9 @@ set(C_PTESTS_LIST
 	Metadata_Stressing
 	open_close
 	comm_test
+        para_high_order
+	test_high_order_parallel
+	test_charlen_parallel
 	test_base
 	test_unstructured
 	test_unstruc_quad
@@ -52,6 +55,7 @@ function(add_test_exe file)
   add_executable (${file} ${file}.c)
   target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS})
 endfunction ()
+
 
 # Define C tests
 foreach(TGTNAME ${C_PTESTS_LIST})
@@ -94,9 +98,36 @@ endif ()
 
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
+  # Configuration for tests requiring non-default processor counts
+  # Format: "test_name:nprocs"
+  # Tests not listed here default to 2 processors for C tests, 4 for Fortran tests
+  set(C_PTEST_NPROCS_CONFIG
+      "para_high_order:4"
+      "test_high_order_parallel:4"
+      "test_charlen_parallel:4"
+  )
+
+  # Build lookup table for custom processor counts
+  set(PTEST_CUSTOM_NPROCS)
+  foreach(CONFIG ${C_PTEST_NPROCS_CONFIG})
+    string(REPLACE ":" ";" CONFIG_LIST ${CONFIG})
+    list(GET CONFIG_LIST 0 TEST)
+    list(GET CONFIG_LIST 1 PROCS)
+    set(PTEST_NPROCS_${TEST} ${PROCS})
+    list(APPEND PTEST_CUSTOM_NPROCS ${TEST})
+  endforeach()
+
+  # Add C parallel tests
   foreach(TEST_NAME ${C_PTESTS_LIST})
+    # Check if test has custom processor count, otherwise use default
+    if (DEFINED PTEST_NPROCS_${TEST_NAME})
+      set(NPROCS ${PTEST_NPROCS_${TEST_NAME}})
+    else()
+      set(NPROCS 4)
+    endif()
+
     add_test(NAME test-${TEST_NAME}
-             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "4"
+             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROCS}
 	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
   endforeach()
   if (HDF5_VERSION VERSION_GREATER_EQUAL "2.0.0")
@@ -104,6 +135,8 @@ if (CGNS_ENABLE_TESTS)
              COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
 	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:pcgns_unicode_test> ${MPIEXEC_POSTFLAGS})
   endif()
+
+  # Add Fortran parallel tests (all use 4 processors by default)
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     foreach(TEST_NAME ${FORTRAN_PTESTS_LIST})
 	    add_test(NAME test-${TEST_NAME}
@@ -111,4 +144,5 @@ if (CGNS_ENABLE_TESTS)
                      ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
     endforeach()
   endif ()
+
 endif ()

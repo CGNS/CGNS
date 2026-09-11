@@ -28,6 +28,11 @@
 
 #define USE_MID_NODES
 
+/* Tolerance for validating parametric coordinates against the standard reference
+ * element (corners at ±1 or 0/1 depending on element type). All checks in
+ * check_element_nodes_ordering() and compareValuesFloat() use this value. */
+#define CG_HO_PARAM_COORD_TOL 1.e-06
+
 #if CG_SIZEOF_SIZE == 32
 #define CG_ABS abs
 #else
@@ -40,6 +45,9 @@ static int LibraryVersion = CGNS_VERSION;
 static int verbose = 0;
 static int nwarn = 0, nerr = 0, totwarn = 0;
 static int dowarn = 3, doerr = 1;
+/* Strict CPEX-0045 validation: promotes soft-checks to hard errors.
+ * Enabled with -s on the command line. */
+static int strict_cpex45 = 0;
 static int cgnsfn, cgnsbase, cgnszone, cgnsparticle;
 
 static int CellDim, PhyDim;
@@ -67,6 +75,10 @@ typedef struct {
     int ib;
     cgsize_t nv, ns, ne, nn;
     cgsize_t *elements;
+    cgsize_t datasize;   /* number of entries allocated at *elements, from
+                          * cg_ElementDataSize(); used to bounds-check a
+                          * file-supplied ElementStartOffset before it is
+                          * used to index *elements (see ho_section_size). */
     cgsize_t *offsets;
     cgsize_t *parent;
     int rind[2];
@@ -145,7 +157,7 @@ static CGNSNAME *ParticleCoordinate;
 
 /* command line options */
 
-static char options[] = "vVuUw:e";
+static char options[] = "vVuUw:es";
 
 static char *usgmsg[] = {
     "usage  : cgnscheck [options] CGNSfile [CGNSoutfile]",
@@ -156,6 +168,10 @@ static char *usgmsg[] = {
     "   -U        : update CGNS file to CGNS Library Version only",
     "   -w<level> : warning level output (0 to 3)",
     "   -e        : don't print error",
+    "   -s        : strict CPEX-0045 high-order validation",
+    "",
+    "exit status: 0 if the file passed (warnings allowed), 1 if errors were",
+    "             found or the file could not be read",
     NULL
 };
 
@@ -170,6 +186,11 @@ static void warning (int level, char *format, ...)
         vprintf (format, arg);
         va_end(arg);
         putchar ('\n');
+        /* Stdout is fully buffered once redirected (as ctest does), so a
+         * process that hangs after this point would otherwise leave no trace
+         * in the captured log.  Flushing here makes every diagnostic visible
+         * up to wherever execution actually stops. */
+        fflush (stdout);
         nwarn++;
     }
     totwarn++;
@@ -184,6 +205,7 @@ static void error (char *format, ...)
         vprintf (format, arg);
         va_end(arg);
         putchar ('\n');
+        fflush (stdout);   /* see warning() above */
     }
     nerr++;
 }
@@ -617,7 +639,8 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
 
 static int valid_face (ZONE *z, cgsize_t elem)
 {
-    int ns, nn;
+    int ns;
+    int nn;
     cgsize_t n, ne, *pe, *po;
     CGNS_ENUMT(ElementType_t) type;
 
@@ -664,7 +687,8 @@ static int valid_face (ZONE *z, cgsize_t elem)
 
 static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 {
-    int ns, nn=0;
+    int ns;
+    int nn=0;
     cgsize_t ne, *nodes, *offsets;
     CGNS_ENUMT(ElementType_t) type;
     for (ns = 0; ns < z->nsets; ns++) {
@@ -854,7 +878,7 @@ static FACE *new_face (int nnodes, cgsize_t *nodes)
 static int compareValuesFloat(float val1, float val2) {
 
   int ret = 1;
-  if (fabs((double)val1 - (double)val2) > 1e-6) {
+  if (fabs((double)val1 - (double)val2) > CG_HO_PARAM_COORD_TOL) {
     ret = 0;
   }
   return ret;
@@ -1211,7 +1235,8 @@ static void read_zone (int nz)
     int ns, nsets, hasparent;
     cgsize_t ne, *pe, *po;
     cgsize_t se, nelem, k;
-    int nn, nf, ip, ierr;
+    int nf, ip, ierr;
+    int nn;
     cgsize_t *nodes, maxnode;
     CGNS_ENUMT(ElementType_t) type;
     ELEMSET *es;
@@ -1283,6 +1308,14 @@ static void read_zone (int nz)
 
     for (es = z->sets, ns = 1; ns <= nsets; ns++, es++) {
         es->invalid = 0;
+        /* z->sets comes from malloc, so these start as garbage.  Clear them
+         * before the se == 0 continue below: a section with an empty
+         * connectivity skips the allocations, and consumers that only test
+         * these for NULL would otherwise follow an uninitialized pointer. */
+        es->elements = NULL;
+        es->parent = NULL;
+        es->offsets = NULL;
+        es->datasize = 0;
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns, es->name,
                 &es->type, &es->is, &es->ie, &es->ib, &hasparent))
             error_exit("cg_section_read");
@@ -1292,16 +1325,15 @@ static void read_zone (int nz)
         if (cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &se))
             error_exit ("cg_ElementDataSize");
         if (se == 0) continue;
+        es->datasize = se;
         es->elements = (cgsize_t *) malloc (((size_t)se) * sizeof(cgsize_t));
         if (NULL == es->elements)
             fatal_error("malloc failed for elements\n");
-        es->parent = NULL;
         if (hasparent) {
             es->parent = (cgsize_t *) malloc (((size_t)(4 * nelem)) * sizeof(cgsize_t));
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
-        es->offsets = NULL;
         if (es->type == CGNS_ENUMV(MIXED) ||
             es->type == CGNS_ENUMV(NFACE_n) ||
             es->type == CGNS_ENUMV(NGON_n)) {
@@ -1639,13 +1671,23 @@ static void read_zone (int nz)
                         face->e1 = es->is + ne;
                         face->f1 = j + 1;
                         (void) HashAdd (z->faces, face);
-                    }
-                    else if (pf->e2) {
-                        ierr++;
+                        /* the hash owns it now; freed by HashDestroy */
                     }
                     else {
-                        pf->e2 = es->is + ne;
-                        pf->f2 = j + 1;
+                        /* Already hashed from the neighbouring element, so this
+                         * copy is redundant and nothing takes ownership of it --
+                         * free it here.  Omitting this leaks one FACE for every
+                         * face shared between two elements, i.e. very nearly
+                         * every interior face in the mesh.  The two other
+                         * HashFind sites on z->faces already free their probe. */
+                        if (pf->e2) {
+                            ierr++;
+                        }
+                        else {
+                            pf->e2 = es->is + ne;
+                            pf->f2 = j + 1;
+                        }
+                        free (face);
                     }
                 }
             }
@@ -1773,6 +1815,1039 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
     error ("grid location %s is invalid", cg_GridLocationName(location));
     return 0;
+}
+
+/*=======================================================================*/
+
+/*=======================================================================*/
+/* CPEX-0045: compare the stored control points against the named
+ * ControlPointDistribution.
+ *
+ * The standard requires this comparison whenever both are present, reported as
+ * an error under -s and a warning otherwise, and requires it to be
+ * PERMUTATION-INVARIANT: the on-disk traversal order of LagrangeControlPoints is
+ * a writer convention and need not coincide with any generation order, so the
+ * two point sets are matched as sets by nearest-neighbour bijection rather than
+ * index by index.  An index-by-index comparison would falsely flag a correctly
+ * distributed but differently ordered file.
+ *
+ * Only families this code can generate reliably are compared; anything else is
+ * reported as unchecked rather than guessed at, since a false mismatch on a
+ * conformant file is worse than no check.  At low degree several named families
+ * coincide exactly (GaussLobattoLegendre and Equidistant are both {-1,0,1} at
+ * p=2), so the check is inherently non-discriminating there.  That is a property
+ * of the mathematics, not a defect.
+ */
+
+#define HO_DIST_TOL 1.0e-8
+
+/* M_PI is not standard C, and MSVC omits it from <math.h> unless
+ * _USE_MATH_DEFINES is defined before the include -- fragile to header
+ * ordering, so the value is defined locally instead. */
+#define HO_PI 3.14159265358979323846
+
+/* Largest degree for which node sets are generated.  Well above any practical
+ * interpolation degree; beyond it the comparison reports "not performed", which
+ * is the conformant outcome.  Also bounds the 1D work arrays: CG_MAX_ORDER
+ * (1000) is unrelated and would put 8 KB on the stack and let the guard admit
+ * degrees the rest of the code cannot handle. */
+#define HO_GEN_MAXP 32
+
+/* The comparison tolerance CPEX-0045 fixes for matching a stored point set
+ * against a named family.  One tolerance suffices because the standard also
+ * tabulates the WarpAndBlend blending parameter, so each family and degree
+ * denotes exactly one point set. */
+
+/* Legendre polynomial P_n and its derivative at x, by the standard recurrence */
+static void ho_legendre (int nn, double x, double *p, double *dp)
+{
+    double p0 = 1.0, p1 = x, pk = x;
+    int k;
+    if (nn == 0) { *p = 1.0; *dp = 0.0; return; }
+    for (k = 2; k <= nn; k++) {
+        pk = ((2.0*k - 1.0)*x*p1 - (k - 1.0)*p0) / (double)k;
+        p0 = p1; p1 = pk;
+    }
+    *p  = pk;
+    /* (1-x^2) P_n' = n (P_{n-1} - x P_n) */
+    if (fabs(1.0 - x*x) < 1.0e-14) *dp = 0.0;
+    else *dp = nn * (p0 - x*pk) / (1.0 - x*x);
+}
+
+/* Roots of P_m, by Newton from Chebyshev starting guesses.  Returns 0 on success. */
+static int ho_legendre_roots (int m, double *r)
+{
+    int i, it;
+    if (m < 1) return -1;
+    for (i = 0; i < m; i++) {
+        double x = -cos(HO_PI * (2.0*i + 1.0) / (2.0*m));   /* Chebyshev guess */
+        for (it = 0; it < 100; it++) {
+            double pp, dpp, dx;
+            ho_legendre (m, x, &pp, &dpp);
+            if (fabs(dpp) < 1.0e-300) break;
+            dx = -pp/dpp;
+            x += dx;
+            if (fabs(dx) < 1.0e-15) break;
+        }
+        r[i] = x;
+    }
+    return 0;
+}
+
+/* p+1 one-dimensional nodes of the named family on [-1,1].
+ * Returns 0 on success, -1 when the family cannot be generated here. */
+static int ho_gen_1d (CGNS_ENUMT(ControlPointDistribution_t) dist,
+                      int p, double *u)
+{
+    int i;
+
+    if (p < 0) return -1;
+    if (p == 0) { u[0] = 0.0; return 0; }   /* single node: the element centre */
+
+    switch (dist) {
+    case CGNS_ENUMV(Equidistant):
+        for (i = 0; i <= p; i++) u[i] = -1.0 + 2.0*i/(double)p;
+        return 0;
+
+    case CGNS_ENUMV(GaussLobattoLegendre):
+        /* roots of (1-u^2) P'_p(u): the two endpoints plus the p-1 interior
+         * extrema of P_p */
+        u[0] = -1.0; u[p] = 1.0;
+        if (p >= 2) {
+            /* P'_p has the same roots as the Gauss-Jacobi(1,1) nodes; find them
+             * by Newton on P'_p using P''_p from the Legendre ODE */
+            for (i = 1; i <= p-1; i++) {
+                int it;
+                double x = -cos(HO_PI * i / (double)p);   /* Chebyshev guess */
+                for (it = 0; it < 100; it++) {
+                    double pp, dpp, ddpp, dx;
+                    ho_legendre (p, x, &pp, &dpp);
+                    /* Legendre ODE: (1-x^2)P'' - 2xP' + p(p+1)P = 0 */
+                    ddpp = (2.0*x*dpp - p*(p+1.0)*pp) / (1.0 - x*x);
+                    if (fabs(ddpp) < 1.0e-300) break;
+                    dx = -dpp/ddpp;
+                    x += dx;
+                    if (fabs(dx) < 1.0e-15) break;
+                }
+                u[i] = x;
+            }
+        }
+        return 0;
+
+    case CGNS_ENUMV(GaussLegendre):
+        /* p+1 interior nodes, i.e. the roots of P_{p+1} -- p+1 nodes are needed
+         * for a degree-p basis, and only that count is unisolvent. */
+        return ho_legendre_roots (p+1, u);
+
+    default:
+        return -1;      /* WarpAndBlend, Null, UserDefined: not generated here */
+    }
+}
+
+/* ---- Warburton Warp&Blend nodes on the simplex -------------------------
+ *
+ * Warburton, "An explicit construction of interpolation nodes on the simplex",
+ * J. Engrg. Math. 56(3):247-262, 2006 -- the construction CPEX-0045 cites for
+ * the WarpAndBlend distribution.  Equidistant barycentric nodes on the
+ * equilateral triangle are displaced towards the one-dimensional GLL
+ * distribution along each edge, the displacement blended so that it vanishes at
+ * the opposite vertex, then mapped to the bi-unit reference triangle.
+ *
+ * Only the triangle is generated.  The tetrahedral construction warps over four
+ * faces with its own optimised parameters, and a subtly wrong table would
+ * produce false mismatches on conformant files -- worse than reporting the case
+ * unchecked, which is what happens instead.
+ */
+
+#define HO_WB_MAXP 10   /* warp factor needs a dense solve of size (p+1) */
+
+
+/* Legendre P_0..P_p at x */
+static void ho_legendre_all (int p, double x, double *pv)
+{
+    int k;
+    pv[0] = 1.0;
+    if (p >= 1) pv[1] = x;
+    for (k = 2; k <= p; k++)
+        pv[k] = ((2.0*k - 1.0)*x*pv[k-1] - (k - 1.0)*pv[k-2]) / (double)k;
+}
+
+/* Solve A x = b in place, Gaussian elimination with partial pivoting.
+ * A is row-major n x n, n <= HO_WB_MAXP+1.  Returns 0 on success. */
+static int ho_solve (int n, double *A, double *b)
+{
+    int i, j, k;
+    for (k = 0; k < n; k++) {
+        int piv = k;
+        double amax = fabs(A[k*n+k]);
+        for (i = k+1; i < n; i++)
+            if (fabs(A[i*n+k]) > amax) { amax = fabs(A[i*n+k]); piv = i; }
+        if (amax < 1.0e-14) return -1;
+        if (piv != k) {
+            for (j = 0; j < n; j++)
+                { double t = A[k*n+j]; A[k*n+j] = A[piv*n+j]; A[piv*n+j] = t; }
+            { double t = b[k]; b[k] = b[piv]; b[piv] = t; }
+        }
+        for (i = k+1; i < n; i++) {
+            double f = A[i*n+k] / A[k*n+k];
+            if (f == 0.0) continue;
+            for (j = k; j < n; j++) A[i*n+j] -= f*A[k*n+j];
+            b[i] -= f*b[k];
+        }
+    }
+    for (i = n-1; i >= 0; i--) {
+        double sum = b[i];
+        for (j = i+1; j < n; j++) sum -= A[i*n+j]*b[j];
+        b[i] = sum / A[i*n+i];
+    }
+    return 0;
+}
+
+/* Warburton's 1D warp factor: the GLL-minus-equidistant displacement,
+ * interpolated at the points rout through the equidistant Lagrange basis. */
+static int ho_warpfactor (int p, const double *rout, int nr, double *warp)
+{
+    double gll[HO_WB_MAXP+1], req[HO_WB_MAXP+1], diff[HO_WB_MAXP+1];
+    double Veq[(HO_WB_MAXP+1)*(HO_WB_MAXP+1)];
+    double A[(HO_WB_MAXP+1)*(HO_WB_MAXP+1)], rhs[HO_WB_MAXP+1];
+    int n1 = p + 1, i, j, k;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    if (ho_gen_1d (CGNS_ENUMV(GaussLobattoLegendre), p, gll)) return -1;
+    for (i = 0; i < n1; i++) req[i] = -1.0 + 2.0*i/(double)p;
+    for (i = 0; i < n1; i++) diff[i] = gll[i] - req[i];
+
+    /* Veq[i][j] = P_j(req_i) */
+    for (i = 0; i < n1; i++) {
+        double pv[HO_WB_MAXP+1];
+        ho_legendre_all (p, req[i], pv);
+        for (j = 0; j < n1; j++) Veq[i*n1+j] = pv[j];
+    }
+
+    for (k = 0; k < nr; k++) {
+        double pv[HO_WB_MAXP+1], sf;
+        int zerof;
+        /* solve Veq^T l = P(rout_k), then warp = l . diff */
+        ho_legendre_all (p, rout[k], pv);
+        for (i = 0; i < n1; i++) {
+            for (j = 0; j < n1; j++) A[i*n1+j] = Veq[j*n1+i];   /* transpose */
+            rhs[i] = pv[i];
+        }
+        if (ho_solve (n1, A, rhs)) return -1;
+        warp[k] = 0.0;
+        for (i = 0; i < n1; i++) warp[k] += rhs[i]*diff[i];
+
+        /* remove the endpoint singularity; the warp vanishes at |r| >= 1 */
+        zerof = (fabs(rout[k]) < 1.0 - 1.0e-10) ? 1 : 0;
+        if (!zerof) { warp[k] = 0.0; continue; }
+        sf = 1.0 - rout[k]*rout[k];
+        warp[k] /= sf;
+    }
+    return 0;
+}
+
+/* Warp&Blend nodes on the bi-unit triangle {r,s >= -1, r+s <= 0}.
+ * Writes (p+1)(p+2)/2 points.  Returns 0 on success. */
+static int ho_wb_tri (int p, double *r, double *sarr)
+{
+    /* Warburton's optimised blend parameter, indexed by degree */
+    static const double alpopt[] = {
+        0.0000, 0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999,
+        1.2832, 1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258 };
+    double *L1, *L2, *L3, *w1, *w2, *w3, *t1, *t2, *t3;
+    double alpha;
+    int np = (p+1)*(p+2)/2, i, m, n, sk;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    /* p is bounded by HO_WB_MAXP above, and the table covers 1..15, so the
+     * lookup is always in range -- no fallback branch is reachable. */
+    alpha = alpopt[p];
+
+    L1 = (double*) malloc ((size_t)np * 9 * sizeof(double));
+    if (!L1) return -1;
+    L2 = L1 + np;   L3 = L1 + 2*np;
+    w1 = L1 + 3*np; w2 = L1 + 4*np; w3 = L1 + 5*np;
+    t1 = L1 + 6*np; t2 = L1 + 7*np; t3 = L1 + 8*np;
+
+    /* equidistant barycentric coordinates */
+    sk = 0;
+    for (n = 0; n <= p; n++)
+        for (m = 0; m <= p - n; m++) {
+            L1[sk] = n/(double)p;
+            L3[sk] = m/(double)p;
+            L2[sk] = 1.0 - L1[sk] - L3[sk];
+            sk++;
+        }
+
+    /* blend arguments per edge */
+    for (i = 0; i < np; i++) {
+        t1[i] = L3[i] - L2[i];
+        t2[i] = L1[i] - L3[i];
+        t3[i] = L2[i] - L1[i];
+    }
+    if (ho_warpfactor (p, t1, np, w1) ||
+        ho_warpfactor (p, t2, np, w2) ||
+        ho_warpfactor (p, t3, np, w3)) { free(L1); return -1; }
+
+    for (i = 0; i < np; i++) {
+        double b1 = 4.0*L2[i]*L3[i], b2 = 4.0*L1[i]*L3[i], b3 = 4.0*L1[i]*L2[i];
+        double a1 = alpha*L1[i], a2 = alpha*L2[i], a3 = alpha*L3[i];
+        double W1 = b1*w1[i]*(1.0 + a1*a1);
+        double W2 = b2*w2[i]*(1.0 + a2*a2);
+        double W3 = b3*w3[i]*(1.0 + a3*a3);
+        /* equilateral coordinates, then the three edge deformations */
+        double x = -L2[i] + L3[i];
+        double y = (-L2[i] - L3[i] + 2.0*L1[i]) / sqrt(3.0);
+        double b1c = cos(2.0*HO_PI/3.0), b1s = sin(2.0*HO_PI/3.0);
+        double b2c = cos(4.0*HO_PI/3.0), b2s = sin(4.0*HO_PI/3.0);
+        double l1, l2, l3;
+        x += W1 + b1c*W2 + b2c*W3;
+        y += 0.0 + b1s*W2 + b2s*W3;
+        /* equilateral -> bi-unit reference triangle */
+        l1 = (sqrt(3.0)*y + 1.0)/3.0;
+        l2 = (-3.0*x - sqrt(3.0)*y + 2.0)/6.0;
+        l3 = ( 3.0*x - sqrt(3.0)*y + 2.0)/6.0;
+        r[i]    = -l2 + l3 - l1;
+        sarr[i] = -l2 - l3 + l1;
+    }
+    free (L1);
+    return 0;
+}
+
+/* Warburton's 1D edge warp in product form (evalwarp), used by the tetrahedral
+ * construction.  Equivalent in intent to ho_warpfactor above but written as a
+ * direct Lagrange product, which is how the 3D code path expresses it. */
+static int ho_evalwarp (int p, const double *xnodes, const double *xout,
+                        int nr, double *warp)
+{
+    double xeq[HO_WB_MAXP+1];
+    int i, j, k;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    for (i = 1; i <= p+1; i++) xeq[i-1] = -1.0 + 2.0*(p+1-i)/(double)p;
+
+    for (k = 0; k < nr; k++) warp[k] = 0.0;
+    for (i = 1; i <= p+1; i++) {
+        for (k = 0; k < nr; k++) {
+            double d = xnodes[i-1] - xeq[i-1];
+            for (j = 2; j <= p; j++)
+                if (i != j) d *= (xout[k] - xeq[j-1])/(xeq[i-1] - xeq[j-1]);
+            if (i != 1)   d = -d/(xeq[i-1] - xeq[0]);
+            if (i != p+1) d =  d/(xeq[i-1] - xeq[p]);
+            warp[k] += d;
+        }
+    }
+    return 0;
+}
+
+/* In-face shift of the 3D construction (evalshift) */
+static int ho_evalshift (int p, double alpha, const double *L1,
+                         const double *L2, const double *L3, int n,
+                         double *dx, double *dy)
+{
+    double *gx, *w1, *w2, *w3, *tmp;
+    int i, rc = -1;
+
+    /* gx is sized for HO_WB_MAXP+1 entries below, but the fill loop just
+     * after ho_gen_1d() writes gx[0..p] -- an unbounded p overflows it.  Not
+     * currently reachable: the one caller (ho_wb_tet) already checks
+     * p > HO_WB_MAXP before calling in. Kept as its four structurally
+     * identical siblings (ho_gen_1d, ho_wb_tri, and the other two guarded at
+     * their own entry) all defend themselves the same way; this one should
+     * too rather than depend on staying the exception. */
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+
+    gx = (double*) malloc ((size_t)(HO_WB_MAXP+1 + 4*n) * sizeof(double));
+    if (!gx) return -1;
+    w1 = gx + HO_WB_MAXP+1; w2 = w1 + n; w3 = w2 + n; tmp = w3 + n;
+
+    if (ho_gen_1d (CGNS_ENUMV(GaussLobattoLegendre), p, gx)) goto done;
+    for (i = 0; i <= p; i++) gx[i] = -gx[i];      /* gaussX = -JacobiGL */
+
+    for (i = 0; i < n; i++) tmp[i] = L3[i] - L2[i];
+    if (ho_evalwarp (p, gx, tmp, n, w1)) goto done;
+    for (i = 0; i < n; i++) tmp[i] = L1[i] - L3[i];
+    if (ho_evalwarp (p, gx, tmp, n, w2)) goto done;
+    for (i = 0; i < n; i++) tmp[i] = L2[i] - L1[i];
+    if (ho_evalwarp (p, gx, tmp, n, w3)) goto done;
+
+    for (i = 0; i < n; i++) {
+        double a1 = alpha*L1[i], a2 = alpha*L2[i], a3 = alpha*L3[i];
+        double W1 = (L2[i]*L3[i]) * 4.0*w1[i] * (1.0 + a1*a1);
+        double W2 = (L1[i]*L3[i]) * 4.0*w2[i] * (1.0 + a2*a2);
+        double W3 = (L1[i]*L2[i]) * 4.0*w3[i] * (1.0 + a3*a3);
+        dx[i] = W1 + cos(2.0*HO_PI/3.0)*W2 + cos(4.0*HO_PI/3.0)*W3;
+        dy[i] =      sin(2.0*HO_PI/3.0)*W2 + sin(4.0*HO_PI/3.0)*W3;
+    }
+    rc = 0;
+done:
+    free (gx);
+    return rc;
+}
+
+/* Warp&Blend nodes on the bi-unit tetrahedron {r,s,t >= -1, r+s+t <= -1}.
+ * Writes (p+1)(p+2)(p+3)/6 points.  Returns 0 on success. */
+static int ho_wb_tet (int p, double *r, double *sarr, double *tarr)
+{
+    static const double alpopt3[] = {
+        0.0000, 0.0000, 0.0000, 0.0000, 0.1002, 1.1332, 1.5608, 1.3413,
+        1.2577, 1.1603, 1.10153, 0.6080, 0.4523, 0.8856, 0.8717, 0.9655 };
+    const double s3 = 1.7320508075688772, s6 = 2.4494897427831781;
+    double v[4][3], tg1[4][3], tg2[4][3];
+    double *L[4], *xyz, *sh, *w1, *w2, *buf;
+    double alpha, A[9], rhs[3];
+    int np = (p+1)*(p+2)*(p+3)/6;
+    int i, k, face, a, b, c, sk, rc = -1;
+    const double tol = 1.0e-10;
+
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+    /* bounded by HO_WB_MAXP above; see ho_wb_tri */
+    alpha = alpopt3[p];
+
+    buf = (double*) malloc ((size_t)np * 12 * sizeof(double));
+    if (!buf) return -1;
+    for (i = 0; i < 4; i++) L[i] = buf + i*np;
+    xyz = buf + 4*np;                  /* np x 3 */
+    sh  = buf + 7*np;                  /* np x 3 */
+    w1  = buf + 10*np; w2 = buf + 11*np;
+
+    /* equilateral tetrahedron vertices */
+    v[0][0] = -1.0; v[0][1] = -1.0/s3; v[0][2] = -1.0/s6;
+    v[1][0] =  1.0; v[1][1] = -1.0/s3; v[1][2] = -1.0/s6;
+    v[2][0] =  0.0; v[2][1] =  2.0/s3; v[2][2] = -1.0/s6;
+    v[3][0] =  0.0; v[3][1] =  0.0;    v[3][2] =  3.0/s6;
+
+    /* orthogonal face tangents */
+    for (k = 0; k < 3; k++) {
+        tg1[0][k] = v[1][k]-v[0][k];  tg1[1][k] = v[1][k]-v[0][k];
+        tg1[2][k] = v[2][k]-v[1][k];  tg1[3][k] = v[2][k]-v[0][k];
+        tg2[0][k] = v[2][k]-0.5*(v[0][k]+v[1][k]);
+        tg2[1][k] = v[3][k]-0.5*(v[0][k]+v[1][k]);
+        tg2[2][k] = v[3][k]-0.5*(v[1][k]+v[2][k]);
+        tg2[3][k] = v[3][k]-0.5*(v[0][k]+v[2][k]);
+    }
+    for (i = 0; i < 4; i++) {
+        double n1 = 0.0, n2 = 0.0;
+        for (k = 0; k < 3; k++) { n1 += tg1[i][k]*tg1[i][k]; n2 += tg2[i][k]*tg2[i][k]; }
+        n1 = sqrt(n1); n2 = sqrt(n2);
+        for (k = 0; k < 3; k++) { tg1[i][k] /= n1; tg2[i][k] /= n2; }
+    }
+
+    /* equidistant barycentric coordinates from the reference-tet lattice */
+    sk = 0;
+    for (c = 0; c <= p; c++)
+        for (b = 0; b <= p - c; b++)
+            for (a = 0; a <= p - b - c; a++) {
+                double rr = -1.0 + 2.0*a/(double)p;
+                double ss = -1.0 + 2.0*b/(double)p;
+                double tt = -1.0 + 2.0*c/(double)p;
+                L[0][sk] = (1.0+tt)/2.0;
+                L[1][sk] = (1.0+ss)/2.0;
+                L[2][sk] = -(1.0+rr+ss+tt)/2.0;
+                L[3][sk] = (1.0+rr)/2.0;
+                sk++;
+            }
+
+    for (i = 0; i < np; i++) {
+        for (k = 0; k < 3; k++) {
+            xyz[i*3+k] = L[2][i]*v[0][k] + L[3][i]*v[1][k]
+                       + L[1][i]*v[2][k] + L[0][i]*v[3][k];
+            sh[i*3+k] = 0.0;
+        }
+    }
+
+    for (face = 0; face < 4; face++) {
+        double *La, *Lb, *Lc, *Ld;
+        switch (face) {
+        case 0: La=L[0]; Lb=L[1]; Lc=L[2]; Ld=L[3]; break;
+        case 1: La=L[1]; Lb=L[0]; Lc=L[2]; Ld=L[3]; break;
+        case 2: La=L[2]; Lb=L[0]; Lc=L[3]; Ld=L[1]; break;
+        default:La=L[3]; Lb=L[0]; Lc=L[2]; Ld=L[1]; break;
+        }
+        if (ho_evalshift (p, alpha, Lb, Lc, Ld, np, w1, w2)) goto done;
+        for (i = 0; i < np; i++) {
+            double blend = Lb[i]*Lc[i]*Ld[i];
+            double denom = (Lb[i]+0.5*La[i])*(Lc[i]+0.5*La[i])*(Ld[i]+0.5*La[i]);
+            int onface;
+            if (denom > tol)
+                blend = (1.0 + (alpha*La[i])*(alpha*La[i]))*blend/denom;
+            for (k = 0; k < 3; k++)
+                sh[i*3+k] += blend*w1[i]*tg1[face][k] + blend*w2[i]*tg2[face][k];
+            /* on this face, replace rather than accumulate */
+            onface = (La[i] < tol) &&
+                     (((Lb[i] > tol) + (Lc[i] > tol) + (Ld[i] > tol)) < 3);
+            if (onface)
+                for (k = 0; k < 3; k++)
+                    sh[i*3+k] = w1[i]*tg1[face][k] + w2[i]*tg2[face][k];
+        }
+    }
+
+    /* equilateral tet -> bi-unit reference tet: solve A [r s t]^T = xyz - o */
+    for (k = 0; k < 3; k++) {
+        A[k*3+0] = 0.5*(v[1][k]-v[0][k]);
+        A[k*3+1] = 0.5*(v[2][k]-v[0][k]);
+        A[k*3+2] = 0.5*(v[3][k]-v[0][k]);
+    }
+    for (i = 0; i < np; i++) {
+        double M[9];
+        for (k = 0; k < 9; k++) M[k] = A[k];
+        for (k = 0; k < 3; k++)
+            rhs[k] = xyz[i*3+k] + sh[i*3+k]
+                   - 0.5*(v[1][k]+v[2][k]+v[3][k]-v[0][k]);
+        if (ho_solve (3, M, rhs)) goto done;
+        r[i] = rhs[0]; sarr[i] = rhs[1]; tarr[i] = rhs[2];
+    }
+    rc = 0;
+done:
+    free (buf);
+    return rc;
+}
+
+/* Generate the full lattice for a basic element type.  Returns the point count,
+ * or -1 when the combination cannot be generated.  The caller frees the three
+ * coordinate arrays returned through gu, gv and gw. */
+static int ho_gen_lattice (CGNS_ENUMT(ElementType_t) btype,
+                           CGNS_ENUMT(ControlPointDistribution_t) dist,
+                           int p, double **gu, double **gv, double **gw, int *dim)
+{
+    double u1[HO_GEN_MAXP+1];
+    int i, j, k, np = 0, n1 = p + 1;
+
+    *gu = *gv = *gw = NULL;
+    if (p < 0 || p > HO_GEN_MAXP) return -1;
+
+    /* Tensor-product families: the 1D rule is applied independently per
+     * parametric direction. */
+    if (btype == CGNS_ENUMV(BAR_2) || btype == CGNS_ENUMV(QUAD_4) ||
+        btype == CGNS_ENUMV(HEXA_8)) {
+        if (ho_gen_1d (dist, p, u1)) return -1;
+        *dim = (btype == CGNS_ENUMV(BAR_2)) ? 1 :
+               (btype == CGNS_ENUMV(QUAD_4)) ? 2 : 3;
+        np = 1;
+        for (i = 0; i < *dim; i++) np *= n1;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) malloc ((size_t)np * sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        np = 0;
+        if (*dim == 1) {
+            for (i = 0; i < n1; i++) { (*gu)[np]=u1[i]; (*gv)[np]=0; (*gw)[np]=0; np++; }
+        } else if (*dim == 2) {
+            for (j = 0; j < n1; j++) for (i = 0; i < n1; i++)
+                { (*gu)[np]=u1[i]; (*gv)[np]=u1[j]; (*gw)[np]=0; np++; }
+        } else {
+            for (k = 0; k < n1; k++) for (j = 0; j < n1; j++) for (i = 0; i < n1; i++)
+                { (*gu)[np]=u1[i]; (*gv)[np]=u1[j]; (*gw)[np]=u1[k]; np++; }
+        }
+        return np;
+    }
+
+    /* Triangle with WarpAndBlend: the Warburton construction above. */
+    if (btype == CGNS_ENUMV(TRI_3) && dist == CGNS_ENUMV(WarpAndBlend)) {
+        *dim = 2;
+        np = (p+1)*(p+2)/2;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) calloc ((size_t)np, sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        if (ho_wb_tri (p, *gu, *gv)) {
+            free(*gu); free(*gv); free(*gw);
+            *gu = *gv = *gw = NULL;
+            return -1;
+        }
+        return np;
+    }
+
+    /* Tetrahedron with WarpAndBlend */
+    if (btype == CGNS_ENUMV(TETRA_4) && dist == CGNS_ENUMV(WarpAndBlend)) {
+        *dim = 3;
+        np = (p+1)*(p+2)*(p+3)/6;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) malloc ((size_t)np * sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        if (ho_wb_tet (p, *gu, *gv, *gw)) {
+            free(*gu); free(*gv); free(*gw);
+            *gu = *gv = *gw = NULL;
+            return -1;
+        }
+        return np;
+    }
+
+    /* Other simplex cases: only the equidistant barycentric lattice is
+     * generated.  The Fekete distributions are not, so those are reported
+     * unchecked rather than compared against the wrong set. */
+    if (dist != CGNS_ENUMV(Equidistant)) return -1;
+
+    if (btype == CGNS_ENUMV(TRI_3)) {
+        *dim = 2;
+        np = (p+1)*(p+2)/2;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) malloc ((size_t)np * sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        np = 0;
+        for (j = 0; j <= p; j++) for (i = 0; i <= p - j; i++) {
+            (*gu)[np] = -1.0 + 2.0*i/(double)p;
+            (*gv)[np] = -1.0 + 2.0*j/(double)p;
+            (*gw)[np] = 0.0;
+            np++;
+        }
+        return np;
+    }
+    if (btype == CGNS_ENUMV(TETRA_4)) {
+        *dim = 3;
+        np = (p+1)*(p+2)*(p+3)/6;
+        *gu = (double*) malloc ((size_t)np * sizeof(double));
+        *gv = (double*) malloc ((size_t)np * sizeof(double));
+        *gw = (double*) malloc ((size_t)np * sizeof(double));
+        if (!*gu || !*gv || !*gw) { free(*gu); free(*gv); free(*gw); return -1; }
+        np = 0;
+        for (k = 0; k <= p; k++) for (j = 0; j <= p - k; j++)
+            for (i = 0; i <= p - j - k; i++) {
+                (*gu)[np] = -1.0 + 2.0*i/(double)p;
+                (*gv)[np] = -1.0 + 2.0*j/(double)p;
+                (*gw)[np] = -1.0 + 2.0*k/(double)p;
+                np++;
+            }
+        return np;
+    }
+    return -1;      /* PENTA, PYRA: layout is the writer's responsibility */
+}
+
+/* Nearest-neighbour bijection between two point sets.  Returns 0 when every
+ * generated point matches a distinct stored point within tol. */
+static int ho_points_match (const double *su, const double *sv, const double *sw,
+                            const double *gu, const double *gv, const double *gw,
+                            int np, int dim, double tol)
+{
+    char *used = (char*) calloc ((size_t)np, 1);
+    int i, j, ok = 0;
+
+    if (!used) return -1;
+    for (i = 0; i < np; i++) {
+        int best = -1;
+        double bestd = 0.0;
+        for (j = 0; j < np; j++) {
+            double d, du, dv, dw;
+            if (used[j]) continue;
+            du = gu[i] - su[j];
+            dv = (dim > 1) ? gv[i] - sv[j] : 0.0;
+            dw = (dim > 2) ? gw[i] - sw[j] : 0.0;
+            d = du*du + dv*dv + dw*dw;
+            if (best < 0 || d < bestd) { best = j; bestd = d; }
+        }
+        /* Negated <= rather than >, so a NaN distance counts as a mismatch.
+         * NaN can come straight from the file's own coordinates, and "NaN > tol"
+         * is false -- which would report unusable data as a match. */
+        if (best < 0 || !(sqrt(bestd) <= tol)) { ok = -1; break; }
+        used[best] = 1;
+    }
+    free (used);
+    return ok;
+}
+
+/* Run the comparison and report.  Silent when it agrees. */
+static void ho_check_distribution (const char *what, const char *nodename,
+                                   CGNS_ENUMT(ElementType_t) etype,
+                                   CGNS_ENUMT(ControlPointDistribution_t) dist,
+                                   int p, int npt,
+                                   const double *pu, const double *pv, const double *pw)
+{
+    CGNS_ENUMT(ElementType_t) btype;
+    double *gu, *gv, *gw;
+    int np, dim = 0;
+
+    if (cg_element_basic_element_type (etype, &btype) != CG_OK) return;
+
+    /* Degree 0 has a single control point, and a single point is unisolvent for
+     * P0 wherever it sits, so no position can be called wrong and there is
+     * nothing to compare.  Skipping is not merely defensive: comparing here
+     * would flag a conformant file, and on the simplex lattices the degree-0
+     * spacing (2*i/p) is 0/0, whose NaN silently satisfies the tolerance test
+     * and made the check accept arbitrary coordinates. */
+    if (p == 0) {
+        if (verbose)
+            printf ("      degree 0: single control point, unisolvent for P0 at "
+                    "any position -- nothing to compare\n");
+        return;
+    }
+
+    np = ho_gen_lattice (btype, dist, p, &gu, &gv, &gw, &dim);
+    if (np < 0) {
+        /* Report the comparison as NOT PERFORMED, never as a mismatch: this
+         * implementation not generating a family says nothing about the file,
+         * and the coordinates are authoritative regardless. */
+        warning (3, "%s \"%s\": comparison against %s not performed -- this build "
+                    "does not generate that family for %s. The stored coordinates "
+                    "are authoritative and remain valid.",
+                 what, nodename, cg_ControlPointDistributionName(dist),
+                 cg_ElementTypeName(btype));
+        return;
+    }
+    if (np != npt) {
+        error("%s \"%s\": %s at degree %d has %d nodes but %d control points are "
+              "stored.", what, nodename,
+              cg_ControlPointDistributionName(dist), p, np, npt);
+        free(gu); free(gv); free(gw);
+        return;
+    }
+
+    if (ho_points_match (pu, pv, pw, gu, gv, gw, np, dim, HO_DIST_TOL)) {
+        /* The coordinates are authoritative and the name is advisory, so a
+         * mismatch is not grounds for rejecting the file: it is an error only
+         * under -s, and the remedy is to correct or drop the name, never to
+         * alter the coordinates. */
+        if (strict_cpex45)
+            error("%s \"%s\": the stored control points do not match the named "
+                  "distribution %s at degree %d (compared as sets, tolerance %g). "
+                  "Correct or remove the name; do not alter the coordinates.",
+                  what, nodename,
+                  cg_ControlPointDistributionName(dist), p, HO_DIST_TOL);
+        else
+            warning (1, "%s \"%s\": the stored control points do not match the named "
+                        "distribution %s at degree %d. The coordinates are "
+                        "authoritative; the name should be corrected or removed.",
+                     what, nodename,
+                     cg_ControlPointDistributionName(dist), p);
+    }
+    else if (verbose) {
+        printf ("      control points match %s at degree %d\n",
+                cg_ControlPointDistributionName(dist), p);
+    }
+    free(gu); free(gv); free(gw);
+}
+
+/*=======================================================================*/
+
+/* Family index (1-based) named by the current zone's FamilyName_t, or 0.
+ * Restores the goto position to the zone before returning. */
+static int ho_zone_family (void)
+{
+    char famname[CG_MAX_NAME_LENGTH+1];
+    int m;
+
+    go_absolute ("Zone_t", cgnszone, NULL);
+    if (cg_famname_read (famname) != CG_OK) return 0;
+
+    for (m = 0; m < NumFamily; m++) {
+        if (0 == strcmp (famname, Family[m])) return m + 1;
+    }
+    return 0;
+}
+
+/* Per-element degree-of-freedom count, per CPEX-0045 (cited without a
+ * section number -- see the note at cgnslib.h's solution-interpolation
+ * lookup comment on why a v3-draft section number is not repeated here).
+ *
+ * N_DOFs(e) is defined by the SolutionInterpolation_t matching element e, so it
+ * depends on the declared interpolation type -- the Lagrange nodal count and
+ * the modal Pascal count differ (a QUAD at degree 2 has 9 nodal but only 6
+ * modal DOFs).  Returns 0 on success and -1 when the basis cannot be resolved,
+ * in which case the caller must skip the size check rather than assume one.
+ *
+ * Leaves the goto position undefined; callers re-establish it. */
+static int ho_ndofs (int fnum, CGNS_ENUMT(ElementType_t) el_type,
+                     int spatialDegree, int temporalDegree, cgsize_t *ndofs)
+{
+    int sn, npe;
+    int sz;
+    CGNS_ENUMT(InterpolationType_t) it;
+
+    *ndofs = 0;
+    if (fnum <= 0) return -1;
+
+    if (cg_solution_interpolation_find (cgnsfn, cgnsbase, fnum, el_type,
+                                        spatialDegree, temporalDegree,
+                                        &sn, &it) != CG_OK)
+        return -1;
+
+    if (it == CGNS_ENUMV(ParametricMonomialsPascal) ||
+        it == CGNS_ENUMV(CartesianMonomialsPascal)) {
+        if (cg_solution_monomial_size (el_type, spatialDegree, temporalDegree,
+                                       &sz) != CG_OK) return -1;
+        *ndofs = sz;
+        return 0;
+    }
+
+    if (it == CGNS_ENUMV(ParametricLagrange)) {
+        /* The stored NumberOfPoints is authoritative: it is what the file
+         * records, and it differs from the complete-space cardinality for the
+         * serendipity spaces the standard tabulates (an edge-serendipity QUAD
+         * at p=2 stores 4p=8 points, not (p+1)^2=9).  Fall back to the
+         * complete space only if the array cannot be read. */
+        char aname[33];
+        int nd, na;
+        cgsize_t dv[3];
+        CGNS_ENUMT(DataType_t) dt;
+
+        if (cg_goto (cgnsfn, cgnsbase, "Family_t", fnum,
+                     "SolutionInterpolation_t", sn, NULL) == CG_OK &&
+            cg_narrays (&na) == CG_OK && na >= 1 &&
+            cg_array_info (1, aname, &dt, &nd, dv) == CG_OK &&
+            0 == strcmp (aname, "LagrangeControlPoints") && nd == 2) {
+            *ndofs = dv[1];
+            return 0;
+        }
+        if (cg_solution_lagrange_interpolation_size (el_type, spatialDegree,
+                                                     temporalDegree, &sz) != CG_OK)
+            return -1;
+        *ndofs = sz;
+        return 0;
+    }
+
+    /* IsoParametric: the solution reuses the mesh basis. The mesh's own
+     * ElementInterpolation_t may carry an explicit LagrangeControlPoints
+     * array for an incomplete/serendipity control-point set, whose stored
+     * point count -- not the complete-space cg_npe() count -- is the basis
+     * actually resolved, exactly as the library's cgi_ho_ndofs() resolves
+     * it (cgns_internals.c). Fall back to cg_npe() only when no such
+     * node/array is found. */
+    if (it == CGNS_ENUMV(IsoParametric)) {
+        int ne, n2;
+        cgsize_t mesh_npe = 0;
+
+        if (fnum > 0 && cg_nelement_interpolation_read(cgnsfn, cgnsbase,
+                fnum, &ne) == CG_OK) {
+            for (n2 = 1; n2 <= ne; n2++) {
+                char ename[33];
+                CGNS_ENUMT(ElementType_t) eet;
+                char aname[33];
+                int nd, na;
+                cgsize_t dv[3];
+                CGNS_ENUMT(DataType_t) dt;
+
+                if (cg_element_interpolation_read(cgnsfn, cgnsbase, fnum, n2,
+                        ename, &eet) != CG_OK || eet != el_type)
+                    continue;
+
+                if (cg_goto(cgnsfn, cgnsbase, "Family_t", fnum,
+                            "ElementInterpolation_t", n2, NULL) == CG_OK &&
+                    cg_narrays(&na) == CG_OK && na >= 1 &&
+                    cg_array_info(1, aname, &dt, &nd, dv) == CG_OK &&
+                    0 == strcmp(aname, "LagrangeControlPoints") && nd == 2) {
+                    mesh_npe = dv[1];
+                }
+                break;
+            }
+        }
+
+        if (mesh_npe > 0) {
+            npe = (int)mesh_npe;
+        }
+        else if (cg_npe (el_type, &npe) != CG_OK) return -1;
+
+        *ndofs = (cgsize_t)npe * (temporalDegree + 1);
+        return 0;
+    }
+
+    return -1;
+}
+
+/* Memoized wrapper around ho_ndofs().  A MIXED section's connectivity is
+ * walked element by element, and ho_ndofs() resolves a SolutionInterpolation_t
+ * by cg_goto()/cg_narrays()/cg_array_info() every time it is called -- on a
+ * multi-million element mesh that turns cgnscheck into a multi-million-lookup
+ * HDF5 traversal even though the answer depends only on the element type for
+ * a given (base, family, spatialDegree, temporalDegree).  Cache on that key,
+ * indexed by the bounded ElementType_t enum. */
+static int ho_ndofs_cached (int fnum, CGNS_ENUMT(ElementType_t) el_type,
+                            int spatialDegree, int temporalDegree,
+                            cgsize_t *ndofs)
+{
+    static int cache_fnum = -1, cache_base = -1, cache_os = -1, cache_ot = -1;
+    static cgsize_t cache_ndofs[NofValidElementTypes];
+    static signed char cache_state[NofValidElementTypes]; /* 0=unknown, 1=ok, -1=error */
+
+    if (el_type < 0 || el_type >= NofValidElementTypes) return -1;
+
+    if (fnum != cache_fnum || cgnsbase != cache_base ||
+        spatialDegree != cache_os || temporalDegree != cache_ot) {
+        memset (cache_state, 0, sizeof(cache_state));
+        cache_fnum = fnum;
+        cache_base = cgnsbase;
+        cache_os = spatialDegree;
+        cache_ot = temporalDegree;
+    }
+
+    if (cache_state[el_type] == 0) {
+        cgsize_t v = 0;
+        cache_state[el_type] =
+            ho_ndofs (fnum, el_type, spatialDegree, temporalDegree, &v) ? -1 : 1;
+        cache_ndofs[el_type] = v;
+    }
+
+    if (cache_state[el_type] < 0) return -1;
+    *ndofs = cache_ndofs[el_type];
+    return 0;
+}
+
+/* Accumulate DOFs for the elements of one section that fall in [rmin,rmax].
+ * Handles MIXED by walking the connectivity element by element. */
+static int ho_section_size (ELEMSET *set, int fnum, int spatialDegree,
+                            int temporalDegree, cgsize_t rmin, cgsize_t rmax,
+                            cgsize_t *datasize)
+{
+    cgsize_t ndofs, e;
+    int edim, cdim;
+
+    if (rmin > rmax) return 0;
+
+    if (set->type == CGNS_ENUMV(MIXED)) {
+        /* Per-element types come from the connectivity stream */
+        if (set->elements == NULL || set->offsets == NULL) return -1;
+        for (e = rmin; e <= rmax; e++) {
+            cgsize_t off = set->offsets[e - set->is];
+            CGNS_ENUMT(ElementType_t) et;
+            int eldim;
+            /* ElementStartOffset comes straight from the file: bounds-check
+             * it before using it to index *elements.  A corrupt or
+             * hand-edited offset here would otherwise be an out-of-bounds
+             * read, and the type it names determines everything downstream. */
+            if (off < 0 || off >= set->datasize) {
+                error ("element set \"%s\": ElementStartOffset[%" PRIdCGSIZE
+                       "] = %" PRIdCGSIZE " is outside the connectivity "
+                       "array (size %" PRIdCGSIZE ")",
+                       set->name, e - set->is, off, set->datasize);
+                return -1;
+            }
+            et = (CGNS_ENUMT(ElementType_t))set->elements[off];
+            if (et < CGNS_ENUMV(NODE) || et >= NofValidElementTypes) {
+                error ("element set \"%s\": element %" PRIdCGSIZE
+                       " has invalid element type %d", set->name, e, (int)et);
+                return -1;
+            }
+            /* A boundary face inside a MIXED section is not part of the
+             * location domain, so it carries no DOFs -- the same per-element
+             * test the non-MIXED branch below applies per section. */
+            if (cg_element_dimension (et, &eldim) == CG_OK && eldim < CellDim)
+                continue;
+            if (ho_ndofs_cached (fnum, et, spatialDegree, temporalDegree, &ndofs)) return -1;
+            *datasize += ndofs;
+        }
+        return 0;
+    }
+
+    /* A FlowSolution_t covers the zone's cells; boundary/edge sections are not
+     * part of the location domain and contribute nothing. */
+    cdim = CellDim;
+    if (cg_element_dimension (set->type, &edim) == CG_OK && edim < cdim) return 0;
+
+    if (ho_ndofs (fnum, set->type, spatialDegree, temporalDegree, &ndofs)) return -1;
+    *datasize += (rmax - rmin + 1) * ndofs;
+    return 0;
+}
+
+/* Number of cells in a zone: elements whose dimension equals CellDim.  This is
+ * the element set a high-order FlowSolution_t covers, so it is what both the
+ * field arrays and CharacteristicLength are sized against.  Returns -1 if a
+ * MIXED section cannot be walked. */
+static cgsize_t ho_zone_ncells (ZONE *z)
+{
+    int i, eldim;
+    cgsize_t ncells = 0, e;
+
+    for (i = 0; i < z->nsets; i++) {
+        ELEMSET *set = &z->sets[i];
+
+        if (set->type != CGNS_ENUMV(MIXED)) {
+            if (cg_element_dimension (set->type, &eldim) == CG_OK &&
+                eldim < CellDim) continue;
+            ncells += set->ie - set->is + 1;
+            continue;
+        }
+
+        if (set->elements == NULL || set->offsets == NULL) return -1;
+        for (e = set->is; e <= set->ie; e++) {
+            cgsize_t off = set->offsets[e - set->is];
+            CGNS_ENUMT(ElementType_t) et;
+
+            if (off < 0 || off >= set->datasize) return -1;
+            et = (CGNS_ENUMT(ElementType_t))set->elements[off];
+            if (et < CGNS_ENUMV(NODE) || et >= NofValidElementTypes) return -1;
+            if (cg_element_dimension (et, &eldim) == CG_OK && eldim >= CellDim)
+                ncells++;
+        }
+    }
+    return ncells;
+}
+
+static cgsize_t get_ho_data_size (ZONE *z, int fnum, int spatialDegree, int temporalDegree)
+{
+    int i;
+    cgsize_t datasize = 0;
+
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+
+      if (ho_section_size (set, fnum, spatialDegree, temporalDegree,
+                           set->is, set->ie, &datasize)) return -1;
+    }
+
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_range (ZONE *z, int fnum, int spatialDegree, int temporalDegree,
+                                        cgsize_t *range)
+{
+    int i;
+    cgsize_t rmin, rmax;
+    cgsize_t datasize = 0;
+
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+
+      // Get element count bellonging to this element section range
+      rmin = MAX(set->is,range[0]);
+      rmax = MIN(set->ie,range[1]);
+
+      if (ho_section_size (set, fnum, spatialDegree, temporalDegree,
+                           rmin, rmax, &datasize)) return -1;
+    }
+
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_list (ZONE *z, int fnum, int spatialDegree, int temporalDegree,
+                                        cgsize_t *list, cgsize_t npts)
+{
+    cgsize_t p;
+    int i;
+    cgsize_t datasize = 0;
+    short done;
+
+    // Loop over Points
+    for (p = 0 ; p < npts ; p++)
+    {
+      cgsize_t id = list[p];
+      done = 0;
+
+      for (i = 0 ; i < z->nsets ; i++)
+      {
+        ELEMSET *set = &z->sets[i];
+
+        if (id > set->ie || id < set->is ) continue;
+
+        done = 1;
+
+        if (ho_section_size (set, fnum, spatialDegree, temporalDegree,
+                             id, id, &datasize)) return -1;
+        break;
+      }
+
+      if (done == 0) {
+        error("Element %"PRIdCGSIZE" from ptset PointList not found in Elements_t",id);
+        return -1;
+      }
+    }
+
+    return datasize;
 }
 
 /*=======================================================================*/
@@ -2591,7 +3666,16 @@ static void check_coordinates (int ng)
 {
     char name[33];
     int ierr, n, rind[6];
-    cgsize_t np, dimensions, rmin[3], rmax[3];
+    /* dimensions was a bare cgsize_t (not an array) even though
+     * cg_array_info() writes one value per dimension of rank -- rank==1 for
+     * every coordinate array on an Unstructured zone (the only kind any
+     * cgnscheck CTest fixture exercised), which happened to fit, but
+     * rank==z->idim (up to 3) on a Structured zone overflows it by up to two
+     * cgsize_t's on the stack. Sized to CGIO_MAX_DIMENSIONS, not just 3:
+     * rank here is whatever a node declares on disk, and this function's job
+     * includes validating files that were not written by this library, so a
+     * hostile file can claim any rank up to the format's own limit. */
+    cgsize_t np, dimensions[CGIO_MAX_DIMENSIONS], rmin[3], rmax[3];
     int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
@@ -2665,7 +3749,7 @@ static void check_coordinates (int ng)
         coordset[n] = 0;
 
     for (nc = 1; nc <= ncoords; nc++) {
-        if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+        if (cg_array_info (nc, name, &datatype, &rank, dimensions))
             error_exit("cg_array_info");
         if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
             error_exit("cg_array_read");
@@ -2720,7 +3804,8 @@ static void check_coordinates (int ng)
 
 static void check_elements (void)
 {
-    int nn, ns, dim;
+    int ns, dim;
+    int nn;
     int nf, np, nint, next;
     cgsize_t is, ne, nelem, *pe, *po;
     ELEMSET *es;
@@ -3185,6 +4270,18 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
             }
+            break;
+        case CGNS_ENUMV(InterpolationPoints):
+            if (z->type != CGNS_ENUMV(Unstructured)) {
+                error ("InterpolationPoints location is compatible only with Unstructured grids");
+            }
+            /* CPEX-0045 scopes the location to FlowSolution_t.  A BC_t or
+             * BCDataSet_t is not sized by the location domain the way a
+             * FlowSolution_t is, so the field-length rule has nothing to attach
+             * to there. */
+            if (is_boco)
+                error ("CPEX-0045: GridLocation=InterpolationPoints is valid only "
+                       "on FlowSolution_t nodes");
             return location;
         default:
             error ("invalid grid location");
@@ -4457,7 +5554,17 @@ static void check_arbitrary_motion (int na)
 
     /* get grid data */
 
-    datasize = get_data_size (z, location, rind);
+    /* get solution data size */
+    if (location == CGNS_ENUMV(InterpolationPoints))
+    {
+      /* InterpolationPoints is not valid for ArbitraryGridMotion_t per CGNS SIDS.
+       * Interpolation orders are defined only for FlowSolution_t nodes. */
+      error("GridLocation=InterpolationPoints is not valid for ArbitraryGridMotion_t. "
+            "Interpolation points can only be used with FlowSolution_t nodes.");
+      datasize = 0;
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0 && type != CGNS_ENUMV(DeformingGrid))
@@ -4636,8 +5743,17 @@ static void check_discrete (int ndis)
     if (punits == NULL) punits = z->punits;
 
     /* get discrete data */
-
-    datasize = get_data_size (z, location, rind);
+/* get solution data size */
+    if (location == CGNS_ENUMV(InterpolationPoints))
+    {
+      /* InterpolationPoints is not valid for DiscreteData_t per CGNS SIDS.
+       * Interpolation orders are defined only for FlowSolution_t nodes. */
+      error("GridLocation=InterpolationPoints is not valid for DiscreteData_t. "
+            "Interpolation points can only be used with FlowSolution_t nodes.");
+      datasize = 0;
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0)
@@ -4664,13 +5780,24 @@ static void check_discrete (int ndis)
 static void check_solution (int ns)
 {
     char name[33];
-    int n, nf, id, ierr, rind[6];
+    int n, nf, narr, id, ierr, rind[6];
     int ndim;
+    int os,ot;
+    int has_interp_order;
+    int hofam;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(GridLocation_t) location;
     ZONE *z = &Zones[cgnszone-1];
+    /* Point Set */
+    cgsize_t npts;
+    int has_ptset;
+    CGNS_ENUMT(PointSetType_t) ptsettype;
+    cgsize_t *ptsetlist = NULL;
+    /* PointRange bounds, kept after ptsetlist is released so the
+     * CharacteristicLength element count can still be checked. */
+    cgsize_t cl_range[2] = {0, 0};
 
     if (cg_sol_info (cgnsfn, cgnsbase, cgnszone, ns, name, &location))
         error_exit("cg_sol_info");
@@ -4713,6 +5840,18 @@ static void check_solution (int ns)
         }
         if (z->type == CGNS_ENUMV(Unstructured) && FileVersion < 2400)
             error ("rind not valid for unstructured zones");
+
+        /* CPEX-0045: Rind_t has no meaning under GridLocation =
+         * InterpolationPoints.  Rind planes are an index-space concept, whereas
+         * a high-order field array is a flat degree-of-freedom list of length
+         * sum_e N_DOFs(e) -- there is no plane to add or remove.  A conforming
+         * writer must not emit one.  Reported rather than treated as fatal: the
+         * node carries no field data itself, so a reader can ignore it and still
+         * recover every solution array correctly. */
+        if (location == CGNS_ENUMV(InterpolationPoints))
+            error ("CPEX-0045: Rind_t has no meaning with GridLocation = "
+                   "InterpolationPoints and must not be written; the field "
+                   "array is a flat degree-of-freedom list, not an index space.");
     }
 
     /* descriptors */
@@ -4741,11 +5880,303 @@ static void check_solution (int ns)
     }
     if (dataclass < 0) dataclass = z->dataclass;
     if (punits == NULL) punits = z->punits;
+    
+    
+    /* Interpolation Degree */
+    ierr = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+    if (ierr == CG_ERROR)
+    {
+        error_exit("cg_sol_interpolation_degree_read");
+    }
+    has_interp_order = (ierr == CG_OK);
+    if (ierr == CG_OK)
+    {
+        printf ("    checking solution Interpolation Degree\n");
+
+        /* CPEX-0045: high-order FlowSolution_t nodes use
+         * GridLocation = InterpolationPoints (both uniform and variable order).
+         * CellCenter is accepted for backward compatibility with earlier drafts;
+         * strict CPEX-0045 mode flags it as non-conformant. (Cited without a
+         * section number: the v3-draft section this was written against is
+         * not guaranteed to match the merged spec's numbering -- see the note
+         * at cgnslib.h's solution-interpolation lookup comment.)
+         */
+        if (location != CGNS_ENUMV(InterpolationPoints) &&
+            location != CGNS_ENUMV(CellCenter))
+        {
+            error("Solution Interpolation Degree requires GridLocation = InterpolationPoints "
+                  "(CPEX-0045).");
+        }
+        else if (location == CGNS_ENUMV(CellCenter) && strict_cpex45)
+        {
+            error("CPEX-0045: GridLocation = CellCenter with InterpolationDegrees "
+                  "is non-conformant; use InterpolationPoints. (Accepted for back-compat in "
+                  "non-strict mode.)");
+        }
+
+        printf ("        Spatial  Degree : %d\n",os);
+        printf ("        Temporal Degree : %d\n",ot);
+
+        /* Validation: degree values, in two independent tiers.
+         *
+         * Tier 1 -- representability, always an error.  Defense in depth: with
+         * the current library this branch is unreachable, because os/ot arrive
+         * from cg_sol_interpolation_degree_read(), and cg_open() already
+         * rejected any InterpolationDegrees outside [0, CG_MAX_ORDER] in
+         * cgi_read_sol() -- verified empirically, cg_open() fails first with a
+         * specific diagnostic naming the degree and the range, so no diagnostic
+         * quality is lost by never reaching here.  Kept because cgnscheck is a
+         * validator that may be linked against a library whose bound differs
+         * from the one that wrote the file, and because an unrepresentable
+         * degree is a hard defect rather than a stylistic preference, so if it
+         * ever does become observable it must be an error in normal mode too,
+         * not just under -s.
+         *
+         * Tier 2 -- plausibility, always a warning.  Degrees beyond [0,100]
+         * spatial / [0,10] temporal are legal, readable, and conformant, but
+         * far outside engineering practice, so they are worth surfacing.
+         * Strict mode deliberately does not escalate these to errors: the file
+         * is valid, and a conformance checker must not fail a valid file.
+         *
+         * Degree 0 is valid in both tiers: it denotes one spatial degree of
+         * freedom per element, i.e. a solution constant over the element.  That
+         * is v2's "standard interpolation (constant per element)" and the
+         * natural representation of a finite-volume cell average -- the single
+         * constant monomial for a modal basis, or one control point whose nodal
+         * function is identically one for a Lagrange basis.  It must not be
+         * rejected, in strict mode or otherwise. */
+        if (os < 0 || os > CG_MAX_ORDER)
+            error("Spatial degree %d is outside the representable range [0, %d]",
+                  os, CG_MAX_ORDER);
+        else if (os > 100)
+            warning(2, "Spatial degree %d is outside typical range [0-100]", os);
+
+        if (ot < 0 || ot > CG_MAX_ORDER)
+            error("Temporal degree %d is outside the representable range [0, %d]",
+                  ot, CG_MAX_ORDER);
+        else if (ot > 10)
+            warning(2, "Temporal degree %d is outside typical range [0-10]", ot);
+
+        /* Full cross-check against Family_t SolutionInterpolation_t: without a
+         * matching (basic_element_type, spatialDegree, temporalDegree) entry
+         * there, this FlowSolution_t's DOFs have no basis to size or position
+         * them against, so the field data is not actually readable as
+         * high-order even though every check above it can pass. Reuses the
+         * homogeneous/rep_basic family walk the CharacteristicLength check
+         * below uses for the same lookup. */
+        {
+            char famname[CG_MAX_NAME_LENGTH+1];
+            int fam_ierr, fnum = 0, m;
+
+            go_absolute ("Zone_t", cgnszone, NULL);
+            fam_ierr = cg_famname_read(famname);
+
+            if (fam_ierr == CG_OK) {
+                for (m = 0; m < NumFamily; m++) {
+                    if (0 == strcmp(famname, Family[m])) { fnum = m + 1; break; }
+                }
+            }
+
+            if (fnum == 0) {
+                warning(1, "no FamilyName_t on this zone; cannot verify a "
+                           "matching SolutionInterpolation_t exists for "
+                           "(spatialDegree=%d, temporalDegree=%d).", os, ot);
+            } else {
+                CGNS_ENUMT(ElementType_t) rep_basic = CGNS_ENUMV(ElementTypeNull);
+                int homogeneous = 1, si;
+
+                for (si = 0; si < z->nsets; si++) {
+                    CGNS_ENUMT(ElementType_t) basic;
+                    /* MIXED/NGON_n/NFACE_n sections are themselves composites
+                     * of possibly several element types; cg_element_basic_element_type()
+                     * maps each of these to itself (its own row in the traits
+                     * table has no single basic type), so it must not be
+                     * trusted as a resolved type here -- doing so previously
+                     * produced a false "no matching SolutionInterpolation_t"
+                     * error against MIXED-section zones whose per-element-type
+                     * entries (e.g. one for TRI_3, one for QUAD_4) were
+                     * actually present and correct. */
+                    if (z->sets[si].type == CGNS_ENUMV(MIXED) ||
+                        z->sets[si].type == CGNS_ENUMV(NGON_n) ||
+                        z->sets[si].type == CGNS_ENUMV(NFACE_n)) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (cg_element_basic_element_type(z->sets[si].type, &basic) != CG_OK) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (rep_basic == CGNS_ENUMV(ElementTypeNull))
+                        rep_basic = basic;
+                    else if (rep_basic != basic) {
+                        homogeneous = 0;
+                        break;
+                    }
+                }
+
+                if (!homogeneous || rep_basic == CGNS_ENUMV(ElementTypeNull)) {
+                    /* Zone mixes element basic types (or none could be resolved):
+                     * there is no single (basic_element_type) key to look up, so
+                     * the automatic check cannot run. Reported explicitly rather
+                     * than silently skipped. */
+                    warning(2, "zone has multiple element basic types (or none "
+                               "resolvable); cannot automatically verify a "
+                               "matching SolutionInterpolation_t exists for "
+                               "(spatialDegree=%d, temporalDegree=%d) -- verify "
+                               "manually.", os, ot);
+                } else {
+                    int sn_found;
+                    CGNS_ENUMT(InterpolationType_t) it_found;
+                    int find_ierr = cg_solution_interpolation_find(cgnsfn, cgnsbase,
+                            fnum, rep_basic, os, ot, &sn_found, &it_found);
+
+                    if (find_ierr != CG_OK) {
+                        if (strict_cpex45)
+                            error("no SolutionInterpolation_t block exists in the "
+                                  "zone's Family_t \"%s\" with (basic_element_type=%s, "
+                                  "spatialDegree=%d, temporalDegree=%d); the field "
+                                  "data has no basis to size or position its degrees "
+                                  "of freedom.", famname, cg_ElementTypeName(rep_basic),
+                                  os, ot);
+                        else
+                            warning(1, "no SolutionInterpolation_t block found in the "
+                                       "zone's Family_t \"%s\" matching "
+                                       "(basic_element_type=%s, spatialDegree=%d, "
+                                       "temporalDegree=%d).", famname,
+                                       cg_ElementTypeName(rep_basic), os, ot);
+                    }
+                }
+            }
+        }
+    }
+
+    /* InterpolationDegrees has cardinality 0:1, and CPEX-0045 states that when
+     * the child is absent the FlowSolution_t "is treated as a standard
+     * (non-high-order) solution".  Nothing in the validation requirements makes
+     * its absence grounds for rejection, so this is a warning: erroring here
+     * would reject a structurally legal file. */
+    if (location == CGNS_ENUMV(InterpolationPoints) && ierr == CG_NODE_NOT_FOUND)
+    {
+        warning(2, "GridLocation=InterpolationPoints without an InterpolationDegrees "
+                   "child: the solution is treated as standard (non-high-order), "
+                   "which is probably not what was intended.");
+    }
+
+    /* CPEX 0045 Consistency Check: CellCenter with InterpolationDegrees requires
+     * PointSet -- deferred to when the PointSet is read below, to avoid reading
+     * it twice. */
+
+    /* PointSet if exists.  cg_sol_ptset_info() reports absence as
+     * PointSetTypeNull with a CG_OK return; it never returns CG_NODE_NOT_FOUND,
+     * so that is not the test for "no point set". */
+    ierr = cg_sol_ptset_info(cgnsfn, cgnsbase, cgnszone,ns,&ptsettype,&npts);
+    has_ptset = (ierr == CG_OK && ptsettype != CGNS_ENUMV(PointSetTypeNull) &&
+                 npts > 0);
+    if (has_ptset) {
+      /* cg_sol_ptset_read() returns npts * IndexDimension values, not npts:
+       * a structured zone stores one index per dimension for every point.
+       * Sizing this buffer as npts overruns it on any zone with idim > 1. */
+      ptsetlist = (cgsize_t *)malloc( (size_t)(npts * z->idim) * sizeof(cgsize_t));
+      if (!ptsetlist) {
+          error("memory allocation failed for %s ptsetlist of size %"PRIdCGSIZE,
+                cg_PointSetTypeName(ptsettype), npts);
+          return;
+      }
+      if (cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist)) {
+          free(ptsetlist);
+          error("cg_sol_ptset_read failed for solution \"%s\"", name);
+          return;
+      }
+      if (ptsettype == CGNS_ENUMV(PointRange)) {
+          /* Defense in depth, not the primary defense: tracing whether this
+           * was load-bearing found that a CellCenter (not InterpolationPoints)
+           * solution with an InterpolationDegrees child bypasses the
+           * library's own cgi_ptset_range() npts-shape check entirely (it
+           * runs only under location==InterpolationPoints), and that a
+           * PointRange with npts=1 built that way drove a confirmed
+           * AddressSanitizer-caught heap-buffer-overflow -- but the overflow
+           * was in cgi_read_ptset() itself (cgns_internals.c), the *generic*
+           * point-set reader every range-type ptset in the format shares,
+           * not anything specific to this function.  That is now fixed at
+           * the root, so cg_open() rejects a malformed PointRange before
+           * cgnscheck ever runs, making this guard unreachable via that
+           * path.  Kept anyway: it is a cheap, correct check of an
+           * invariant the code immediately below assumes (ptsetlist[z->idim]
+           * requires npts>=2), and a future consumer of solution ptsets
+           * that reached this point some other way would still need it. */
+          if (npts != 2) {
+              free(ptsetlist);
+              error("PointRange for solution \"%s\" has %"PRIdCGSIZE" points, expected 2",
+                    name, npts);
+              return;
+          }
+          /* [idim,2]: the two bounds are idim apart, so the upper bound is at
+           * [z->idim], which is [1] on the unstructured zones the high-order
+           * paths below run on. */
+          cl_range[0] = ptsetlist[0];
+          cl_range[1] = ptsetlist[z->idim];
+      }
+    }
+
+    /* CPEX 0045 Validation: CellCenter with InterpolationDegrees MUST have PointSet */
+    if (location == CGNS_ENUMV(CellCenter) && os > 0)
+    {
+        int has_order;
+        int temp_os, temp_ot;
+        int ierr_order = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &temp_os, &temp_ot);
+        has_order = (ierr_order == CG_OK && (temp_os > 0 || temp_ot > 0));
+
+        if (has_order && !has_ptset)
+        {
+            /* Cited without a section number: the draft section this was written
+             * against is not guaranteed to match the merged spec's numbering. */
+            error("CPEX-0045: Variable degree solutions (GridLocation=CellCenter "
+                  "with SpatialDegree=%d or TemporalDegree=%d) require PointRange or "
+                  "PointList to specify which elements use this degree.",
+                  temp_os, temp_ot);
+        }
+        else if (has_order)
+        {
+            printf ("    Variable degree solution (p-adaptation):\n");
+            printf ("        PointSet Type: %s\n", cg_PointSetTypeName(ptsettype));
+            printf ("        Point Count  : %ld\n", (long)npts);
+        }
+    }
+
+    /* Resolve the zone's Family_t: the high-order field length is defined by
+     * the SolutionInterpolation_t it carries.  ho_zone_family() moves the goto
+     * position, so re-establish it afterwards. */
+    hofam = ho_zone_family ();
+    go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
 
     /* get solution data size */
+    if (location == CGNS_ENUMV(InterpolationPoints) ||
+        (location == CGNS_ENUMV(CellCenter) && os > 0))
+    {
+      /* CellCenter+InterpolationDegrees is the legacy back-compat path;
+       * size it like InterpolationPoints so cgnscheck does not flag a
+       * spurious size mismatch on the field arrays. */
+      if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
+        datasize = get_ho_data_size_range(z,hofam,os,ot,cl_range);
+      else if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointList) )
+        datasize = get_ho_data_size_list(z,hofam,os,ot,ptsetlist,npts);
+      else
+        datasize = get_ho_data_size(z,hofam,os,ot);
+      /* The size helpers walk into Family_t/SolutionInterpolation_t to read the
+       * stored DOF count, so the goto position must be re-established before
+       * the field arrays of this FlowSolution_t are enumerated below. */
+      go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
+      if (datasize < 0) {
+        free(ptsetlist);
+        error("could not compute high-order data size for solution \"%s\"", name);
+        return;
+      }
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
-    datasize = get_data_size (z, location, rind);
-
+    free(ptsetlist);
+    
     /* read solution data as arrays to get size */
 
     if (cg_nfields (cgnsfn, cgnsbase, cgnszone, ns, &nf))
@@ -4753,22 +6184,208 @@ static void check_solution (int ns)
     if (nf == 0)
         warning (2, "no solution data arrays defined");
 
-    for (n = 1; n <= nf; n++) {
+    if (cg_narrays (&narr))
+        error_exit("cg_narrays");
+    for (n = 1; n <= narr; n++) {
         if (cg_array_info (n, name, &datatype, &ndim, dims))
             error_exit("cg_array_info");
+        /* CPEX-0045 v4: interpolation metadata belongs in the
+         * InterpolationMetadata container, not among the solution fields.
+         * A CharacteristicLength here is the superseded v3 layout, which
+         * puts a non-conforming array in the field list. */
+        if (strcmp (name, "CharacteristicLength") == 0) {
+            error("CharacteristicLength must be a child of the "
+                  "InterpolationMetadata UserDefinedData_t node, not of "
+                  "FlowSolution_t (CPEX-0045 v4 sec:cartesian-modal). This "
+                  "is the superseded v3 layout.");
+            continue;
+        }
         printf ("    checking solution field \"%s\"\n", name);
         fflush (stdout);
         for (size = 1, id = 0; id < ndim; id++)
             size *= dims[id];
         if (ndim != z->idim || size < 1 ||
             (datasize && size != datasize))
-            error ("bad dimension values");
+            error ("bad dimension values. required %"PRIdCGSIZE", %"PRIdCGSIZE" given",datasize,size);
         check_quantity (n, name, dataclass, punits, 1, 6);
+    }
+
+    /* CPEX-0045 v4 §3.3.1: CharacteristicLength shape check.
+     * If a "CharacteristicLength" DataArray_t is present in the
+     * InterpolationMetadata container, it must be R8, rank 1 or 2, and cover
+     * the number of elements in the block. We also cross-check against the
+     * zone's Family_t SolutionInterpolation_t entries: if the matching
+     * entry (found via cg_solution_interpolation_find, which implements the
+     * bidirectional-with-fallback lookup of §sec:solution-interpolation) has
+     * InterpolationType = CartesianMonomialsPascal, CharacteristicLength is
+     * mandatory. The cross-check is skipped for zones whose element
+     * sections do not all share a single basic element type (heterogeneous
+     * MIXED-type zones), since a single representative type cannot be
+     * derived in that case. */
+    {
+        cgsize_t cl_len = 0;
+        int cl_nscale = 0;
+        int cl_ierr = cg_sol_characteristic_length_read(cgnsfn, cgnsbase,
+                                                        cgnszone, ns,
+                                                        &cl_nscale, &cl_len,
+                                                        NULL);
+        if (cl_ierr == CG_OK) {
+            printf ("    CharacteristicLength present: %s, length=%ld\n",
+                    cl_nscale == 1 ? "isotropic" : "per-axis", (long)cl_len);
+            /* Rank-2 (per-axis) must carry exactly PhysDim factors per
+             * element; rank-1 is the isotropic encoding. */
+            if (cl_nscale != 1 && cl_nscale != PhyDim) {
+                error("CharacteristicLength has %d scale factors per element; "
+                      "expected 1 (isotropic) or %d (per-axis, PhysDim).",
+                      cl_nscale, PhyDim);
+            }
+            /* If the block has an explicit point set, length must match
+             * the number of elements listed; otherwise it must match the
+             * total cell count of the zone. */
+            cgsize_t expected = 0;
+            if (npts > 0 && ptsettype == CGNS_ENUMV(PointRange)) {
+                /* A PointRange lists two bounds; the element count is the
+                 * closed interval between them.  cl_range was captured before
+                 * the point-set list was released. */
+                expected = (cl_range[1] >= cl_range[0])
+                         ? cl_range[1] - cl_range[0] + 1 : 0;
+            } else if (npts > 0 && ptsettype == CGNS_ENUMV(PointList)) {
+                expected = npts;
+            } else {
+                /* Whole-zone block: the zone's cells.  Boundary sections, and
+                 * boundary faces inside a MIXED section, are not part of the
+                 * location domain and are not counted. */
+                cgsize_t n = ho_zone_ncells (z);
+                expected = (n < 0) ? 0 : n;
+            }
+            /* All factors must be strictly positive.  This needs the values,
+             * so the shape-only query above is repeated with a buffer -- a
+             * validator that never looks at the data cannot enforce the rule. */
+            if (cl_len > 0 && cl_nscale > 0) {
+                cgsize_t ntot = cl_len * (cgsize_t)cl_nscale;
+                double *cl_vals = (double *) malloc ((size_t)ntot * sizeof(double));
+                if (cl_vals == NULL) {
+                    warning (1, "could not allocate %ld doubles to check "
+                                "CharacteristicLength positivity", (long)ntot);
+                } else if (cg_sol_characteristic_length_read (cgnsfn, cgnsbase,
+                               cgnszone, ns, &cl_nscale, &cl_len,
+                               cl_vals) != CG_OK) {
+                    error("CharacteristicLength could not be read: %s", cg_get_error());
+                    free (cl_vals);
+                    cl_vals = NULL;
+                } else {
+                    cgsize_t k;
+                    for (k = 0; k < ntot; k++) {
+                        /* !(x > 0) also catches NaN */
+                        if (!(cl_vals[k] > 0.0)) {
+                            error("CharacteristicLength factor %ld is %g; all factors "
+                                  "must be strictly positive.", (long)k, cl_vals[k]);
+                            break;
+                        }
+                    }
+                    free (cl_vals);
+                }
+            }
+            if (expected > 0 && cl_len != expected) {
+                error("CharacteristicLength covers %ld elements, which does not "
+                      "match the number of elements covered by this "
+                      "FlowSolution_t (%ld).",
+                      (long)cl_len, (long)expected);
+            }
+        } else if (cl_ierr != CG_NODE_NOT_FOUND) {
+            error("CharacteristicLength validation failed: %s",
+                  cg_get_error());
+        }
+
+        if (has_interp_order && cl_ierr == CG_NODE_NOT_FOUND) {
+            char famname[CG_MAX_NAME_LENGTH+1];
+            int fam_ierr, fnum = 0, m;
+
+            go_absolute ("Zone_t", cgnszone, NULL);
+            fam_ierr = cg_famname_read(famname);
+
+            if (fam_ierr == CG_OK) {
+                for (m = 0; m < NumFamily; m++) {
+                    if (0 == strcmp(famname, Family[m])) { fnum = m + 1; break; }
+                }
+            }
+
+            if (fnum > 0) {
+                CGNS_ENUMT(ElementType_t) rep_basic = CGNS_ENUMV(ElementTypeNull);
+                int homogeneous = 1, si;
+
+                for (si = 0; si < z->nsets; si++) {
+                    CGNS_ENUMT(ElementType_t) basic;
+                    /* MIXED/NGON_n/NFACE_n sections are themselves composites
+                     * of possibly several element types; cg_element_basic_element_type()
+                     * maps each of these to itself (its own row in the traits
+                     * table has no single basic type), so it must not be
+                     * trusted as a resolved type here -- doing so previously
+                     * produced a false "no matching SolutionInterpolation_t"
+                     * error against MIXED-section zones whose per-element-type
+                     * entries (e.g. one for TRI_3, one for QUAD_4) were
+                     * actually present and correct. */
+                    if (z->sets[si].type == CGNS_ENUMV(MIXED) ||
+                        z->sets[si].type == CGNS_ENUMV(NGON_n) ||
+                        z->sets[si].type == CGNS_ENUMV(NFACE_n)) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (cg_element_basic_element_type(z->sets[si].type, &basic) != CG_OK) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (rep_basic == CGNS_ENUMV(ElementTypeNull))
+                        rep_basic = basic;
+                    else if (rep_basic != basic) {
+                        homogeneous = 0;
+                        break;
+                    }
+                }
+
+                if (homogeneous && rep_basic != CGNS_ENUMV(ElementTypeNull)) {
+                    int sn_found;
+                    CGNS_ENUMT(InterpolationType_t) it_found;
+                    int find_ierr = cg_solution_interpolation_find(cgnsfn, cgnsbase,
+                            fnum, rep_basic, os, ot, &sn_found, &it_found);
+
+                    if (find_ierr == CG_OK &&
+                        it_found == CGNS_ENUMV(CartesianMonomialsPascal))
+                    {
+                        if (strict_cpex45)
+                            error("CPEX-0045 v4 sec:cartesian-modal: the "
+                                  "InterpolationMetadata/CharacteristicLength node "
+                                  "is mandatory when the associated SolutionInterpolation_t "
+                                  "uses CartesianMonomialsPascal, but is absent from this "
+                                  "FlowSolution_t.");
+                        else
+                            warning(2, "InterpolationMetadata/CharacteristicLength is "
+                                       "normally required for CartesianMonomialsPascal "
+                                       "interpolation but is absent from this "
+                                       "FlowSolution_t.");
+                    }
+                } else {
+                    /* Zone mixes element basic types (or contains a
+                     * MIXED/NGON_n/NFACE_n section): the mandatory-
+                     * CharacteristicLength rule cannot be evaluated without a
+                     * single basic element type to look up. Reported
+                     * explicitly rather than silently skipped, since these are
+                     * exactly the zones CPEX-0045's MIXED-section support is
+                     * meant to cover. */
+                    warning(2, "zone has multiple element basic types (or a "
+                               "MIXED/NGON_n/NFACE_n section); cannot "
+                               "automatically verify whether "
+                               "InterpolationMetadata/CharacteristicLength is "
+                               "required here -- verify manually.");
+                }
+            }
+        }
     }
 
     /* user data */
 
     check_user_data (dataclass, punits, 4);
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -5669,13 +7286,118 @@ static void check_gravity (float *vector)
 
 /*-----------------------------------------------------------------------*/
 
+static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
+                                        int npe, double *u, double *v, double *w)
+{
+    CGNS_ENUMT(ElementType_t) btype;
+    int ncorner;
+    if (cg_element_basic_element_type(type,&btype) != CG_OK) {
+        error("cg_element_basic_element_type");
+        return CG_ERROR;
+    }
+
+    /* Each case below indexes u/v/w up to the basic type's corner count
+     * (e.g. QUAD_4 reads u[0..3]).  At SpatialDegree=0 there is exactly one
+     * stored point -- valid per CPEX-0045 -- and fewer than that in general
+     * whenever npe is smaller than the corner count, which is a heap
+     * over-read waiting to happen rather than an orderable case: a single
+     * point cannot "be" four distinct corners, so the check does not apply. */
+    if (cg_npe(btype, &ncorner) != CG_OK || npe < ncorner) return CG_OK;
+
+    switch(btype)
+    {
+      case (CGNS_ENUMV(NODE)): return CG_OK;
+      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;break;
+      case (CGNS_ENUMV(TRI_3)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(QUAD_4)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(TETRA_4)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(HEXA_8)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[5]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[7]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[5]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[7]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[5]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[6]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[7]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(PENTA_6)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[5]+1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[5]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[5]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          break;
+      }
+      case (CGNS_ENUMV(PYRA_5)): 
+      {
+          if(fabs(u[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[1]-1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(u[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(u[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(u[4]) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(v[2]-1.0) > CG_HO_PARAM_COORD_TOL || fabs(v[3]-1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(v[4]) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[1]+1.0) > CG_HO_PARAM_COORD_TOL || 
+             fabs(w[2]+1.0) > CG_HO_PARAM_COORD_TOL || fabs(w[3]+1.0) > CG_HO_PARAM_COORD_TOL ||
+             fabs(w[4]-1.0) > CG_HO_PARAM_COORD_TOL ) return CG_ERROR;
+          break;
+      }
+      default: return CG_ERROR;
+    }
+    
+    
+    return CG_OK;
+}
+/*-----------------------------------------------------------------------*/
+
 static void check_family (int fam)
 {
+    CGNS_ENUMT(ControlPointDistribution_t) sdist = CGNS_ENUMV(ControlPointDistributionNull);
+    int sdist_ierr = CG_NODE_NOT_FOUND;
     char famname[33], name[33], cad[33], *filename;
-    int ierr, i, n, nbc, ngeo, nparts;
+    int ierr, j, n,ndim, nbc, ngeo, nparts;
+    int ordinal;
+    cgsize_t i;
+    int npt, npts_stored;
     CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(ElementType_t) etype,btype;
+    CGNS_ENUMT(InterpolationType_t) it;
     int nds, dirichlet, neumann;
     float point[3], vector[3];
+    int ninterp, os, ot;
+    double *pu,*pv,*pw,*pt;
 
     if (cg_family_read (cgnsfn, cgnsbase, fam, famname, &nbc, &ngeo))
         error_exit("cg_family_read");
@@ -5749,7 +7471,7 @@ static void check_family (int fam)
         }
     }
 
-    ierr = read_ordinal (&i);
+    ierr = read_ordinal (&ordinal);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_ordinal_read");
 
     ierr = cg_rotating_read (vector, point);
@@ -5759,8 +7481,350 @@ static void check_family (int fam)
         fflush (stdout);
         check_rotating (point, vector, BaseClass, pBaseUnits, 4);
     }
-
+    
     check_user_data (BaseClass, pBaseUnits, 2);
+    
+    if (cg_nelement_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nelement_interpolation_read");
+
+    if (verbose) printf ("  Number ElementInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        CGNS_ENUMT(InterpolationType_t) eit;
+        CGNS_ENUMT(ControlPointDistribution_t) edist;
+        int dist_ierr = CG_NODE_NOT_FOUND;
+        if (cg_element_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype) )
+          error_exit("cg_element_interpolation_read");
+        if (verbose) {
+            printf ("    ElementInterpolation Name=\"%s\"\n", name);
+            printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+        }
+
+        /* CPEX-0045 §3.1.2: ControlPointDistribution is recommended
+         * but not required for ParametricLagrange.  The nodal basis is fully
+         * determined by the LagrangeControlPoints coordinates together with the
+         * element type and order, so absence is conformant and is not an error
+         * even in strict mode. */
+        if (cg_element_interpolation_type_read(cgnsfn, cgnsbase, fam, n, &eit))
+            error_exit("cg_element_interpolation_type_read");
+        /* No note about "deliberately isoparametric" versus "not written yet":
+         * per CPEX-0045 v4 those are not two states.  A node's type is exactly
+         * the presence or absence of LagrangeControlPoints, so an absent array
+         * means IsoParametric, full stop, and adding one later is a defined
+         * type change rather than something this validator should flag. */
+        if (eit == CGNS_ENUMV(ParametricLagrange)) {
+            dist_ierr = cg_element_interpolation_distribution_read(cgnsfn, cgnsbase,
+                                                                   fam, n, &edist);
+            if (dist_ierr == CG_NODE_NOT_FOUND) {
+                warning(2, "ElementInterpolation \"%s\": ControlPointDistribution "
+                        "is absent; recording it is recommended.  The basis is taken from "
+                        "the LagrangeControlPoints coordinates.", name);
+            } else if (dist_ierr != CG_OK) {
+                error_exit("cg_element_interpolation_distribution_read");
+            } else if (verbose) {
+                printf ("    ElementInterpolation Distribution=\"%s\"\n",
+                        cg_ControlPointDistributionName(edist));
+            }
+        }
+
+        /* Validate: Get expected size for this element type */
+        int tmp_i;
+        if (cg_element_lagrange_interpolation_size(etype,&tmp_i) != CG_OK) {
+            error("ElementInterpolation \"%s\": cg_element_lagrange_interpolation_size "
+                  "failed for element type %s", name, cg_ElementTypeName(etype));
+            continue;
+        }
+        i = tmp_i;
+        if (i <= 0) {
+            error("ElementInterpolation \"%s\": Invalid size %lld for element type %s",
+                  name, (long long)i, cg_ElementTypeName(etype));
+            continue;
+        }
+
+        /* Validate: Get actual number of points from stored data */
+        if (cg_npe(etype, &npt) != CG_OK) {
+            error("ElementInterpolation \"%s\": invalid element type %s",
+                  name, cg_ElementTypeName(etype));
+        }
+        else if (npt != i) {
+            error("ElementInterpolation \"%s\": Point count mismatch - expected %lld for %s, got %lld",
+                  name, (long long)i, cg_ElementTypeName(etype), (long long)npt);
+        }
+
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        if (!pu || !pv || !pw) {
+            free(pu); free(pv); free(pw);
+            error("ElementInterpolation \"%s\": memory allocation failed for %lld points",
+                  name, (long long)i);
+            continue;
+        }
+
+        ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw);
+        if (ierr == CG_OK) {
+            /* CPEX-0045: compare the stored coordinates against the named
+             * distribution whenever both are present.  The geometric order of an
+             * ElementInterpolation_t is carried by its element tag, so the degree
+             * comes from cg_npe_ho rather than from a stored degree field. */
+            if (dist_ierr == CG_OK) {
+                CGNS_ENUMT(ElementType_t) dbtype;
+                int dp, dnpe;
+                if (cg_element_basic_element_type(etype, &dbtype) == CG_OK) {
+                    for (dp = 1; dp <= 4; dp++) {
+                        if (cg_npe_ho(dbtype, dp, &dnpe) == CG_OK && dnpe == npt) break;
+                    }
+                    if (dp <= 4)
+                        ho_check_distribution("ElementInterpolation", name, etype,
+                                              edist, dp, npt, pu, pv, pw);
+                }
+            }
+
+            /* Validate: Check element dimension and verify non-NULL coordinate arrays */
+            cg_element_dimension(etype, &ndim);
+            if (ndim < 1 || ndim > 3) {
+                error("ElementInterpolation \"%s\": Invalid element dimension %d for type %s",
+                      name, ndim, cg_ElementTypeName(etype));
+            }
+
+            /* CPEX-0045 S3.2.2 (ElementInterpolation_t): "it is assumed that
+             * the first points correspond to the principal vertices of the
+             * corresponding linear element, in the same order, cf. Figure 1."
+             * This is a genuine conformance requirement, not a debugging aid,
+             * so unlike the dump below it runs whether or not -v was given.
+             * (The parallel check formerly applied to SolutionInterpolation_t
+             * has been removed: S3.2.4/S5.2 state no ordering requirement
+             * there -- that block is selected by (element type, order) alone,
+             * not by array position.) */
+            if (cg_element_basic_element_type(etype, &btype) != CG_OK) {
+                error("ElementInterpolation \"%s\": cg_element_basic_element_type failed "
+                      "for type %s", name, cg_ElementTypeName(etype));
+            }
+            else if (check_element_nodes_ordering(btype, npt, pu, pv, pw)) {
+                if (strict_cpex45)
+                    error("ElementInterpolation \"%s\": the leading control points do "
+                          "not correspond to the corner nodes of %s in standard order.",
+                          name, cg_ElementTypeName(btype));
+                else
+                    warning(1, "ElementInterpolation \"%s\": the leading control points "
+                               "do not correspond to the corner nodes of %s in standard "
+                               "order.", name, cg_ElementTypeName(btype));
+            }
+
+            if (verbose)
+        {
+            printf ("    ElementInterpolation Lagrange Points Defined \n");
+
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            if (cg_npe(etype,&npt) != CG_OK)
+                error("ElementInterpolation \"%s\": invalid element type %s",
+                      name, cg_ElementTypeName(etype));
+
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+        }
+        }
+        else if (ierr == CG_ERROR)
+          error_exit("cg_element_interpolation_points_read");
+        free(pu);free(pv);free(pw);
+    }
+    
+    if (cg_nsolution_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nsolution_interpolation_read");
+    
+    if (verbose) printf ("  Number SolutionInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        if (cg_solution_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype, &os, &ot,&it) )
+          error_exit("cg_solution_interpolation_read");
+        if (verbose) {
+            printf ("    SolutionInterpolation Name=\"%s\"\n", name);
+            printf ("    SolutionInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+            printf ("    SolutionInterpolation spatialDegree=%d\n", os);
+            printf ("    SolutionInterpolation temporalDegree=%d\n", ot);
+            printf ("    SolutionInterpolation InterpolationType=\"%s\"\n", cg_InterpolationTypeName(it));
+        }
+
+        /* Validate: Check InterpolationType */
+        if (it != CGNS_ENUMV(ParametricLagrange) &&
+            it != CGNS_ENUMV(ParametricMonomialsPascal) &&
+            it != CGNS_ENUMV(CartesianMonomialsPascal) &&
+            it != CGNS_ENUMV(IsoParametric)) {
+            error("SolutionInterpolation \"%s\": Invalid InterpolationType %d",
+                  name, it);
+        }
+
+        /* CPEX-0045 §3.1.2: ControlPointDistribution is recommended
+         * but not required for ParametricLagrange solutions.  The nodal basis is
+         * fully determined by the LagrangeControlPoints coordinates together with
+         * the element type and order, so absence is conformant and is not an error
+         * even in strict mode. */
+        sdist_ierr = CG_NODE_NOT_FOUND;
+        if (it == CGNS_ENUMV(ParametricLagrange)) {
+            sdist_ierr = cg_solution_interpolation_distribution_read(cgnsfn,
+                                cgnsbase, fam, n, &sdist);
+            if (sdist_ierr == CG_NODE_NOT_FOUND) {
+                warning(2, "SolutionInterpolation \"%s\": ControlPointDistribution "
+                        "is absent; recording it is recommended.  The basis is taken from "
+                        "the LagrangeControlPoints coordinates.", name);
+            } else if (sdist_ierr != CG_OK) {
+                error_exit("cg_solution_interpolation_distribution_read");
+            } else if (verbose) {
+                printf ("    SolutionInterpolation Distribution=\"%s\"\n",
+                        cg_ControlPointDistributionName(sdist));
+            }
+        }
+
+        /* Validate: spatial and temporal degrees, in the same two tiers as the
+         * FlowSolution-side check above -- representability is an error,
+         * implausibility only ever a warning.  As there, the representability
+         * tier is defense in depth and unreachable with the current library:
+         * os/ot come from cg_solution_interpolation_read(), and cg_open()
+         * already applied the same [0, CG_MAX_ORDER] bound in
+         * cgi_read_solution_interpolation().  The plausibility tier is the
+         * reachable one.  Previously this side had no upper bound at all,
+         * silently relying on cg_solution_lagrange_interpolation_size() below
+         * to reject an out-of-range degree with a generic "failed" message
+         * instead of a diagnostic one. */
+        if (os < 0 || os > CG_MAX_ORDER)
+            error("SolutionInterpolation \"%s\": spatialDegree %d is outside the "
+                  "representable range [0, %d]", name, os, CG_MAX_ORDER);
+        else if (os > 100)
+            warning(2, "SolutionInterpolation \"%s\": spatialDegree %d is outside "
+                    "typical range [0-100]", name, os);
+
+        if (ot < 0 || ot > CG_MAX_ORDER)
+            error("SolutionInterpolation \"%s\": temporalDegree %d is outside the "
+                  "representable range [0, %d]", name, ot, CG_MAX_ORDER);
+        else if (ot > 10)
+            warning(2, "SolutionInterpolation \"%s\": temporalDegree %d is outside "
+                    "typical range [0-10]", name, ot);
+
+        /* Validate: Get expected size for this element type and orders */
+        int tmp_i2;
+        if (cg_solution_lagrange_interpolation_size(etype, os, ot, &tmp_i2) != CG_OK) {
+            error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size failed "
+                  "for element type %s with degrees (spatial=%d, temporal=%d)",
+                  name, cg_ElementTypeName(etype), os, ot);
+            continue;
+        }
+        i = tmp_i2;
+        if (i <= 0) {
+            error("SolutionInterpolation \"%s\": Invalid size %lld for element type %s with degrees (spatial=%d, temporal=%d)",
+                  name, (long long)i, cg_ElementTypeName(etype), os, ot);
+            continue;
+        }
+
+        /* The *stored* point count, not the complete-space cardinality: an
+         * incomplete (serendipity) space carries fewer, and comparing i entries
+         * of a buffer only npts_stored of which were filled would read
+         * uninitialised memory and report a spurious mismatch. */
+        npts_stored = i;
+        if (cg_solution_interpolation_npoints_read(cgnsfn, cgnsbase, fam, n,
+                                                   &npts_stored) != CG_OK)
+            npts_stored = i;
+
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pt = (double*) malloc((cgsize_t) i * sizeof(double) );
+        if (!pu || !pv || !pw || !pt) {
+            free(pu); free(pv); free(pw); free(pt);
+            error("SolutionInterpolation \"%s\": memory allocation failed for %lld points",
+                  name, (long long)i);
+            continue;
+        }
+
+        ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw,pt);
+        if (ierr == CG_OK) {
+            /* CPEX-0045: compare the stored coordinates against the named
+             * distribution.  Purely spatial nodes only -- for a space-time node
+             * the array holds N_spatial*(q+1) points and the spatial set is
+             * replicated per time level, which the set comparison would not
+             * resolve. */
+            if (sdist_ierr == CG_OK) {
+                if (ot == 0)
+                    ho_check_distribution("SolutionInterpolation", name, etype,
+                                          sdist, os, npts_stored, pu, pv, pw);
+                else
+                    warning (3, "SolutionInterpolation \"%s\": space-time node; the "
+                                "stored coordinates are not checked against the named "
+                                "distribution.", name);
+            }
+
+            /* Validate: Check element dimension */
+            cg_element_dimension(etype, &ndim);
+            if (ndim < 1 || ndim > 3) {
+                error("SolutionInterpolation \"%s\": Invalid element dimension %d for type %s",
+                      name, ndim, cg_ElementTypeName(etype));
+            }
+
+            /* Validate: For TemporalDegree=0, temporal coordinates should not be present;
+             * for TemporalDegree>0, they must be present. Not checked here -- the pt
+             * array's content was already validated in the library. */
+
+            /* Unlike ElementInterpolation_t (CPEX-0045 S3.2.2: "it is assumed
+             * that the first points correspond to the principal vertices ...
+             * in the same order, cf. Figure 1"), the spec's SolutionInterpolation_t
+             * text (S3.2.4, S5.2) states no ordering requirement on
+             * LagrangeControlPoints -- the block is selected by (element type,
+             * order) alone, not by position within the array.  So there is no
+             * corner-ordering check here; btype is still needed below for the
+             * verbose dump. */
+            if (cg_element_basic_element_type(etype, &btype) != CG_OK) {
+                error("SolutionInterpolation \"%s\": cg_element_basic_element_type failed "
+                      "for type %s", name, cg_ElementTypeName(etype));
+            }
+            else if (verbose)
+        {
+            printf ("    SolutionInterpolation Lagrange Points Defined \n");
+
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            /* npts_stored, not the complete-space cardinality
+             * cg_solution_lagrange_interpolation_size() would give: for an
+             * incomplete (serendipity) space, cg_solution_interpolation_points_read()
+             * (above) fills only npts_stored entries of pu/pv/pw, so looping to
+             * the complete-space count here would print uninitialised heap --
+             * the exact hazard the ho_check_distribution() call a few lines
+             * above already avoids by using npts_stored instead of the
+             * complete-space size. */
+            npt = npts_stored;
+
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+        }
+        }
+        else if (ierr == CG_ERROR)
+          error_exit("cg_solution_interpolation_points_read");
+        free(pu);free(pv);free(pw);free(pt);
+    }
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -6144,7 +8208,18 @@ static void check_particle_coordinates (int npc)
 {
     char name[33];
     int n;
-    cgsize_t np, dimensions, rmin, rmax;
+    /* dimensions is an array, not a scalar, even though a conformant
+     * particle-coordinate array is always rank 1 (cg_particle_coord_write()
+     * sets only dim_vals[0] = nparticles -- there is no per-zone index
+     * dimension for particles the way there is for a Structured zone's
+     * coordinates): cg_array_info() writes one value per dimension of
+     * whatever rank the node actually has on disk, and this function's job
+     * includes validating files that were not written by this library. See
+     * the identical fix in check_coordinates() (this file) for the sibling
+     * bug this pattern already caused on a Structured zone. Sized to
+     * CGIO_MAX_DIMENSIONS, not just the rank=1 a conformant file has: a
+     * hostile file can declare any rank up to the format's own limit. */
+    cgsize_t np, dimensions[CGIO_MAX_DIMENSIONS], rmin, rmax;
     int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
@@ -6202,7 +8277,7 @@ static void check_particle_coordinates (int npc)
 
     /* Check each particle coordinate node */
     for (nc = 1; nc <= ncoords; nc++) {
-       if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+       if (cg_array_info (nc, name, &datatype, &rank, dimensions))
            error_exit("cg_array_info");
        if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
            error_exit("cg_array_read");
@@ -6260,7 +8335,17 @@ static void check_particle_solution (int ns)
     char name[33];
     int n, nf;
     int ndim;
-    cgsize_t datasize, size;
+    /* dim_vals is an array, not a scalar: cg_array_info() writes one value
+     * per dimension of whatever rank the node actually has on disk, before
+     * the ndim>1 check below ever runs, so a malformed field array with
+     * ndim>1 would overflow a scalar slot first and only be rejected after
+     * the fact. Same pattern, same fix, as check_coordinates() and
+     * check_particle_coordinates() in this file. size is set from
+     * dim_vals[0] afterward, which is correct for the only case the
+     * following check accepts (ndim==1). Sized to CGIO_MAX_DIMENSIONS, not
+     * just the rank=1 a conformant field has: a hostile file can declare any
+     * rank up to the format's own limit. */
+    cgsize_t datasize, size, dim_vals[CGIO_MAX_DIMENSIONS];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     PARTICLE_ZONE *p= &ParticleZone[cgnsparticle-1];
@@ -6341,8 +8426,9 @@ static void check_particle_solution (int ns)
         warning (2, "no solution data arrays defined");
 
     for (n = 1; n <= nf; n++) {
-        if (cg_array_info (n, name, &datatype, &ndim, &size))
+        if (cg_array_info (n, name, &datatype, &ndim, dim_vals))
             error_exit("cg_array_info");
+        size = dim_vals[0];
         printf ("    checking solution field \"%s\"\n", name);
         fflush (stdout);
 
@@ -6568,6 +8654,49 @@ static void check_particle (void)
 
 /*=======================================================================*/
 
+/* Release the per-zone buffers held from the base last read.
+ *
+ * check_base() calls this on entry, so the arrays it is about to overwrite are
+ * the previous base's.  That leaves the final base's buffers held at exit --
+ * harmless for a short-lived tool, but LeakSanitizer and valgrind both report
+ * it (18 FACE objects on a MIXED-section fixture), which would fail the asan
+ * and valgrind CI jobs on every run.  main() therefore calls it once more after
+ * the last base.  Idempotent: NumZones is zeroed, so a second call frees
+ * nothing. */
+static void free_zones (void)
+{
+    int nz, n;
+
+    for (nz = 0; nz < NumZones; nz++) {
+        if (Zones[nz].nsets) {
+            for (n = 0; n < Zones[nz].nsets; n++) {
+                if (Zones[nz].sets[n].elements != NULL)
+                    free (Zones[nz].sets[n].elements);
+                if (Zones[nz].sets[n].parent != NULL)
+                    free (Zones[nz].sets[n].parent);
+                /* Only MIXED/NGON_n/NFACE_n sections allocate this, which is
+                 * why it went unnoticed: the original cleanup freed elements
+                 * and parent but never offsets. */
+                if (Zones[nz].sets[n].offsets != NULL)
+                    free (Zones[nz].sets[n].offsets);
+            }
+            free (Zones[nz].sets);
+            Zones[nz].sets = NULL;
+            Zones[nz].nsets = 0;
+        }
+        if (Zones[nz].faces) {
+            HashDestroy (Zones[nz].faces, free);
+            Zones[nz].faces = NULL;
+        }
+        if (Zones[nz].nextnodes) {
+            free (Zones[nz].extnodes);
+            Zones[nz].extnodes = NULL;
+            Zones[nz].nextnodes = 0;
+        }
+    }
+    NumZones = 0;
+}
+
 static void check_base (void)
 {
     char basename[33], name[33], *desc1, *desc2, *desc3;
@@ -6597,21 +8726,7 @@ static void check_base (void)
 
     /*----- read zones -----*/
 
-    for (nz = 0; nz < NumZones; nz++) {
-        if (Zones[nz].nsets) {
-            for (n = 0; n < Zones[nz].nsets; n++) {
-                if (Zones[nz].sets[n].elements != NULL)
-                    free (Zones[nz].sets[n].elements);
-                if (Zones[nz].sets[n].parent != NULL)
-                    free (Zones[nz].sets[n].parent);
-            }
-            free (Zones[nz].sets);
-        }
-        if (Zones[nz].faces)
-            HashDestroy (Zones[nz].faces, free);
-        if (Zones[nz].nextnodes)
-            free (Zones[nz].extnodes);
-    }
+    free_zones ();
 
     if (cg_nzones (cgnsfn, cgnsbase, &NumZones)) error_exit("cg_nzones");
     if (NumZones > MaxZones) {
@@ -6938,6 +9053,9 @@ int main (int argc, char *argv[])
             case 'e':
                 doerr = 0;
                 break;
+            case 's':
+                strict_cpex45 = 1;
+                break;
         }
     }
 
@@ -6981,11 +9099,21 @@ int main (int argc, char *argv[])
     /* check node name validity according to SIDS */
     check_node_names();
 
+    /* Release the last base's zone buffers; check_base() only ever frees the
+     * base before it, so without this they are still held at exit. */
+    free_zones ();
+
     /* close CGNS file and exit */
 
     if (cg_close (cgnsfn)) error_exit("cg_close");
     puts ("\nchecking complete");
     if (totwarn) printf ("%d warnings (%d shown)\n", totwarn, nwarn);
     if (nerr) printf ("%d errors\n", nerr);
-    return 0;
+
+    /* Exit non-zero when the file failed validation, so cgnscheck can gate a
+     * build or CI step.  This also makes the tool self-consistent: a defect
+     * that trips a library call already exits 1 via error_exit(), so a defect
+     * cgnscheck diagnoses itself must not report success.  Warnings alone do
+     * not fail the run. */
+    return nerr ? 1 : 0;
 }

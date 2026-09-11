@@ -16,6 +16,11 @@ typedef int32_t map_ssize_t;
 typedef uint32_t map_usize_t;
 #define SIZEOF_MAP_USIZE_T 4
 #endif
-typedef char char_name[33];
+
+/* CG_MAX_NAME_LENGTH is CGIO_MAX_NAME_LENGTH (32) + 1 for null terminator */
+#ifndef CG_MAX_NAME_LENGTH
+#define CG_MAX_NAME_LENGTH 33
+#endif
+typedef char char_name[CG_MAX_NAME_LENGTH];
 
 #endif

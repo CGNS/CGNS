@@ -43,8 +43,10 @@ set (examples
 	write_floweqn_str
 	write_flowvert_str
 	write_flowvert_unst
+	write_flowcell_ho_unst
 	write_grid2zn_str
 	write_grid_unst
+	write_grid_ho_unst
 	write_nondimensional
 	write_timevert_str
 	read_bc_str
@@ -61,6 +63,7 @@ set (examples
 	read_floweqn_str
 	read_flowvert_str
 	read_flowvert_unst
+	read_flowcell_ho_unst
 	read_grid2zn_str
 	read_grid_str
 	read_grid_unst
@@ -177,6 +180,9 @@ if (CGNS_ENABLE_TESTS)
 
 	# Test_Grid_Unstr group
 	setup_test_group("Test_Grid_Unstr" "write_grid_unst;write_flowvert_unst;write_dimensional;write_bcpnts_unst")
+
+	# High-order unstructured grid tests
+	setup_fixture_test("Test_Grid_HO_Unstr" "write_grid_ho_unst" "write_flowcell_ho_unst")
 
 	# Fixture-based test groups
 	setup_fixture_test("Test_Grid_Str_Timeacc" "write_grid_str" "write_timevert_str")

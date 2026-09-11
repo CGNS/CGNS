@@ -31,6 +31,85 @@ New Features
 
     Library:
     --------
+    - CPEX-0045: high-order polynomial interpolation for elements and
+      solutions. Adopted by the CGNS Steering Committee on 2026-08-04
+      (v3.0), with the v4 corrections amendment applied.
+
+      SIDS additions:
+        ElementInterpolation_t and SolutionInterpolation_t, both optional
+          list children of Family_t, describing the mesh and solution
+          interpolation bases per element type and degree.
+        InterpolationType_t enumeration: ParametricLagrange,
+          ParametricMonomialsPascal, CartesianMonomialsPascal,
+          IsoParametric.
+        ControlPointDistribution_t enumeration: GaussLobattoLegendre,
+          Equidistant, GaussLegendre, WarpAndBlend. Recommended, not
+          required; the stored coordinates are authoritative.
+        GridLocation_t gains InterpolationPoints (value 9), required for
+          all high-order FlowSolution_t nodes. Field arrays then have
+          length sum(N_DOFs(e)) over the zone's cells, not one value per
+          cell. NofValidGridLocation is now 10.
+        FlowSolution_t gains an InterpolationDegrees IndexArray_t child
+          and, for Cartesian modal interpolation, an InterpolationMetadata
+          UserDefinedData_t container holding CharacteristicLength.
+
+      Proposal S3.2.5 and standard section S5.3 disagree on the shape of
+      per-element variable order: S3.2.5 shows scalar SpatialOrder/
+      TemporalOrder fields, while S5.3 specifies a single InterpolationDegrees
+      array. This implementation follows S5.3. A file from an implementation
+      that instead followed S3.2.5 cannot be read by this library.
+
+      Changes to existing API:
+        CG_MAX_ORDER, CG_MAX_NAME_LENGTH, and ElementType_MAX are new public
+          symbols. ElementType_MAX is a sentinel value (57), not a valid
+          element type; an exhaustive switch over ElementType_t built with
+          -Wswitch -Werror and no default case will need updating.
+        NofValidElementTypes is now CGNS_ENUMV(ElementType_MAX) rather than
+          the integer literal 57, so it is no longer usable in a
+          preprocessor #if and may not be parsed by binding generators that
+          scan the header textually rather than compiling it.
+
+      New API (C, with _f Fortran bindings for each):
+        cg_element_interpolation_{read,write}
+        cg_element_interpolation_type_read
+        cg_element_interpolation_points_{read,write}
+        cg_element_interpolation_distribution_{read,write}
+        cg_element_isoparametric_write
+        cg_element_lagrange_interpolation_{size,count}
+        cg_nelement_interpolation_read
+        cg_solution_interpolation_{read,write,find}
+        cg_solution_interpolation_points_{read,write}
+        cg_solution_interpolation_npoints_read
+        cg_solution_interpolation_distribution_{read,write}
+        cg_solution_lagrange_interpolation_{size,count}
+        cg_solution_monomial_size
+        cg_nsolution_interpolation_read
+        cg_sol_interpolation_degree_{read,write}
+        cg_sol_characteristic_length_{read,write,create,partial_write}
+        cgp_sol_characteristic_length_write_data
+        cg_npe_ho, cg_element_dimension, cg_element_basic_element_type
+
+      New API (C only -- Fortran access is via the corresponding
+      *Name(0:N) character array, following the existing cg_*TypeName
+      convention, not a _f binding):
+        cg_InterpolationTypeName, cg_ControlPointDistributionName
+
+      cgnscheck validates the new nodes and gains a -s option for strict
+      CPEX-0045 conformance, which promotes the soft checks (CellCenter
+      used with InterpolationDegrees, a stored control point set
+      disagreeing with its named distribution, a FlowSolution_t whose
+      (element type, degree) triplet has no matching
+      SolutionInterpolation_t) to errors.
+
+      The typical-degree ranges are deliberately not among them. A degree
+      outside [0,100] spatial or [0,10] temporal is unusual but legal, so
+      it is reported as a warning in every mode and strict mode does not
+      escalate it -- a conformance checker must not fail a valid file. A
+      degree that cannot be represented at all is a separate check and is
+      always an error.
+
+      See Known Problems for interoperability with CGNS 4.x libraries.
+
     - Added test for Unicode (UTF-8) filepath support (CGNS-98/GitHub #494).
       The test verifies creating, reading, and modifying CGNS files with
       non-ASCII characters in directory and filenames, as well as external
@@ -38,6 +117,19 @@ New Features
 
     Parallel Library:
     -----------------
+    - CPEX-0045 parallel support. High-order field arrays are written
+      through the existing cgp_field_write / cgp_field_write_data pair;
+      the interpolation descriptions live in Family_t and are written
+      collectively through the serial calls with identical arguments on
+      every rank.
+
+      Added cgp_sol_characteristic_length_write_data, which writes one
+      rank's element range of CharacteristicLength through the
+      collective-capable MPI-IO path. The array must first be created
+      collectively by cg_sol_characteristic_length_create; node creation
+      is collective, so a rank that creates after another has written
+      would discard that rank's range.
+
     - Added parallel Unicode (UTF-8) filepath test using cgp_open
       (GitHub #494). Verifies parallel coordinate I/O through paths
       containing non-ASCII characters. Requires HDF5 >= 2.0.0.
@@ -155,6 +247,17 @@ Bug Fixes since CGNS 4.5.0 release
 
 Known Problems
 ==============
+
+    * A file written by the CGNS 5.0 library cannot be opened by any
+      CGNS 4.x library, regardless of whether it uses CPEX-0045
+      high-order features. cg_open()'s major-version guard rejects any
+      file whose CGNSLibraryVersion major digit exceeds the reading
+      library's, and every file this library writes is stamped 5.00.
+      Placing high-order solutions in a linked file does not work around
+      this: the base file itself is still stamped 5.00, so a 4.x reader
+      fails on the base file before ever following the link. Producers
+      serving mixed-version readers need to keep a separate CGNS 4.x
+      copy of the file.
 
     * Parallel I/O (cgp_open) does not support Unicode (UTF-8) file
       paths on Windows. MPI_File_open passes filenames to Windows ANSI

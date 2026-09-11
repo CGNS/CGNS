@@ -27,6 +27,9 @@ CALL =	pcgns_ctest$(EXE) \
 	test_general_readwrite$(EXE) \
         Metadata_Stressing$(EXE) \
 	test_poly_unstructured$(EXE) \
+	para_high_order$(EXE) \
+	test_high_order_parallel$(EXE) \
+	test_charlen_parallel$(EXE) \
 	test_mixed_par_ser$(EXE) \
 	thesis_benchmark$(EXE)
 
@@ -123,6 +126,24 @@ test : $(TESTS)
 # Pattern rule for all single-source C tests
 %$(EXE) : %.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ $< $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+para_high_order$(EXE) : para_high_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ para_high_order.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_charlen_parallel$(EXE) : test_charlen_parallel.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_charlen_parallel.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_high_order_parallel$(EXE) : test_high_order_parallel.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_parallel.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

@@ -2722,17 +2722,6 @@ CGNSDLL void cg_ordinal_read_f(cgint_f *Ordinal, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_npe_f(CGNS_ENUMT(ElementType_t) *type,
-	cgint_f *npe, cgint_f *ier)
-{
-    int i_npe;
-
-    *ier = (cgint_f)cg_npe(*type, &i_npe);
-    *npe = (cgint_f)i_npe;
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void cg_is_link_f(cgint_f *path_length, cgint_f *ier)
 {
     int i_path_length;
