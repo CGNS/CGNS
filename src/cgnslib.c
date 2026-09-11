@@ -9421,7 +9421,8 @@ int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
     cgsize_t s_start[2], s_end[2], s_stride[2];
     cgsize_t m_dims[2], m_start[2], m_end[2], m_stride[2];
     cgsize_t i, ncount;
-    int nnodes, n, found = 0;
+    cgsize_t actual_dims[2];
+    int nnodes, n, found = 0, actual_ndim;
     double *ids = NULL;
     double node_id = 0, container_id;
     char_33 nname;
@@ -9495,6 +9496,58 @@ int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
                   "cg_sol_characteristic_length_create() first (collectively, "
                   "on every rank, in a parallel run) before writing ranges");
         return CG_ERROR;
+    }
+
+    /* Validate nscale/numElements against the array's actual on-disk extent
+     * rather than trusting the caller's argument and going straight to the
+     * hyperslab write.  This is not merely a diagnostic-quality improvement:
+     * verified empirically that a numElements mismatch is NOT reliably
+     * caught by cgio_write_data's own hyperslab-selection rejection.  A
+     * caller that claims numElements=42 but writes only the range [1,1] --
+     * exactly what a distributed writer's first rank does if the value
+     * wasn't threaded to it consistently -- selects a hyperslab that fits
+     * inside the real, differently-sized array coincidentally, and the
+     * write silently succeeds against the wrong logical array shape.  Only
+     * an nscale mismatch (a rank change) reliably trips the underlying I/O
+     * layer's own rejection; a numElements mismatch does not.  The extra
+     * metadata query costs one small round-trip on a call whose actual data
+     * write already dwarfs it. */
+    if (cgio_get_dimensions(cg->cgio, node_id, &actual_ndim, actual_dims)) {
+        cg_io_error("cgio_get_dimensions");
+        return CG_ERROR;
+    }
+    {
+        /* Derive (actual_nscale, actual_numElements) from the array's own
+         * rank, not from what the caller expects: indexing actual_dims by
+         * expect_ndim when actual_ndim differs would read a slot
+         * cgio_get_dimensions never populated for a lower-rank array. */
+        int expect_ndim = (nscale == 1) ? 1 : 2;
+        cgsize_t actual_nscale, actual_numElements;
+        if (actual_ndim == 1) {
+            actual_nscale = 1;
+            actual_numElements = actual_dims[0];
+        }
+        else if (actual_ndim == 2) {
+            actual_nscale = actual_dims[0];
+            actual_numElements = actual_dims[1];
+        }
+        else {
+            actual_nscale = -1;
+            actual_numElements = -1;
+        }
+        if (actual_ndim != expect_ndim ||
+            actual_nscale != nscale ||
+            actual_numElements != numElements) {
+            cgi_error("CharacteristicLength: (nscale=%d, numElements=%"
+                      PRIdCGSIZE ") does not match the array's actual "
+                      "extent (nscale=%" PRIdCGSIZE ", numElements=%"
+                      PRIdCGSIZE ") as created by "
+                      "cg_sol_characteristic_length_create(); every writer "
+                      "of a given array must pass the same nscale and "
+                      "numElements it was created with",
+                      nscale, numElements, actual_nscale, actual_numElements);
+            return CG_ERROR;
+        }
     }
 
     /* nscale is the fast-varying axis, so an element range is contiguous. */
