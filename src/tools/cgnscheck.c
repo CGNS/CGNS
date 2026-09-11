@@ -1671,13 +1671,23 @@ static void read_zone (int nz)
                         face->e1 = es->is + ne;
                         face->f1 = j + 1;
                         (void) HashAdd (z->faces, face);
-                    }
-                    else if (pf->e2) {
-                        ierr++;
+                        /* the hash owns it now; freed by HashDestroy */
                     }
                     else {
-                        pf->e2 = es->is + ne;
-                        pf->f2 = j + 1;
+                        /* Already hashed from the neighbouring element, so this
+                         * copy is redundant and nothing takes ownership of it --
+                         * free it here.  Omitting this leaks one FACE for every
+                         * face shared between two elements, i.e. very nearly
+                         * every interior face in the mesh.  The two other
+                         * HashFind sites on z->faces already free their probe. */
+                        if (pf->e2) {
+                            ierr++;
+                        }
+                        else {
+                            pf->e2 = es->is + ne;
+                            pf->f2 = j + 1;
+                        }
+                        free (face);
                     }
                 }
             }
@@ -2517,7 +2527,9 @@ static int ho_zone_family (void)
     return 0;
 }
 
-/* Per-element degree-of-freedom count, per CPEX-0045 v3 §6.2.
+/* Per-element degree-of-freedom count, per CPEX-0045 (cited without a
+ * section number -- see the note at cgnslib.h's solution-interpolation
+ * lookup comment on why a v3-draft section number is not repeated here).
  *
  * N_DOFs(e) is defined by the SolutionInterpolation_t matching element e, so it
  * depends on the declared interpolation type -- the Lagrange nodal count and
@@ -3645,7 +3657,16 @@ static void check_coordinates (int ng)
 {
     char name[33];
     int ierr, n, rind[6];
-    cgsize_t np, dimensions, rmin[3], rmax[3];
+    /* dimensions was a bare cgsize_t (not an array) even though
+     * cg_array_info() writes one value per dimension of rank -- rank==1 for
+     * every coordinate array on an Unstructured zone (the only kind any
+     * cgnscheck CTest fixture exercised), which happened to fit, but
+     * rank==z->idim (up to 3) on a Structured zone overflows it by up to two
+     * cgsize_t's on the stack. Sized to CGIO_MAX_DIMENSIONS, not just 3:
+     * rank here is whatever a node declares on disk, and this function's job
+     * includes validating files that were not written by this library, so a
+     * hostile file can claim any rank up to the format's own limit. */
+    cgsize_t np, dimensions[CGIO_MAX_DIMENSIONS], rmin[3], rmax[3];
     int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
@@ -3719,7 +3740,7 @@ static void check_coordinates (int ng)
         coordset[n] = 0;
 
     for (nc = 1; nc <= ncoords; nc++) {
-        if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+        if (cg_array_info (nc, name, &datatype, &rank, dimensions))
             error_exit("cg_array_info");
         if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
             error_exit("cg_array_read");
@@ -5852,7 +5873,7 @@ static void check_solution (int ns)
     if (punits == NULL) punits = z->punits;
     
     
-    /* Interpolation Order */
+    /* Interpolation Degree */
     ierr = cg_sol_interpolation_degree_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
     if (ierr == CG_ERROR)
     {
@@ -5861,58 +5882,162 @@ static void check_solution (int ns)
     has_interp_order = (ierr == CG_OK);
     if (ierr == CG_OK)
     {
-        printf ("    checking solution Interpolation Order\n");
+        printf ("    checking solution Interpolation Degree\n");
 
-        /* CPEX-0045 v3 §3.1.3: high-order FlowSolution_t nodes use
+        /* CPEX-0045: high-order FlowSolution_t nodes use
          * GridLocation = InterpolationPoints (both uniform and variable order).
          * CellCenter is accepted for backward compatibility with earlier drafts;
-         * strict CPEX-0045 mode flags it as non-conformant.
+         * strict CPEX-0045 mode flags it as non-conformant. (Cited without a
+         * section number: the v3-draft section this was written against is
+         * not guaranteed to match the merged spec's numbering -- see the note
+         * at cgnslib.h's solution-interpolation lookup comment.)
          */
         if (location != CGNS_ENUMV(InterpolationPoints) &&
             location != CGNS_ENUMV(CellCenter))
         {
-            error("Solution Interpolation Order requires GridLocation = InterpolationPoints "
-                  "(CPEX-0045 v3 §3.1.3).");
+            error("Solution Interpolation Degree requires GridLocation = InterpolationPoints "
+                  "(CPEX-0045).");
         }
         else if (location == CGNS_ENUMV(CellCenter) && strict_cpex45)
         {
-            error("CPEX-0045 v3 §3.1.3: GridLocation = CellCenter with InterpolationDegrees "
+            error("CPEX-0045: GridLocation = CellCenter with InterpolationDegrees "
                   "is non-conformant; use InterpolationPoints. (Accepted for back-compat in "
                   "non-strict mode.)");
         }
 
-        printf ("        Spatial  Order : %d\n",os);
-        printf ("        Temporal Order : %d\n",ot);
+        printf ("        Spatial  Degree : %d\n",os);
+        printf ("        Temporal Degree : %d\n",ot);
 
-        /* Validation: order values.
-         * SpatialOrder is a polynomial degree, and degree 0 is valid: it denotes
-         * one spatial degree of freedom per element, i.e. a solution constant over
-         * the element.  That is v2's "standard interpolation (constant per
-         * element)" and the natural representation of a finite-volume cell
-         * average -- the single constant monomial for a modal basis, or one
-         * control point whose nodal function is identically one for a Lagrange
-         * basis.  It must not be rejected, in strict mode or otherwise. */
-        if (os < 0 || os > 100) {
-            if (strict_cpex45)
-                error("Spatial order %d outside valid range [0-100]", os);
-            else
-                warning(2, "Spatial order %d is outside typical range [0-100]", os);
-        }
-        if (ot < 0 || ot > 10) {
-            if (strict_cpex45)
-                error("Temporal order %d outside valid range [0-10]", ot);
-            else
-                warning(2, "Temporal order %d is outside typical range [0-10]", ot);
-        }
+        /* Validation: degree values, in two independent tiers.
+         *
+         * Tier 1 -- representability, always an error.  Defense in depth: with
+         * the current library this branch is unreachable, because os/ot arrive
+         * from cg_sol_interpolation_degree_read(), and cg_open() already
+         * rejected any InterpolationDegrees outside [0, CG_MAX_ORDER] in
+         * cgi_read_sol() -- verified empirically, cg_open() fails first with a
+         * specific diagnostic naming the degree and the range, so no diagnostic
+         * quality is lost by never reaching here.  Kept because cgnscheck is a
+         * validator that may be linked against a library whose bound differs
+         * from the one that wrote the file, and because an unrepresentable
+         * degree is a hard defect rather than a stylistic preference, so if it
+         * ever does become observable it must be an error in normal mode too,
+         * not just under -s.
+         *
+         * Tier 2 -- plausibility, always a warning.  Degrees beyond [0,100]
+         * spatial / [0,10] temporal are legal, readable, and conformant, but
+         * far outside engineering practice, so they are worth surfacing.
+         * Strict mode deliberately does not escalate these to errors: the file
+         * is valid, and a conformance checker must not fail a valid file.
+         *
+         * Degree 0 is valid in both tiers: it denotes one spatial degree of
+         * freedom per element, i.e. a solution constant over the element.  That
+         * is v2's "standard interpolation (constant per element)" and the
+         * natural representation of a finite-volume cell average -- the single
+         * constant monomial for a modal basis, or one control point whose nodal
+         * function is identically one for a Lagrange basis.  It must not be
+         * rejected, in strict mode or otherwise. */
+        if (os < 0 || os > CG_MAX_ORDER)
+            error("Spatial degree %d is outside the representable range [0, %d]",
+                  os, CG_MAX_ORDER);
+        else if (os > 100)
+            warning(2, "Spatial degree %d is outside typical range [0-100]", os);
 
-        /* Full cross-check against Family_t SolutionInterpolation_t (matching
-         * (element_type, os, ot) triplet per CPEX-0045 §4.3) requires walking
-         * the family tree and element sections. In strict mode, remind the
-         * user to verify this manually; otherwise stay silent. */
-        if (strict_cpex45) {
-            warning(1, "Strict mode: verify a SolutionInterpolation_t block "
-                       "exists in the zone's Family_t with (basic_element_type, "
-                       "spatialDegree=%d, temporalDegree=%d).", os, ot);
+        if (ot < 0 || ot > CG_MAX_ORDER)
+            error("Temporal degree %d is outside the representable range [0, %d]",
+                  ot, CG_MAX_ORDER);
+        else if (ot > 10)
+            warning(2, "Temporal degree %d is outside typical range [0-10]", ot);
+
+        /* Full cross-check against Family_t SolutionInterpolation_t: without a
+         * matching (basic_element_type, spatialDegree, temporalDegree) entry
+         * there, this FlowSolution_t's DOFs have no basis to size or position
+         * them against, so the field data is not actually readable as
+         * high-order even though every check above it can pass. Reuses the
+         * homogeneous/rep_basic family walk the CharacteristicLength check
+         * below uses for the same lookup. */
+        {
+            char famname[CG_MAX_NAME_LENGTH+1];
+            int fam_ierr, fnum = 0, m;
+
+            go_absolute ("Zone_t", cgnszone, NULL);
+            fam_ierr = cg_famname_read(famname);
+
+            if (fam_ierr == CG_OK) {
+                for (m = 0; m < NumFamily; m++) {
+                    if (0 == strcmp(famname, Family[m])) { fnum = m + 1; break; }
+                }
+            }
+
+            if (fnum == 0) {
+                warning(1, "no FamilyName_t on this zone; cannot verify a "
+                           "matching SolutionInterpolation_t exists for "
+                           "(spatialDegree=%d, temporalDegree=%d).", os, ot);
+            } else {
+                CGNS_ENUMT(ElementType_t) rep_basic = CGNS_ENUMV(ElementTypeNull);
+                int homogeneous = 1, si;
+
+                for (si = 0; si < z->nsets; si++) {
+                    CGNS_ENUMT(ElementType_t) basic;
+                    /* MIXED/NGON_n/NFACE_n sections are themselves composites
+                     * of possibly several element types; cg_element_basic_element_type()
+                     * maps each of these to itself (its own row in the traits
+                     * table has no single basic type), so it must not be
+                     * trusted as a resolved type here -- doing so previously
+                     * produced a false "no matching SolutionInterpolation_t"
+                     * error against MIXED-section zones whose per-element-type
+                     * entries (e.g. one for TRI_3, one for QUAD_4) were
+                     * actually present and correct. */
+                    if (z->sets[si].type == CGNS_ENUMV(MIXED) ||
+                        z->sets[si].type == CGNS_ENUMV(NGON_n) ||
+                        z->sets[si].type == CGNS_ENUMV(NFACE_n)) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (cg_element_basic_element_type(z->sets[si].type, &basic) != CG_OK) {
+                        homogeneous = 0;
+                        break;
+                    }
+                    if (rep_basic == CGNS_ENUMV(ElementTypeNull))
+                        rep_basic = basic;
+                    else if (rep_basic != basic) {
+                        homogeneous = 0;
+                        break;
+                    }
+                }
+
+                if (!homogeneous || rep_basic == CGNS_ENUMV(ElementTypeNull)) {
+                    /* Zone mixes element basic types (or none could be resolved):
+                     * there is no single (basic_element_type) key to look up, so
+                     * the automatic check cannot run. Reported explicitly rather
+                     * than silently skipped. */
+                    warning(2, "zone has multiple element basic types (or none "
+                               "resolvable); cannot automatically verify a "
+                               "matching SolutionInterpolation_t exists for "
+                               "(spatialDegree=%d, temporalDegree=%d) -- verify "
+                               "manually.", os, ot);
+                } else {
+                    int sn_found;
+                    CGNS_ENUMT(InterpolationType_t) it_found;
+                    int find_ierr = cg_solution_interpolation_find(cgnsfn, cgnsbase,
+                            fnum, rep_basic, os, ot, &sn_found, &it_found);
+
+                    if (find_ierr != CG_OK) {
+                        if (strict_cpex45)
+                            error("no SolutionInterpolation_t block exists in the "
+                                  "zone's Family_t \"%s\" with (basic_element_type=%s, "
+                                  "spatialDegree=%d, temporalDegree=%d); the field "
+                                  "data has no basis to size or position its degrees "
+                                  "of freedom.", famname, cg_ElementTypeName(rep_basic),
+                                  os, ot);
+                        else
+                            warning(1, "no SolutionInterpolation_t block found in the "
+                                       "zone's Family_t \"%s\" matching "
+                                       "(basic_element_type=%s, spatialDegree=%d, "
+                                       "temporalDegree=%d).", famname,
+                                       cg_ElementTypeName(rep_basic), os, ot);
+                    }
+                }
+            }
         }
     }
 
@@ -5978,13 +6103,16 @@ static void check_solution (int ns)
 
         if (has_order && !has_ptset)
         {
-            error("CPEX 0045 Section 3.2.5: Variable order solutions (GridLocation=CellCenter "
-                  "with SpatialOrder=%d or TemporalOrder=%d) require PointRange or PointList "
-                  "to specify which elements use this order.", temp_os, temp_ot);
+            /* Cited without a section number: the draft section this was written
+             * against is not guaranteed to match the merged spec's numbering. */
+            error("CPEX-0045: Variable degree solutions (GridLocation=CellCenter "
+                  "with SpatialDegree=%d or TemporalDegree=%d) require PointRange or "
+                  "PointList to specify which elements use this degree.",
+                  temp_os, temp_ot);
         }
         else if (has_order)
         {
-            printf ("    Variable order solution (p-adaptation):\n");
+            printf ("    Variable degree solution (p-adaptation):\n");
             printf ("        PointSet Type: %s\n", cg_PointSetTypeName(ptsettype));
             printf ("        Point Count  : %ld\n", (long)npts);
         }
@@ -6163,6 +6291,21 @@ static void check_solution (int ns)
 
                 for (si = 0; si < z->nsets; si++) {
                     CGNS_ENUMT(ElementType_t) basic;
+                    /* MIXED/NGON_n/NFACE_n sections are themselves composites
+                     * of possibly several element types; cg_element_basic_element_type()
+                     * maps each of these to itself (its own row in the traits
+                     * table has no single basic type), so it must not be
+                     * trusted as a resolved type here -- doing so previously
+                     * produced a false "no matching SolutionInterpolation_t"
+                     * error against MIXED-section zones whose per-element-type
+                     * entries (e.g. one for TRI_3, one for QUAD_4) were
+                     * actually present and correct. */
+                    if (z->sets[si].type == CGNS_ENUMV(MIXED) ||
+                        z->sets[si].type == CGNS_ENUMV(NGON_n) ||
+                        z->sets[si].type == CGNS_ENUMV(NFACE_n)) {
+                        homogeneous = 0;
+                        break;
+                    }
                     if (cg_element_basic_element_type(z->sets[si].type, &basic) != CG_OK) {
                         homogeneous = 0;
                         break;
@@ -6196,6 +6339,19 @@ static void check_solution (int ns)
                                        "interpolation but is absent from this "
                                        "FlowSolution_t.");
                     }
+                } else {
+                    /* Zone mixes element basic types (or contains a
+                     * MIXED/NGON_n/NFACE_n section): the mandatory-
+                     * CharacteristicLength rule cannot be evaluated without a
+                     * single basic element type to look up. Reported
+                     * explicitly rather than silently skipped, since these are
+                     * exactly the zones CPEX-0045's MIXED-section support is
+                     * meant to cover. */
+                    warning(2, "zone has multiple element basic types (or a "
+                               "MIXED/NGON_n/NFACE_n section); cannot "
+                               "automatically verify whether "
+                               "InterpolationMetadata/CharacteristicLength is "
+                               "required here -- verify manually.");
                 }
             }
         }
@@ -7325,6 +7481,11 @@ static void check_family (int fam)
          * even in strict mode. */
         if (cg_element_interpolation_type_read(cgnsfn, cgnsbase, fam, n, &eit))
             error_exit("cg_element_interpolation_type_read");
+        /* No note about "deliberately isoparametric" versus "not written yet":
+         * per CPEX-0045 v4 those are not two states.  A node's type is exactly
+         * the presence or absence of LagrangeControlPoints, so an absent array
+         * means IsoParametric, full stop, and adding one later is a defined
+         * type change rather than something this validator should flag. */
         if (eit == CGNS_ENUMV(ParametricLagrange)) {
             dist_ierr = cg_element_interpolation_distribution_read(cgnsfn, cgnsbase,
                                                                    fam, n, &edist);
@@ -7501,25 +7662,42 @@ static void check_family (int fam)
             }
         }
 
-        /* Validate: Check spatial and temporal orders */
-        if (os < 0) {
-            error("SolutionInterpolation \"%s\": Invalid spatialDegree %d (must be >= 0)", name, os);
-        }
-        if (ot < 0) {
-            error("SolutionInterpolation \"%s\": Invalid temporalDegree %d (must be >= 0)", name, ot);
-        }
+        /* Validate: spatial and temporal degrees, in the same two tiers as the
+         * FlowSolution-side check above -- representability is an error,
+         * implausibility only ever a warning.  As there, the representability
+         * tier is defense in depth and unreachable with the current library:
+         * os/ot come from cg_solution_interpolation_read(), and cg_open()
+         * already applied the same [0, CG_MAX_ORDER] bound in
+         * cgi_read_solution_interpolation().  The plausibility tier is the
+         * reachable one.  Previously this side had no upper bound at all,
+         * silently relying on cg_solution_lagrange_interpolation_size() below
+         * to reject an out-of-range degree with a generic "failed" message
+         * instead of a diagnostic one. */
+        if (os < 0 || os > CG_MAX_ORDER)
+            error("SolutionInterpolation \"%s\": spatialDegree %d is outside the "
+                  "representable range [0, %d]", name, os, CG_MAX_ORDER);
+        else if (os > 100)
+            warning(2, "SolutionInterpolation \"%s\": spatialDegree %d is outside "
+                    "typical range [0-100]", name, os);
+
+        if (ot < 0 || ot > CG_MAX_ORDER)
+            error("SolutionInterpolation \"%s\": temporalDegree %d is outside the "
+                  "representable range [0, %d]", name, ot, CG_MAX_ORDER);
+        else if (ot > 10)
+            warning(2, "SolutionInterpolation \"%s\": temporalDegree %d is outside "
+                    "typical range [0-10]", name, ot);
 
         /* Validate: Get expected size for this element type and orders */
         int tmp_i2;
         if (cg_solution_lagrange_interpolation_size(etype, os, ot, &tmp_i2) != CG_OK) {
             error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size failed "
-                  "for element type %s with orders (spatial=%d, temporal=%d)",
+                  "for element type %s with degrees (spatial=%d, temporal=%d)",
                   name, cg_ElementTypeName(etype), os, ot);
             continue;
         }
         i = tmp_i2;
         if (i <= 0) {
-            error("SolutionInterpolation \"%s\": Invalid size %lld for element type %s with orders (spatial=%d, temporal=%d)",
+            error("SolutionInterpolation \"%s\": Invalid size %lld for element type %s with degrees (spatial=%d, temporal=%d)",
                   name, (long long)i, cg_ElementTypeName(etype), os, ot);
             continue;
         }
@@ -7568,8 +7746,8 @@ static void check_family (int fam)
                       name, ndim, cg_ElementTypeName(etype));
             }
 
-            /* Validate: For TemporalOrder=0, temporal coordinates should not be present;
-             * for TemporalOrder>0, they must be present. Not checked here -- the pt
+            /* Validate: For TemporalDegree=0, temporal coordinates should not be present;
+             * for TemporalDegree>0, they must be present. Not checked here -- the pt
              * array's content was already validated in the library. */
 
             /* Unlike ElementInterpolation_t (CPEX-0045 S3.2.2: "it is assumed
@@ -7590,14 +7768,15 @@ static void check_family (int fam)
 
             cg_element_dimension(etype,&ndim);
             printf("      Parametric Coordinates\n");
-            int npt_size;
-            if (cg_solution_lagrange_interpolation_size(btype,os,ot,&npt_size) != CG_OK) {
-                error("SolutionInterpolation \"%s\": cg_solution_lagrange_interpolation_size "
-                      "failed for type %s (os=%d, ot=%d)", name,
-                      cg_ElementTypeName(btype), os, ot);
-            }
-            else {
-            npt = (int)npt_size;
+            /* npts_stored, not the complete-space cardinality
+             * cg_solution_lagrange_interpolation_size() would give: for an
+             * incomplete (serendipity) space, cg_solution_interpolation_points_read()
+             * (above) fills only npts_stored entries of pu/pv/pw, so looping to
+             * the complete-space count here would print uninitialised heap --
+             * the exact hazard the ho_check_distribution() call a few lines
+             * above already avoids by using npts_stored instead of the
+             * complete-space size. */
+            npt = npts_stored;
 
             if (ndim>0) {
               printf("      u = ");
@@ -7613,7 +7792,6 @@ static void check_family (int fam)
               printf("      w = ");
               for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
               printf("\n");
-            }
             }
         }
         }
@@ -8005,7 +8183,18 @@ static void check_particle_coordinates (int npc)
 {
     char name[33];
     int n;
-    cgsize_t np, dimensions, rmin, rmax;
+    /* dimensions is an array, not a scalar, even though a conformant
+     * particle-coordinate array is always rank 1 (cg_particle_coord_write()
+     * sets only dim_vals[0] = nparticles -- there is no per-zone index
+     * dimension for particles the way there is for a Structured zone's
+     * coordinates): cg_array_info() writes one value per dimension of
+     * whatever rank the node actually has on disk, and this function's job
+     * includes validating files that were not written by this library. See
+     * the identical fix in check_coordinates() (this file) for the sibling
+     * bug this pattern already caused on a Structured zone. Sized to
+     * CGIO_MAX_DIMENSIONS, not just the rank=1 a conformant file has: a
+     * hostile file can declare any rank up to the format's own limit. */
+    cgsize_t np, dimensions[CGIO_MAX_DIMENSIONS], rmin, rmax;
     int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
@@ -8063,7 +8252,7 @@ static void check_particle_coordinates (int npc)
 
     /* Check each particle coordinate node */
     for (nc = 1; nc <= ncoords; nc++) {
-       if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+       if (cg_array_info (nc, name, &datatype, &rank, dimensions))
            error_exit("cg_array_info");
        if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
            error_exit("cg_array_read");
@@ -8121,7 +8310,17 @@ static void check_particle_solution (int ns)
     char name[33];
     int n, nf;
     int ndim;
-    cgsize_t datasize, size;
+    /* dim_vals is an array, not a scalar: cg_array_info() writes one value
+     * per dimension of whatever rank the node actually has on disk, before
+     * the ndim>1 check below ever runs, so a malformed field array with
+     * ndim>1 would overflow a scalar slot first and only be rejected after
+     * the fact. Same pattern, same fix, as check_coordinates() and
+     * check_particle_coordinates() in this file. size is set from
+     * dim_vals[0] afterward, which is correct for the only case the
+     * following check accepts (ndim==1). Sized to CGIO_MAX_DIMENSIONS, not
+     * just the rank=1 a conformant field has: a hostile file can declare any
+     * rank up to the format's own limit. */
+    cgsize_t datasize, size, dim_vals[CGIO_MAX_DIMENSIONS];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     PARTICLE_ZONE *p= &ParticleZone[cgnsparticle-1];
@@ -8202,8 +8401,9 @@ static void check_particle_solution (int ns)
         warning (2, "no solution data arrays defined");
 
     for (n = 1; n <= nf; n++) {
-        if (cg_array_info (n, name, &datatype, &ndim, &size))
+        if (cg_array_info (n, name, &datatype, &ndim, dim_vals))
             error_exit("cg_array_info");
+        size = dim_vals[0];
         printf ("    checking solution field \"%s\"\n", name);
         fflush (stdout);
 
@@ -8429,6 +8629,49 @@ static void check_particle (void)
 
 /*=======================================================================*/
 
+/* Release the per-zone buffers held from the base last read.
+ *
+ * check_base() calls this on entry, so the arrays it is about to overwrite are
+ * the previous base's.  That leaves the final base's buffers held at exit --
+ * harmless for a short-lived tool, but LeakSanitizer and valgrind both report
+ * it (18 FACE objects on a MIXED-section fixture), which would fail the asan
+ * and valgrind CI jobs on every run.  main() therefore calls it once more after
+ * the last base.  Idempotent: NumZones is zeroed, so a second call frees
+ * nothing. */
+static void free_zones (void)
+{
+    int nz, n;
+
+    for (nz = 0; nz < NumZones; nz++) {
+        if (Zones[nz].nsets) {
+            for (n = 0; n < Zones[nz].nsets; n++) {
+                if (Zones[nz].sets[n].elements != NULL)
+                    free (Zones[nz].sets[n].elements);
+                if (Zones[nz].sets[n].parent != NULL)
+                    free (Zones[nz].sets[n].parent);
+                /* Only MIXED/NGON_n/NFACE_n sections allocate this, which is
+                 * why it went unnoticed: the original cleanup freed elements
+                 * and parent but never offsets. */
+                if (Zones[nz].sets[n].offsets != NULL)
+                    free (Zones[nz].sets[n].offsets);
+            }
+            free (Zones[nz].sets);
+            Zones[nz].sets = NULL;
+            Zones[nz].nsets = 0;
+        }
+        if (Zones[nz].faces) {
+            HashDestroy (Zones[nz].faces, free);
+            Zones[nz].faces = NULL;
+        }
+        if (Zones[nz].nextnodes) {
+            free (Zones[nz].extnodes);
+            Zones[nz].extnodes = NULL;
+            Zones[nz].nextnodes = 0;
+        }
+    }
+    NumZones = 0;
+}
+
 static void check_base (void)
 {
     char basename[33], name[33], *desc1, *desc2, *desc3;
@@ -8458,21 +8701,7 @@ static void check_base (void)
 
     /*----- read zones -----*/
 
-    for (nz = 0; nz < NumZones; nz++) {
-        if (Zones[nz].nsets) {
-            for (n = 0; n < Zones[nz].nsets; n++) {
-                if (Zones[nz].sets[n].elements != NULL)
-                    free (Zones[nz].sets[n].elements);
-                if (Zones[nz].sets[n].parent != NULL)
-                    free (Zones[nz].sets[n].parent);
-            }
-            free (Zones[nz].sets);
-        }
-        if (Zones[nz].faces)
-            HashDestroy (Zones[nz].faces, free);
-        if (Zones[nz].nextnodes)
-            free (Zones[nz].extnodes);
-    }
+    free_zones ();
 
     if (cg_nzones (cgnsfn, cgnsbase, &NumZones)) error_exit("cg_nzones");
     if (NumZones > MaxZones) {
@@ -8844,6 +9073,10 @@ int main (int argc, char *argv[])
 
     /* check node name validity according to SIDS */
     check_node_names();
+
+    /* Release the last base's zone buffers; check_base() only ever frees the
+     * base before it, so without this they are still held at exit. */
+    free_zones ();
 
     /* close CGNS file and exit */
 
