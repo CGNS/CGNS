@@ -171,9 +171,9 @@ int test_mixed_ho_simple()
         return 1;
     }
 
-    /* Set interpolation orders */
+    /* Set interpolation degrees */
     if (cg_sol_interpolation_degree_write(fn, bn, zn, soln, spatial_degree, temporal_degree)) {
-        printf("ERROR: Failed to set interpolation orders: %s\n", cg_get_error());
+        printf("ERROR: Failed to set interpolation degrees: %s\n", cg_get_error());
         cg_close(fn);
         failed_tests++;
         return 1;

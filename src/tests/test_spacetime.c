@@ -6,7 +6,7 @@
 
 /* Test 5.1: Temporal Order 1 (Linear Time)
  * Tests space-time interpolation with linear temporal component
- * QUAD_9 element with spatial order 2, temporal order 1
+ * QUAD_9 element with spatial degree 2, temporal degree 1
  * Uses SolutionInterpolation_t with InterpolationDegrees = [2, 2, 1]
  * LagrangeControlPoints: (3+1) × ((2+1)^2 × (1+1)) = 4 × 18 array
  */
@@ -79,7 +79,7 @@ int test_temporal_degree1(void)
     printf("SolutionInterpolation_t node created (index=%d)\n", cgsinterp);
 
     /* Allocate and fill control points for space-time
-     * For QUAD_9 with spatial order 2, temporal order 1:
+     * For QUAD_9 with spatial degree 2, temporal degree 1:
      * - Spatial: 3×3 = 9 points per time level
      * - Temporal: 2 time levels (order 1)
      * - Total: 9 × 2 = 18 points
@@ -173,7 +173,7 @@ int test_temporal_degree1(void)
 
     /* NOTE: SolutionInterpolation_t stores the basic element type (e.g., QUAD_4)
      * rather than the high-order type (e.g., QUAD_9). The actual order is in
-     * the spatialdegree field. */
+     * the spatialDegree field. */
     CGNS_ENUMT(ElementType_t) basic_type;
     cg_element_basic_element_type(type, &basic_type);
     if (etyperead != basic_type)
@@ -186,7 +186,7 @@ int test_temporal_degree1(void)
 
     if (os_read != spatial_degree || ot_read != temporal_degree)
     {
-        fprintf(stderr, "ERROR: Wrong interpolation orders (expected [%d, %d], got [%d, %d])\n",
+        fprintf(stderr, "ERROR: Wrong interpolation degrees (expected [%d, %d], got [%d, %d])\n",
                 spatial_degree, temporal_degree, os_read, ot_read);
         return 1;
     }
@@ -311,7 +311,7 @@ int test_temporal_degree1(void)
 
 /* Test 5.2: Higher Temporal Orders
  * Tests quadratic and cubic temporal interpolation
- * QUAD_9 element with spatial order 2, temporal orders 2 and 3
+ * QUAD_9 element with spatial degree 2, temporal degrees 2 and 3
  */
 int test_temporal_higher_orders(void)
 {
@@ -460,7 +460,7 @@ int test_temporal_higher_orders(void)
 
         if (os_read != spatial_degree || ot_read != temporal_degree)
         {
-            fprintf(stderr, "ERROR: Wrong interpolation orders (expected [%d, %d], got [%d, %d])\n",
+            fprintf(stderr, "ERROR: Wrong interpolation degrees (expected [%d, %d], got [%d, %d])\n",
                     spatial_degree, temporal_degree, os_read, ot_read);
             return 1;
         }

@@ -740,6 +740,155 @@ static int test_faces_not_cells(void)
     return rc;
 }
 
+/* CPEX-0045 cgnscheck fixture: a FlowSolution_t's InterpolationDegrees names a
+ * (basic_element_type, spatialDegree, temporalDegree) triplet with no matching
+ * SolutionInterpolation_t in the zone's Family_t. The library's writers do not
+ * cross-validate this (each write is local to its own node), so this is a file
+ * cgnscheck's own referential-integrity check must catch -- it is the check
+ * that determines whether the high-order field data has any basis to size or
+ * position its degrees of freedom against.  Exercised by the
+ * cgnscheck_solinterp_mismatch_* tests in CMakeLists.txt: strict mode must
+ * error, and default mode must still warn (not stay silent), on this file. */
+static int write_solinterp_mismatch(const char *filename)
+{
+    int fn, B, Z, S, F;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t conn[3] = {1, 2, 3};
+    double coordx[3] = {0.0, 1.0, 0.0};
+    double coordy[3] = {0.0, 0.0, 1.0};
+    double coordz[3] = {0.0, 0.0, 0.0};
+    int ci, sec;
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open W")) return 1;
+    if (check(cg_base_write(fn, "Base", 2, 2, &B), "base")) return 1;
+    if (check(cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX",
+              coordx, &ci), "coordX")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY",
+              coordy, &ci), "coordY")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ",
+              coordz, &ci), "coordZ")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Tri", CGNS_ENUMV(TRI_3), 1, 1, 0,
+              conn, &sec), "section")) return 1;
+
+    /* Family exists, but deliberately carries no SolutionInterpolation_t at
+     * all -- the zone's FlowSolution_t below names a basis nothing defines. */
+    if (check(cg_family_write(fn, B, "Fam", &F), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto zone")) return 1;
+    if (check(cg_famname_write("Fam"), "famname")) return 1;
+
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S),
+              "sol")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0), "degree"))
+        return 1;
+
+    if (check(cg_close(fn), "close W")) return 1;
+    return 0;
+}
+
+/* CPEX-0045 cgnscheck fixture: degrees that are legal but implausible.
+ *
+ * CPEX-0045 §Polynomial Degree and Geometric Order Limits separates a normative
+ * representability limit from the advisory [0,100] spatial / [0,10] temporal
+ * ranges, and states that strict mode must NOT escalate the advisory ranges to
+ * errors -- a degree above them yields a valid file, and a conformance checker
+ * must not fail a valid file.  Spatial 150 and temporal 20 are outside both
+ * typical ranges and well inside CG_MAX_ORDER, so cgnscheck must warn about each
+ * in both default and strict mode, and must not turn either into an error.
+ *
+ * This exists because the advisory warnings were once deleted outright in favour
+ * of a single representability error, and the entire 260-test suite stayed green
+ * -- nothing covered them.  The cgnscheck_high_degree_* tests in CMakeLists.txt
+ * assert both warning texts. */
+static int write_high_degree_plausibility(const char *filename)
+{
+    int fn, B, Z, S, F;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t conn[3] = {1, 2, 3};
+    double coordx[3] = {0.0, 1.0, 0.0};
+    double coordy[3] = {0.0, 0.0, 1.0};
+    double coordz[3] = {0.0, 0.0, 0.0};
+    int ci, sec;
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open W")) return 1;
+    if (check(cg_base_write(fn, "Base", 2, 2, &B), "base")) return 1;
+    if (check(cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX",
+              coordx, &ci), "coordX")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY",
+              coordy, &ci), "coordY")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ",
+              coordz, &ci), "coordZ")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Tri", CGNS_ENUMV(TRI_3), 1, 1, 0,
+              conn, &sec), "section")) return 1;
+
+    if (check(cg_family_write(fn, B, "Fam", &F), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto zone")) return 1;
+    if (check(cg_famname_write("Fam"), "famname")) return 1;
+
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S),
+              "sol")) return 1;
+    /* Legal: both are well within CG_MAX_ORDER, so the writer must accept them. */
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 150, 20), "degree"))
+        return 1;
+
+    if (check(cg_close(fn), "close W")) return 1;
+    return 0;
+}
+
+/* CPEX-0045 cgnscheck fixture: a FlowSolution_t's PointList names an element
+ * id that does not exist in any of the zone's Element_t sections. Verified
+ * empirically that cg_open() does NOT reject this -- the library's own
+ * cgi_ho_datasize_list() walk does not flag an unmatched PointList entry, so
+ * this is a genuine, reachable gap only cgnscheck's own get_ho_data_size_list()
+ * (commit cd51aa37) catches, unlike the unresolved-element-type defensive
+ * checks in the same commit (those are provably unreachable: the element
+ * type field is already validated by cg_open() itself before cgnscheck ever
+ * runs, so no file that opens successfully can reach them). Exercised by the
+ * cgnscheck_ptlist_oob_element_* tests in CMakeLists.txt. */
+static int write_ptlist_oob_element(const char *filename)
+{
+    int fn, B, Z, S, F, si;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t conn[3] = {1, 2, 3};
+    double coordx[3] = {0.0, 1.0, 0.0};
+    double coordy[3] = {0.0, 0.0, 1.0};
+    double coordz[3] = {0.0, 0.0, 0.0};
+    /* Element id 99 does not exist: this zone has exactly one element (id 1). */
+    cgsize_t plist[1] = {99};
+    int ci, sec;
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open W")) return 1;
+    if (check(cg_base_write(fn, "Base", 2, 2, &B), "base")) return 1;
+    if (check(cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX",
+              coordx, &ci), "coordX")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY",
+              coordy, &ci), "coordY")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ",
+              coordz, &ci), "coordZ")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Tri", CGNS_ENUMV(TRI_3), 1, 1, 0,
+              conn, &sec), "section")) return 1;
+
+    if (check(cg_family_write(fn, B, "Fam", &F), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto zone")) return 1;
+    if (check(cg_famname_write("Fam"), "famname")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, F, "Tri_P2",
+              CGNS_ENUMV(TRI_3), 2, 0, CGNS_ENUMV(ParametricMonomialsPascal),
+              &si), "SI")) return 1;
+
+    if (check(cg_sol_ptset_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints),
+              CGNS_ENUMV(PointList), 1, plist, &S), "ptset")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0), "degree"))
+        return 1;
+
+    if (check(cg_close(fn), "close W")) return 1;
+    return 0;
+}
+
 int main(void)
 {
     int errors = 0;
@@ -758,6 +907,18 @@ int main(void)
     if (test_v3_layout_rejected()) errors++;
     if (test_partial())           errors++;
     if (test_faces_not_cells())   errors++;
+
+    /* Fixture only: written for the cgnscheck_solinterp_mismatch_* CTest
+     * entries (CMakeLists.txt) to run against, not asserted here. */
+    if (write_solinterp_mismatch("test_solinterp_mismatch.cgns")) errors++;
+
+    /* Fixture only: written for the cgnscheck_ptlist_oob_element_* CTest
+     * entries (CMakeLists.txt) to run against, not asserted here. */
+    if (write_ptlist_oob_element("test_ptlist_oob_element.cgns")) errors++;
+
+    /* Fixture only: written for the cgnscheck_high_degree_* CTest entries
+     * (CMakeLists.txt) to run against, not asserted here. */
+    if (write_high_degree_plausibility("test_high_degree.cgns")) errors++;
 
     printf("\n");
     printf("##################################################\n");

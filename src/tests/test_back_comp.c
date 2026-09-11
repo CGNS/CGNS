@@ -433,9 +433,9 @@ int main()
       cg_error_exit();
     if ( ! compareValuesChr(state,"ReferenceQuantities"))
       cg_error_exit();
-    cg_free(state);
 
     printf("\nReferenceState = %s\n",state);
+    cg_free(state);
 
     /* Go to ReferenceState node, read Mach array and its dataclass */
     if(cg_goto(fd,index_base,"ReferenceState_t",1,"end"))

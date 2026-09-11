@@ -290,7 +290,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         cg_error_exit();
     }
     
-    /* add Corresponding spatial and temporal order --> 3rd and 0th order */
+    /* add Corresponding spatial and temporal degree --> 3rd and 0th order */
     error = cg_sol_interpolation_degree_write(cgfile,cgbase,cgzone,cgsol,3,0);
     
     if (error)

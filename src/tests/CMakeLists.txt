@@ -61,6 +61,7 @@ set(test_particle_FILES test_particle.c)
 set(test_error_handling_FILES test_error_handling.c)
 set(test_variable_order_FILES test_variable_order.c)
 set(test_characteristic_length_FILES test_characteristic_length.c)
+set(test_structured_ptset_solution_FILES test_structured_ptset_solution.c)
 set(test_degree_zero_FILES test_degree_zero.c)
 set(test_distribution_FILES test_distribution.c)
 set(test_element_traits_FILES test_element_traits.c)
@@ -103,7 +104,7 @@ set(C_TESTS_LIST
     test_family_tree test_bbox test_complex test_convert_elem
     test_back_comp test_particle test_error_handling test_variable_order
     test_characteristic_length test_degree_zero test_distribution
-    test_element_traits
+    test_element_traits test_structured_ptset_solution
 )
 foreach(t IN LISTS C_TESTS_LIST)
     add_executable(${t} ${${t}_FILES})
@@ -255,12 +256,20 @@ if (CGNS_ENABLE_TESTS)
                                        #   separate QUAD_4 boundary section
       test_charlen_mixedsec.cgns       # test_characteristic_length: one MIXED
                                        #   section of cells and faces
+      test_structured_ptset_solution.cgns # test_structured_ptset_solution: plain
+                                       #   3-D Structured zone, CellCenter+PointRange --
+                                       #   the fixture check_solution()'s point-set
+                                       #   buffer-overflow fix (688b3530) needs and
+                                       #   the HO suite otherwise never provides,
+                                       #   since it is Unstructured-only
   )
   # A fixture, not DEPENDS: ctest honours FIXTURES_REQUIRED even when the run is
   # filtered with -R, so the producers cannot be skipped, leaving a cgnscheck
   # test to run against a file that was never written.
   set_tests_properties(test_high_order test_mixed_ho test_degree_zero
                        test_distribution test_characteristic_length
+                       test_structured_ptset_solution test_serendipity
+                       test_variable_order
                        PROPERTIES FIXTURES_SETUP HO_TEST_FILES)
 
   foreach(HOFILE IN LISTS CGNSCHECK_HO_FILES)
@@ -329,6 +338,118 @@ if (CGNS_ENABLE_TESTS)
            COMMAND cgnscheck test_ho_rind.cgns)
   set_tests_properties(cgnscheck_ho_rind_flagged PROPERTIES
     PASS_REGULAR_EXPRESSION "Rind_t has no meaning with GridLocation"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # CPEX-0045 referential integrity: a FlowSolution_t's InterpolationDegrees
+  # names a (basic_element_type, spatialDegree, temporalDegree) triplet with no
+  # matching SolutionInterpolation_t in the zone's Family_t. The library's
+  # writers never cross-validate this, so only cgnscheck can catch it -- and
+  # previously it did not: this rule was an unimplemented TODO asking the
+  # operator to verify by hand. Strict mode must error; default mode must still
+  # warn, not stay silent, since silence here is indistinguishable from "no
+  # such gap exists."
+  add_test(NAME cgnscheck_solinterp_mismatch_strict_fails
+           COMMAND cgnscheck -s test_solinterp_mismatch.cgns)
+  set_tests_properties(cgnscheck_solinterp_mismatch_strict_fails PROPERTIES
+    PASS_REGULAR_EXPRESSION "no SolutionInterpolation_t block exists"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  add_test(NAME cgnscheck_solinterp_mismatch_default_warns
+           COMMAND cgnscheck test_solinterp_mismatch.cgns)
+  set_tests_properties(cgnscheck_solinterp_mismatch_default_warns PROPERTIES
+    PASS_REGULAR_EXPRESSION "no SolutionInterpolation_t block found"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # cgnscheck's own get_ho_data_size_list() (commit cd51aa37) rejects a
+  # PointList entry that names an element id absent from every Element_t
+  # section in the zone. This is NOT redundant with cg_open()'s own
+  # validation: verified empirically that a file built this way opens
+  # successfully (the library's cgi_ho_datasize_list() walk does not flag an
+  # unmatched PointList entry), so this is a genuine, reachable gap only
+  # cgnscheck itself closes. Unconditional error in both modes (not gated on
+  # -s), so one test covers it.
+  add_test(NAME cgnscheck_ptlist_oob_element_flagged
+           COMMAND cgnscheck test_ptlist_oob_element.cgns)
+  set_tests_properties(cgnscheck_ptlist_oob_element_flagged PROPERTIES
+    PASS_REGULAR_EXPRESSION "from ptset PointList not found in Elements_t"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # CPEX-0045 separates a normative representability limit from the advisory
+  # [0,100] spatial / [0,10] temporal ranges, and forbids strict mode from
+  # escalating the advisory ranges to errors: a degree above them is unusual but
+  # perfectly legal, and a conformance checker must not fail a legal file. These
+  # two entries pin both halves -- the warnings fire, and -s does not promote
+  # them. Regression guard: the advisory warnings were once removed entirely in
+  # favour of a single representability error and the whole suite stayed green,
+  # because nothing exercised them.
+  add_test(NAME cgnscheck_high_degree_warns
+           COMMAND cgnscheck test_high_degree.cgns)
+  set_tests_properties(cgnscheck_high_degree_warns PROPERTIES
+    PASS_REGULAR_EXPRESSION "Spatial degree 150 is outside typical range"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # Same file under -s: the degree warnings must still be warnings. Asserting
+  # the temporal one here (the spatial one is covered above) so the pair covers
+  # both ranges across both modes.
+  add_test(NAME cgnscheck_high_degree_strict_does_not_escalate
+           COMMAND cgnscheck -s test_high_degree.cgns)
+  set_tests_properties(cgnscheck_high_degree_strict_does_not_escalate PROPERTIES
+    PASS_REGULAR_EXPRESSION "Temporal degree 20 is outside typical range"
+    FAIL_REGULAR_EXPRESSION "(ERROR|error).*(Spatial|Temporal) degree"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # Variable-degree (p-adaptation) files: several FlowSolution_t nodes over one
+  # zone at different degrees. Like CGNSCHECK_ORDERING_FILES below, these are
+  # metadata-only and legitimately report "no element sets found"/"no grid
+  # coordinates defined", so they cannot join CGNSCHECK_HO_FILES' blanket
+  # FAIL_REGULAR_EXPRESSION "ERROR" -- they assert their specific diagnostic
+  # instead. Until now nothing ran cgnscheck against a p-adaptation file at all.
+  #
+  # This one pins the "no family binding" branch of the three causes CPEX-0045
+  # requires a reader to distinguish when a matching SolutionInterpolation_t
+  # cannot be found ("no family binding, no family, no matching triplet"). The
+  # other two are covered by cgnscheck_solinterp_mismatch_* above; this branch
+  # had no coverage.
+  add_test(NAME cgnscheck_vardegree_no_family_binding
+           COMMAND cgnscheck test_variable_order_cell.cgns)
+  set_tests_properties(cgnscheck_vardegree_no_family_binding PROPERTIES
+    PASS_REGULAR_EXPRESSION "zone has no FamilyName_t, so no SolutionInterpolation_t can be located"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # The PointList variant additionally reaches cgnscheck's own
+  # get_ho_data_size_list() element-resolution check, on a p-adaptation file
+  # where each solution covers a different element subset.
+  add_test(NAME cgnscheck_vardegree_ptlist
+           COMMAND cgnscheck test_variable_order_ptlist.cgns)
+  set_tests_properties(cgnscheck_vardegree_ptlist PROPERTIES
+    PASS_REGULAR_EXPRESSION "from ptset PointList not found in Elements_t"
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
+  # check_family()'s verbose dump of a SolutionInterpolation_t's Lagrange
+  # points used the complete-space cardinality (cg_solution_lagrange_
+  # interpolation_size()) as its print loop bound instead of the actual
+  # stored count (npts_stored) -- for an incomplete/serendipity space (this
+  # fixture: QUAD_4 at degree 2, 8 stored points vs. 9 complete-space), that
+  # read one uninitialised double past the buffer cg_solution_interpolation_
+  # points_read() actually filled, printing heap garbage as if it were real
+  # interpolation coordinates. No existing cgnscheck CTest entry ever passed
+  # -v, so this path was completely unexercised; confirmed with valgrind
+  # (21 uninitialised-value errors without the fix, 0 with it). This test
+  # cannot itself detect the uninitialised read (a plain ctest run has no
+  # sanitizer), but it does exercise the path so the new ASan CI job
+  # (asan.yml) does.
+  add_test(NAME cgnscheck_verbose_serendipity_dump
+           COMMAND cgnscheck -v -s test_quad8_sol.cgns)
+  set_tests_properties(cgnscheck_verbose_serendipity_dump PROPERTIES
+    PASS_REGULAR_EXPRESSION "Parametric Coordinates"
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
@@ -413,6 +534,14 @@ if (CGNS_ENABLE_TESTS)
                          cgnscheck_dist_mismatch_default_passes
                          cgnscheck_ho_rind_flagged
                          cgnscheck_ho_rind_flagged_strict
+                         cgnscheck_solinterp_mismatch_strict_fails
+                         cgnscheck_solinterp_mismatch_default_warns
+                         cgnscheck_ptlist_oob_element_flagged
+                         cgnscheck_verbose_serendipity_dump
+                         cgnscheck_high_degree_warns
+                         cgnscheck_high_degree_strict_does_not_escalate
+                         cgnscheck_vardegree_no_family_binding
+                         cgnscheck_vardegree_ptlist
       PROPERTIES ENVIRONMENT_MODIFICATION
       "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
   endif()

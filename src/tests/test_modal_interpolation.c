@@ -78,7 +78,7 @@ int test_solution_modal()
 {
     int cgfile, cgbase, cgzone, cgfamily, cgsinterp;
     int ncoeff;
-    int spatialdegree = 3, temporaldegree = 1;
+    int spatialDegree = 3, temporalDegree = 1;
     cgsize_t size[9];
     CGNS_ENUMT(ElementType_t) type = CGNS_ENUMV(QUAD_4);
     CGNS_ENUMT(ElementType_t) type_read;
@@ -95,12 +95,12 @@ int test_solution_modal()
      * basis stores no array (MonomialCoefficients is withdrawn), so this
      * cardinality is the whole of what a caller needs; it is re-queried after
      * the round trip below and compared against this value. */
-    if (cg_solution_monomial_size(type, spatialdegree, temporaldegree, &ncoeff)) {
+    if (cg_solution_monomial_size(type, spatialDegree, temporalDegree, &ncoeff)) {
         fprintf(stderr, "ERROR: cg_solution_monomial_size failed\n");
         return 1;
     }
     printf("Creating CGNS file with %d monomial coefficients...\n", ncoeff);
-    printf("  (spatial order %d, temporal order %d)\n", spatialdegree, temporaldegree);
+    printf("  (spatial degree %d, temporal degree %d)\n", spatialDegree, temporalDegree);
 
     /* Create CGNS file */
     size[0] = 4;  /* vertex size */
@@ -124,7 +124,7 @@ int test_solution_modal()
 
     /* Write SolutionInterpolation_t */
     if (cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "ModalSolutionInterp",
-                                       type, spatialdegree, temporaldegree,
+                                       type, spatialDegree, temporalDegree,
                                        CGNS_ENUMV(ParametricMonomialsPascal), &cgsinterp))
     {
         fprintf(stderr, "ERROR: Failed to write SolutionInterpolation_t node\n");
@@ -168,9 +168,9 @@ int test_solution_modal()
     }
     printf("Element type: %s\n", cg_ElementTypeName(type_read));
 
-    if (os_read != spatialdegree || ot_read != temporaldegree) {
+    if (os_read != spatialDegree || ot_read != temporalDegree) {
         fprintf(stderr, "ERROR: Wrong orders: spatial=%d (expected %d), temporal=%d (expected %d)\n",
-                os_read, spatialdegree, ot_read, temporaldegree);
+                os_read, spatialDegree, ot_read, temporalDegree);
         return 1;
     }
     printf("Orders: spatial=%d, temporal=%d\n", os_read, ot_read);
@@ -185,7 +185,7 @@ int test_solution_modal()
      * caller needs in order to size the FlowSolution_t field arrays. */
     {
         int sz = 0;
-        if (cg_solution_monomial_size(type, spatialdegree, temporaldegree, &sz)) {
+        if (cg_solution_monomial_size(type, spatialDegree, temporalDegree, &sz)) {
             fprintf(stderr, "ERROR: cg_solution_monomial_size failed\n");
             return 1;
         }

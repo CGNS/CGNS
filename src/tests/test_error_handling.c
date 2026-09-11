@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cgnslib.h"
+#include "cgns_io.h"
 
 /* Test 7.1: Invalid Element Types and Interpolation Types */
 int test_invalid_types(void)
@@ -312,7 +313,7 @@ int test_out_of_range_orders(void)
     int result;
 
     printf("\n==============================================\n");
-    printf("  Test 7.3: Out of Range Interpolation Orders\n");
+    printf("  Test 7.3: Out of Range Interpolation Degrees\n");
     printf("==============================================\n\n");
 
     /* Create basic CGNS structure */
@@ -329,19 +330,19 @@ int test_out_of_range_orders(void)
         return 1;
     }
 
-    /* Spatial order 0 is valid, not an edge case to be rejected: it denotes one
+    /* Spatial degree 0 is valid, not an edge case to be rejected: it denotes one
      * spatial degree of freedom per element, i.e. a solution constant over the
      * element -- v2's "standard interpolation (constant per element)" and the
      * natural form of a finite-volume cell average.  For Lagrange it is a single
      * control point whose nodal function is identically one, and one point is
      * unisolvent for P_0. */
-    printf("Testing spatial order = 0 (valid: constant per element)...\n");
+    printf("Testing spatial degree = 0 (valid: constant per element)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Order0",
                                             CGNS_ENUMV(QUAD_4), 0, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result != CG_OK)
     {
-        fprintf(stderr, "ERROR: spatial order 0 should be accepted: %s\n", cg_get_error());
+        fprintf(stderr, "ERROR: spatial degree 0 should be accepted: %s\n", cg_get_error());
         return 1;
     }
     printf("  accepted (constant per element)\n");
@@ -351,36 +352,36 @@ int test_out_of_range_orders(void)
      * cg_solution_lagrange_interpolation_size, cg_solution_monomial_size --
      * rejects anything outside [0, CG_MAX_ORDER], so a writer that accepted one
      * would produce a file it could not itself size on read. */
-    printf("Testing negative spatial order (invalid)...\n");
+    printf("Testing negative spatial degree (invalid)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "BadOrderNeg",
                                             CGNS_ENUMV(QUAD_4), -1, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result == CG_OK)
     {
-        fprintf(stderr, "ERROR: negative spatial order must be rejected\n");
+        fprintf(stderr, "ERROR: negative spatial degree must be rejected\n");
         cg_close(cgfile);
         return 1;
     }
-    printf("Negative spatial order correctly rejected (error code: %d)\n", result);
+    printf("Negative spatial degree correctly rejected (error code: %d)\n", result);
 
-    printf("Testing spatial order above CG_MAX_ORDER...\n");
+    printf("Testing spatial degree above CG_MAX_ORDER...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "TooHigh",
                                             CGNS_ENUMV(QUAD_4), CG_MAX_ORDER + 1, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result == CG_OK)
     {
-        fprintf(stderr, "ERROR: spatial order %d exceeds CG_MAX_ORDER (%d) and "
+        fprintf(stderr, "ERROR: spatial degree %d exceeds CG_MAX_ORDER (%d) and "
                         "must be rejected\n", CG_MAX_ORDER + 1, CG_MAX_ORDER);
         cg_close(cgfile);
         return 1;
     }
-    printf("Spatial order %d correctly rejected (error code: %d)\n",
+    printf("Spatial degree %d correctly rejected (error code: %d)\n",
            CG_MAX_ORDER + 1, result);
 
     /* Order 100 is inside CG_MAX_ORDER, so it must be accepted -- and the basis
      * it names must size correctly: QUAD_4 Lagrange at degree p has (p+1)^2
      * control points, so 101^2 = 10201. */
-    printf("Testing high but valid spatial order (100)...\n");
+    printf("Testing high but valid spatial degree (100)...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "HighOrder",
                                             CGNS_ENUMV(QUAD_4), 100, 0,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
@@ -410,46 +411,86 @@ int test_out_of_range_orders(void)
         printf("Order 100 accepted, basis has %d control points\n", npts);
     }
 
-    /* INT_MAX spatial order via cg_solution_monomial_size: must not silently overflow
+    /* INT_MAX spatial degree via cg_solution_monomial_size: must not silently overflow
      * binomial_coefficient(os + dim, dim).  A malicious or corrupted file providing
      * os=INT_MAX makes os+dim wrap negative, binomial_coefficient returns 1, and a
      * subsequent write can overflow the tiny allocation.  Verify the guard fires. */
     {
         int msize;
-        printf("Testing INT_MAX spatial order in cg_solution_monomial_size (overflow guard)...\n");
+        printf("Testing INT_MAX spatial degree in cg_solution_monomial_size (overflow guard)...\n");
         result = cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), INT_MAX, 0, &msize);
         if (result == CG_OK)
         {
-            fprintf(stderr, "ERROR: INT_MAX spatial order must be rejected by "
+            fprintf(stderr, "ERROR: INT_MAX spatial degree must be rejected by "
                     "cg_solution_monomial_size (overflow risk)\n");
             cg_close(cgfile);
             return 1;
         }
-        printf("INT_MAX spatial order correctly rejected (error code: %d)\n", result);
+        printf("INT_MAX spatial degree correctly rejected (error code: %d)\n", result);
 
-        printf("Testing INT_MAX temporal order in cg_solution_monomial_size (overflow guard)...\n");
+        printf("Testing INT_MAX temporal degree in cg_solution_monomial_size (overflow guard)...\n");
         result = cg_solution_monomial_size(CGNS_ENUMV(QUAD_4), 2, INT_MAX, &msize);
         if (result == CG_OK)
         {
-            fprintf(stderr, "ERROR: INT_MAX temporal order must be rejected by "
+            fprintf(stderr, "ERROR: INT_MAX temporal degree must be rejected by "
                     "cg_solution_monomial_size (overflow risk)\n");
             cg_close(cgfile);
             return 1;
         }
-        printf("INT_MAX temporal order correctly rejected (error code: %d)\n", result);
+        printf("INT_MAX temporal degree correctly rejected (error code: %d)\n", result);
     }
 
-    printf("\nTesting negative temporal order...\n");
+    /* HEXA_8 at (os=1000, ot=1000): both individually within [0, CG_MAX_ORDER]
+     * (unlike the INT_MAX cases above, which are rejected by the earlier
+     * range check, not this guard), but their product overflows a 32-bit
+     * int: the true counts are 1,004,006,004,001 (Lagrange) and
+     * 167,836,169,501 (monomial). Before the fix, computing and comparing
+     * this product in cgsize_t was a no-op in a 32-bit-cgsize_t build
+     * (--enable-legacy, or CGNS_ENABLE_64BIT=OFF), where CGSIZE_MAX ==
+     * INT_MAX, so the check could never fire; verified directly under that
+     * configuration to return CG_OK with sz=-1016343263 (Lagrange) and
+     * sz=332444957 (monomial) -- silent, wrapped, wrong-sign garbage sizes
+     * that a caller would then malloc/index with. This test exercises the
+     * same call in every build configuration, whether or not it happens to
+     * catch anything additional in a 64-bit build. */
+    {
+        int npts;
+        printf("Testing HEXA_8 at (os=1000, ot=1000) in "
+               "cg_solution_lagrange_interpolation_size (overflow guard)...\n");
+        result = cg_solution_lagrange_interpolation_size(CGNS_ENUMV(HEXA_8), 1000, 1000, &npts);
+        if (result == CG_OK)
+        {
+            fprintf(stderr, "ERROR: HEXA_8 at (1000,1000) must be rejected by "
+                    "cg_solution_lagrange_interpolation_size (overflow risk), got sz=%d\n", npts);
+            cg_close(cgfile);
+            return 1;
+        }
+        printf("HEXA_8 (1000,1000) correctly rejected by lagrange size (error code: %d)\n", result);
+
+        printf("Testing HEXA_8 at (os=1000, ot=1000) in "
+               "cg_solution_monomial_size (overflow guard)...\n");
+        result = cg_solution_monomial_size(CGNS_ENUMV(HEXA_8), 1000, 1000, &npts);
+        if (result == CG_OK)
+        {
+            fprintf(stderr, "ERROR: HEXA_8 at (1000,1000) must be rejected by "
+                    "cg_solution_monomial_size (overflow risk), got sz=%d\n", npts);
+            cg_close(cgfile);
+            return 1;
+        }
+        printf("HEXA_8 (1000,1000) correctly rejected by monomial size (error code: %d)\n", result);
+    }
+
+    printf("\nTesting negative temporal degree...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "BadTemporal",
                                             CGNS_ENUMV(QUAD_4), 2, -1,
                                             CGNS_ENUMV(ParametricLagrange), &cgsinterp);
     if (result == CG_OK)
     {
-        fprintf(stderr, "ERROR: negative temporal order must be rejected\n");
+        fprintf(stderr, "ERROR: negative temporal degree must be rejected\n");
         cg_close(cgfile);
         return 1;
     }
-    printf("Negative temporal order correctly rejected (error code: %d)\n", result);
+    printf("Negative temporal degree correctly rejected (error code: %d)\n", result);
 
     printf("\nTesting valid edge case: order = 1...\n");
     result = cg_solution_interpolation_write(cgfile, cgbase, cgfamily, "Order1",
@@ -461,7 +502,7 @@ int test_out_of_range_orders(void)
         cg_close(cgfile);
         return 1;
     }
-    printf("Spatial order 1 accepted (valid)\n");
+    printf("Spatial degree 1 accepted (valid)\n");
 
     cg_close(cgfile);
 
@@ -943,11 +984,11 @@ int test_interpolation_order_location(void)
     }
     printf("  accepted (back-compatibility path)\n");
 
-    /* SpatialOrder 0 with TemporalOrder > 0 is valid: a per-element value that is
+    /* SpatialDegree 0 with TemporalDegree > 0 is valid: a per-element value that is
      * constant in space and varies in time, i.e. an unsteady finite-volume
      * solution, with N_DOFs = q+1 per element.  No constraint couples the two
      * orders, so this must be accepted. */
-    printf("TemporalOrder > 0 with SpatialOrder 0 (must be accepted)...\n");
+    printf("TemporalDegree > 0 with SpatialDegree 0 (must be accepted)...\n");
     result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S, 0, 1);
     if (result != CG_OK)
     {
@@ -956,6 +997,34 @@ int test_interpolation_order_location(void)
         cg_close(cgfile); return 1;
     }
     printf("  accepted (unsteady finite-volume case)\n");
+
+    /* cg_sol_interpolation_degree_write must reject a degree above
+     * CG_MAX_ORDER, mirroring cg_solution_interpolation_write's bound
+     * (test_out_of_range_orders, Test 7.3) and the read-side bound enforced
+     * by cgi_read_solution_order(): without this check the writer accepts a
+     * degree its own reader then refuses, producing a file that cannot be
+     * reopened. */
+    printf("Testing spatialDegree above CG_MAX_ORDER (must be rejected)...\n");
+    result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S,
+                                                CG_MAX_ORDER + 1, 0);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: spatialDegree %d exceeds CG_MAX_ORDER (%d) and "
+                        "must be rejected\n", CG_MAX_ORDER + 1, CG_MAX_ORDER);
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
+
+    printf("Testing temporalDegree above CG_MAX_ORDER (must be rejected)...\n");
+    result = cg_sol_interpolation_degree_write(cgfile, cgbase, cgzone, S,
+                                                0, CG_MAX_ORDER + 1);
+    if (result == CG_OK)
+    {
+        fprintf(stderr, "ERROR: temporalDegree %d exceeds CG_MAX_ORDER (%d) and "
+                        "must be rejected\n", CG_MAX_ORDER + 1, CG_MAX_ORDER);
+        cg_close(cgfile); return 1;
+    }
+    printf("  correctly rejected (error code: %d)\n", result);
 
     cg_close(cgfile);
 
@@ -1080,6 +1149,271 @@ int test_isoparametric_ambiguous_reference(void)
     return errors;
 }
 
+/* cgi_read_element_interpolation()/cgi_read_solution_interpolation() allocate
+ * lagrangePts (via cgi_read_array()) partway through validating an
+ * ElementInterpolation_t/SolutionInterpolation_t node, then continue
+ * validating its extent; a later mismatch used to `goto err_free`, which
+ * freed only the local cgi_get_nodes() id list, leaking the just-read array.
+ * cg_delete_node() refuses to touch anything under these node types (so an
+ * already-conformant file cannot be corrupted after the fact through the
+ * public API), so this builds the malformed node directly via cgio_* calls,
+ * exactly the shape an adversarial or corrupted file would have on disk: a
+ * TRI_3 ElementInterpolation_t whose LagrangeControlPoints array declares 3
+ * coordinates per point instead of the 2 that TRI_3 requires. This function
+ * only asserts that the mismatch is detected and the file correctly refused
+ * to reopen; the leak itself was independently verified with valgrind
+ * (7 blocks/9088 bytes reachable at exit with the fix vs. 9 blocks/9432
+ * bytes without it, on an otherwise-identical run), which a plain ctest
+ * assertion cannot reproduce without a dedicated sanitizer/valgrind build. */
+int test_element_interpolation_leak_on_extent_mismatch(void)
+{
+    int fn, B, F, cgio_num;
+    double root_id, parent_id;
+    cgsize_t dims1[1] = {1};
+    cgsize_t dims2[2] = {3, 3}; /* wrong: TRI_3 wants 2 coords/point, not 3 */
+    int tri3_type = (int)CGNS_ENUMV(TRI_3);
+    double bad_pts[9] = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+
+    printf("\n=== Test: LagrangeControlPoints extent mismatch is detected "
+           "(and does not leak) ===\n");
+
+    if (cg_open("test_ei_leak_mismatch.cgns", CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 2, 2, &B) ||
+        cg_family_write(fn, B, "Fam", &F))
+    {
+        fprintf(stderr, "ERROR: Failed to create file structure\n");
+        return 1;
+    }
+
+    if (cg_get_cgio(fn, &cgio_num) ||
+        cgio_get_root_id(cgio_num, &root_id) ||
+        cgio_get_node_id(cgio_num, root_id, "Base/Fam", &parent_id))
+    {
+        fprintf(stderr, "ERROR: could not locate Family_t node: %s\n", cg_get_error());
+        cg_close(fn);
+        return 1;
+    }
+    {
+        double ei_id;
+        if (cgio_new_node(cgio_num, parent_id, "EI", "ElementInterpolation_t",
+                "I4", 1, dims1, &tri3_type, &ei_id) ||
+            cgio_new_node(cgio_num, ei_id, "LagrangeControlPoints",
+                "DataArray_t", "R8", 2, dims2, bad_pts, &ei_id))
+        {
+            fprintf(stderr, "ERROR: could not write malformed node: %s\n", cg_get_error());
+            cg_close(fn);
+            return 1;
+        }
+    }
+    cg_close(fn);
+
+    /* The caller here follows the idiom of not calling cg_close() after a
+     * failed cg_open() -- exactly the case in which the array would
+     * otherwise accumulate for the life of the process. */
+    if (cg_open("test_ei_leak_mismatch.cgns", CG_MODE_READ, &fn) == CG_OK)
+    {
+        fprintf(stderr, "ERROR: reopen should have failed on the corrupted "
+                        "LagrangeControlPoints extent\n");
+        cg_close(fn);
+        return 1;
+    }
+    printf("  correctly rejected: %s\n", cg_get_error());
+    return 0;
+}
+
+/* cgi_ptset_range() and the PointList branch of cgi_read_sol() (commit
+ * 87ccbb56) used to size their read buffers as npts*Idim, while
+ * cgi_read_int_data()/cgio_read_all_data_type() read the node's entire
+ * declared on-disk payload regardless of the count passed in -- a
+ * FlowSolution_t whose PointRange/PointList's actual first extent disagreed
+ * with Idim overflowed the undersized buffer with file-controlled data. Both
+ * sites now validate the on-disk shape via cgio_get_dimensions() before
+ * allocating. This had no regression test: this function corrupts each
+ * node's declared dimensions in place (via cgio_set_dimensions(), keeping the
+ * original data type) after a normally-valid write, and confirms the reopen
+ * is rejected rather than reading past the allocation. */
+int test_ptset_range_shape_mismatch(void)
+{
+    int fn, B, Z, S, cgio_num;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t range[2] = {1, 1};
+    double root_id, node_id;
+    char data_type[3];
+
+    printf("\n=== Test: PointRange/PointList shape mismatch is detected "
+           "(cgi_ptset_range / PointList branch) ===\n");
+
+    /* Case 1: PointRange. Idim=1 for an unstructured zone, so the correct
+     * on-disk shape is [1,2]; corrupt it to [2,2]. */
+    if (cg_open("test_ptrange_mismatch.cgns", CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 2, 2, &B) ||
+        cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z) ||
+        cg_sol_ptset_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints),
+                           CGNS_ENUMV(PointRange), 2, range, &S) ||
+        cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0))
+    {
+        fprintf(stderr, "ERROR: setup failed: %s\n", cg_get_error());
+        return 1;
+    }
+    cg_close(fn);
+
+    if (cg_open("test_ptrange_mismatch.cgns", CG_MODE_MODIFY, &fn) ||
+        cg_get_cgio(fn, &cgio_num) ||
+        cgio_get_root_id(cgio_num, &root_id) ||
+        cgio_get_node_id(cgio_num, root_id, "Base/Zone/FS/PointRange", &node_id) ||
+        cgio_get_data_type(cgio_num, node_id, data_type))
+    {
+        fprintf(stderr, "ERROR: could not locate PointRange node\n");
+        return 1;
+    }
+    {
+        cgsize_t bad_dims[2] = {2, 2};
+        cgsize_t bad_data[4] = {1, 1, 1, 1};
+        if (cgio_set_dimensions(cgio_num, node_id, data_type, 2, bad_dims) ||
+            cgio_write_all_data(cgio_num, node_id, bad_data))
+        {
+            fprintf(stderr, "ERROR: could not corrupt PointRange dimensions\n");
+            return 1;
+        }
+    }
+    cg_close(fn);
+
+    if (cg_open("test_ptrange_mismatch.cgns", CG_MODE_READ, &fn) == CG_OK)
+    {
+        fprintf(stderr, "ERROR: reopen should have failed on the corrupted "
+                        "PointRange shape\n");
+        cg_close(fn);
+        return 1;
+    }
+    printf("  PointRange: correctly rejected: %s\n", cg_get_error());
+
+    /* Case 2: PointList. Correct on-disk shape for one point on an
+     * unstructured zone is [1,1]; corrupt it to [2,1]. */
+    {
+        cgsize_t plist[1] = {1};
+        if (cg_open("test_ptlist_mismatch.cgns", CG_MODE_WRITE, &fn) ||
+            cg_base_write(fn, "Base", 2, 2, &B) ||
+            cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z) ||
+            cg_sol_ptset_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints),
+                               CGNS_ENUMV(PointList), 1, plist, &S) ||
+            cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0))
+        {
+            fprintf(stderr, "ERROR: setup failed: %s\n", cg_get_error());
+            return 1;
+        }
+        cg_close(fn);
+    }
+
+    if (cg_open("test_ptlist_mismatch.cgns", CG_MODE_MODIFY, &fn) ||
+        cg_get_cgio(fn, &cgio_num) ||
+        cgio_get_root_id(cgio_num, &root_id) ||
+        cgio_get_node_id(cgio_num, root_id, "Base/Zone/FS/PointList", &node_id) ||
+        cgio_get_data_type(cgio_num, node_id, data_type))
+    {
+        fprintf(stderr, "ERROR: could not locate PointList node\n");
+        return 1;
+    }
+    {
+        cgsize_t bad_dims[2] = {2, 1};
+        cgsize_t bad_data[2] = {1, 1};
+        if (cgio_set_dimensions(cgio_num, node_id, data_type, 2, bad_dims) ||
+            cgio_write_all_data(cgio_num, node_id, bad_data))
+        {
+            fprintf(stderr, "ERROR: could not corrupt PointList dimensions\n");
+            return 1;
+        }
+    }
+    cg_close(fn);
+
+    if (cg_open("test_ptlist_mismatch.cgns", CG_MODE_READ, &fn) == CG_OK)
+    {
+        fprintf(stderr, "ERROR: reopen should have failed on the corrupted "
+                        "PointList shape\n");
+        cg_close(fn);
+        return 1;
+    }
+    printf("  PointList: correctly rejected: %s\n", cg_get_error());
+
+    return 0;
+}
+
+/* cg_sol_ptset_read() (cgnslib.c, commit cd51aa37) validates the node's
+ * on-disk shape against dim/npts cached in the in-memory ptset struct before
+ * reading -- a check whose value is easy to dismiss as redundant with
+ * cg_open()'s own initial validation of the same node (both this file's
+ * test_ptset_range_shape_mismatch above and cgi_read_sol's internal parsing
+ * already reject a malformed shape at open time). It is NOT redundant in one
+ * real scenario: the node is corrupted on disk (e.g. by a malicious
+ * concurrent writer, or by low-level tooling bypassing the public API, as
+ * this test does) *after* cg_open() cached the then-correct npts, but
+ * *before* cg_sol_ptset_read() is called on that same, still-open handle.
+ * Without this function's own fresh cgio_get_dimensions() check, it would
+ * read the file's new (wrong) shape into a buffer sized from the stale
+ * cached npts. */
+int test_sol_ptset_read_stale_shape(void)
+{
+    int fn, B, Z, S, cgio_num;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t range[2] = {1, 1};
+    double root_id, node_id;
+    char data_type[3];
+
+    printf("\n=== Test: cg_sol_ptset_read() catches a within-session, "
+           "on-disk-only shape change ===\n");
+
+    if (cg_open("test_ptset_stale_shape.cgns", CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 2, 2, &B) ||
+        cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z) ||
+        cg_sol_ptset_write(fn, B, Z, "FS", CGNS_ENUMV(CellCenter),
+                           CGNS_ENUMV(PointRange), 2, range, &S))
+    {
+        fprintf(stderr, "ERROR: setup failed: %s\n", cg_get_error());
+        return 1;
+    }
+    cg_close(fn);
+
+    /* Reopen in MODIFY: this caches ptset->npts from the correct on-disk
+     * shape [1,2]. Then, on the SAME open handle -- no intervening
+     * cg_close/cg_open -- corrupt the node's actual on-disk shape directly
+     * via cgio, which is the only way to reach this: there is no public API
+     * to rewrite an existing solution's ptset shape in place. */
+    if (cg_open("test_ptset_stale_shape.cgns", CG_MODE_MODIFY, &fn) ||
+        cg_get_cgio(fn, &cgio_num) ||
+        cgio_get_root_id(cgio_num, &root_id) ||
+        cgio_get_node_id(cgio_num, root_id, "Base/Zone/FS/PointRange", &node_id) ||
+        cgio_get_data_type(cgio_num, node_id, data_type))
+    {
+        fprintf(stderr, "ERROR: could not locate PointRange node\n");
+        return 1;
+    }
+    {
+        cgsize_t bad_dims[2] = {2, 2};
+        cgsize_t bad_data[4] = {1, 1, 1, 1};
+        if (cgio_set_dimensions(cgio_num, node_id, data_type, 2, bad_dims) ||
+            cgio_write_all_data(cgio_num, node_id, bad_data))
+        {
+            fprintf(stderr, "ERROR: could not corrupt PointRange dimensions\n");
+            return 1;
+        }
+    }
+
+    {
+        cgsize_t pts[4];
+        int rc = cg_sol_ptset_read(fn, B, Z, S, pts);
+        if (rc == CG_OK)
+        {
+            fprintf(stderr, "ERROR: cg_sol_ptset_read should have caught the "
+                            "since-corrupted on-disk shape rather than trusting "
+                            "the stale cached npts\n");
+            cg_close(fn);
+            return 1;
+        }
+        printf("  correctly rejected: %s\n", cg_get_error());
+    }
+    cg_close(fn);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int errors = 0;
@@ -1119,11 +1453,20 @@ int main(int argc, char **argv)
     if (test_isoparametric_ambiguous_reference())
         errors++;
 
+    if (test_element_interpolation_leak_on_extent_mismatch())
+        errors++;
+
+    if (test_ptset_range_shape_mismatch())
+        errors++;
+
+    if (test_sol_ptset_read_stale_shape())
+        errors++;
+
     printf("\n");
     printf("##################################################\n");
     if (errors == 0)
     {
-        printf("#ALL ERROR HANDLING TESTS PASSED (10/10)   #\n");
+        printf("#ALL ERROR HANDLING TESTS PASSED (13/13)   #\n");
     }
     else
     {

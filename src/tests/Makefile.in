@@ -47,6 +47,7 @@ CALL = \
 	test_characteristic_length$(EXE) \
 	test_degree_zero$(EXE) \
 	test_distribution$(EXE) \
+	test_structured_ptset_solution$(EXE) \
 	test_element_traits$(EXE) \
 	test_error_handling$(EXE) \
 	test_hexa_order2$(EXE) \
@@ -110,7 +111,8 @@ CGNSCHECK_HO_FILES = \
 	test_dist_wbtet_p2.cgns \
 	test_dist_wbtet_p3.cgns \
 	test_charlen_bndsec.cgns \
-	test_charlen_mixedsec.cgns
+	test_charlen_mixedsec.cgns \
+	test_structured_ptset_solution.cgns
 
 TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
 ifeq ("$(TIMING_AVAIL)" , "0")
@@ -375,6 +377,12 @@ test_element_traits$(EXE) : test_element_traits.c $(CGNSLIB)
 
 test_distribution$(EXE) : test_distribution.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_distribution.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_structured_ptset_solution$(EXE) : test_structured_ptset_solution.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_structured_ptset_solution.c $(LDLIBS) $(CLIBS) -lm
 	$(STRIP) $@
 
 #----------
