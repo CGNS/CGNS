@@ -2148,6 +2148,15 @@ static int ho_evalshift (int p, double alpha, const double *L1,
     double *gx, *w1, *w2, *w3, *tmp;
     int i, rc = -1;
 
+    /* gx is sized for HO_WB_MAXP+1 entries below, but the fill loop just
+     * after ho_gen_1d() writes gx[0..p] -- an unbounded p overflows it.  Not
+     * currently reachable: the one caller (ho_wb_tet) already checks
+     * p > HO_WB_MAXP before calling in. Kept as its four structurally
+     * identical siblings (ho_gen_1d, ho_wb_tri, and the other two guarded at
+     * their own entry) all defend themselves the same way; this one should
+     * too rather than depend on staying the exception. */
+    if (p < 1 || p > HO_WB_MAXP) return -1;
+
     gx = (double*) malloc ((size_t)(HO_WB_MAXP+1 + 4*n) * sizeof(double));
     if (!gx) return -1;
     w1 = gx + HO_WB_MAXP+1; w2 = w1 + n; w3 = w2 + n; tmp = w3 + n;
@@ -6079,6 +6088,22 @@ static void check_solution (int ns)
           return;
       }
       if (ptsettype == CGNS_ENUMV(PointRange)) {
+          /* Defense in depth, not the primary defense: tracing whether this
+           * was load-bearing found that a CellCenter (not InterpolationPoints)
+           * solution with an InterpolationDegrees child bypasses the
+           * library's own cgi_ptset_range() npts-shape check entirely (it
+           * runs only under location==InterpolationPoints), and that a
+           * PointRange with npts=1 built that way drove a confirmed
+           * AddressSanitizer-caught heap-buffer-overflow -- but the overflow
+           * was in cgi_read_ptset() itself (cgns_internals.c), the *generic*
+           * point-set reader every range-type ptset in the format shares,
+           * not anything specific to this function.  That is now fixed at
+           * the root, so cg_open() rejects a malformed PointRange before
+           * cgnscheck ever runs, making this guard unreachable via that
+           * path.  Kept anyway: it is a cheap, correct check of an
+           * invariant the code immediately below assumes (ptsetlist[z->idim]
+           * requires npts>=2), and a future consumer of solution ptsets
+           * that reached this point some other way would still need it. */
           if (npts != 2) {
               free(ptsetlist);
               error("PointRange for solution \"%s\" has %"PRIdCGSIZE" points, expected 2",
