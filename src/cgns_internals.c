@@ -978,8 +978,8 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
               cg_element_basic_element_type(family->solutioninterpolations[m].type,&btype);
               if (n != m) {
                   if (atype == btype
-                   && family->solutioninterpolations[n].spatialdegree  == family->solutioninterpolations[m].spatialdegree
-                   && family->solutioninterpolations[n].temporaldegree == family->solutioninterpolations[m].temporaldegree
+                   && family->solutioninterpolations[n].spatialDegree  == family->solutioninterpolations[m].spatialDegree
+                   && family->solutioninterpolations[n].temporalDegree == family->solutioninterpolations[m].temporalDegree
                   ) {
                       cgi_error("Only a single SolutionInterpolation_t node per triplet (Element_t,spatialDegree,temporalDegree) is allowed.");
                       return CG_ERROR;
@@ -1934,19 +1934,19 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
      /* FlowSolution_t Name */
         if (cgio_get_name(cg->cgio, sol[0][s].id, sol[0][s].name)) {
             cg_io_error("cgio_get_name");
-            return CG_ERROR;
+            goto error_free_id;
         }
 
      /* GridLocation */
         if (cgi_read_location(sol[0][s].id, sol[0][s].name,
-            &sol[0][s].location)) return CG_ERROR;
+            &sol[0][s].location)) goto error_free_id;
         
      /* CPEX 045 */
-     /* read spatial and temporal orders IndexArray_t */
-        if (cgi_read_solution_order(&sol[0][s])) return CG_ERROR;
+     /* read spatial and temporal degrees IndexArray_t */
+        if (cgi_read_solution_order(&sol[0][s])) goto error_free_id;
         
      /* Rind Planes */
-        if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return CG_ERROR;
+        if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) goto error_free_id;
         
      /* CPEX 045 */
      /* Determine data size (HO solution case) */
@@ -1955,28 +1955,36 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
             if (sol[0][s].spatialDegree < 0)
             {
                 cgi_error("FlowSolution: InterpolationPoints solution requires an InterpolationDegrees child node");
-                return CG_ERROR;
+                goto error_free_id;
             }
             
             int ret = cgi_ho_datasize(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
                                 sol[0][s].temporalDegree, DataSize);
             
-            if ( ret == CG_ERROR) return CG_ERROR;
+            if ( ret == CG_ERROR) goto error_free_id;
             if ( ret == CG_NODE_NOT_FOUND ) {
-                /* Say which of the several distinct causes it was, and that the
-                 * consequence is unvalidated field lengths.  The generic
-                 * "Data Size checking disabled" warning emitted further down
-                 * fires long after the information is gone, leaving the user
-                 * nothing to act on.  Still a warning, not an error: the write
-                 * path rejects these files, but refusing to open one already on
-                 * disk would strand data that earlier versions accepted. */
-                if (hofam == NULL)
+                /* CPEX-0045 requires a reader meeting such a file to "report
+                 * which of the several causes applies -- no family binding, no
+                 * family, no matching triplet -- and continue with field-length
+                 * validation disabled; it must not reject the file, and must not
+                 * assume a default count."  The three branches below are those
+                 * three causes, in that order.  The generic "Data Size checking
+                 * disabled" warning emitted further down fires long after the
+                 * information is gone, leaving the user nothing to act on.
+                 * Warning rather than error is likewise required: refusing to
+                 * open would strand data that earlier versions accepted, and the
+                 * arrays are readable regardless -- their extents are on disk.
+                 * Such a file is still non-conformant; cgnscheck -s reports it. */
+                if (zone == NULL || zone->family_name[0] == '\0')
+                    cgi_warning("FlowSolution '%s': zone has no FamilyName_t, so "
+                                "no SolutionInterpolation_t can be located and "
+                                "InterpolationPoints field lengths cannot be "
+                                "validated", sol[0][s].name);
+                else if (hofam == NULL)
                     cgi_warning("FlowSolution '%s': zone family '%s' does not "
                                 "resolve to a Family_t, so InterpolationPoints "
                                 "field lengths cannot be validated",
-                                sol[0][s].name,
-                                (zone && zone->family_name[0]) ?
-                                    zone->family_name : "<unset>");
+                                sol[0][s].name, zone->family_name);
                 else
                     cgi_warning("FlowSolution '%s': no SolutionInterpolation_t "
                                 "under family '%s' matches this zone's elements "
@@ -2015,17 +2023,17 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
         else {
      /* Determine data size (1st Order solution) */
             if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
-                    sol[0][s].rind_planes, DataSize)) return CG_ERROR;     
+                    sol[0][s].rind_planes, DataSize)) goto error_free_id;     
         }
         
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, sol[0][s].id,
-                &sol[0][s].ptset)) return CG_ERROR;
+                &sol[0][s].ptset)) goto error_free_id;
         if (sol[0][s].ptset != NULL) {
             if (sol[0][s].ptset->type == CGNS_ENUMV(ElementList) ||
                 sol[0][s].ptset->type == CGNS_ENUMV(ElementRange)) {
                 cgi_error("ElementList/Range not supported under FlowSolution");
-                return CG_ERROR;
+                goto error_free_id;
             }
             DataCount = sol[0][s].ptset->size_of_patch;
             sol[0][s].ho_ptset_datasize = -1;
@@ -2040,7 +2048,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 cgsize_t range_min[12] = {0}, range_max[12] = {0};
                 
                 if (cgi_ptset_range(sol[0][s].ptset,range_min,range_max)) {
-                    return CG_ERROR;
+                    goto error_free_id;
                 }
                 
                 ret = cgi_ho_datasize_range(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
@@ -2061,14 +2069,14 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 if (cgio_get_dimensions(cg->cgio, sol[0][s].ptset->id,
                         &pl_ndim, pl_dim_vals)) {
                   cg_io_error("cgio_get_dimensions");
-                  return CG_ERROR;
+                  goto error_free_id;
                 }
                 if (pl_ndim != 2 || pl_dim_vals[0] != Idim ||
                     pl_dim_vals[1] != sol[0][s].ptset->npts) {
                   cgi_error("Invalid dimensions for PointList '%s': "
                       "expected [%d, %" PRIdCGSIZE "]", sol[0][s].ptset->name,
                       Idim, sol[0][s].ptset->npts);
-                  return CG_ERROR;
+                  goto error_free_id;
                 }
 
                 pnts = CGNS_NEW(cgsize_t, pl_dim_vals[0] * pl_dim_vals[1]);
@@ -2078,7 +2086,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
 
                 if (ret == CG_ERROR) {
                   CGNS_FREE(pnts);
-                  return CG_ERROR;
+                  goto error_free_id;
                 }
 
                 ret = cgi_ho_datasize_list(Idim,Cdim,zone,hofam,sol[0][s].spatialDegree,
@@ -2088,7 +2096,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 CGNS_FREE(pnts);
               }
               
-              if (ret == CG_ERROR) return CG_ERROR;
+              if (ret == CG_ERROR) goto error_free_id;
               if (ret == CG_NODE_NOT_FOUND) checksize = 0;
               else sol[0][s].ho_ptset_datasize = DataCount; /* cache for write path */
             }
@@ -2096,7 +2104,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
 
      /* DataArray_t */
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
-            &idf)) return CG_ERROR;
+            &idf)) goto error_free_id;
 
         if (sol[0][s].nfields > 0) {
             sol[0][s].field = CGNS_NEW(cgns_array, sol[0][s].nfields);
@@ -2106,7 +2114,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                 sol[0][s].field[z].in_link = linked;
 
                 if (cgi_read_array(&sol[0][s].field[z],"FlowSolution_t",
-                    sol[0][s].id)) return CG_ERROR;
+                    sol[0][s].id)) goto error_free_idf;
 
              /* check data */
                 if (checksize) {
@@ -2114,13 +2122,13 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                         if (sol[0][s].field[z].data_dim != Idim) {
                             cgi_error("Wrong number of dimension in DataArray %s",
                                 sol[0][s].field[z].name);
-                            return CG_ERROR;
+                            goto error_free_idf;
                         }
                         for (n=0; n<Idim; n++) {
                             if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
                                 cgi_error("Invalid field array size for dimension %d. Given %"PRIdCGSIZE", requested %"PRIdCGSIZE,
                                   n, sol[0][s].field[z].dim_vals[n], DataSize[n]);
-                                return CG_ERROR;
+                                goto error_free_idf;
                             }
                         }
                     } else {
@@ -2128,7 +2136,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                             sol[0][s].field[z].dim_vals[0] != DataCount) {
                             cgi_error("Invalid field array dimension for ptset solution. Given %"PRIdCGSIZE", requested %"PRIdCGSIZE,
                               sol[0][s].field[z].dim_vals[0],DataCount);
-                            return CG_ERROR;
+                            goto error_free_idf;
                         }
                     }
                 }
@@ -2142,7 +2150,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
                     strcmp(sol[0][s].field[z].data_type,"X4") &&
                     strcmp(sol[0][s].field[z].data_type,"X8")) {
                     cgi_error("Datatype %s not supported for flow solutions",sol[0][s].field[z].data_type);
-                    return CG_ERROR;
+                    goto error_free_idf;
                 }
             }
             CGNS_FREE(idf);
@@ -2151,21 +2159,37 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol,
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
         if (cgi_read_DDD(linked, sol[0][s].id, &sol[0][s].ndescr,
             &sol[0][s].descr, &sol[0][s].data_class, &sol[0][s].units))
-            return CG_ERROR;
+            goto error_free_id;
 
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, sol[0][s].id, &sol[0][s].nuser_data,
-            &sol[0][s].user_data)) return CG_ERROR;
+            &sol[0][s].user_data)) goto error_free_id;
 
      /* CPEX-0045 v4: validate InterpolationMetadata now that its arrays are
       * in memory.  No cgio traffic: everything inspected was read above. */
         if (cgi_check_interp_metadata(&sol[0][s], zone, Pdim, Cdim))
-            return CG_ERROR;
+            goto error_free_id;
     }
 
     CGNS_FREE(id);
 
     return CG_OK;
+
+/* id (the FlowSolution_t node list from cgi_get_nodes() at function entry)
+ * was leaked on every one of this loop's ~20 error returns: only the
+ * fall-through success path freed it. idf (the per-solution DataArray_t node
+ * list) has the same issue, but is live only inside the nfields>0 block --
+ * every return in there must free it too, before id. Reachable from any
+ * malformed FlowSolution_t, not just CPEX-0045-specific ones; caught by
+ * LeakSanitizer via a corrupted-PointRange fixture written for an unrelated
+ * regression test (see test_ptset_range_shape_mismatch,
+ * test_error_handling.c), which is exactly the ASan CI gap that finding
+ * flagged. */
+error_free_idf:
+    CGNS_FREE(idf);
+error_free_id:
+    CGNS_FREE(id);
+    return CG_ERROR;
 }
 
 
@@ -2184,7 +2208,7 @@ int cgi_read_solution_order(cgns_sol *sol)
     sol->spatialDegree  = -1;
     sol->temporalDegree = 0;
     
-    /* spatial and temporal orders IndexArray_t */
+    /* spatial and temporal degrees IndexArray_t */
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
     
     /* Check ZoneType and existence of Orders node.  A FlowSolution_t on any
@@ -5089,9 +5113,6 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     nnod = 0;
     eltinterpolation->lagrangePts = 0;
     eltinterpolation->lagrangeDist = 0;
-    /* Not recoverable from disk: the IsoParametric and empty-nodal forms are
-     * identical on disk by design, so this is a write-session flag only. */
-    eltinterpolation->isoparametric = 0;
     /* cgi_get_nodes() sets nnod = 0 before any of its own failure returns, so an
      * unchecked failure here simply skips the loop below.  id is only allocated
      * when nnod > 0, hence the "if (nnod)" on every free.  Errors inside the loop
@@ -5178,12 +5199,23 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
   * same convention as InterpolationType_t -- NOT the name-matched DataArray_t
   * convention used by the sibling LagrangeControlPoints. */
     if (cgi_read_distribution_node(eltinterpolation->id, "ElementInterpolation_t",
-            eltinterpolation->name, &eltinterpolation->lagrangeDist)) return CG_ERROR;
+            eltinterpolation->name, &eltinterpolation->lagrangeDist)) {
+        /* lagrangePts was already read successfully above; this return does
+         * not go through err_free, so it must free it here itself. */
+        cgi_free_element_interpolation(eltinterpolation);
+        return CG_ERROR;
+    }
 
     return CG_OK;
 
 err_free:
     if (nnod) CGNS_FREE(id);
+    /* lagrangePts may have been allocated and partially populated by
+     * cgi_read_array() above before a later validation check failed; every
+     * error return past that point must free it symmetrically, the same way
+     * cgi_free_element_interpolation() does when the caller tears down the
+     * whole struct. */
+    cgi_free_element_interpolation(eltinterpolation);
     return CG_ERROR;
 }
 int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation)
@@ -5205,8 +5237,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
      /* Data:
      Required: ElementType_t,spatialDegree,temporalDegree
       */
-    sltinterpolation->spatialdegree  = 1;
-    sltinterpolation->temporaldegree = 0;
+    sltinterpolation->spatialDegree  = 1;
+    sltinterpolation->temporalDegree = 0;
     if (cgi_read_node(sltinterpolation->id, sltinterpolation->name, data_type,
             &ndim, dim_vals, &vdata, READ_DATA)) {
         cgi_error("Error reading SolutionInterpolation_t node");
@@ -5233,8 +5265,8 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     }
     edata = (int *)vdata;
     sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
-    sltinterpolation->spatialdegree = edata[1];
-    sltinterpolation->temporaldegree = edata[2];
+    sltinterpolation->spatialDegree = edata[1];
+    sltinterpolation->temporalDegree = edata[2];
     CGNS_FREE(vdata);
     if (INVALID_ENUM(sltinterpolation->type, NofValidElementTypes)) {
         cgi_error("Invalid element type %d in SolutionInterpolation_t node '%s'",
@@ -5246,14 +5278,14 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
      * used below to size and divide: the extent check divides by
      * TemporalDegree+1, so a stored -1 would be a division by zero rather
      * than a diagnosable error. */
-    if (sltinterpolation->spatialdegree  < 0 ||
-        sltinterpolation->spatialdegree  > CG_MAX_ORDER ||
-        sltinterpolation->temporaldegree < 0 ||
-        sltinterpolation->temporaldegree > CG_MAX_ORDER) {
+    if (sltinterpolation->spatialDegree  < 0 ||
+        sltinterpolation->spatialDegree  > CG_MAX_ORDER ||
+        sltinterpolation->temporalDegree < 0 ||
+        sltinterpolation->temporalDegree > CG_MAX_ORDER) {
         cgi_error("Interpolation degrees (spatial=%d, temporal=%d) of "
                   "SolutionInterpolation_t node '%s' out of valid range [0, %d]",
-                  sltinterpolation->spatialdegree,
-                  sltinterpolation->temporaldegree,
+                  sltinterpolation->spatialDegree,
+                  sltinterpolation->temporalDegree,
                   sltinterpolation->name, CG_MAX_ORDER);
         return CG_ERROR;
     }
@@ -5357,7 +5389,7 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
              * than the complete space cannot be unisolvent for a degree-p space
              * and is always wrong. */
             {
-                int edim = 0, q = sltinterpolation->temporaldegree;
+                int edim = 0, q = sltinterpolation->temporalDegree;
                 int want, complete = 0;
                 cgsize_t npts = sltinterpolation->lagrangePts->dim_vals[1];
 
@@ -5379,14 +5411,14 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
                     goto err_free;
                 }
                 if (cg_solution_lagrange_interpolation_size(sltinterpolation->type,
-                        sltinterpolation->spatialdegree, 0, &complete) == CG_OK &&
+                        sltinterpolation->spatialDegree, 0, &complete) == CG_OK &&
                     complete > 0 &&
                     npts / (cgsize_t)(q + 1) > (cgsize_t)complete) {
                     cgi_error("Error: LagrangeControlPoints of '%s' has %"PRIdCGSIZE
                               " spatial points, more than the %d of the complete "
                               "space at degree %d; such a set cannot be unisolvent",
                               sltinterpolation->name, npts / (cgsize_t)(q + 1),
-                              complete, sltinterpolation->spatialdegree);
+                              complete, sltinterpolation->spatialDegree);
                     goto err_free;
                 }
             }
@@ -5418,21 +5450,34 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
         cgi_error("SolutionInterpolation_t '%s' has InterpolationType %s, which "
                   "stores no LagrangeControlPoints", sltinterpolation->name,
                   cg_InterpolationTypeName(sltinterpolation->interpolationName));
+        /* lagrangePts was read successfully above (that is how this branch
+         * was reached); this return does not go through err_free, so it must
+         * free it here itself. */
+        cgi_free_solution_interpolation(sltinterpolation);
         return CG_ERROR;
     }
 
  /* ControlPointDistribution: labelled enumeration node (see the
   * element-side reader for the convention). */
     if (cgi_read_distribution_node(sltinterpolation->id, "SolutionInterpolation_t",
-            sltinterpolation->name, &sltinterpolation->lagrangeDist)) return CG_ERROR;
+            sltinterpolation->name, &sltinterpolation->lagrangeDist)) {
+        cgi_free_solution_interpolation(sltinterpolation);
+        return CG_ERROR;
+    }
 
     return CG_OK;
 
 /* nnod is reset to 0 before each cgi_get_nodes(), and id is only allocated when
  * nnod > 0, so this frees whichever id list is currently live -- and nothing
- * after the corresponding "if (nnod) CGNS_FREE(id)" has already run. */
+ * after the corresponding "if (nnod) CGNS_FREE(id)" has already run.
+ * lagrangePts may also have been allocated and partially populated by
+ * cgi_read_array() before a later validation check failed; every error return
+ * past that point must free it symmetrically, the same way
+ * cgi_free_solution_interpolation() does when the caller tears down the whole
+ * struct. */
 err_free:
     if (nnod) CGNS_FREE(id);
+    cgi_free_solution_interpolation(sltinterpolation);
     return CG_ERROR;
 }
 int cgi_read_converg_from_list(int in_link, _childnode_t *nodelist, int nnodes, cgns_converg** converg)
@@ -8347,7 +8392,7 @@ const cgns_family *cgi_ho_find_family(const cgns_base *base,
 /**
  * \brief Per-element degree-of-freedom count for a high-order solution.
  *
- * CPEX-0045 v3 defines the high-order FlowSolution_t field length as
+ * CPEX-0045 defines the high-order FlowSolution_t field length as
  * sum_e N_DOFs(e), where N_DOFs(e) comes from the SolutionInterpolation_t
  * matching element e.  The count therefore depends on the *interpolation
  * type* and cannot be derived from the element type and degree alone:
@@ -8362,7 +8407,11 @@ const cgns_family *cgi_ho_find_family(const cgns_base *base,
  *     control-point count, or the element tag's own node count when that node
  *     is itself IsoParametric.
  *
- * In every case the spatial count is multiplied by (TemporalDegree+1).
+ * The final DOF count reflects a (TemporalDegree+1) factor in every case,
+ * though it is applied here only for the IsoParametric path -- the
+ * ParametricLagrange stored count already has it baked in (see the inline
+ * comment where it is returned, below), and the monomial branches delegate
+ * it to cg_solution_monomial_size().
  *
  * \param[in]  family        Family resolved from the zone's FamilyName_t
  * \param[in]  el_type       Element type of the element being counted
@@ -8390,8 +8439,8 @@ static int cgi_ho_ndofs(const cgns_family *family,
      * high-order tag. */
     for (n = 0; n < family->nsolutioninterpolation; n++) {
         const cgns_solutionInterpolation *c = &family->solutioninterpolations[n];
-        if (c->spatialdegree == spatialDegree &&
-            c->temporaldegree == temporalDegree && c->type == el_type) {
+        if (c->spatialDegree == spatialDegree &&
+            c->temporalDegree == temporalDegree && c->type == el_type) {
             si = c;
             break;
         }
@@ -8399,8 +8448,8 @@ static int cgi_ho_ndofs(const cgns_family *family,
     if (si == NULL && basic != el_type) {
         for (n = 0; n < family->nsolutioninterpolation; n++) {
             const cgns_solutionInterpolation *c = &family->solutioninterpolations[n];
-            if (c->spatialdegree == spatialDegree &&
-                c->temporaldegree == temporalDegree && c->type == basic) {
+            if (c->spatialDegree == spatialDegree &&
+                c->temporalDegree == temporalDegree && c->type == basic) {
                 si = c;
                 break;
             }
@@ -8466,13 +8515,18 @@ static int cgi_ho_ndofs(const cgns_family *family,
 
     /* npe and temporalDegree are each bounded, their product is not, and the
      * result sizes a field array.  cg_solution_monomial_size() guards the same
-     * multiplication for the same reason. */
+     * multiplication for the same reason -- and, like that guard, this must
+     * be done in "long long" (guaranteed >= 64 bits), not cgsize_t: in a
+     * 32-bit-cgsize_t build (--enable-legacy, or CGNS_ENABLE_64BIT=OFF)
+     * CGSIZE_MAX == INT_MAX, so a cgsize_t-typed check can never fire and the
+     * multiplication has already overflowed as signed 32-bit UB by the time
+     * it would run. */
     {
-        cgsize_t total = (cgsize_t)npe * (cgsize_t)(temporalDegree + 1);
-        if (total > (cgsize_t)INT_MAX) {
+        long long total = (long long)npe * (long long)(temporalDegree + 1);
+        if (total > (long long)INT_MAX) {
             cgi_error("Degree-of-freedom count %lld for element type %s at "
                       "(spatial=%d, temporal=%d) exceeds INT_MAX",
-                      (long long)total, cg_ElementTypeName(el_type),
+                      total, cg_ElementTypeName(el_type),
                       spatialDegree, temporalDegree);
             return CG_ERROR;
         }
@@ -8593,7 +8647,7 @@ int cgi_ho_zone_ncells(const cgns_zone *zone, int cell_dim, cgsize_t *ncells)
  * \param[in]  section      Pointer to MIXED element section
  * \param[in]  cell_dim     Base CellDimension; boundary faces inside a MIXED
  *                          section carry no DOFs
- * \param[in]  spatialDegree Spatial interpolation order
+ * \param[in]  spatialDegree Spatial interpolation degree
  * \param[in]  rmin         First element in range (global indexing)
  * \param[in]  rmax         Last element in range (global indexing)
  * \param[out] DataSize     Computed data size for this range
@@ -8728,7 +8782,7 @@ int cgi_ho_datasize(const int id_dim, const int cell_dim, const cgns_zone *zone,
             ne = section->range[1] - section->range[0] + 1;
             /* Per-element DOF count from the family's SolutionInterpolation_t:
              * this depends on the interpolation type, not just on the element
-             * type and degree (CPEX-0045 v3 field-array length rule). */
+             * type and degree (CPEX-0045's field-array length rule). */
             ret = cgi_ho_ndofs(family, type, spatialDegree, temporalDegree, &npe);
             if (ret == CG_NODE_NOT_FOUND) return CG_NODE_NOT_FOUND;
             if (ret != CG_OK) {
@@ -8772,7 +8826,15 @@ int cgi_ho_datasize_range(const int id_dim, const int cell_dim, const cgns_zone 
       return CG_ERROR;
     }
 
-    /* Unstructured zones are 1D, so DataSize is a pointer to a single value */
+    /* DataSize is a pointer to a single value, so id_dim is unused here -- and
+     * that is a property of the caller, not of the zone type.  Both point-set
+     * entry points in cgi_sol_size() set *data_dim = 1 before calling this, so
+     * only DataSize[0] is ever meaningful, whatever index_dim the zone has.
+     * Reading it as "Unstructured zones are 1D" invites the conclusion that a
+     * Structured zone reaching here would leave DataSize[1..] uninitialised;
+     * it would not, because the caller has already declared one dimension.
+     * cgi_ho_datasize() is the one that genuinely fills id_dim entries, because
+     * its caller does not flatten data_dim first. */
     *DataSize = 0;
 
     // Loop over Sections
@@ -8866,7 +8928,15 @@ int cgi_ho_datasize_list(const int id_dim, const int cell_dim, const cgns_zone *
       return CG_ERROR;
     }
 
-    /* Unstructured zones are 1D, so DataSize is a pointer to a single value */
+    /* DataSize is a pointer to a single value, so id_dim is unused here -- and
+     * that is a property of the caller, not of the zone type.  Both point-set
+     * entry points in cgi_sol_size() set *data_dim = 1 before calling this, so
+     * only DataSize[0] is ever meaningful, whatever index_dim the zone has.
+     * Reading it as "Unstructured zones are 1D" invites the conclusion that a
+     * Structured zone reaching here would leave DataSize[1..] uninitialised;
+     * it would not, because the caller has already declared one dimension.
+     * cgi_ho_datasize() is the one that genuinely fills id_dim entries, because
+     * its caller does not flatten data_dim first. */
     *DataSize = 0;
 
     /* OPTIMIZATION:

@@ -152,9 +152,12 @@ typedef enum {
  */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- * Element Properties Lookup Table (CPEX 45 High-Order Support)         *
- * CRITICAL: Single source of truth for element properties used by both  *
- * serial and parallel I/O. This eliminates scattered switch statements. *
+ * Element Properties Lookup Table (CPEX 45 High-Order Support)          *
+ * Single source of truth for element properties, replacing scattered    *
+ * switch statements.  Serial only: pcgnslib.c references neither this   *
+ * table nor its accessors.  (This comment used to say the table was     *
+ * used by both serial and parallel I/O; it never was, and believing it  *
+ * would misdirect anyone changing the table.)                           *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef struct {
@@ -179,12 +182,17 @@ typedef struct {
 extern const ElementTraits cgi_element_traits[NofValidElementTypes];
 
 /* Fast accessor functions for element properties
- * These provide O(1) lookup by using enum value as array index
- * CRITICAL for parallel I/O offset calculations */
+ * These provide O(1) lookup by using enum value as array index.
+ *
+ * Call counts outside this header, as of the CPEX-0045 branch: npe, dim and
+ * basic_type have one caller each; nfaces, nedges, name and order have none.
+ * The four unused ones are kept because the table row already carries the data
+ * and an accessor is the supported way to reach it -- but they are untested by
+ * construction, so treat a first use as new code rather than as exercising a
+ * proven path. */
 
-/* Get nodes per element (NPE) - most frequently used property
- * Returns: NPE value, or -1 if type is invalid
- * Used by: Serial I/O, Parallel I/O, connectivity size calculations */
+/* Get nodes per element (NPE)
+ * Returns: NPE value, or -1 if type is invalid */
 static inline int cgi_element_npe(CGNS_ENUMT(ElementType_t) type) {
     int idx = (int)type;
     if (idx < 0 || idx >= NofValidElementTypes) return -1;
@@ -1046,14 +1054,27 @@ typedef struct {                    /* ElementInterpolation_t Node */
                                      * ControlPointDistribution_t enum node whose on-disk
                                      * payload is the enumerator's name as a C1 string
                                      * (not a DataArray_t).  Held here decoded, as an I4
-                                     * scalar.  NULL -> not recorded */
-    int isoparametric;              /* set when the node was created by
-                                     * cg_element_isoparametric_write.  CPEX-0045 forbids a
-                                     * following cg_element_interpolation_points_write, and
-                                     * lagrangePts == NULL cannot express that on its own
-                                     * because it is exactly the state the points write
-                                     * overwrites.  On-disk the two forms are identical by
-                                     * design, so this is only enforceable within a session. */
+                                     * scalar.  NULL -> not recorded.
+                                     *
+                                     * INVARIANT: cgns_array is reused only as
+                                     * the in-memory box; the node is NOT a
+                                     * DataArray_t.  It is deliberately a named
+                                     * field rather than a member of any
+                                     * narrays[] collection, and every access
+                                     * goes through cgi_{read,write}_distribution_*
+                                     * -- never a generic DataArray_t path, which
+                                     * would write the wrong label and re-encode
+                                     * the decoded enum as numeric data.  Keep it
+                                     * out of any generic array traversal added
+                                     * later.  (cgi_free_array is correct here:
+                                     * the in-memory struct really is cgns_array.) */
+    /* No isoparametric flag: the interpolation type of this node *is*
+     * lagrangePts == NULL (IsoParametric) vs. non-NULL (ParametricLagrange),
+     * and that encoding is total -- there is no third "declared isoparametric"
+     * state to record.  CPEX-0045 v4 withdrew the prohibition on adding points
+     * to a node created by cg_element_isoparametric_write, that writer being a
+     * direct alias of cg_element_interpolation_write and the resulting node
+     * byte-identical either way. */
     /* No monomialCoeff: mesh interpolation is nodal only (CPEX-0045); modal
      * coefficients belong to SolutionInterpolation_t alone. */
 } cgns_elementInterpolation;
@@ -1062,8 +1083,8 @@ typedef struct {                    /* SolutionInterpolation_t Node */
     char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
-    int spatialdegree;               /* Degree of the spatial interpolation */
-    int temporaldegree;              /* Degree of the temporal interpolation */
+    int spatialDegree;               /* Degree of the spatial interpolation */
+    int temporalDegree;              /* Degree of the temporal interpolation */
     CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
     /* No monomialCoeff: MonomialCoefficients is withdrawn (CPEX-0045).  A modal
@@ -1073,7 +1094,20 @@ typedef struct {                    /* SolutionInterpolation_t Node */
                                      * ControlPointDistribution_t enum node whose on-disk
                                      * payload is the enumerator's name as a C1 string
                                      * (not a DataArray_t).  Held here decoded, as an I4
-                                     * scalar.  NULL -> not recorded */
+                                     * scalar.  NULL -> not recorded.
+                                     *
+                                     * INVARIANT: cgns_array is reused only as
+                                     * the in-memory box; the node is NOT a
+                                     * DataArray_t.  It is deliberately a named
+                                     * field rather than a member of any
+                                     * narrays[] collection, and every access
+                                     * goes through cgi_{read,write}_distribution_*
+                                     * -- never a generic DataArray_t path, which
+                                     * would write the wrong label and re-encode
+                                     * the decoded enum as numeric data.  Keep it
+                                     * out of any generic array traversal added
+                                     * later.  (cgi_free_array is correct here:
+                                     * the in-memory struct really is cgns_array.) */
 } cgns_solutionInterpolation;
 
 typedef struct cgns_family_s {            /* Family_t node            */

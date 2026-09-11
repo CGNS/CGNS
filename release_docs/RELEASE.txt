@@ -86,12 +86,27 @@ New Features
         cg_nsolution_interpolation_read
         cg_sol_interpolation_degree_{read,write}
         cg_sol_characteristic_length_{read,write,create,partial_write}
+        cgp_sol_characteristic_length_write_data
+        cg_npe_ho, cg_element_dimension, cg_element_basic_element_type
+
+      New API (C only -- Fortran access is via the corresponding
+      *Name(0:N) character array, following the existing cg_*TypeName
+      convention, not a _f binding):
         cg_InterpolationTypeName, cg_ControlPointDistributionName
 
       cgnscheck validates the new nodes and gains a -s option for strict
-      CPEX-0045 conformance, which promotes the soft checks (degree
-      ranges, CellCenter used with InterpolationDegrees, a stored control
-      point set disagreeing with its named distribution) to errors.
+      CPEX-0045 conformance, which promotes the soft checks (CellCenter
+      used with InterpolationDegrees, a stored control point set
+      disagreeing with its named distribution, a FlowSolution_t whose
+      (element type, degree) triplet has no matching
+      SolutionInterpolation_t) to errors.
+
+      The typical-degree ranges are deliberately not among them. A degree
+      outside [0,100] spatial or [0,10] temporal is unusual but legal, so
+      it is reported as a warning in every mode and strict mode does not
+      escalate it -- a conformance checker must not fail a valid file. A
+      degree that cannot be represented at all is a separate check and is
+      always an error.
 
       See Known Problems for interoperability with CGNS 4.x libraries.
 

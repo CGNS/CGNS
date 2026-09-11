@@ -125,7 +125,7 @@
 
 #define CG_MAX_NAME_LENGTH 33
 
-/* max interpolation order for high-order elements */
+/* max interpolation degree for high-order elements */
 
 #define CG_MAX_ORDER 1000
 
@@ -1289,7 +1289,10 @@ CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
 CGNSDLL int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t,
                                                      int os, int ot, int *cnt);
 
-/* Bidirectional lookup with fallback (CPEX-0045 v3 sec:solution-interpolation):
+/* Bidirectional lookup with fallback (CPEX-0045's solution-interpolation
+ * rule -- cited here without a v3/v4 draft label or section number, since
+ * the draft numbering this comment was originally written against is not
+ * guaranteed to match the section numbering of whichever revision merged):
  * searches for an exact (et, os, ot) match first; if absent, falls back to the
  * basic (order-1/linear) element type for et and searches again. Returns
  * CG_NODE_NOT_FOUND if neither is present. */
@@ -1544,21 +1547,24 @@ CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	const cgsize_t *pnts, int *S);
 
 /*
- * CPEX-0045 §3.2.5 vs §5.3 storage note
- * --------------------------------------
- * The text of the CPEX-0045 proposal shows the FlowSolution_t interpolation
- * orders in two complementary forms:
- *   (a) §3.2.5 enumerates "int SpatialOrder; int TemporalOrder;" as scalar
- *       fields of FlowSolution_t itself.
- *   (b) §5.3 ("Extension to the SIDS file mapping") specifies a single
- *       IndexArray_t child named "InterpolationDegrees" with dim = 2,
+ * CPEX-0045 interpolation-degree storage note
+ * -------------------------------------------
+ * CPEX-0045 shows the FlowSolution_t interpolation degrees in two complementary
+ * forms:
+ *   (a) a prose enumeration of two scalar fields of FlowSolution_t itself.  The
+ *       v2 text spelled these "int SpatialOrder; int TemporalOrder;" -- quoted
+ *       verbatim here because it is a quotation; the 2026-08-04 Steering
+ *       Committee decision (D-03) renamed them to SpatialDegree/TemporalDegree.
+ *   (b) the SIDS file mapping, which specifies a single IndexArray_t child named
+ *       "InterpolationDegrees" with dim = 2,
  *       values = [spatialDegree, temporalDegree].
  * This implementation follows (b) as the normative file layout: the
  * cg_sol_interpolation_degree_{read,write}() pair reads/writes the
- * IndexArray_t child. Form (a) is treated as the in-SIDS-prose convenience
- * description of that same data. If a future clarification from the CGNS
- * Steering Committee requires form (a) as an additional on-disk encoding,
- * these functions must be extended; existing callers will be unaffected.
+ * IndexArray_t child. Form (a) is the in-SIDS-prose convenience description of
+ * that same data, not a second on-disk encoding.
+ *
+ * Cited without section numbers: the draft sections this was written against
+ * are not guaranteed to match the merged spec's numbering.
  */
 CGNSDLL int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S,
                                             int *spatialDegree, int *temporalDegree);
