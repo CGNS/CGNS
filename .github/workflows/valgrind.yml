@@ -1,0 +1,88 @@
+name: valgrind
+
+# Complements asan.yml: AddressSanitizer catches out-of-bounds and
+# use-after-free, but NOT reads of uninitialised-but-in-bounds memory (that
+# needs MemorySanitizer or Valgrind's memcheck -- MSan requires an
+# MSan-instrumented libc/HDF5 to avoid false positives, which is a much
+# larger undertaking, so this job uses valgrind instead). Confirmed this
+# catches a real class asan.yml does not: cgnscheck's verbose
+# SolutionInterpolation dump (check_family(), cgnscheck.c) used to loop past
+# the actual stored point count on a serendipity basis, printing
+# uninitialised heap as if it were real coordinates -- ASan sees nothing
+# wrong (the read stays inside the allocated buffer), valgrind reports it
+# immediately.
+#
+# Scoped to cgnscheck specifically (not the whole suite): cgnscheck is the
+# tool that parses untrusted, potentially-malformed files with hand-rolled
+# buffer logic, which is where this bug class actually lives; running the
+# full suite under valgrind as well would be straightforward to extend to
+# later if a similar issue turns up in the library itself.
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+  workflow_dispatch:
+
+env:
+  hdf5_vers: 1_14_6
+
+jobs:
+  valgrind-cgnscheck:
+    name: "Valgrind (cgnscheck)"
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+        shell: bash
+
+      - name: Install HDF5 (serial, no compression -- kept minimal for CI speed)
+        run: |
+          git clone https://github.com/HDFGroup/hdf5.git \
+            --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+          cd hdf5_src
+          ./configure --without-zlib --without-szlib --disable-fortran \
+            --disable-hl --disable-tests --disable-tools \
+            --prefix=$HOME/hdf5 --disable-nonstandard-feature-float16 \
+            --disable-parallel
+          make -j 8 install
+        shell: bash
+
+      - name: Configure CGNS (plain Debug -- no sanitizer instrumentation,
+              which would conflict with valgrind's own instrumentation)
+        run: |
+          mkdir build_valgrind
+          cd build_valgrind
+          cmake .. \
+            -D CMAKE_PREFIX_PATH=$HOME/hdf5 \
+            -D CGNS_ENABLE_HDF5:BOOL=ON \
+            -D HDF5_NEED_ZLIB:BOOL=OFF \
+            -D HDF5_NEED_SZIP:BOOL=OFF \
+            -D CGNS_ENABLE_FORTRAN:BOOL=OFF \
+            -D CGNS_ENABLE_TESTS:BOOL=ON \
+            -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
+            -D CMAKE_BUILD_TYPE:STRING=Debug
+        shell: bash
+
+      - name: Build
+        run: |
+          cd build_valgrind
+          cmake --build . --parallel 8
+        shell: bash
+
+      - name: Run test suite once to produce fixture files
+        run: |
+          cd build_valgrind
+          ctest --output-on-failure -j4
+        shell: bash
+
+      - name: Re-run cgnscheck's own CTest entries under valgrind memcheck
+        run: |
+          python3 .github/workflows/run_cgnscheck_valgrind.py \
+            build_valgrind \
+            .github/workflows/valgrind-suppressions.supp
+        shell: bash

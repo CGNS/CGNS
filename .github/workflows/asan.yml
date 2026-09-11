@@ -1,0 +1,86 @@
+name: asan
+
+# Dynamic-analysis gate: this branch's own commit history (4764dfae, 87ccbb56,
+# 688b3530, 0b1e7eb0, a3635287, cd51aa37, 9bdf9c17, 60a30721) fixed eight
+# memory-safety bugs (leaks, heap overflow, integer overflow) in the
+# CPEX-0045 interpolation read/validation paths, each verified once, by hand,
+# with LeakSanitizer or by inspection -- but no CI job builds under a
+# sanitizer, so a regression of any of them would pass every other workflow
+# in this repo silently. This job is the missing net: it builds the serial
+# test suite (plus cgnscheck) under ASan+UBSan and runs it via ctest.
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+  workflow_dispatch:
+
+env:
+  hdf5_vers: 1_14_6
+
+jobs:
+  asan-ubsan:
+    name: "ASan + UBSan (Ubuntu, serial)"
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install HDF5 (serial, no compression -- kept minimal for CI speed)
+        run: |
+          git clone https://github.com/HDFGroup/hdf5.git \
+            --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_src
+          cd hdf5_src
+          ./configure --without-zlib --without-szlib --disable-fortran \
+            --disable-hl --disable-tests --disable-tools \
+            --prefix=$HOME/hdf5 --disable-nonstandard-feature-float16 \
+            --disable-parallel
+          make -j 8 install
+        shell: bash
+
+      - name: Configure CGNS with ASan + UBSan
+        run: |
+          mkdir build_asan
+          cd build_asan
+          # -O1 (not -O0): ASan's own documentation recommends at least -O1 so
+          # stack-use-after-return and similar checks are meaningful, while
+          # staying low enough to keep stack traces attributable to source
+          # lines. -fno-omit-frame-pointer keeps ASan's backtraces symbolized.
+          cmake .. \
+            -D CMAKE_PREFIX_PATH=$HOME/hdf5 \
+            -D CGNS_ENABLE_HDF5:BOOL=ON \
+            -D HDF5_NEED_ZLIB:BOOL=OFF \
+            -D HDF5_NEED_SZIP:BOOL=OFF \
+            -D CGNS_ENABLE_FORTRAN:BOOL=OFF \
+            -D CGNS_ENABLE_TESTS:BOOL=ON \
+            -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
+            -D CMAKE_BUILD_TYPE:STRING=Debug \
+            -D CMAKE_C_FLAGS:STRING="-fsanitize=address,undefined -fno-omit-frame-pointer -O1 -g" \
+            -D CMAKE_EXE_LINKER_FLAGS:STRING="-fsanitize=address,undefined" \
+            -D CMAKE_SHARED_LINKER_FLAGS:STRING="-fsanitize=address,undefined"
+        shell: bash
+
+      - name: Build
+        run: |
+          cd build_asan
+          cmake --build . --parallel 8
+        shell: bash
+
+      - name: Test under ASan + UBSan
+        env:
+          # halt_on_error=1: a sanitizer error must fail the job, not just be
+          # logged and continued past. detect_leaks=1 is ASan's default when
+          # built for Linux, kept explicit here since this job's whole point
+          # is catching exactly the leak class this branch already had.
+          # suppressions=... covers cgnscheck's own internal working data
+          # (e.g. its volume-face hash table), never freed before the CLI
+          # process exits by design -- see lsan-suppressions.txt. Library
+          # code is not suppressed there and remains fully checked.
+          ASAN_OPTIONS: "halt_on_error=1:detect_leaks=1"
+          LSAN_OPTIONS: "suppressions=${{ github.workspace }}/.github/workflows/lsan-suppressions.txt"
+          UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
+        run: |
+          cd build_asan
+          ctest --output-on-failure -j4
+        shell: bash

@@ -1,0 +1,15 @@
+# LeakSanitizer suppressions for the asan.yml CI job.
+#
+# cgnscheck is a short-lived, single-invocation validator CLI: like many such
+# tools, its internal working data structures (e.g. the volume-face hash
+# table built by new_face()/element_face() in src/tools/cgnscheck.c, used
+# only for the duration of one run to detect shared/boundary faces) are
+# never explicitly freed before exit -- the process exiting reclaims them,
+# and the tool contains no free-before-exit discipline anywhere for this
+# kind of internal state. This is a deliberate simplification appropriate to
+# a CLI tool's lifetime, not a leak in the sense that matters for a library
+# embedded in a long-running process (which is what the rest of this ASan
+# job, deliberately NOT suppressed here, continues to check). Suppressed by
+# allocating function name so a genuine new leak elsewhere in cgnscheck is
+# still caught.
+leak:new_face
