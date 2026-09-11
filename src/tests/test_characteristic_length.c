@@ -37,6 +37,7 @@
 #include <string.h>
 #include <math.h>
 #include "cgnslib.h"
+#include "cgns_io.h"
 
 #define N_ELEM  4
 #define N_VERT  (N_ELEM * 8)
@@ -620,6 +621,128 @@ static int test_partial(void)
 }
 
 /* ------------------------------------------------------------------ */
+/* cg_sol_characteristic_length_partial_write() must reject a          */
+/* nscale/numElements that does not match the array's actual on-disk   */
+/* extent, rather than handing cgio_write_data a hyperslab selection   */
+/* it did not itself validate. A caller-argument mismatch like this is */
+/* an easy distributed-writer bug -- one rank passing a numElements    */
+/* different from the one every other rank used at create() time --    */
+/* and prior to this check, the only diagnosis was whatever generic    */
+/* I/O error cgio_write_data's own hyperslab-selection rejection        */
+/* happened to produce.                                                 */
+/* ------------------------------------------------------------------ */
+static int test_partial_extent_mismatch(void)
+{
+    int fn, B, Z, S, F, fam, si, ci, sec;
+    cgsize_t sz[3];
+    const int nvert = 8, nelem = 1;
+    double coord[8], fld[1], h[3];
+    cgsize_t conn[8];
+    int i, ierr;
+
+    for (i = 0; i < nvert; i++) coord[i] = (double)i;
+    for (i = 0; i < 8; i++) conn[i] = (cgsize_t)i + 1;
+    fld[0] = 1.0;
+    h[0] = h[1] = h[2] = 1.0;
+
+    if (check(cg_open("test_charlen_extent_mismatch.cgns", CG_MODE_WRITE, &fn),
+              "open")) return 1;
+    if (check(cg_base_write(fn, "Base", 3, 3, &B), "base")) return 1;
+    sz[0] = nvert; sz[1] = nelem; sz[2] = 0;
+    if (check(cg_zone_write(fn, B, "Zone", sz, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX", coord, &ci), "cx")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY", coord, &ci), "cy")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ", coord, &ci), "cz")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Hexas", CGNS_ENUMV(HEXA_8),
+              1, nelem, 0, conn, &sec), "section")) return 1;
+    if (check(cg_family_write(fn, B, "CartFam", &fam), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto")) return 1;
+    if (check(cg_famname_write("CartFam"), "famname")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, fam, "Hex_P0",
+              CGNS_ENUMV(HEXA_8), 0, 0,
+              CGNS_ENUMV(CartesianMonomialsPascal), &si), "si")) return 1;
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S), "sol")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 0, 0), "degree")) return 1;
+    if (check(cg_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "Density", fld, &F), "field")) return 1;
+
+    /* Created with numElements=nelem ... */
+    if (check(cg_sol_characteristic_length_create(fn, B, Z, S, 3,
+              (cgsize_t)nelem), "charlen create")) return 1;
+
+    /* ... but the range write claims a different numElements (nelem+41,
+     * an arbitrary mismatch). This must be rejected, and rejected with a
+     * diagnostic that names the mismatch -- not a bare I/O failure. */
+    ierr = cg_sol_characteristic_length_partial_write(fn, B, Z, S, 3,
+              (cgsize_t)(nelem + 41), 1, (cgsize_t)nelem, h);
+    if (ierr == CG_OK) {
+        fprintf(stderr, "ERROR: partial_write accepted a numElements that "
+                        "does not match the array created earlier\n");
+        cg_close(fn);
+        return 1;
+    }
+    printf("  mismatched numElements correctly rejected: %s\n", cg_get_error());
+
+    if (check(cg_close(fn), "close")) return 1;
+    return 0;
+}
+
+/* Same check, but for the nscale half of the mismatch: the array is created
+ * isotropic (nscale=1) and the range write claims the per-axis encoding. */
+static int test_partial_nscale_mismatch(void)
+{
+    int fn, B, Z, S, F, fam, si, ci, sec;
+    cgsize_t sz[3];
+    const int nvert = 8, nelem = 1;
+    double coord[8], fld[1], h[3] = {1.0, 1.0, 1.0};
+    cgsize_t conn[8];
+    int i, ierr;
+
+    for (i = 0; i < nvert; i++) coord[i] = (double)i;
+    for (i = 0; i < 8; i++) conn[i] = (cgsize_t)i + 1;
+    fld[0] = 1.0;
+
+    if (check(cg_open("test_charlen_nscale_mismatch.cgns", CG_MODE_WRITE, &fn),
+              "open")) return 1;
+    if (check(cg_base_write(fn, "Base", 3, 3, &B), "base")) return 1;
+    sz[0] = nvert; sz[1] = nelem; sz[2] = 0;
+    if (check(cg_zone_write(fn, B, "Zone", sz, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateX", coord, &ci), "cx")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateY", coord, &ci), "cy")) return 1;
+    if (check(cg_coord_write(fn, B, Z, CGNS_ENUMV(RealDouble), "CoordinateZ", coord, &ci), "cz")) return 1;
+    if (check(cg_section_write(fn, B, Z, "Hexas", CGNS_ENUMV(HEXA_8),
+              1, nelem, 0, conn, &sec), "section")) return 1;
+    if (check(cg_family_write(fn, B, "CartFam", &fam), "family")) return 1;
+    if (check(cg_goto(fn, B, "Zone_t", Z, NULL), "goto")) return 1;
+    if (check(cg_famname_write("CartFam"), "famname")) return 1;
+    if (check(cg_solution_interpolation_write(fn, B, fam, "Hex_P0",
+              CGNS_ENUMV(HEXA_8), 0, 0,
+              CGNS_ENUMV(CartesianMonomialsPascal), &si), "si")) return 1;
+    if (check(cg_sol_write(fn, B, Z, "FS", CGNS_ENUMV(InterpolationPoints), &S), "sol")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 0, 0), "degree")) return 1;
+    if (check(cg_field_write(fn, B, Z, S, CGNS_ENUMV(RealDouble), "Density", fld, &F), "field")) return 1;
+
+    /* Created isotropic (nscale=1) ... */
+    if (check(cg_sol_characteristic_length_create(fn, B, Z, S, 1,
+              (cgsize_t)nelem), "charlen create")) return 1;
+
+    /* ... but the range write claims the per-axis encoding (nscale=3). */
+    ierr = cg_sol_characteristic_length_partial_write(fn, B, Z, S, 3,
+              (cgsize_t)nelem, 1, (cgsize_t)nelem, h);
+    if (ierr == CG_OK) {
+        fprintf(stderr, "ERROR: partial_write accepted an nscale that does "
+                        "not match the array's isotropic encoding\n");
+        cg_close(fn);
+        return 1;
+    }
+    printf("  mismatched nscale correctly rejected: %s\n", cg_get_error());
+
+    if (check(cg_close(fn), "close")) return 1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* I - |E| counts cells, not every Elements_t entry                    */
 /* ------------------------------------------------------------------ */
 
@@ -838,6 +961,73 @@ static int write_high_degree_plausibility(const char *filename)
     return 0;
 }
 
+/* CPEX-0045 cgnscheck fixture: a PointRange with a corrupted point count.
+ *
+ * Originally built to test whether cgnscheck's own check_solution() npts!=2
+ * guard is load-bearing: a CellCenter (not InterpolationPoints) solution
+ * with an InterpolationDegrees child bypasses cgi_read_sol()'s
+ * InterpolationPoints-only npts-shape check (cgi_ptset_range()) entirely.
+ * It was -- but tracing that surfaced a more serious, unrelated bug this
+ * fixture now exists to guard instead: cgi_read_ptset() (cgns_internals.c),
+ * the *generic* point-set reader used by every range-type point set in the
+ * format (PointRange, PointRangeDonor, ElementRange -- 1to1 connectivity,
+ * holes, BC datasets, subregions, not just FlowSolution_t), computed
+ * size_of_patch by unconditionally indexing pnts[i+Idim] without ever
+ * checking npts==2. Confirmed under AddressSanitizer: this file, opened
+ * through nothing but cg_open(), drove a real heap-buffer-overflow read --
+ * before cgnscheck ever ran. Fixed at the root in cgi_read_ptset() itself,
+ * so cg_open() now rejects this file outright, earlier and more generally
+ * than a FlowSolution-specific fix would have. check_solution()'s own guard
+ * is kept as defense in depth (see its comment) but is no longer reachable
+ * via this exact file. Building it needs raw cgio_* corruption (the same as
+ * write_ptlist_oob_element below), since no public API can produce a
+ * PointRange with npts != 2. Exercised by the
+ * cgnscheck_ptrange_bad_npts_* tests in CMakeLists.txt. */
+static int write_ptrange_bad_npts(const char *filename)
+{
+    int fn, B, Z, S, cgio_num;
+    cgsize_t size[3] = {3, 1, 0};
+    cgsize_t range[2] = {1, 1};
+    double root_id, node_id;
+    char data_type[3];
+
+    if (check(cg_open(filename, CG_MODE_WRITE, &fn), "open W")) return 1;
+    if (check(cg_base_write(fn, "Base", 2, 2, &B), "base")) return 1;
+    if (check(cg_zone_write(fn, B, "Zone", size, CGNS_ENUMV(Unstructured), &Z),
+              "zone")) return 1;
+    /* CellCenter, not InterpolationPoints: the path that bypasses the
+     * library's own npts-shape check. */
+    if (check(cg_sol_ptset_write(fn, B, Z, "FS", CGNS_ENUMV(CellCenter),
+              CGNS_ENUMV(PointRange), 2, range, &S), "ptset")) return 1;
+    if (check(cg_sol_interpolation_degree_write(fn, B, Z, S, 2, 0), "degree"))
+        return 1;
+    if (check(cg_close(fn), "close W")) return 1;
+
+    /* Corrupt only the point-count axis (dim_vals[1]), leaving dim_vals[0]
+     * (=Idim=1 for an unstructured zone) untouched: a corruption that also
+     * touched dim_vals[0] would be caught elsewhere and prove nothing about
+     * this specific guard. */
+    if (check(cg_open(filename, CG_MODE_MODIFY, &fn), "open M")) return 1;
+    if (cg_get_cgio(fn, &cgio_num) ||
+        cgio_get_root_id(cgio_num, &root_id) ||
+        cgio_get_node_id(cgio_num, root_id, "Base/Zone/FS/PointRange", &node_id) ||
+        cgio_get_data_type(cgio_num, node_id, data_type)) {
+        fprintf(stderr, "ERROR: could not locate PointRange node\n");
+        return 1;
+    }
+    {
+        cgsize_t bad_dims[2] = {1, 1};
+        cgsize_t bad_data[1] = {1};
+        if (cgio_set_dimensions(cgio_num, node_id, data_type, 2, bad_dims) ||
+            cgio_write_all_data(cgio_num, node_id, bad_data)) {
+            fprintf(stderr, "ERROR: could not corrupt PointRange dims\n");
+            return 1;
+        }
+    }
+    if (check(cg_close(fn), "close M")) return 1;
+    return 0;
+}
+
 /* CPEX-0045 cgnscheck fixture: a FlowSolution_t's PointList names an element
  * id that does not exist in any of the zone's Element_t sections. Verified
  * empirically that cg_open() does NOT reject this -- the library's own
@@ -906,6 +1096,8 @@ int main(void)
     if (test_not_a_field())       errors++;
     if (test_v3_layout_rejected()) errors++;
     if (test_partial())           errors++;
+    if (test_partial_extent_mismatch()) errors++;
+    if (test_partial_nscale_mismatch()) errors++;
     if (test_faces_not_cells())   errors++;
 
     /* Fixture only: written for the cgnscheck_solinterp_mismatch_* CTest
@@ -919,6 +1111,10 @@ int main(void)
     /* Fixture only: written for the cgnscheck_high_degree_* CTest entries
      * (CMakeLists.txt) to run against, not asserted here. */
     if (write_high_degree_plausibility("test_high_degree.cgns")) errors++;
+
+    /* Fixture only: written for the cgnscheck_ptrange_bad_npts_* CTest
+     * entries (CMakeLists.txt) to run against, not asserted here. */
+    if (write_ptrange_bad_npts("test_ptrange_bad_npts.cgns")) errors++;
 
     printf("\n");
     printf("##################################################\n");

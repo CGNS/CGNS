@@ -404,6 +404,33 @@ if (CGNS_ENABLE_TESTS)
     FIXTURES_REQUIRED HO_TEST_FILES
     TIMEOUT 120)
 
+  # A PointRange must have exactly 2 points. This fixture was built to
+  # exercise check_solution()'s own npts != 2 guard (a CellCenter, not
+  # InterpolationPoints, solution with an InterpolationDegrees child bypasses
+  # the library's InterpolationPoints-only npts-shape check, cgi_ptset_range)
+  # -- but building it surfaced a more serious, unrelated defect: the
+  # library's generic cgi_read_ptset() itself (cgns_internals.c), used by
+  # every range-type point set in the file format (PointRange,
+  # PointRangeDonor, ElementRange -- 1to1 connectivity, holes, BC datasets,
+  # subregions, not just FlowSolution_t), computed size_of_patch by
+  # unconditionally indexing pnts[i+Idim] without ever checking npts==2,
+  # reading past the actual allocation for any corrupted or malformed npts.
+  # Confirmed under AddressSanitizer as a real heap-buffer-overflow read at
+  # cg_open() time, before cgnscheck ever runs. Fixed at the root in
+  # cgi_read_ptset() itself, so cg_open() now rejects this file outright --
+  # a strictly earlier and clearer rejection than check_solution()'s own
+  # guard would have given, which is why the assertion below is the library's
+  # message, not cgnscheck's. (check_solution()'s guard is kept as documented
+  # defense in depth: cgi_read_ptset()'s fix closes this specific corruption
+  # for every ptset consumer, but a future consumer of solution ptsets that
+  # bypasses cgi_read_ptset entirely would still need it.)
+  add_test(NAME cgnscheck_ptrange_bad_npts_flagged
+           COMMAND cgnscheck test_ptrange_bad_npts.cgns)
+  set_tests_properties(cgnscheck_ptrange_bad_npts_flagged PROPERTIES
+    PASS_REGULAR_EXPRESSION "Invalid definition of point set .PointRange. .type=PointRange.: expected shape .1, 2., got .1, 1."
+    FIXTURES_REQUIRED HO_TEST_FILES
+    TIMEOUT 120)
+
   # Variable-degree (p-adaptation) files: several FlowSolution_t nodes over one
   # zone at different degrees. Like CGNSCHECK_ORDERING_FILES below, these are
   # metadata-only and legitimately report "no element sets found"/"no grid
@@ -542,6 +569,7 @@ if (CGNS_ENABLE_TESTS)
                          cgnscheck_high_degree_strict_does_not_escalate
                          cgnscheck_vardegree_no_family_binding
                          cgnscheck_vardegree_ptlist
+                         cgnscheck_ptrange_bad_npts_flagged
       PROPERTIES ENVIRONMENT_MODIFICATION
       "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:cgnscheck>,\;>>")
   endif()
