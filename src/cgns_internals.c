@@ -3729,19 +3729,34 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
     char_33 name;
     cgns_ptset *ptset = NULL;
 
+    /* Every early exit below goes through error_free rather than returning
+     * directly, so I_id (from whichever of the two cgi_get_nodes calls is
+     * currently open) and ptset (if one was already parsed, from either
+     * loop) are both released exactly once.  Before this, six of the eight
+     * error paths here leaked I_id, and the "IndexRange_t" cgi_get_nodes
+     * failure additionally leaked a ptset already parsed from the
+     * IndexArray_t loop -- pre-existing, but only ever reachable when
+     * cgi_read_ptset() itself fails, which nothing exercised until the
+     * PointRange npts-shape validation added in cgi_read_ptset() this
+     * session (confirmed under ASan: LeakSanitizer flagged exactly this
+     * call chain once that validation started actually rejecting a
+     * malformed file here). nI_t is reliably 0 whenever the I_id it guards
+     * is not valid, including on a cgi_get_nodes failure (it sets *nnodes=0
+     * unconditionally before anything else can fail), so "if (nI_t)" is a
+     * safe guard at error_free even though nI_t is reused across both
+     * loops. */
     if (cgi_get_nodes(parent_id, "IndexArray_t", &nI_t, &I_id))
         return CG_ERROR;
     for (i = 0; i < nI_t; i++) {
         if (cgio_get_name(cg->cgio, I_id[i], name)) {
             cg_io_error("cgio_get_name for PointList");
-            return CG_ERROR;
+            goto error_free;
         }
         if (strcmp(name, "PointList") && strcmp(name, "ElementList"))
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
-            CGNS_FREE(ptset);
-            return CG_ERROR;
+            goto error_free;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
         if (0 == strcmp(name, "ElementList"))
@@ -3752,25 +3767,23 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
         if (cgi_read_ptset(I_id[i], ptset)){
-            CGNS_FREE(ptset);
-            return CG_ERROR;
+            goto error_free;
         }
     }
     if (nI_t) CGNS_FREE(I_id);
 
     if (cgi_get_nodes(parent_id, "IndexRange_t", &nI_t, &I_id))
-        return CG_ERROR;
+        goto error_free;
     for (i = 0; i < nI_t; i++) {
         if (cgio_get_name(cg->cgio, I_id[i], name)) {
             cg_io_error("cgio_get_name for PointRange");
-            return CG_ERROR;
+            goto error_free;
         }
         if (strcmp(name, "PointRange") && strcmp(name, "ElementRange"))
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
-            CGNS_FREE(ptset);
-            return CG_ERROR;
+            goto error_free;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
         if (0 == strcmp(name, "ElementRange"))
@@ -3781,14 +3794,18 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
         if (cgi_read_ptset(I_id[i], ptset)){
-            CGNS_FREE(ptset);
-            return CG_ERROR;
+            goto error_free;
         }
     }
     if (nI_t) CGNS_FREE(I_id);
 
     *pptset = ptset;
     return CG_OK;
+
+error_free:
+    if (nI_t) CGNS_FREE(I_id);
+    if (ptset) CGNS_FREE(ptset);
+    return CG_ERROR;
 }
 
 int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
@@ -3852,6 +3869,30 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
         ptset->size_of_patch = ptset->npts;
     }
     else {
+        /* This branch's arithmetic below (pnts[i+Idim] paired against
+         * pnts[i]) assumes exactly two Idim-length points -- a low corner
+         * and a high corner -- which is the defined on-disk shape for
+         * PointRange, PointRangeDonor and ElementRange: [Idim, 2].  The
+         * dim_vals[1]>0 check above allows any positive npts, not just 2, so
+         * a corrupted node declaring npts=1 (or any value other than 2)
+         * passes it and this loop then reads pnts[i+Idim] out of the array
+         * actually allocated (sized to the node's real, smaller npts) --
+         * confirmed under AddressSanitizer as a genuine heap-buffer-overflow
+         * read, not merely a logic error silently computing a wrong count.
+         * Every caller of cgi_read_ptset (1to1 connectivity, holes, BC
+         * datasets, subregions, and a FlowSolution_t's own ptset outside the
+         * InterpolationPoints path, which has a separate, narrower check of
+         * its own in cgi_ptset_range) funnels through this one function, so
+         * fixing it here closes the gap for all of them at once rather than
+         * requiring each call site to defend itself. */
+        if (dim_vals[0] != Idim || dim_vals[1] != 2) {
+            cgi_error("Invalid definition of point set '%s' (type=%s): "
+                      "expected shape [%d, 2], got [%" PRIdCGSIZE ", %"
+                      PRIdCGSIZE "]", ptset->name,
+                      PointSetTypeName[ptset->type], Idim,
+                      dim_vals[0], dim_vals[1]);
+            return CG_ERROR;
+        }
      /* read points to calculate size_of_patch */
         int i;
         cgsize_t size=1;
