@@ -81,8 +81,13 @@ jobs:
         shell: bash
 
       - name: Re-run cgnscheck's own CTest entries under valgrind memcheck
+        # No suppressions: cgnscheck's volume-face hash table used to need one
+        # here (the same "never freed before exit, by design" rationale as
+        # asan.yml, and the same non-issue it turned out not to be -- see that
+        # job's comment). The actual leaks are fixed, and the suite is clean
+        # under valgrind with zero suppressions, confirmed by running it with
+        # none. run_cgnscheck_valgrind.py still accepts an optional
+        # suppressions-file argument if a real one is ever needed.
         run: |
-          python3 .github/workflows/run_cgnscheck_valgrind.py \
-            build_valgrind \
-            .github/workflows/valgrind-suppressions.supp
+          python3 .github/workflows/run_cgnscheck_valgrind.py build_valgrind
         shell: bash

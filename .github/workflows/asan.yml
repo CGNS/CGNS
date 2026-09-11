@@ -73,12 +73,21 @@ jobs:
           # logged and continued past. detect_leaks=1 is ASan's default when
           # built for Linux, kept explicit here since this job's whole point
           # is catching exactly the leak class this branch already had.
-          # suppressions=... covers cgnscheck's own internal working data
-          # (e.g. its volume-face hash table), never freed before the CLI
-          # process exits by design -- see lsan-suppressions.txt. Library
-          # code is not suppressed there and remains fully checked.
+          #
+          # No leak suppressions: cgnscheck's volume-face hash table
+          # (new_face()/element_face() in src/tools/cgnscheck.c) used to be
+          # suppressed here as "never freed before exit, by design." That
+          # was wrong on two counts, found during this same review --
+          # new_face() actually leaked a FACE object on every hash hit
+          # (roughly one per shared face, growing with mesh size, not a
+          # fixed one-time allocation), and check_base()'s cleanup only ever
+          # freed the *previous* base, never the last one. Both are now
+          # fixed (free_zones() releases the hash and runs once more after
+          # the last base), so the suite is leak-clean with no suppressions
+          # at all -- confirmed by running it with none. Keeping a blanket
+          # "leak:new_face" suppression after fixing the actual leaks would
+          # have hidden any real regression in that function.
           ASAN_OPTIONS: "halt_on_error=1:detect_leaks=1"
-          LSAN_OPTIONS: "suppressions=${{ github.workspace }}/.github/workflows/lsan-suppressions.txt"
           UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
         run: |
           cd build_asan
