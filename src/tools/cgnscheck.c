@@ -3175,6 +3175,15 @@ static cgsize_t check_ptset_data_size (ZONE *z,
         return 0;
     }
 
+    /* The SIDS gives point sets on these two node types for edge- and
+     * face-based data on unstructured grids -- locations Elements_t indexes but
+     * GridLocation alone cannot address.  Every other use is subsetting, and
+     * ZoneSubRegion_t (CPEX-0030) is the node meant for that. */
+    if (z->type != CGNS_ENUMV(Unstructured) ||
+        location == CGNS_ENUMV(Vertex) || location == CGNS_ENUMV(CellCenter))
+        warning (2, "ZoneSubRegion_t is the node intended for data over a"
+                    " subset of a zone");
+
     /* idim indices per point, as everywhere else a point set is read */
     pnts = (cgsize_t *) malloc (((size_t)(npts * z->idim)) * sizeof(cgsize_t));
     if (pnts == NULL)
