@@ -446,7 +446,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Grid Location                                                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  CHARACTER(LEN=MAX_LEN) :: GridLocationName(0:8)
+  CHARACTER(LEN=MAX_LEN) :: GridLocationName(0:9)
   ENUM, BIND(C)
     ENUMERATOR :: CGNS_ENUMV(GridLocationNull)        = CG_Null
     ENUMERATOR :: CGNS_ENUMV(GridLocationUserDefined) = CG_UserDefined
@@ -457,6 +457,7 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(JFaceCenter)             = 6
     ENUMERATOR :: CGNS_ENUMV(KFaceCenter)             = 7
     ENUMERATOR :: CGNS_ENUMV(EdgeCenter)              = 8
+    ENUMERATOR :: CGNS_ENUMV(InterpolationPoints)     = 9
   END ENUM
 
 !DEC$if defined(BUILD_CGNS_DLL)
@@ -761,7 +762,28 @@ MODULE cgns
 !*      Element types                                                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)
+! CRITICAL: ElementType enum values are part of the CGNS file format
+! These values are stored as integers in HDF5/ADF files and MUST match the
+! C enumeration in cgnslib.h exactly. Stable since CGNS 4.3.0 (2020).
+!
+! BACKWARD COMPATIBILITY REQUIREMENTS:
+! - DO NOT reorder existing element types
+! - DO NOT insert new types in the middle
+! - ALWAYS append new element types at the end (after HEXA_125)
+! - Update ElementTypeName array below when adding types
+!
+! Violation will cause silent data corruption when reading CGNS 4.x files.
+! Array sized using CGNS_ElementType_MAX_val below (must match ElementType_MAX enum = 57).
+! A named PARAMETER is required because Fortran array bounds cannot use ENUM constants
+! (ENUM/BIND(C) values have kind C_INT which is not guaranteed to be the default integer kind).
+!
+! IMPORTANT: CGNS_ElementType_MAX_val MUST equal ElementType_MAX in cgnslib.h (currently 57).
+! When adding new element types to the C enum, increment both this value AND
+! NofValidElementTypes in cgnslib.h simultaneously, or the ElementTypeName array will
+! be mis-sized and accesses will silently read out-of-bounds data.
+
+  INTEGER, PARAMETER :: CGNS_ElementType_MAX_val = 57
+  CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:CGNS_ElementType_MAX_val-1)
   ENUM, BIND(C)
     ENUMERATOR :: CGNS_ENUMV(ElementTypeNull) = CG_Null
     ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined)
@@ -820,6 +842,10 @@ MODULE cgns
     ENUMERATOR :: CGNS_ENUMV(HEXA_44)
     ENUMERATOR :: CGNS_ENUMV(HEXA_98)
     ENUMERATOR :: CGNS_ENUMV(HEXA_125)
+    ! *** ADD NEW ELEMENT TYPES HERE (value 57+) ***
+    ! DO NOT insert above - append only to maintain backward compatibility
+    ! Sentinel value for array sizing and bounds checking
+    ENUMERATOR :: CGNS_ENUMV(ElementType_MAX) = 57
   END ENUM
 
 !DEC$if defined(BUILD_CGNS_DLL)
@@ -855,6 +881,40 @@ MODULE cgns
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: RigidGridMotionTypeName
+!DEC$endif
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Solution Interpolation types                                        *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  CHARACTER(LEN=MAX_LEN) :: InterpolationTypeName(0:5)
+  ENUM, BIND(C)
+      ENUMERATOR :: CGNS_ENUMV(InterpolationTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(InterpolationTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(ParametricLagrange)
+      ENUMERATOR :: CGNS_ENUMV(ParametricMonomialsPascal)
+      ENUMERATOR :: CGNS_ENUMV(CartesianMonomialsPascal)
+      ENUMERATOR :: CGNS_ENUMV(IsoParametric)
+  END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: InterpolationTypeName
+!DEC$endif
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)        *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  CHARACTER(LEN=MAX_LEN) :: ControlPointDistributionName(0:5)
+  ENUM, BIND(C)
+      ENUMERATOR :: CGNS_ENUMV(ControlPointDistributionNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ControlPointDistributionUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(GaussLobattoLegendre)
+      ENUMERATOR :: CGNS_ENUMV(Equidistant)
+      ENUMERATOR :: CGNS_ENUMV(GaussLegendre)
+      ENUMERATOR :: CGNS_ENUMV(WarpAndBlend)
+  END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: ControlPointDistributionName
 !DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -969,7 +1029,7 @@ MODULE cgns
 
   DATA GridLocationName / 'Null','UserDefined', &
     'Vertex','CellCenter','FaceCenter','IFaceCenter', &
-    'JFaceCenter','KFaceCenter','EdgeCenter' /
+    'JFaceCenter','KFaceCenter','EdgeCenter','InterpolationPoints' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Grid Connectivity Types                                        *
@@ -1064,6 +1124,9 @@ MODULE cgns
 !*      Element types                                                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
+! ElementTypeName array MUST match enum ordering (index 0-56)
+! CRITICAL: Maintain exact order for backward compatibility with CGNS 4.x
+! When adding new element types, append to the end
   DATA ElementTypeName / 'Null','UserDefined', &
     'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6', &
     'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10', &
@@ -1096,6 +1159,22 @@ MODULE cgns
 
   DATA RigidGridMotionTypeName / 'Null','UserDefined', &
     'ConstantRate', 'VariableRate' /
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Solution Interpolation types                                   *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+  DATA InterpolationTypeName / 'Null','UserDefined', &
+       'ParametricLagrange', 'ParametricMonomialsPascal', &
+       'CartesianMonomialsPascal', 'IsoParametric' /
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Lagrange Control-Point Distributions                          *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+  DATA ControlPointDistributionName / 'Null','UserDefined', &
+       'GaussLobattoLegendre', 'Equidistant', &
+       'GaussLegendre', 'WarpAndBlend' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
@@ -1460,7 +1539,10 @@ MODULE cgns
       INTEGER :: B
       INTEGER :: Z
       INTEGER :: S
-      INTEGER(CGSIZE_T) ::pnts
+      ! cgsize_t *pnts on the C side: 2 bounds for PointRange, npnts entries
+      ! for PointList.  Declared scalar here, a caller could pass a single
+      ! integer and the C entry would write past it.
+      INTEGER(CGSIZE_T) :: pnts(*)
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_sol_ptset_read_f
 
@@ -1474,7 +1556,8 @@ MODULE cgns
       INTEGER(cgenum_t) :: location
       INTEGER(cgenum_t) :: ptype
       INTEGER(CGSIZE_T) :: npnts
-      INTEGER(CGSIZE_T) :: pnts
+      ! const cgsize_t *pnts on the C side -- see cg_sol_ptset_read_f
+      INTEGER(CGSIZE_T) :: pnts(*)
       INTEGER :: S
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_sol_ptset_write_f
@@ -2392,22 +2475,24 @@ MODULE cgns
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_arbitrary_motion_read_f
 
-    SUBROUTINE cg_arbitrary_motion_write_f(fn, B, Z, amotion_name, TYPE, A, ier) !BIND(C, NAME="cg_arbitrary_motion_write_f")
-      IMPORT :: c_char, cgenum_t
-      IMPLICIT NONE
-      INTEGER :: fn
-      INTEGER :: B
-      INTEGER :: Z
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: amotion_name
-      INTEGER(cgenum_t) :: TYPE
-      INTEGER :: A
-      INTEGER, INTENT(OUT) :: ier
-    END SUBROUTINE cg_arbitrary_motion_write_f
+     SUBROUTINE cg_arbitrary_motion_write_f(fn, B, Z, amotion_name, TYPE, A, ier) !BIND(C, NAME="cg_arbitrary_motion_write_f")
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: Z
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: amotion_name
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: A
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_arbitrary_motion_write_f
+  END INTERFACE
 
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-    !      Read and write GridCoordinates_t Nodes                           *
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+  !      Read and write GridCoordinates_t Nodes                           *
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+  INTERFACE
     SUBROUTINE cg_ngrids_f(fn, B, Z, ngrids, ier) BIND(C, NAME="cg_ngrids_f")
       IMPLICIT NONE
       INTEGER :: fn
@@ -2863,14 +2948,6 @@ MODULE cgns
       INTEGER :: Ordinal
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_ordinal_read_f
-
-    SUBROUTINE cg_npe_f(TYPE,npe, ier) BIND(C, NAME="cg_npe_f")
-      IMPORT :: cgenum_t
-      IMPLICIT NONE
-      INTEGER(cgenum_t) :: TYPE
-      INTEGER :: npe
-      INTEGER, INTENT(OUT) :: ier
-    END SUBROUTINE cg_npe_f
 
     SUBROUTINE cg_is_link_f(path_length, ier) BIND(C, NAME="cg_is_link_f")
       IMPLICIT NONE
@@ -5116,6 +5193,844 @@ CONTAINS
     F = INT(i_F)
   END SUBROUTINE cg_family_write_f
 
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write ElementInterpolation_t Nodes (CPEX 0045)           *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_nelement_interpolation_read_f
+!DEC$endif
+  SUBROUTINE cg_nelement_interpolation_read_f(fn, B, fam, ne, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    INTEGER, INTENT(OUT) :: ne
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: i_ne
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_nelement_interpolation_read(fn, bn, fam, ne) &
+          BIND(C, name="cg_nelement_interpolation_read")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(C_INT), INTENT(OUT) :: ne
+      END FUNCTION cg_nelement_interpolation_read
+    END INTERFACE
+    ier = INT(cg_nelement_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), i_ne))
+    ne = INT(i_ne)
+  END SUBROUTINE cg_nelement_interpolation_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_read_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_read_f(fn, B, fam, en, name, etype, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    CHARACTER(LEN=*), INTENT(OUT) :: name
+    INTEGER(cgenum_t), INTENT(OUT) :: etype
+    INTEGER, INTENT(OUT) :: ier
+    CHARACTER(LEN=33, KIND=C_CHAR) :: c_name
+    INTEGER(cgenum_t) :: c_etype
+    INTEGER :: i_nul
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_read(fn, bn, fam, en, name, etype) &
+          BIND(C, name="cg_element_interpolation_read")
+        IMPORT :: C_INT, C_CHAR, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(OUT) :: name
+        INTEGER(cgenum_t), INTENT(OUT) :: etype
+      END FUNCTION cg_element_interpolation_read
+    END INTERFACE
+    ier = INT(cg_element_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), c_name, c_etype))
+    i_nul = INDEX(c_name, C_NULL_CHAR)
+    IF (i_nul <= 0) i_nul = LEN(c_name) + 1
+    name = c_name(1:i_nul-1)
+    etype = c_etype
+  END SUBROUTINE cg_element_interpolation_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_points_read_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_points_read_f(fn, B, fam, en, pu, pv, pw, ier)
+    !! pv and pw are OPTIONAL: the C entry takes NULL for a coordinate the
+    !! element does not have (pv on 1D, pw on 1D or 2D), and Fortran has no null
+    !! array argument.  Omitting the argument passes a null pointer through, so a
+    !! caller never has to invent an array it has no data for.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), OPTIONAL, TARGET :: pv, pw
+    INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_points_read(fn, bn, fam, en, pu, pv, pw) &
+          BIND(C, name="cg_element_interpolation_points_read")
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw
+      END FUNCTION cg_element_interpolation_points_read
+    END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    ier = INT(cg_element_interpolation_points_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), pu, c_pv, c_pw))
+  END SUBROUTINE cg_element_interpolation_points_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_write_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_write_f(fn, B, fam, name, etype, en, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    CHARACTER(LEN=*), INTENT(IN) :: name
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: en
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: i_en
+    CHARACTER(LEN=LEN_TRIM(name)+1, KIND=C_CHAR) :: c_name
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_write(fn, bn, fam, node_name, et, en) &
+          BIND(C, name="cg_element_interpolation_write")
+        IMPORT :: C_INT, C_CHAR, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: node_name
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: et
+        INTEGER(C_INT), INTENT(OUT) :: en
+      END FUNCTION cg_element_interpolation_write
+    END INTERFACE
+    c_name = TRIM(name)//C_NULL_CHAR
+    ier = INT(cg_element_interpolation_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), c_name, etype, i_en))
+    en = INT(i_en)
+  END SUBROUTINE cg_element_interpolation_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_points_write_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_points_write_f(fn, B, fam, en, pu, pv, pw, ier)
+    !! pv and pw are OPTIONAL; see cg_element_interpolation_points_read_f.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), OPTIONAL, TARGET :: pv, pw
+    INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_points_write(fn, bn, fam, en, pu, pv, pw) &
+          BIND(C, name="cg_element_interpolation_points_write")
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw
+      END FUNCTION cg_element_interpolation_points_write
+    END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    ier = INT(cg_element_interpolation_points_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), pu, c_pv, c_pw))
+  END SUBROUTINE cg_element_interpolation_points_write_f
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write SolutionInterpolation_t Nodes (CPEX 0045)          *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_nsolution_interpolation_read_f
+!DEC$endif
+  SUBROUTINE cg_nsolution_interpolation_read_f(fn, B, fam, ns, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    INTEGER, INTENT(OUT) :: ns
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: i_ns
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_nsolution_interpolation_read(fn, bn, fam, ns) &
+          BIND(C, name="cg_nsolution_interpolation_read")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(C_INT), INTENT(OUT) :: ns
+      END FUNCTION cg_nsolution_interpolation_read
+    END INTERFACE
+    ier = INT(cg_nsolution_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), i_ns))
+    ns = INT(i_ns)
+  END SUBROUTINE cg_nsolution_interpolation_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_read_f(fn, B, fam, sn, name, etype, os, ot, it, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    CHARACTER(LEN=*), INTENT(OUT) :: name
+    INTEGER(cgenum_t), INTENT(OUT) :: etype
+    INTEGER, INTENT(OUT) :: os, ot
+    INTEGER(cgenum_t), INTENT(OUT) :: it
+    INTEGER, INTENT(OUT) :: ier
+    CHARACTER(LEN=33, KIND=C_CHAR) :: c_name
+    INTEGER(cgenum_t) :: c_etype, c_it
+    INTEGER(C_INT) :: c_os, c_ot
+    INTEGER :: i_nul
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_read(fn, bn, fam, sn, name, etype, os, ot, it) &
+          BIND(C, name="cg_solution_interpolation_read")
+        IMPORT :: C_INT, C_CHAR, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(OUT) :: name
+        INTEGER(cgenum_t), INTENT(OUT) :: etype
+        INTEGER(C_INT), INTENT(OUT) :: os, ot
+        INTEGER(cgenum_t), INTENT(OUT) :: it
+      END FUNCTION cg_solution_interpolation_read
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), c_name, c_etype, c_os, c_ot, c_it))
+    i_nul = INDEX(c_name, C_NULL_CHAR)
+    IF (i_nul <= 0) i_nul = LEN(c_name) + 1
+    name = c_name(1:i_nul-1)
+    etype = c_etype
+    os = INT(c_os)
+    ot = INT(c_ot)
+    it = c_it
+  END SUBROUTINE cg_solution_interpolation_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_points_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_points_read_f(fn, B, fam, sn, pu, pv, pw, pt, ier)
+    !! pv, pw and pt are OPTIONAL: the C entry takes NULL for a coordinate the
+    !! node does not have (pv on 1D, pw on 1D or 2D, pt when TemporalDegree = 0),
+    !! and Fortran has no null array argument.  Omitting the argument passes a
+    !! null pointer through.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT), OPTIONAL, TARGET :: pv, pw, pt
+    INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw, c_pt
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_points_read(fn, bn, fam, sn, pu, pv, pw, pt) &
+          BIND(C, name="cg_solution_interpolation_points_read")
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(OUT) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw, pt
+      END FUNCTION cg_solution_interpolation_points_read
+    END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    c_pt = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    IF (PRESENT(pt)) c_pt = C_LOC(pt(1))
+    ier = INT(cg_solution_interpolation_points_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), pu, c_pv, c_pw, c_pt))
+  END SUBROUTINE cg_solution_interpolation_points_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_npoints_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_npoints_read_f(fn, B, fam, sn, npts, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER, INTENT(OUT) :: npts
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_npts
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_npoints_read(fn, bn, fam, sn, npts) &
+          BIND(C, name="cg_solution_interpolation_npoints_read")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(C_INT), INTENT(OUT) :: npts
+      END FUNCTION cg_solution_interpolation_npoints_read
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_npoints_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), c_npts))
+    npts = INT(c_npts)
+  END SUBROUTINE cg_solution_interpolation_npoints_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_write_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_write_f(fn, B, fam, name, etype, os, ot, it, sn, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    CHARACTER(LEN=*), INTENT(IN) :: name
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(IN) :: os, ot
+    INTEGER(cgenum_t), INTENT(IN) :: it
+    INTEGER, INTENT(OUT) :: sn
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: i_sn
+    CHARACTER(LEN=LEN_TRIM(name)+1, KIND=C_CHAR) :: c_name
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_write(fn, bn, fam, node_name, etype, os, ot, it, sn) &
+          BIND(C, name="cg_solution_interpolation_write")
+        IMPORT :: C_INT, C_CHAR, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: node_name
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), VALUE, INTENT(IN) :: os, ot
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: it
+        INTEGER(C_INT), INTENT(OUT) :: sn
+      END FUNCTION cg_solution_interpolation_write
+    END INTERFACE
+    c_name = TRIM(name)//C_NULL_CHAR
+    ier = INT(cg_solution_interpolation_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), c_name, etype, INT(os,C_INT), INT(ot,C_INT), it, i_sn))
+    sn = INT(i_sn)
+  END SUBROUTINE cg_solution_interpolation_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_points_write_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_points_write_f(fn, B, fam, sn, npts, pu, pv, pw, pt, ier)
+    !! pv, pw and pt are OPTIONAL; see cg_solution_interpolation_points_read_f.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn, npts
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), TARGET :: pu
+    REAL(C_DOUBLE), DIMENSION(*), INTENT(IN), OPTIONAL, TARGET :: pv, pw, pt
+    INTEGER, INTENT(OUT) :: ier
+    TYPE(C_PTR) :: c_pv, c_pw, c_pt
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_points_write(fn, bn, fam, sn, npts, pu, pv, pw, pt) &
+          BIND(C, name="cg_solution_interpolation_points_write")
+        IMPORT :: C_INT, C_DOUBLE, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn, npts
+        REAL(C_DOUBLE), DIMENSION(*), INTENT(IN) :: pu
+        TYPE(C_PTR), VALUE :: pv, pw, pt
+      END FUNCTION cg_solution_interpolation_points_write
+    END INTERFACE
+    c_pv = C_NULL_PTR
+    c_pw = C_NULL_PTR
+    c_pt = C_NULL_PTR
+    IF (PRESENT(pv)) c_pv = C_LOC(pv(1))
+    IF (PRESENT(pw)) c_pw = C_LOC(pw(1))
+    IF (PRESENT(pt)) c_pt = C_LOC(pt(1))
+    ier = INT(cg_solution_interpolation_points_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), INT(npts,C_INT), pu, c_pv, c_pw, c_pt))
+  END SUBROUTINE cg_solution_interpolation_points_write_f
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_distribution_write_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_distribution_write_f(fn, B, fam, en, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    INTEGER(cgenum_t), INTENT(IN) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_distribution_write(fn, bn, fam, en, dist) &
+          BIND(C, name="cg_element_interpolation_distribution_write")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: dist
+      END FUNCTION cg_element_interpolation_distribution_write
+    END INTERFACE
+    ier = INT(cg_element_interpolation_distribution_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), dist))
+  END SUBROUTINE cg_element_interpolation_distribution_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_distribution_read_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_distribution_read_f(fn, B, fam, en, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    INTEGER(cgenum_t), INTENT(OUT) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_dist
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_distribution_read(fn, bn, fam, en, dist) &
+          BIND(C, name="cg_element_interpolation_distribution_read")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        INTEGER(cgenum_t), INTENT(OUT) :: dist
+      END FUNCTION cg_element_interpolation_distribution_read
+    END INTERFACE
+    ier = INT(cg_element_interpolation_distribution_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), c_dist))
+    dist = c_dist
+  END SUBROUTINE cg_element_interpolation_distribution_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_distribution_write_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_distribution_write_f(fn, B, fam, sn, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER(cgenum_t), INTENT(IN) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_distribution_write(fn, bn, fam, sn, dist) &
+          BIND(C, name="cg_solution_interpolation_distribution_write")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: dist
+      END FUNCTION cg_solution_interpolation_distribution_write
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_distribution_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), dist))
+  END SUBROUTINE cg_solution_interpolation_distribution_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_distribution_read_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_distribution_read_f(fn, B, fam, sn, dist, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, sn
+    INTEGER(cgenum_t), INTENT(OUT) :: dist
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_dist
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_distribution_read(fn, bn, fam, sn, dist) &
+          BIND(C, name="cg_solution_interpolation_distribution_read")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, sn
+        INTEGER(cgenum_t), INTENT(OUT) :: dist
+      END FUNCTION cg_solution_interpolation_distribution_read
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_distribution_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(sn,C_INT), c_dist))
+    dist = c_dist
+  END SUBROUTINE cg_solution_interpolation_distribution_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_interpolation_type_read_f
+!DEC$endif
+  SUBROUTINE cg_element_interpolation_type_read_f(fn, B, fam, en, it, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, en
+    INTEGER, INTENT(OUT) :: it
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_it
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_interpolation_type_read(fn, bn, fam, en, it) &
+          BIND(C, name="cg_element_interpolation_type_read")
+        USE ISO_C_BINDING
+        IMPORT :: cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam, en
+        INTEGER(cgenum_t), INTENT(OUT) :: it
+      END FUNCTION cg_element_interpolation_type_read
+    END INTERFACE
+    ier = INT(cg_element_interpolation_type_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), INT(en,C_INT), c_it))
+    it = INT(c_it)
+  END SUBROUTINE cg_element_interpolation_type_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_lagrange_interpolation_count_f
+!DEC$endif
+  SUBROUTINE cg_element_lagrange_interpolation_count_f(fn, B, fam, etype, ncount, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: ncount
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_ncount
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_lagrange_interpolation_count(fn, bn, fam, etype, ncount) &
+          BIND(C, name="cg_element_lagrange_interpolation_count")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), INTENT(OUT) :: ncount
+      END FUNCTION cg_element_lagrange_interpolation_count
+    END INTERFACE
+    ier = INT(cg_element_lagrange_interpolation_count(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), etype, c_ncount))
+    ncount = INT(c_ncount)
+  END SUBROUTINE cg_element_lagrange_interpolation_count_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_lagrange_interpolation_count_f
+!DEC$endif
+  SUBROUTINE cg_solution_lagrange_interpolation_count_f(fn, B, fam, etype, os, ot, ncount, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, os, ot
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: ncount
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_ncount
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_lagrange_interpolation_count(fn, bn, fam, etype, os, ot, ncount) &
+          BIND(C, name="cg_solution_lagrange_interpolation_count")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), VALUE, INTENT(IN) :: os, ot
+        INTEGER(C_INT), INTENT(OUT) :: ncount
+      END FUNCTION cg_solution_lagrange_interpolation_count
+    END INTERFACE
+    ier = INT(cg_solution_lagrange_interpolation_count(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), etype, INT(os,C_INT), INT(ot,C_INT), c_ncount))
+    ncount = INT(c_ncount)
+  END SUBROUTINE cg_solution_lagrange_interpolation_count_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_interpolation_find_f
+!DEC$endif
+  SUBROUTINE cg_solution_interpolation_find_f(fn, B, fam, etype, os, ot, sn, it, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam, os, ot
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: sn
+    INTEGER(cgenum_t), INTENT(OUT) :: it
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_sn
+    INTEGER(cgenum_t) :: c_it
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_interpolation_find(fn, bn, fam, etype, os, ot, sn, it) &
+          BIND(C, name="cg_solution_interpolation_find")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), VALUE, INTENT(IN) :: os, ot
+        INTEGER(C_INT), INTENT(OUT) :: sn
+        INTEGER(cgenum_t), INTENT(OUT) :: it
+      END FUNCTION cg_solution_interpolation_find
+    END INTERFACE
+    ier = INT(cg_solution_interpolation_find(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), etype, INT(os,C_INT), INT(ot,C_INT), c_sn, c_it))
+    sn = INT(c_sn)
+    it = c_it
+  END SUBROUTINE cg_solution_interpolation_find_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_read_f
+!DEC$endif
+  SUBROUTINE cg_sol_interpolation_degree_read_f(fn, B, Z, S, os, ot, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S
+    INTEGER, INTENT(OUT) :: os, ot
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_os, c_ot
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_interpolation_degree_read(fn, B, Z, S, os, ot) &
+          BIND(C, name="cg_sol_interpolation_degree_read")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), INTENT(OUT) :: os, ot
+      END FUNCTION cg_sol_interpolation_degree_read
+    END INTERFACE
+    ier = INT(cg_sol_interpolation_degree_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), c_os, c_ot))
+    os = INT(c_os)
+    ot = INT(c_ot)
+  END SUBROUTINE cg_sol_interpolation_degree_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_interpolation_degree_write_f
+!DEC$endif
+  SUBROUTINE cg_sol_interpolation_degree_write_f(fn, B, Z, S, os, ot, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, os, ot
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_interpolation_degree_write(fn, B, Z, S, os, ot) &
+          BIND(C, name="cg_sol_interpolation_degree_write")
+        IMPORT :: C_INT
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S, os, ot
+      END FUNCTION cg_sol_interpolation_degree_write
+    END INTERFACE
+    ier = INT(cg_sol_interpolation_degree_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(os,C_INT), INT(ot,C_INT)))
+  END SUBROUTINE cg_sol_interpolation_degree_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_read_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_read_f(fn, B, Z, S, nscale, numElements, h_e, ier)
+    !! h_e is OPTIONAL so that the shape-only query the C entry documents
+    !! (h_e == NULL: report nscale and numElements without reading the data) is
+    !! reachable from Fortran.  Omitting it passes a null pointer through.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S
+    INTEGER, INTENT(OUT) :: nscale
+    INTEGER(cgsize_t), INTENT(OUT) :: numElements
+    REAL(C_DOUBLE), INTENT(OUT), OPTIONAL, TARGET :: h_e(*)
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_nscale
+    INTEGER(cgsize_t) :: c_n
+    TYPE(C_PTR) :: c_h
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_read &
+          (fn, B, Z, S, nscale, numElements, h_e) &
+          BIND(C, name="cg_sol_characteristic_length_read")
+        IMPORT :: C_INT, C_PTR, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT) :: nscale
+        INTEGER(cgsize_t) :: numElements
+        TYPE(C_PTR), VALUE :: h_e
+      END FUNCTION cg_sol_characteristic_length_read
+    END INTERFACE
+    IF (PRESENT(h_e)) THEN
+      c_h = C_LOC(h_e(1))
+    ELSE
+      c_h = C_NULL_PTR
+    END IF
+    ier = INT(cg_sol_characteristic_length_read(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), c_nscale, c_n, c_h))
+    nscale = INT(c_nscale)
+    numElements = c_n
+  END SUBROUTINE cg_sol_characteristic_length_read_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_write_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_write_f(fn, B, Z, S, nscale, numElements, h_e, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
+    INTEGER(cgsize_t), INTENT(IN) :: numElements
+    REAL(C_DOUBLE), INTENT(IN), TARGET :: h_e(*)
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_write &
+          (fn, B, Z, S, nscale, numElements, h_e) &
+          BIND(C, name="cg_sol_characteristic_length_write")
+        IMPORT :: C_INT, C_DOUBLE, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
+        INTEGER(cgsize_t), VALUE :: numElements
+        REAL(C_DOUBLE) :: h_e(*)
+      END FUNCTION cg_sol_characteristic_length_write
+    END INTERFACE
+    ier = INT(cg_sol_characteristic_length_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements, h_e))
+  END SUBROUTINE cg_sol_characteristic_length_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_create_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_create_f(fn, B, Z, S, nscale, numElements, ier)
+!   Declares the array at its full extent with its contents unwritten; the
+!   factors are then supplied by cg_sol_characteristic_length_partial_write_f.
+!   Creating a node is collective, so in a parallel run every rank calls this,
+!   with identical arguments, including a rank that owns no elements.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
+    INTEGER(cgsize_t), INTENT(IN) :: numElements
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_create &
+          (fn, B, Z, S, nscale, numElements) &
+          BIND(C, name="cg_sol_characteristic_length_create")
+        IMPORT :: C_INT, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
+        INTEGER(cgsize_t), VALUE :: numElements
+      END FUNCTION cg_sol_characteristic_length_create
+    END INTERFACE
+    ier = INT(cg_sol_characteristic_length_create(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements))
+  END SUBROUTINE cg_sol_characteristic_length_create_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_sol_characteristic_length_partial_write_f
+!DEC$endif
+  SUBROUTINE cg_sol_characteristic_length_partial_write_f(fn, B, Z, S, nscale, &
+                                                          numElements, rmin, rmax, h_e, ier)
+!   Writes one element range only.  The array must already exist; create it with
+!   cg_sol_characteristic_length_create_f first.
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, Z, S, nscale
+    INTEGER(cgsize_t), INTENT(IN) :: numElements, rmin, rmax
+    REAL(C_DOUBLE), INTENT(IN), TARGET :: h_e(*)
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_sol_characteristic_length_partial_write &
+          (fn, B, Z, S, nscale, numElements, rmin, rmax, h_e) &
+          BIND(C, name="cg_sol_characteristic_length_partial_write")
+        IMPORT :: C_INT, C_DOUBLE, cgsize_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, B, Z, S
+        INTEGER(C_INT), VALUE :: nscale
+        INTEGER(cgsize_t), VALUE :: numElements, rmin, rmax
+        REAL(C_DOUBLE) :: h_e(*)
+      END FUNCTION cg_sol_characteristic_length_partial_write
+    END INTERFACE
+    ier = INT(cg_sol_characteristic_length_partial_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(Z,C_INT), INT(S,C_INT), INT(nscale,C_INT), numElements, rmin, rmax, h_e))
+  END SUBROUTINE cg_sol_characteristic_length_partial_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_monomial_size_f
+!DEC$endif
+  SUBROUTINE cg_solution_monomial_size_f(etype, os, ot, nsize, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(IN) :: os, ot
+    INTEGER, INTENT(OUT) :: nsize
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_nsize
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_solution_monomial_size(etype, os, ot, nsize) &
+          BIND(C, name="cg_solution_monomial_size")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE :: etype
+        INTEGER(C_INT), VALUE :: os, ot
+        INTEGER(C_INT) :: nsize
+      END FUNCTION cg_solution_monomial_size
+    END INTERFACE
+    ier = INT(cg_solution_monomial_size(etype, INT(os,C_INT), INT(ot,C_INT), c_nsize))
+    nsize = c_nsize
+  END SUBROUTINE cg_solution_monomial_size_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_isoparametric_write_f
+!DEC$endif
+  SUBROUTINE cg_element_isoparametric_write_f(fn, B, fam, name, etype, en, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn, B, fam
+    CHARACTER(LEN=*), INTENT(IN) :: name
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: en
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: i_en
+    CHARACTER(LEN=LEN_TRIM(name)+1, KIND=C_CHAR) :: c_name
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_isoparametric_write(fn, bn, fam, node_name, et, en) &
+          BIND(C, name="cg_element_isoparametric_write")
+        IMPORT :: C_INT, C_CHAR, cgenum_t
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: fn, bn, fam
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: node_name
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: et
+        INTEGER(C_INT), INTENT(OUT) :: en
+      END FUNCTION cg_element_isoparametric_write
+    END INTERFACE
+    c_name = TRIM(name)//C_NULL_CHAR
+    ier = INT(cg_element_isoparametric_write(INT(fn,C_INT), INT(B,C_INT), &
+              INT(fam,C_INT), c_name, etype, i_en))
+    en = INT(i_en)
+  END SUBROUTINE cg_element_isoparametric_write_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_npe_f
+!DEC$endif
+  SUBROUTINE cg_npe_f(etype, npe, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: npe
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_npe
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_npe(etype, npe) &
+          BIND(C, name="cg_npe")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), INTENT(OUT) :: npe
+      END FUNCTION cg_npe
+    END INTERFACE
+    ier = INT(cg_npe(etype, c_npe))
+    npe = INT(c_npe)
+  END SUBROUTINE cg_npe_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_npe_ho_f
+!DEC$endif
+  SUBROUTINE cg_npe_ho_f(etype, order, npe, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(IN) :: order
+    INTEGER, INTENT(OUT) :: npe
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_npe
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_npe_ho(etype, order, npe) &
+          BIND(C, name="cg_npe_ho")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), VALUE, INTENT(IN) :: order
+        INTEGER(C_INT), INTENT(OUT) :: npe
+      END FUNCTION cg_npe_ho
+    END INTERFACE
+    ier = INT(cg_npe_ho(etype, INT(order,C_INT), c_npe))
+    npe = INT(c_npe)
+  END SUBROUTINE cg_npe_ho_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_dimension_f
+!DEC$endif
+  SUBROUTINE cg_element_dimension_f(etype, dim, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER, INTENT(OUT) :: dim
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(C_INT) :: c_dim
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_dimension(etype, dim) &
+          BIND(C, name="cg_element_dimension")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(C_INT), INTENT(OUT) :: dim
+      END FUNCTION cg_element_dimension
+    END INTERFACE
+    ier = INT(cg_element_dimension(etype, c_dim))
+    dim = INT(c_dim)
+  END SUBROUTINE cg_element_dimension_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_basic_element_type_f
+!DEC$endif
+  SUBROUTINE cg_element_basic_element_type_f(etype, btype, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: etype
+    INTEGER(cgenum_t), INTENT(OUT) :: btype
+    INTEGER, INTENT(OUT) :: ier
+    INTEGER(cgenum_t) :: c_btype
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_element_basic_element_type(etype, btype) &
+          BIND(C, name="cg_element_basic_element_type")
+        IMPORT :: C_INT, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE, INTENT(IN) :: etype
+        INTEGER(cgenum_t), INTENT(OUT) :: btype
+      END FUNCTION cg_element_basic_element_type
+    END INTERFACE
+    ier = INT(cg_element_basic_element_type(etype, c_btype))
+    btype = c_btype
+  END SUBROUTINE cg_element_basic_element_type_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_nfamily_names_f
+!DEC$endif
   SUBROUTINE cg_nfamily_names_f(fn, B, F, nnames, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -8649,6 +9564,66 @@ CONTAINS
     END SUBROUTINE cgp_poly_elements_read_data_elements_f
 
 #endif
+
+!> @ingroup ElementConnectivity
+!> Helper function: Get size of Lagrange interpolation points array for element
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_element_lagrange_interpolation_size_f
+!DEC$endif
+  SUBROUTINE cg_element_lagrange_interpolation_size_f(type, sz, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: type
+    INTEGER, INTENT(OUT) :: sz
+    INTEGER, INTENT(OUT) :: ier
+
+    INTEGER(C_INT) :: c_sz
+
+    INTERFACE
+      INTEGER(c_int) FUNCTION cg_element_lagrange_interpolation_size(type, sz) &
+        BIND(C, name="cg_element_lagrange_interpolation_size")
+        IMPORT :: c_int, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE :: type
+        INTEGER(C_INT) :: sz
+      END FUNCTION cg_element_lagrange_interpolation_size
+    END INTERFACE
+
+    ier = INT(cg_element_lagrange_interpolation_size(type, c_sz))
+    sz = c_sz
+
+  END SUBROUTINE cg_element_lagrange_interpolation_size_f
+
+!> @ingroup FlowSolutionData
+!> Helper function: Get size of Lagrange interpolation points array for solution
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_solution_lagrange_interpolation_size_f
+!DEC$endif
+  SUBROUTINE cg_solution_lagrange_interpolation_size_f(type, os, ot, sz, ier)
+    IMPLICIT NONE
+    INTEGER(cgenum_t), INTENT(IN) :: type
+    INTEGER, INTENT(IN) :: os
+    INTEGER, INTENT(IN) :: ot
+    INTEGER, INTENT(OUT) :: sz
+    INTEGER, INTENT(OUT) :: ier
+
+    INTEGER(C_INT) :: c_sz
+
+    INTERFACE
+      INTEGER(c_int) FUNCTION cg_solution_lagrange_interpolation_size(type, os, ot, sz) &
+        BIND(C, name="cg_solution_lagrange_interpolation_size")
+        IMPORT :: c_int, cgenum_t
+        IMPLICIT NONE
+        INTEGER(cgenum_t), VALUE :: type
+        INTEGER(c_int), VALUE :: os
+        INTEGER(c_int), VALUE :: ot
+        INTEGER(C_INT) :: sz
+      END FUNCTION cg_solution_lagrange_interpolation_size
+    END INTERFACE
+
+    ier = INT(cg_solution_lagrange_interpolation_size(type, INT(os, c_int), INT(ot, c_int), c_sz))
+    sz = c_sz
+
+  END SUBROUTINE cg_solution_lagrange_interpolation_size_f
 
 
 END MODULE cgns

@@ -229,7 +229,7 @@ PROGRAM benchmark_hdf5_f90
   ! ======================================
 
   t1 = MPI_Wtime()
-  CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_WRITE, fn, err)
+  CALL cgp_open_f("bmark_f90_"//ichr6//".cgns", CG_MODE_WRITE, fn, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open_f'
      CALL cgp_error_exit_f()
@@ -558,7 +558,7 @@ PROGRAM benchmark_hdf5_f90
 
   t1 = MPI_Wtime()
   ! Open the cgns file for reading
-  CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_MODIFY, fn, err)
+  CALL cgp_open_f("bmark_f90_"//ichr6//".cgns", CG_MODE_MODIFY, fn, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open_f'
      CALL cgp_error_exit_f()

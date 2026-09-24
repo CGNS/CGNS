@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <limits.h>
 #ifdef _WIN32
 #include <io.h>
 #define ACCESS _access
@@ -69,7 +70,7 @@ static int is_structured = 0;
 typedef struct {
     cgsize_t id;
     int bcnum;
-    int nnodes;
+    cgsize_t nnodes;
     cgsize_t nodes[4];
 } FACE;
 
@@ -323,7 +324,8 @@ static int sort_faces (const void *v1, const void *v2)
 static void count_elements (void)
 {
     int ns, nsect, nn, ip;
-    cgsize_t i, n, is, ie, ne;
+    int npe_int;  /* cg_npe returns int, not cgsize_t */
+    cgsize_t i, n, is, ie, ne, nn_npe;
     cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33], errmsg[128];
@@ -401,9 +403,10 @@ static void count_elements (void)
                         err_exit(NULL, errmsg);
                         break;
                 }
-                if (cg_npe(et, &nn) || nn <= 0)
+                if (cg_npe(et, &npe_int) || npe_int <= 0)
                     err_exit("cg_npe", NULL);
-                i += nn;
+                nn_npe = (cgsize_t)npe_int;
+                i += nn_npe;
             }
             free (conn);
             free (conn_offset);
@@ -549,7 +552,8 @@ static void structured_elements (void)
 static void unstructured_elements (void)
 {
     int ns, nsect, nn, ip, nf, j;
-    cgsize_t i, n, is, ie, ne;
+    int npe_int;  /* cg_npe returns int, not cgsize_t */
+    cgsize_t i, n, is, ie, ne, nn_npe;
     cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
@@ -637,8 +641,9 @@ static void unstructured_elements (void)
                     free(pf);
                 }
             }
-            cg_npe (et, &nn);
-            i += nn;
+            cg_npe(et, &npe_int);
+            nn_npe = (cgsize_t)npe_int;
+            i += nn_npe;
         }
         free (conn);
         if (conn_offset) free(conn_offset);
@@ -703,14 +708,24 @@ static void unstructured_elements (void)
                 pf->id = is + n;
                 pf->bcnum = -ns;
             }
-            cg_npe (et, &nn);
-            i += nn;
+            cg_npe(et, &npe_int);
+            nn_npe = (cgsize_t)npe_int;
+            i += nn_npe;
         }
         free (conn);
         if (conn_offset) free(conn_offset);
     }
 
-    nFaces = HashSize(facehash);
+    /* Get face count with overflow safety check */
+    size_t face_count = HashSize(facehash);
+    if (face_count > INT_MAX) {
+        char errmsg[256];
+        sprintf(errmsg, "Mesh too large for AFLR3 converter: %zu faces exceeds maximum %d",
+                face_count, INT_MAX);
+        err_exit(NULL, errmsg);
+    }
+    nFaces = (int)face_count;
+
     Faces = (FACE **)malloc(nFaces * sizeof(FACE *));
     if (Faces == NULL)
         err_exit(NULL, "malloc failed for face list");
@@ -1120,16 +1135,19 @@ static void write_boundary (FILE *fp)
 
 static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type)
 {
-    int ns, nsect, nn, ip;
-    int nnodes, elem[8];
+    int ns, nsect, ip;
+    cgsize_t nn, nnodes;
+    int elem[8];
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
+    int npe_tmp;
 
     if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
         err_exit ("cg_nsections", NULL);
-    cg_npe(type, &nnodes);
+    cg_npe(type, &npe_tmp);
+    nnodes = npe_tmp;
 
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
@@ -1174,8 +1192,9 @@ static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type)
                     }
                     write_ints(fp, nnodes, elem);
                 }
-                if (cg_npe(et, &nn) || nn <= 0)
+                if (cg_npe(et, &npe_tmp) || npe_tmp <= 0)
                     err_exit("cg_npe", NULL);
+                nn = npe_tmp;
                 i += nn;
             }
         }

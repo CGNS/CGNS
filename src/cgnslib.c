@@ -66,6 +66,7 @@ freely, subject to the following restrictions:
  * \defgroup DimensionalUnits Dimensional Units
  * \defgroup DiscreteData Discrete Data
  * \defgroup ElementConnectivity  Element Connectivity
+ * \defgroup ElementInterpolation Element Interpolation
  * \defgroup FamilyName  Family Name
  * \defgroup FlowEquationSet Flow Equation Set
  * \defgroup FlowSolution  Flow Solution
@@ -86,6 +87,7 @@ freely, subject to the following restrictions:
  * \defgroup RindLayers Rind Layers
  * \defgroup RotatingCoordinates Rotating Coordinates
  * \defgroup SimulationType Simulation Type
+ * \defgroup SolutionInterpolation Solution Interpolation
  * \defgroup SpecialBoundaryConditionProperty Special Boundary Condition Property
  * \defgroup SpecialGridConnectivityProperty Special Grid Connectivity Property
  * \defgroup UserDefinedData User Defined Data
@@ -112,6 +114,8 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <limits.h>
+#include <assert.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -234,7 +238,7 @@ const char * DataClassName[NofValidDataClass] =
 const char * GridLocationName[NofValidGridLocation] =
     {"Null", "UserDefined",
      "Vertex", "CellCenter", "FaceCenter", "IFaceCenter",
-     "JFaceCenter", "KFaceCenter", "EdgeCenter"
+     "JFaceCenter", "KFaceCenter", "EdgeCenter", "InterpolationPoints"
     };
 const char * BCDataTypeName[NofValidBCDataTypes] =
     {"Null", "UserDefined",
@@ -304,6 +308,11 @@ const char * DataTypeName[NofValidDataTypes] =
      "Integer", "RealSingle", "RealDouble", "Character", "LongInteger",
      "ComplexSingle", "ComplexDouble"
     };
+
+/* ElementTypeName array MUST match ElementType_t enum ordering in cgnslib.h
+ * Array index corresponds to enum integer value (e.g., index 19 = HEXA_27)
+ * CRITICAL: Maintain exact order for backward compatibility with CGNS 4.x files
+ * When adding new element types, append to the end of this array */
 const char * ElementTypeName[NofValidElementTypes] =
     {"Null", "UserDefined",
      "NODE", "BAR_2", "BAR_3",
@@ -327,6 +336,107 @@ const char * ElementTypeName[NofValidElementTypes] =
      "PENTA_33", "PENTA_66", "PENTA_75",
      "HEXA_44", "HEXA_98", "HEXA_125"
     };
+
+/* Centralized element properties lookup table (defined here, declared extern in cgns_header.h)
+ * Array index corresponds to ElementType_t enum value for O(1) lookup */
+const ElementTraits cgi_element_traits[NofValidElementTypes] = {
+    /* type, name, npe, dim, nfaces, nedges, order, basic_type */
+    {CGNS_ENUMV(ElementTypeNull), "Null", 0, 0, 0, 0, -1, CGNS_ENUMV(ElementTypeNull)},
+    {CGNS_ENUMV(ElementTypeUserDefined), "UserDefined", 0, 0, 0, 0, -1, CGNS_ENUMV(ElementTypeUserDefined)},
+    {CGNS_ENUMV(NODE), "NODE", 1, 0, 0, 0, 0, CGNS_ENUMV(NODE)},
+    {CGNS_ENUMV(BAR_2), "BAR_2", 2, 1, 0, 1, 1, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(BAR_3), "BAR_3", 3, 1, 0, 1, 2, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_3), "TRI_3", 3, 2, 0, 3, 1, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_6), "TRI_6", 6, 2, 0, 3, 2, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_4), "QUAD_4", 4, 2, 0, 4, 1, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_8), "QUAD_8", 8, 2, 0, 4, 2, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_9), "QUAD_9", 9, 2, 0, 4, 2, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_4), "TETRA_4", 4, 3, 4, 6, 1, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_10), "TETRA_10", 10, 3, 4, 6, 2, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_5), "PYRA_5", 5, 3, 5, 8, 1, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_14), "PYRA_14", 14, 3, 5, 8, 2, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_6), "PENTA_6", 6, 3, 5, 9, 1, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_15), "PENTA_15", 15, 3, 5, 9, 2, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_18), "PENTA_18", 18, 3, 5, 9, 2, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_8), "HEXA_8", 8, 3, 6, 12, 1, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_20), "HEXA_20", 20, 3, 6, 12, 2, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_27), "HEXA_27", 27, 3, 6, 12, 2, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(MIXED), "MIXED", 0, 0, 0, 0, -1, CGNS_ENUMV(MIXED)},
+    {CGNS_ENUMV(PYRA_13), "PYRA_13", 13, 3, 5, 8, 2, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(NGON_n), "NGON_n", 0, 2, 0, 0, -1, CGNS_ENUMV(NGON_n)},
+    {CGNS_ENUMV(NFACE_n), "NFACE_n", 0, 3, 0, 0, -1, CGNS_ENUMV(NFACE_n)},
+    {CGNS_ENUMV(BAR_4), "BAR_4", 4, 1, 0, 1, 3, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_9), "TRI_9", 9, 2, 0, 3, 3, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_10), "TRI_10", 10, 2, 0, 3, 3, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_12), "QUAD_12", 12, 2, 0, 4, 3, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_16), "QUAD_16", 16, 2, 0, 4, 3, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_16), "TETRA_16", 16, 3, 4, 6, 3, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_20), "TETRA_20", 20, 3, 4, 6, 3, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_21), "PYRA_21", 21, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_29), "PYRA_29", 29, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_30), "PYRA_30", 30, 3, 5, 8, 3, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_24), "PENTA_24", 24, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_38), "PENTA_38", 38, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_40), "PENTA_40", 40, 3, 5, 9, 3, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_32), "HEXA_32", 32, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_56), "HEXA_56", 56, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_64), "HEXA_64", 64, 3, 6, 12, 3, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(BAR_5), "BAR_5", 5, 1, 0, 1, 4, CGNS_ENUMV(BAR_2)},
+    {CGNS_ENUMV(TRI_12), "TRI_12", 12, 2, 0, 3, 4, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(TRI_15), "TRI_15", 15, 2, 0, 3, 4, CGNS_ENUMV(TRI_3)},
+    {CGNS_ENUMV(QUAD_P4_16), "QUAD_P4_16", 16, 2, 0, 4, 4, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(QUAD_25), "QUAD_25", 25, 2, 0, 4, 4, CGNS_ENUMV(QUAD_4)},
+    {CGNS_ENUMV(TETRA_22), "TETRA_22", 22, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_34), "TETRA_34", 34, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(TETRA_35), "TETRA_35", 35, 3, 4, 6, 4, CGNS_ENUMV(TETRA_4)},
+    {CGNS_ENUMV(PYRA_P4_29), "PYRA_P4_29", 29, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_50), "PYRA_50", 50, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PYRA_55), "PYRA_55", 55, 3, 5, 8, 4, CGNS_ENUMV(PYRA_5)},
+    {CGNS_ENUMV(PENTA_33), "PENTA_33", 33, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_66), "PENTA_66", 66, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(PENTA_75), "PENTA_75", 75, 3, 5, 9, 4, CGNS_ENUMV(PENTA_6)},
+    {CGNS_ENUMV(HEXA_44), "HEXA_44", 44, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_98), "HEXA_98", 98, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)},
+    {CGNS_ENUMV(HEXA_125), "HEXA_125", 125, 3, 6, 12, 4, CGNS_ENUMV(HEXA_8)}
+};
+
+/* The array is declared with explicit size [NofValidElementTypes], so a
+ * _Static_assert on sizeof(...)/sizeof(...[0]) == NofValidElementTypes is
+ * tautologically true by construction and catches nothing: too many
+ * initializers is already a hard compile error independently, and too few
+ * silently zero-fills the trailing rows (type=ElementTypeNull, npe=0,
+ * dim=0) with no diagnostic. The real invariant -- that row i actually
+ * describes element type i, not some other type shifted into that slot --
+ * can only be checked at runtime, since a misaligned row is otherwise
+ * indistinguishable from a correct one at compile time.
+ *
+ * Reported rather than asserted.  assert() compiles out under NDEBUG, so in a
+ * release build -- the build almost every consumer actually links against --
+ * this checked nothing at all, while the failure it guards against (a short
+ * initializer list zero-filling the trailing rows) makes every accessor return
+ * npe=0/dim=0 for the affected types with no diagnostic anywhere.  A silent
+ * wrong answer from cg_npe() is worse than a loud one, and the latch keeps the
+ * cost to a single pass for the life of the process. */
+static int cgi_verify_element_traits_alignment(void)
+{
+    static int checked = 0, aligned = 1;
+    int i;
+
+    if (checked) return aligned;
+    checked = 1;
+    for (i = 0; i < NofValidElementTypes; i++) {
+        if (cgi_element_traits[i].type != (CGNS_ENUMT(ElementType_t))i) {
+            aligned = 0;
+            cgi_error("internal: cgi_element_traits row %d describes element "
+                      "type %d, not %d -- the table is misaligned with "
+                      "ElementType_t and every element-property lookup is "
+                      "unreliable", i, (int)cgi_element_traits[i].type, i);
+            break;
+        }
+    }
+    return aligned;
+}
+
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
      "Structured", "Unstructured"
@@ -334,6 +444,16 @@ const char * ZoneTypeName[NofValidZoneTypes] =
 const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes] =
     {"Null", "UserDefined",
      "ConstantRate", "VariableRate"
+    };
+const char * InterpolationTypeName[NofValidInterpolationTypes] =
+    {"Null", "UserDefined",
+     "ParametricLagrange", "ParametricMonomialsPascal",
+     "CartesianMonomialsPascal", "IsoParametric"
+    };
+const char * ControlPointDistributionName[NofValidControlPointDistributions] =
+    {"Null", "UserDefined",
+     "GaussLobattoLegendre", "Equidistant",
+     "GaussLegendre", "WarpAndBlend"
     };
 const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes] =
     {"Null", "UserDefined",
@@ -1301,6 +1421,15 @@ const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t )  type
 {
     return cg_get_name(NofValidRigidGridMotionTypes,RigidGridMotionTypeName,(int)type);
 }
+const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t )  type)
+{
+    return cg_get_name(NofValidInterpolationTypes,InterpolationTypeName,(int)type);
+}
+const char *cg_ControlPointDistributionName(CGNS_ENUMT( ControlPointDistribution_t ) type)
+{
+    return cg_get_name(NofValidControlPointDistributions,
+                       ControlPointDistributionName,(int)type);
+}
 const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t )  type)
 {
     return cg_get_name(NofValidArbitraryGridMotionTypes,ArbitraryGridMotionTypeName,(int)type);
@@ -1901,7 +2030,8 @@ int cg_family_read(int fn, int B, int Fam, char *family_name,
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
 
     family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
@@ -3638,6 +3768,12 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+    /* CPEX-0045: InterpolationPoints is valid only on FlowSolution_t */
+    if (location == CGNS_ENUMV(InterpolationPoints)) {
+        cgi_error("GridLocation InterpolationPoints is valid only under "
+                  "FlowSolution_t, not under DiscreteData_t");
+        return CG_ERROR;
+    }
 
     if (cg_discrete_write(fn, B, Z, discrete_name, D))
         return CG_ERROR;
@@ -4899,7 +5035,8 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
     cgns_zone *zone;
     cgns_section *section = NULL;
     int data[2];
-    int index, elemsize;
+    int index;
+    int elemsize;
     cgsize_t num;
     cgsize_t dim_vals;
     const char * data_type;
@@ -6826,7 +6963,8 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
 {
     cgns_section *section;
     CGNS_ENUMT(ElementType_t) type;
-    int i, elemsize;
+    int i;
+    int elemsize;
     cgsize_t oldsize;
     cgsize_t num, size, offset;
     cgsize_t n, j, newsize, ElementDataSize;
@@ -8128,10 +8266,23 @@ int cg_sol_id(int fn, int B, int Z, int S, double *sol_id)
  * \param[in]  Z        \Z_Zone
  * \param[in]  solname  Name of the flow solution.
  * \param[in]  location Grid location where the solution is recorded. The current permissible
- *                      locations are \e Vertex, \e CellCenter, \e IFaceCenter, \e JFaceCenter, and \e KFaceCenter.
+ *                      locations are \e Vertex, \e CellCenter, \e IFaceCenter, \e JFaceCenter,
+ *                      \e KFaceCenter, and \e InterpolationPoints.
  * \param[out] S        \SOL_S
  * \return \ier
  *
+ * \details
+ * **IMPORTANT**: If \p location is \e InterpolationPoints, you MUST also call
+ * cg_sol_interpolation_degree_write() to define the spatial and temporal interpolation
+ * degrees. Without interpolation degrees, readers cannot determine where the interpolation
+ * points are located, making the data invalid.
+ *
+ * Example for high-order solution:
+ * \code
+ * int sol_idx;
+ * cg_sol_write(fn, B, Z, "HighOrderSolution", InterpolationPoints, &sol_idx);
+ * cg_sol_interpolation_degree_write(fn, B, Z, sol_idx, 3, 0);  // 3rd order spatial, 0th temporal
+ * \endcode
  */
 int cg_sol_write(int fn, int B, int Z, const char * solname,
          CGNS_ENUMT(GridLocation_t) location, int *S)
@@ -8146,7 +8297,8 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
         location != CGNS_ENUMV(CellCenter) &&
         location != CGNS_ENUMV(IFaceCenter) &&
         location != CGNS_ENUMV(JFaceCenter) &&
-        location != CGNS_ENUMV(KFaceCenter)) {
+        location != CGNS_ENUMV(KFaceCenter) &&
+        location != CGNS_ENUMV(InterpolationPoints)) {
         cgi_error("Given grid location not supported for FlowSolution_t");
         return CG_ERROR;
     }
@@ -8208,6 +8360,11 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     memset(sol, 0, sizeof(cgns_sol));
     strcpy(sol->name,solname);
     sol->location = location;
+    
+    /* initialize solution order: -1 means "no InterpolationDegrees child" */
+    sol->spatialDegree       = -1;
+    sol->temporalDegree      = 0;
+    sol->ho_ptset_datasize  = -1;
 
     index_dim = zone->index_dim;
     sol->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
@@ -8231,6 +8388,146 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
     return CG_OK;
 }
 
+/* Internal version without mode check - used by cg_field_write() and
+ * cg_field_general_write() which need to query solution size during writes */
+static int cgi_sol_size(int fn, int B, int Z, int S,
+                        int *data_dim, cgsize_t *dim_vals)
+{
+    int ret;
+    cgns_sol *sol;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+
+    if (sol->ptset == NULL) {
+        cgns_zone *zone = &cg->base[B-1].zone[Z-1];
+        const cgns_family *hofam = cgi_ho_find_family(&cg->base[B-1], zone->family_name);
+        *data_dim = zone->index_dim;
+
+        /* CPEX 045 */
+        /* Determine data size (HO solution case) */
+        if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
+
+            if (sol->spatialDegree < 0)
+            {
+                cgi_error("FlowSolution: InterpolationPoints solution requires an InterpolationDegrees child node");
+                return CG_ERROR;
+            }
+
+            ret = cgi_ho_datasize(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
+                                  sol->temporalDegree, dim_vals);
+            if (ret == CG_NODE_NOT_FOUND) {
+              cgi_error("GridLocation=InterpolationPoints field length is defined by the "
+                        "SolutionInterpolation_t matching each element, but none was found: "
+                        "the zone needs a FamilyName_t naming a Family_t that carries a "
+                        "SolutionInterpolation_t for the element type at degree (%d,%d)",
+                        sol->spatialDegree, sol->temporalDegree);
+              return CG_ERROR;
+            }
+            if (ret != CG_OK) {
+              cgi_error("Unable to retrieve solution datasize for High Order solution");
+              return CG_ERROR;
+            }
+
+            /* No rind contribution: CPEX-0045 gives Rind_t no meaning under
+             * InterpolationPoints and forbids writing one.  See cgi_read_sol. */
+        }
+        else {
+            if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
+                    sol->rind_planes, dim_vals)) return CG_ERROR;
+        }
+    } else {
+        *data_dim = 1;
+        dim_vals[0] = sol->ptset->size_of_patch;
+        /* CPEX 045 */
+        if ( sol->location == CGNS_ENUMV(InterpolationPoints) ) {
+          cgns_zone *zone = &cg->base[B-1].zone[Z-1];
+          const cgns_family *hofam = cgi_ho_find_family(&cg->base[B-1], zone->family_name);
+          // Override based on range
+          if (sol->ptset->type == CGNS_ENUMV(PointRange)) {
+
+            cgsize_t range_min[12], range_max[12];
+
+            if (cgi_ptset_range(sol->ptset, range_min, range_max)) return CG_ERROR;
+
+            ret = cgi_ho_datasize_range(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
+                              sol->temporalDegree, range_min[0], range_max[0], &dim_vals[0]);
+            if (ret == CG_NODE_NOT_FOUND) {
+              cgi_error("GridLocation=InterpolationPoints field length requires a "
+                        "SolutionInterpolation_t for the listed elements at degree (%d,%d); "
+                        "none was found via the zone's FamilyName_t",
+                        sol->spatialDegree, sol->temporalDegree);
+              return CG_ERROR;
+            }
+            if (ret != CG_OK) {
+              cgi_error("Unable to retrieve solution datasize for High Order solution from PointRange");
+              return CG_ERROR;
+            }
+          }
+          else if (sol->ptset->type == CGNS_ENUMV(PointList)) {
+            /* Use cached size if already computed to avoid repeated disk reads. */
+            if (sol->ho_ptset_datasize >= 0) {
+              dim_vals[0] = sol->ho_ptset_datasize;
+            } else {
+              /* cgi_read_int_data() reads the node's entire declared payload
+               * regardless of the count passed to it, so the on-disk shape
+               * must be validated -- not assumed to be npts * index_dim --
+               * before the buffer is sized. */
+              int pl_ndim;
+              cgsize_t pl_dim_vals[CGIO_MAX_DIMENSIONS];
+              cgsize_t *pnts;
+
+              if (cgio_get_dimensions(cg->cgio, sol->ptset->id,
+                      &pl_ndim, pl_dim_vals)) {
+                cg_io_error("cgio_get_dimensions");
+                return CG_ERROR;
+              }
+              if (pl_ndim != 2 || pl_dim_vals[0] != zone->index_dim ||
+                  pl_dim_vals[1] != sol->ptset->npts) {
+                cgi_error("Invalid dimensions for PointList '%s': "
+                    "expected [%d, %" PRIdCGSIZE "]", sol->ptset->name,
+                    zone->index_dim, sol->ptset->npts);
+                return CG_ERROR;
+              }
+
+              pnts = CGNS_NEW(cgsize_t, pl_dim_vals[0] * pl_dim_vals[1]);
+
+              ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
+                                      pl_dim_vals[0] * pl_dim_vals[1], pnts);
+
+              if (ret == CG_ERROR) {
+                cgi_error("Unable to read PointList for solution %s",sol->name);
+                CGNS_FREE(pnts);
+                return CG_ERROR;
+              }
+
+              ret = cgi_ho_datasize_list(zone->index_dim,cg->base[B-1].cell_dim,zone,hofam,sol->spatialDegree,
+                                      sol->temporalDegree, pnts,
+                                      sol->ptset->npts, &dim_vals[0]);
+              CGNS_FREE(pnts);
+              if (ret == CG_NODE_NOT_FOUND) {
+                cgi_error("GridLocation=InterpolationPoints field length requires a "
+                          "SolutionInterpolation_t for the listed elements at degree (%d,%d); "
+                          "none was found via the zone's FamilyName_t",
+                          sol->spatialDegree, sol->temporalDegree);
+                return CG_ERROR;
+              }
+              if (ret != CG_OK) {
+                cgi_error("Unable to retrieve solution datasize for High Order solution from PointList");
+                return CG_ERROR;
+              }
+              sol->ho_ptset_datasize = dim_vals[0]; /* cache for subsequent field writes */
+            }
+          }
+        }
+    }
+
+    return CG_OK;
+}
+
 /**
  * \ingroup FlowSolution
  *
@@ -8247,30 +8544,16 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
  * \return \ier
  *
  */
+/* Public API - requires file to be open for reading (CG_MODE_READ or CG_MODE_MODIFY) */
 int cg_sol_size(int fn, int B, int Z, int S,
                 int *data_dim, cgsize_t *dim_vals)
 {
-    cgns_sol *sol;
-
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    sol = cgi_get_sol(cg, B, Z, S);
-    if (sol==0) return CG_ERROR;
-
-    if (sol->ptset == NULL) {
-        cgns_zone *zone = &cg->base[B-1].zone[Z-1];
-        *data_dim = zone->index_dim;
-        if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
-                sol->rind_planes, dim_vals)) return CG_ERROR;
-    } else {
-        *data_dim = 1;
-        dim_vals[0] = sol->ptset->size_of_patch;
-    }
-
-    return CG_OK;
+    return cgi_sol_size(fn, B, Z, S, data_dim, dim_vals);
 }
 
 /*----------------------------------------------------------------------*/
@@ -8345,6 +8628,26 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
         return CG_ERROR;
     }
     cg_index_dim(fn, B, Z, &dim);
+
+    /* cgi_read_int_data() reads the node's entire declared payload
+     * regardless of the count passed to it, so the caller-supplied pnts
+     * buffer -- sized by the documented contract as npts * index_dim --
+     * is only safe if the on-disk node actually has that shape. Validate
+     * it before reading rather than trusting dim*npts. */
+    {
+        int ndim;
+        cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
+        if (cgio_get_dimensions(cg->cgio, sol->ptset->id, &ndim, dim_vals)) {
+            cg_io_error("cgio_get_dimensions");
+            return CG_ERROR;
+        }
+        if (ndim != 2 || dim_vals[0] != dim || dim_vals[1] != sol->ptset->npts) {
+            cgi_error("Invalid dimensions for point set of FlowSolution node %d: "
+                      "expected [%d, %" PRIdCGSIZE "]", S, dim, sol->ptset->npts);
+            return CG_ERROR;
+        }
+    }
+
     if (cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
             sol->ptset->npts * dim, pnts)) return CG_ERROR;
     return CG_OK;
@@ -8425,6 +8728,1021 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
                 "C1", 1, &dim_vals, (void *)GridLocationName[location]))
             return CG_ERROR;
     }
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX 045 */
+
+/**
+ * \ingroup FlowSolution
+ * \brief Read interpolation degrees for a FlowSolution node
+ *
+ * Reads the spatial and temporal interpolation degrees from an element-based
+ * FlowSolution_t node. These orders define the polynomial degree for
+ * interpolating solution fields.
+ *
+ * \param[in]  fn            CGNS file index number
+ * \param[in]  B             Base index number (1-based)
+ * \param[in]  Z             Zone index number (1-based)
+ * \param[in]  S             FlowSolution index (1-based)
+ * \param[out] spatialDegree  Spatial interpolation degree (polynomial degree)
+ * \param[out] temporalDegree Temporal interpolation degree (0 if no temporal)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function reads the InterpolationDegrees child node from a FlowSolution_t
+ * node. The interpolation degrees must be set for element-based solutions
+ * (GridLocation = CellCenter or other element-based locations).
+ *
+ * \par Precedence relative to SolutionInterpolation_t (CPEX-0045 §4.3):
+ * The per-zone InterpolationDegrees pair and the per-family
+ * SolutionInterpolation_t triplet (element_type, spatialDegree, temporalDegree)
+ * play complementary roles. The zone-level orders identify *which*
+ * SolutionInterpolation_t block in the zone's Family_t describes the
+ * interpolation basis (via the (element_type, spatialDegree, temporalDegree)
+ * key, with the element_type falling back from the actual section tag
+ * (e.g. TETRA_10) to the basic tag (TETRA_4) when no exact match is found).
+ * The InterpolationDegrees pair here therefore *selects* a family-level
+ * basis; it does not override its order values. A SolutionInterpolation_t
+ * block whose orders disagree with a FlowSolution_t's InterpolationDegrees
+ * is a file-level inconsistency and cgnscheck reports it.
+ *
+ * Spatial degree:
+ * - order = 1: Linear interpolation (2 nodes per direction)
+ * - order = 2: Quadratic interpolation (3 nodes per direction)
+ * - order = 3: Cubic interpolation (4 nodes per direction)
+ *
+ * Temporal degree (for time-accurate solutions):
+ * - temporalDegree = 0: No temporal interpolation (steady or time-instance)
+ * - temporalDegree = 1: Linear temporal interpolation
+ * - temporalDegree = 2: Quadratic temporal interpolation
+ *
+ * Example:
+ * \code
+ * int spatial_degree, temporal_degree;
+ * cg_sol_interpolation_degree_read(fn, B, Z, S, &spatial_degree, &temporal_degree);
+ * printf("Spatial degree: %d, Temporal degree: %d\n", spatial_degree, temporal_degree);
+ * \endcode
+ */
+int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S, 
+                                            int *spatialDegree, int *temporalDegree)
+{
+    cgns_sol *sol;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+
+    // Defaults
+    *spatialDegree  = 0;
+    *temporalDegree = 0;
+
+    if (sol->spatialDegree < 0) return CG_NODE_NOT_FOUND;
+
+    /* CPEX-0045: high-order FlowSolution_t nodes use
+     * GridLocation = InterpolationPoints. CellCenter is accepted for
+     * backward compatibility with files written under earlier drafts.
+     */
+    if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
+        sol->location != CGNS_ENUMV(CellCenter))
+    {
+        cgi_error("Solution interpolation degree requires GridLocation = "
+                  "InterpolationPoints.");
+        return CG_ERROR;
+    }
+
+    *spatialDegree  = sol->spatialDegree;
+    *temporalDegree = sol->temporalDegree;
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Write interpolation degrees for a FlowSolution node
+ *
+ * Writes the spatial and temporal interpolation degrees to an element-based
+ * FlowSolution_t node as an InterpolationDegrees child node.
+ *
+ * \param[in] fn            CGNS file index number
+ * \param[in] B             Base index number (1-based)
+ * \param[in] Z             Zone index number (1-based)
+ * \param[in] S             FlowSolution index (1-based)
+ * \param[in] spatialDegree  Spatial interpolation degree (polynomial degree)
+ * \param[in] temporalDegree Temporal interpolation degree (0 if no temporal)
+ * \return    CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function writes an InterpolationDegrees DataArray_t child node under
+ * the specified FlowSolution_t node. The FlowSolution must be element-based
+ * (GridLocation = CellCenter or similar).
+ *
+ * The InterpolationDegrees array contains [spatialDegree, temporalDegree]:
+ * - spatialDegree: Polynomial degree for spatial interpolation
+ * - temporalDegree: Polynomial degree for temporal interpolation (0 = none)
+ *
+ * \par Relationship to family-level SolutionInterpolation_t (CPEX-0045 §4.3):
+ * The orders written here form the lookup key into the zone's Family_t
+ * SolutionInterpolation_t blocks: pair (element_type, spatialDegree,
+ * temporalDegree) — with element_type taken from the section's basic type
+ * when no exact match exists. Keep the two in sync: if the family does
+ * not carry a matching SolutionInterpolation_t, cgnscheck will flag the
+ * file.
+ *
+ * Typical usage:
+ * 1. Create FlowSolution_t with element-based GridLocation
+ * 2. Call this function to set interpolation degrees
+ * 3. Write solution data arrays
+ *
+ * Example:
+ * \code
+ * int sol_idx;
+ * cg_sol_write(fn, B, Z, "FlowSolution", CellCenter, &sol_idx);
+ * cg_sol_interpolation_degree_write(fn, B, Z, sol_idx, 2, 0);  // Quadratic spatial, no temporal
+ * \endcode
+ */
+int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S, 
+                                             int spatialDegree, int  temporalDegree)
+{
+    int n,nnodes;
+    char_33 name;
+    cgns_sol *sol;
+    cgsize_t dim_vals;
+    int array[2];
+    double dummy_id;
+    double *ids;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+
+    /* CPEX-0045: high-order FlowSolution_t nodes use
+     * GridLocation = InterpolationPoints in both cases:
+     *   - Uniform order: no PointRange/PointList; block covers the whole zone.
+     *   - Variable order: PointRange/PointList lists element indices.
+     * GridLocation = CellCenter is accepted for backward compatibility with
+     * files written under earlier drafts; cgnscheck strict CPEX-0045 mode
+     * flags it as non-conformant.
+     *
+     * DEPRECATION: the CellCenter fallback is deprecated as of CGNS 5.0 and
+     * may be removed in a future major release. New code should always
+     * write GridLocation = InterpolationPoints.
+     */
+    if (sol->location != CGNS_ENUMV(InterpolationPoints) &&
+        !(sol->location == CGNS_ENUMV(CellCenter) &&
+          sol->ptset != NULL && sol->ptset->npts > 0))
+    {
+        cgi_error("Solution interpolation degree requires GridLocation = "
+                  "InterpolationPoints (CellCenter is accepted only for "
+                  "backward compatibility, and only with an explicit "
+                  "PointRange or PointList).");
+        return CG_ERROR;
+    }
+
+    /* Variable-order subsets require a PointRange/PointList regardless of
+     * which GridLocation is used. */
+    if (sol->ptset != NULL && sol->ptset->npts == 0)
+    {
+        cgi_error("Variable-degree solutions require PointRange or PointList "
+                  "to specify element subset.");
+        return CG_ERROR;
+    }
+
+    // Check values
+    if (temporalDegree < 0 || spatialDegree < 0)
+    {
+        cgi_error("Negative values are not allowed for spatial or temporal degree in solution interpolation node.");
+        return CG_ERROR;
+    }
+
+    /* Bound the degrees here, where they enter the file, mirroring the check
+     * cg_solution_interpolation_write() applies -- every path that later sizes
+     * this basis (cg_npe_ho(), cg_solution_lagrange_interpolation_size(),
+     * cg_solution_monomial_size()) rejects anything outside [0, CG_MAX_ORDER],
+     * so without this check the writer accepts a degree that makes its own
+     * file impossible to reopen: cgi_read_solution_order() enforces the same
+     * bound on read and would reject the file this function just wrote. */
+    if (spatialDegree > CG_MAX_ORDER || temporalDegree > CG_MAX_ORDER)
+    {
+        cgi_error("Interpolation degrees (spatial=%d, temporal=%d) out of valid range [0, %d]",
+                  spatialDegree, temporalDegree, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
+
+    /* No constraint couples the two degrees.  SpatialDegree = 0 with
+     * TemporalDegree = q describes a per-element value constant in space and
+     * varying in time -- an unsteady finite-volume solution -- with
+     * N_DOFs = q+1 per element by the general rule.  Both are accepted.
+     */
+
+    /* spatialDegree >= 0 marks "InterpolationDegrees present". */
+    sol->spatialDegree = spatialDegree;
+    sol->temporalDegree= temporalDegree;
+
+    /* cgi_sol_size() caches the PointList-based field length in
+     * ho_ptset_datasize the first time it is computed (e.g. on the first
+     * cg_field_write() call). If the degree is (re)written after that, the
+     * cache must be invalidated or later cg_field_write()/
+     * cg_field_general_write() calls silently reuse the stale, wrong-degree
+     * size. */
+    sol->ho_ptset_datasize = -1;
+
+    if (cgi_get_nodes(sol->id, "IndexArray_t", &nnodes, &ids)) 
+      return CG_ERROR;
+    if (nnodes)
+    {
+        for (n = 0; n < nnodes; n++)
+        {
+            /* Name */
+            if (cgio_get_name(cg->cgio, ids[n], name)) {
+                cg_io_error("cgio_get_name");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            if (strcmp(name,"InterpolationDegrees")==0)
+            {
+                // Delete Node ...
+                if (cgi_delete_node(sol->id,ids[n])) {
+                    CGNS_FREE(ids);
+                    return CG_ERROR;
+                }
+            }
+        }
+        CGNS_FREE(ids);
+    }
+    
+    dim_vals = 2;
+    array[0] = spatialDegree;
+    array[1] = temporalDegree;
+    if (cgi_new_node(sol->id, "InterpolationDegrees", "IndexArray_t",
+                         &dummy_id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX-0045 v4 §3.3.1: per-element characteristic length(s) for        */
+/* Cartesian modal interpolation, stored as an R8 DataArray_t named     */
+/* "CharacteristicLength" inside the "InterpolationMetadata"            */
+/* UserDefinedData_t child of the FlowSolution_t. Two encodings are     */
+/* normative and are distinguished by array rank:                       */
+/*   rank 1, [numElements]          -> isotropic, one h^e per element   */
+/*   rank 2, [nscale, numElements]  -> per-axis, nscale factors/element */
+/* The per-axis form matches the directional non-dimensionalisation used*/
+/* by Taylor-basis DG solvers (h_k = extent of the element along axis k)*/
+/* and is what keeps the modal mass matrix well conditioned on          */
+/* high-aspect-ratio cells. Writers record the factors they actually    */
+/* used; readers must use the recorded values and never recompute them. */
+/*                                                                      */
+/* The container is what keeps these factors out of the solution-field  */
+/* list: every DataArray_t child of a FlowSolution_t is a field, and    */
+/* the library enumerates them by label, so an array stored directly    */
+/* there would be counted by cg_nfields and rejected by the field size  */
+/* check. Storing it one level down removes the collision rather than   */
+/* documenting an exception to it.                                      */
+
+#define CG_INTERP_METADATA_NAME "InterpolationMetadata"
+
+/* Locate the InterpolationMetadata container under a FlowSolution_t.
+ * Returns CG_NODE_NOT_FOUND if absent and create is 0; creates it if
+ * create is non-zero. */
+static int cgi_interp_metadata_node(cgns_sol *sol, int create, double *id_out)
+{
+    int nnodes, n;
+    double *ids = NULL;
+    char_33 nname;
+    int found = 0;
+
+    if (cgi_get_nodes(sol->id, "UserDefinedData_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, CG_INTERP_METADATA_NAME) == 0) {
+            *id_out = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (found) return CG_OK;
+    if (!create) return CG_NODE_NOT_FOUND;
+
+    if (cgi_new_node(sol->id, CG_INTERP_METADATA_NAME, "UserDefinedData_t",
+                     id_out, "MT", 0, NULL, NULL))
+        return CG_ERROR;
+
+    /* Register the new container in the in-memory model as well, so that a
+     * cg_goto/cg_nuser_data in the same session sees it.  Writing the node
+     * alone would leave the tree stale until the file was reopened. */
+    {
+        cgns_user_data *ud;
+        if (sol->nuser_data == 0)
+            sol->user_data = CGNS_NEW(cgns_user_data, 1);
+        else
+            sol->user_data = CGNS_RENEW(cgns_user_data, sol->nuser_data + 1,
+                                        sol->user_data);
+        ud = &sol->user_data[sol->nuser_data];
+        memset(ud, 0, sizeof(cgns_user_data));
+        strcpy(ud->name, CG_INTERP_METADATA_NAME);
+        ud->id = *id_out;
+        ud->data_class = CGNS_ENUMV(DataClassNull);
+        ud->location = CGNS_ENUMV(Vertex);
+        sol->nuser_data++;
+    }
+    return CG_OK;
+}
+
+/* Locate an existing CharacteristicLength DataArray_t under a FlowSolution_t's
+ * InterpolationMetadata container, without creating anything.  Exposed to the
+ * parallel layer, which needs the node's id to write a hyperslab through the
+ * MPI-IO path rather than the serial one. */
+int cgi_charlen_node_id(cgns_sol *sol, double *id_out)
+{
+    double container_id, *ids = NULL;
+    int nnodes, n, found = 0;
+    char_33 nname;
+
+    if (sol == 0 || id_out == 0) return CG_ERROR;
+    if (cgi_interp_metadata_node(sol, 0, &container_id)) return CG_ERROR;
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids)) return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            *id_out = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (!found) {
+        cgi_error("CharacteristicLength array not found; call "
+                  "cg_sol_characteristic_length_create() first");
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+static int cgi_find_sol_array(double parent_id, const char *name,
+                              double *node_id_out, int *ndim_out,
+                              cgsize_t *dim_vals_out)
+{
+    int nnodes;
+    double *ids = NULL;
+    int n, dim;
+    char_33 nname;
+    char_33 dtype;
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
+    int found = 0;
+    double match_id = 0;
+    cgsize_t match_len = 0;
+    char_33 match_dtype;
+    int match_dim = 0;
+    cgsize_t match_dimvals[CGIO_MAX_DIMENSIONS];
+    int i;
+
+    if (cgi_get_nodes(parent_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, name) == 0) {
+            if (cgio_get_data_type(cg->cgio, ids[n], dtype)) {
+                cg_io_error("cgio_get_data_type");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            if (cgio_get_dimensions(cg->cgio, ids[n], &dim, dim_vals)) {
+                cg_io_error("cgio_get_dimensions");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            match_id  = ids[n];
+            match_dim = dim;
+            for (i = 0; i < dim; i++) match_dimvals[i] = dim_vals[i];
+            snprintf(match_dtype, sizeof(match_dtype), "%s", dtype);
+            match_len = (dim >= 1) ? dim_vals[0] : 0;
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+    if (!found) return CG_NODE_NOT_FOUND;
+    if (strcmp(match_dtype, "R8") != 0 || (match_dim != 1 && match_dim != 2)) {
+        cgi_error("\"%s\" must be a 1-D (isotropic) or 2-D (per-axis) R8 array",
+                  name);
+        return CG_ERROR;
+    }
+    (void)match_len;
+    *node_id_out = match_id;
+    *ndim_out    = match_dim;
+    for (i = 0; i < match_dim; i++) dim_vals_out[i] = match_dimvals[i];
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Read the per-element characteristic length(s) from a FlowSolution_t.
+ *
+ * Reads the \c CharacteristicLength \c DataArray_t held in the
+ * \c InterpolationMetadata \c UserDefinedData_t child of a FlowSolution_t node.
+ * Required when the associated SolutionInterpolation_t uses
+ * \c CartesianMonomialsPascal interpolation (CPEX-0045 v4 §3.3.1).
+ * Returns \c CG_NODE_NOT_FOUND if either the container or the array is absent.
+ *
+ * \param[in]  fn          CGNS file index number
+ * \param[in]  B           Base index number (1-based)
+ * \param[in]  Z           Zone index number (1-based)
+ * \param[in]  S           FlowSolution index (1-based)
+ * \param[out] nscale      Number of scale factors per element: 1 for the
+ *                         isotropic encoding, PhysDim for the per-axis encoding
+ * \param[out] numElements Number of elements covered by the block
+ * \param[out] h_e         Scale-factor array (allocated by caller), of total
+ *                         length nscale*numElements
+ * \return     CG_OK on success, CG_NODE_NOT_FOUND if the array is absent,
+ *             CG_ERROR otherwise.
+ *
+ * Typical usage: call once with \c h_e==NULL to obtain \c nscale and
+ * \c numElements, then allocate and call again to read the data.
+ *
+ * For the per-axis encoding the on-disk array is [nscale, numElements] with
+ * nscale fast-varying, so the scale factors of one element are contiguous:
+ * (hx0,hy0,hz0, hx1,hy1,hz1, ...). This matches the LagrangeControlPoints
+ * layout convention.
+ */
+int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
+                                      int *nscale, cgsize_t *numElements,
+                                      double *h_e)
+{
+    cgns_sol *sol;
+    double node_id, container_id;
+    int ndim;
+    cgsize_t dim_vals[CGIO_MAX_DIMENSIONS];
+    int ierr;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    ierr = cgi_interp_metadata_node(sol, 0, &container_id);
+    if (ierr == CG_NODE_NOT_FOUND) {
+        if (nscale) *nscale = 0;
+        if (numElements) *numElements = 0;
+        return CG_NODE_NOT_FOUND;
+    }
+    if (ierr) return CG_ERROR;
+
+    ierr = cgi_find_sol_array(container_id, "CharacteristicLength", &node_id,
+                              &ndim, dim_vals);
+    if (ierr == CG_NODE_NOT_FOUND) {
+        if (nscale) *nscale = 0;
+        if (numElements) *numElements = 0;
+        return CG_NODE_NOT_FOUND;
+    }
+    if (ierr) return CG_ERROR;
+
+    /* Rank discriminates the encoding: 1-D is isotropic (one factor per
+     * element), 2-D is per-axis ([nscale, numElements]). */
+    if (ndim == 1) {
+        if (nscale) *nscale = 1;
+        if (numElements) *numElements = dim_vals[0];
+    }
+    else {
+        /* CPEX-0045 requires nscale to be either 1 or PhysDim. */
+        int phys_dim = cg->base[B-1].phys_dim;
+        if (dim_vals[0] != 1 && dim_vals[0] != (cgsize_t)phys_dim) {
+            cgi_error("CharacteristicLength in FlowSolution '%s': nscale must be 1 "
+                      "(isotropic) or PhysDim=%d (per-axis), got %"PRIdCGSIZE,
+                      sol->name, phys_dim, dim_vals[0]);
+            return CG_ERROR;
+        }
+        if (nscale) *nscale = (int)dim_vals[0];
+        if (numElements) *numElements = dim_vals[1];
+    }
+
+    if (h_e == NULL) return CG_OK;          /* size-only query */
+
+    if (cgio_read_all_data_type(cg->cgio, node_id, "R8", (void *)h_e)) {
+        cg_io_error("cgio_read_all_data_type");
+        return CG_ERROR;
+    }
+
+    /* All factors must be strictly positive.  Checked here rather than at file
+     * open: positivity cannot be established without reading the data, and the
+     * reader deliberately does not pull array contents at open.  The !(x > 0)
+     * form also rejects NaN, matching the writer's check. */
+    {
+        cgsize_t n, total = (ndim == 1) ? dim_vals[0] : dim_vals[0] * dim_vals[1];
+        for (n = 0; n < total; n++) {
+            if (!(h_e[n] > 0.0)) {
+                cgi_error("CharacteristicLength in FlowSolution '%s': factor %"
+                          PRIdCGSIZE " is %g; all factors must be strictly positive",
+                          sol->name, n, h_e[n]);
+                return CG_ERROR;
+            }
+        }
+    }
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Create an empty CharacteristicLength array at its full extent.
+ *
+ * \param[in] fn          CGNS file index number
+ * \param[in] B           Base index number (1-based)
+ * \param[in] Z           Zone index number (1-based)
+ * \param[in] S           FlowSolution index (1-based)
+ * \param[in] nscale      1 (isotropic) or PhysDim (per-axis)
+ * \param[in] numElements Number of elements the block covers
+ * \return    CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Creates the \c CharacteristicLength \c DataArray_t inside the
+ * \c InterpolationMetadata container at its full extent, with its contents
+ * left unwritten.  The factors are then supplied by one or more calls to
+ * cg_sol_characteristic_length_partial_write().
+ *
+ * This exists to separate the *creation* of the array from the *writing* of
+ * its contents, which a distributed writer must be able to do independently.
+ * Creating a node is a collective operation: every rank must call this, with
+ * identical arguments, including a rank that owns no elements of the block.
+ * The subsequent range writes are independent, each rank supplying only the
+ * elements it owns.
+ *
+ * Calling it when the array already exists is not an error and does not
+ * disturb the contents, so a serial writer may call it unconditionally.
+ */
+int cg_sol_characteristic_length_create(int fn, int B, int Z, int S,
+                                        int nscale, cgsize_t numElements)
+{
+    cgns_sol *sol;
+    cgns_base *base;
+    cgsize_t dim_vals[2];
+    int nnodes, n, found = 0;
+    double *ids = NULL;
+    double node_id = 0, container_id;
+    char_33 nname;
+    int HDF5storage_type_original = HDF5storage_type;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    if (found) return CG_OK;   /* idempotent: contents left alone */
+
+    /* The array must be CONTIGUOUS, not the CG_COMPACT default.  A compact
+     * dataset lives inside the HDF5 object header, so each rank's write
+     * rewrites the whole object rather than its own hyperslab: on four ranks
+     * writing disjoint element ranges, only the last rank's factors survived
+     * and every other element read back as zero.  cgi_array_general_write and
+     * the point-list writer make the same switch for the same reason.
+     *
+     * NULL data declares the extent and leaves the contents unwritten, which
+     * is what the range writes then fill in. */
+    HDF5storage_type = CG_CONTIGUOUS;
+    if (nscale == 1) {
+        dim_vals[0] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength",
+                "DataArray_t", &node_id, "R8", 1, dim_vals, NULL)) {
+            HDF5storage_type = HDF5storage_type_original;
+            return CG_ERROR;
+        }
+    }
+    else {
+        dim_vals[0] = nscale;
+        dim_vals[1] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength",
+                "DataArray_t", &node_id, "R8", 2, dim_vals, NULL)) {
+            HDF5storage_type = HDF5storage_type_original;
+            return CG_ERROR;
+        }
+    }
+    HDF5storage_type = HDF5storage_type_original;
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief Write part of the characteristic-length array.
+ *
+ * \details
+ * Writes the scale factors for elements \p rmin through \p rmax (1-based,
+ * inclusive) of a CharacteristicLength array whose full extent is \p numElements.
+ * The array must already exist: create it with
+ * cg_sol_characteristic_length_create(), which every caller must invoke with the
+ * same \p nscale and \p numElements before any range is written.  Creating a node
+ * is a collective operation, so a distributed writer that created it here would
+ * have later creates discard earlier ranks' ranges.
+ *
+ * The factors are per-element data -- PhysDim values per cell in the per-axis
+ * encoding, the same order of magnitude as a solution field -- so requiring the
+ * whole array in one call would force every rank to gather it.  Element ranges
+ * map to contiguous storage, since \p nscale is the fast-varying axis, so a rank
+ * owning a contiguous run of elements writes one hyperslab.
+ *
+ * Positivity is checked on the supplied range only; a range that is never
+ * written leaves the file with undefined factors for those elements, which
+ * cgnscheck reports when it validates the array.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \FLOW_S
+ * \param[in] nscale 1 for the isotropic encoding, PhysDim for per-axis.
+ * \param[in] numElements Total number of elements the array covers.
+ * \param[in] rmin First element to write, 1-based inclusive.
+ * \param[in] rmax Last element to write, 1-based inclusive.
+ * \param[in] h_e nscale*(rmax-rmin+1) factors, all strictly positive.
+ * \return \ier
+ */
+int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
+                                               int nscale, cgsize_t numElements,
+                                               cgsize_t rmin, cgsize_t rmax,
+                                               const double *h_e)
+{
+    cgns_sol *sol;
+    cgns_base *base;
+    cgsize_t s_start[2], s_end[2], s_stride[2];
+    cgsize_t m_dims[2], m_start[2], m_end[2], m_stride[2];
+    cgsize_t i, ncount;
+    cgsize_t actual_dims[2];
+    int nnodes, n, found = 0, actual_ndim;
+    double *ids = NULL;
+    double node_id = 0, container_id;
+    char_33 nname;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+    if (rmin < 1 || rmax > numElements || rmin > rmax) {
+        cgi_error("CharacteristicLength: invalid element range [%" PRIdCGSIZE
+                  ",%" PRIdCGSIZE "] for %" PRIdCGSIZE " elements",
+                  rmin, rmax, numElements);
+        return CG_ERROR;
+    }
+    if (h_e == NULL) {
+        cgi_error("CharacteristicLength: h_e pointer must not be NULL");
+        return CG_ERROR;
+    }
+    ncount = (cgsize_t)nscale * (rmax - rmin + 1);
+    for (i = 0; i < ncount; i++) {
+        if (!(h_e[i] > 0.0)) {
+            cgi_error("CharacteristicLength: all scale factors must be > 0 "
+                      "(entry %" PRIdCGSIZE " of this range is %g)", i, h_e[i]);
+            return CG_ERROR;
+        }
+    }
+
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
+    /* Find an existing array, or create one at the full extent.  Rank selects
+     * the encoding exactly as it does for the whole-array writer. */
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            node_id = ids[n];
+            found = 1;
+            break;
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    if (!found) {
+        /* Deliberately not created here.  Creating a node is collective, so a
+         * distributed writer that let every rank create-then-write would have
+         * later creates wipe earlier ranks' ranges -- which is exactly what
+         * happened before cg_sol_characteristic_length_create() existed: on
+         * four ranks only the last rank's elements survived, the rest read
+         * back as zero.  Requiring the array up front makes the collective
+         * step explicit and the correct usage the only usage. */
+        cgi_error("CharacteristicLength: the array does not exist yet; call "
+                  "cg_sol_characteristic_length_create() first (collectively, "
+                  "on every rank, in a parallel run) before writing ranges");
+        return CG_ERROR;
+    }
+
+    /* Validate nscale/numElements against the array's actual on-disk extent
+     * rather than trusting the caller's argument and going straight to the
+     * hyperslab write.  This is not merely a diagnostic-quality improvement:
+     * verified empirically that a numElements mismatch is NOT reliably
+     * caught by cgio_write_data's own hyperslab-selection rejection.  A
+     * caller that claims numElements=42 but writes only the range [1,1] --
+     * exactly what a distributed writer's first rank does if the value
+     * wasn't threaded to it consistently -- selects a hyperslab that fits
+     * inside the real, differently-sized array coincidentally, and the
+     * write silently succeeds against the wrong logical array shape.  Only
+     * an nscale mismatch (a rank change) reliably trips the underlying I/O
+     * layer's own rejection; a numElements mismatch does not.  The extra
+     * metadata query costs one small round-trip on a call whose actual data
+     * write already dwarfs it. */
+    if (cgio_get_dimensions(cg->cgio, node_id, &actual_ndim, actual_dims)) {
+        cg_io_error("cgio_get_dimensions");
+        return CG_ERROR;
+    }
+    {
+        /* Derive (actual_nscale, actual_numElements) from the array's own
+         * rank, not from what the caller expects: indexing actual_dims by
+         * expect_ndim when actual_ndim differs would read a slot
+         * cgio_get_dimensions never populated for a lower-rank array. */
+        int expect_ndim = (nscale == 1) ? 1 : 2;
+        cgsize_t actual_nscale, actual_numElements;
+        if (actual_ndim == 1) {
+            actual_nscale = 1;
+            actual_numElements = actual_dims[0];
+        }
+        else if (actual_ndim == 2) {
+            actual_nscale = actual_dims[0];
+            actual_numElements = actual_dims[1];
+        }
+        else {
+            actual_nscale = -1;
+            actual_numElements = -1;
+        }
+        if (actual_ndim != expect_ndim ||
+            actual_nscale != nscale ||
+            actual_numElements != numElements) {
+            cgi_error("CharacteristicLength: (nscale=%d, numElements=%"
+                      PRIdCGSIZE ") does not match the array's actual "
+                      "extent (nscale=%" PRIdCGSIZE ", numElements=%"
+                      PRIdCGSIZE ") as created by "
+                      "cg_sol_characteristic_length_create(); every writer "
+                      "of a given array must pass the same nscale and "
+                      "numElements it was created with",
+                      nscale, numElements, actual_nscale, actual_numElements);
+            return CG_ERROR;
+        }
+    }
+
+    /* nscale is the fast-varying axis, so an element range is contiguous. */
+    if (nscale == 1) {
+        s_start[0]  = rmin;      s_end[0] = rmax;      s_stride[0] = 1;
+        m_dims[0]   = rmax - rmin + 1;
+        m_start[0]  = 1;         m_end[0] = m_dims[0]; m_stride[0] = 1;
+        if (cgio_write_data(cg->cgio, node_id, s_start, s_end, s_stride,
+                            1, m_dims, m_start, m_end, m_stride, h_e)) {
+            cg_io_error("cgio_write_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        s_start[0] = 1;    s_end[0] = nscale;  s_stride[0] = 1;
+        s_start[1] = rmin; s_end[1] = rmax;    s_stride[1] = 1;
+        m_dims[0]  = nscale;            m_dims[1] = rmax - rmin + 1;
+        m_start[0] = 1;                 m_start[1] = 1;
+        m_end[0]   = m_dims[0];         m_end[1]   = m_dims[1];
+        m_stride[0] = 1;                m_stride[1] = 1;
+        if (cgio_write_data(cg->cgio, node_id, s_start, s_end, s_stride,
+                            2, m_dims, m_start, m_end, m_stride, h_e)) {
+            cg_io_error("cgio_write_data");
+            return CG_ERROR;
+        }
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup FlowSolution
+ * \brief Write the per-element characteristic length(s) on a FlowSolution_t.
+ *
+ * Writes a \c CharacteristicLength \c DataArray_t into the
+ * \c InterpolationMetadata \c UserDefinedData_t child of the FlowSolution_t
+ * node, creating the container if it does not yet exist. Required when the
+ * associated SolutionInterpolation_t uses \c CartesianMonomialsPascal
+ * (CPEX-0045 v4 §3.3.1).
+ *
+ * \param[in] fn          CGNS file index number
+ * \param[in] B           Base index number (1-based)
+ * \param[in] Z           Zone index number (1-based)
+ * \param[in] S           FlowSolution index (1-based)
+ * \param[in] nscale      Number of scale factors per element. Pass 1 for the
+ *                        isotropic encoding (R8, 1-D, [numElements]); pass
+ *                        PhysDim for the per-axis encoding (R8, 2-D,
+ *                        [nscale, numElements]).
+ * \param[in] numElements Number of elements covered by the block
+ * \param[in] h_e         Scale factors, total length nscale*numElements. For
+ *                        the per-axis encoding the factors of one element are
+ *                        contiguous: (hx0,hy0,hz0, hx1,hy1,hz1, ...).
+ * \return    CG_OK on success, CG_ERROR otherwise.
+ *
+ * Writers must record the scale factors actually used to non-dimensionalise
+ * the monomial coefficients, so that a reader reproduces the same polynomial
+ * without recomputing any geometric formula.
+ *
+ * If the child already exists and the file is open in CG_MODE_MODIFY, it is
+ * replaced; in CG_MODE_WRITE a duplicate write returns CG_ERROR.
+ */
+int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
+                                       int nscale, cgsize_t numElements,
+                                       const double *h_e)
+{
+    cgns_sol *sol;
+    cgns_base *base;
+    cgsize_t dim_vals[2];
+    cgsize_t i, ntotal;
+    int nnodes;
+    double *ids = NULL;
+    double dummy_id, container_id;
+    int n;
+    char_33 nname;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (numElements <= 0) {
+        cgi_error("CharacteristicLength: numElements must be > 0");
+        return CG_ERROR;
+    }
+    /* Only the two normative encodings are accepted: isotropic (nscale==1) or
+     * one factor per physical coordinate direction (nscale==PhysDim). */
+    if (nscale != 1 && nscale != base->phys_dim) {
+        cgi_error("CharacteristicLength: nscale must be 1 (isotropic) or %d "
+                  "(per-axis, PhysDim), got %d", base->phys_dim, nscale);
+        return CG_ERROR;
+    }
+    if (h_e == NULL) {
+        cgi_error("CharacteristicLength: h_e pointer must not be NULL");
+        return CG_ERROR;
+    }
+
+    /* Scale factors divide the local coordinates, so zero or negative values
+     * would make the normalisation undefined. */
+    ntotal = (cgsize_t)nscale * numElements;
+    for (i = 0; i < ntotal; i++) {
+        if (!(h_e[i] > 0.0)) {
+            cgi_error("CharacteristicLength: all scale factors must be > 0 "
+                      "(entry %" PRIdCGSIZE " is %g)", i, h_e[i]);
+            return CG_ERROR;
+        }
+    }
+
+    /* The factors live inside the InterpolationMetadata container, never
+     * directly under the FlowSolution_t, so that they are not one of its
+     * solution fields.  Create the container on first write. */
+    if (cgi_interp_metadata_node(sol, 1, &container_id)) return CG_ERROR;
+
+    /* Replace any existing CharacteristicLength child. */
+    if (cgi_get_nodes(container_id, "DataArray_t", &nnodes, &ids))
+        return CG_ERROR;
+    for (n = 0; n < nnodes; n++) {
+        if (cgio_get_name(cg->cgio, ids[n], nname)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ids);
+            return CG_ERROR;
+        }
+        if (strcmp(nname, "CharacteristicLength") == 0) {
+            if (cg->mode == CG_MODE_WRITE) {
+                cgi_error("CharacteristicLength already written for this "
+                          "FlowSolution_t. Open the file in CG_MODE_MODIFY "
+                          "to replace.");
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+            if (cgi_delete_node(container_id, ids[n])) {
+                CGNS_FREE(ids);
+                return CG_ERROR;
+            }
+        }
+    }
+    if (ids) CGNS_FREE(ids);
+
+    /* Array rank encodes which convention was used. */
+    if (nscale == 1) {
+        dim_vals[0] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength", "DataArray_t",
+                         &dummy_id, "R8", 1, dim_vals, (void *)h_e))
+            return CG_ERROR;
+    }
+    else {
+        dim_vals[0] = nscale;
+        dim_vals[1] = numElements;
+        if (cgi_new_node(container_id, "CharacteristicLength", "DataArray_t",
+                         &dummy_id, "R8", 2, dim_vals, (void *)h_e))
+            return CG_ERROR;
+    }
+
+    /* Keep the in-memory container consistent with what was just written, so
+     * a same-session cg_goto/cg_narrays into it agrees with the file. */
+    for (n = 0; n < sol->nuser_data; n++) {
+        cgns_user_data *ud = &sol->user_data[n];
+        cgns_array *arr = NULL;
+        int a;
+
+        if (strcmp(ud->name, CG_INTERP_METADATA_NAME)) continue;
+
+        for (a = 0; a < ud->narrays; a++) {
+            if (0 == strcmp(ud->array[a].name, "CharacteristicLength")) {
+                arr = &ud->array[a];
+                break;
+            }
+        }
+        if (arr == NULL) {
+            if (ud->narrays == 0)
+                ud->array = CGNS_NEW(cgns_array, 1);
+            else
+                ud->array = CGNS_RENEW(cgns_array, ud->narrays + 1, ud->array);
+            arr = &ud->array[ud->narrays];
+            ud->narrays++;
+        }
+        memset(arr, 0, sizeof(cgns_array));
+        strcpy(arr->name, "CharacteristicLength");
+        strcpy(arr->data_type, "R8");
+        arr->id = dummy_id;
+        arr->data_dim = (nscale == 1) ? 1 : 2;
+        if (nscale == 1) {
+            arr->dim_vals[0] = numElements;
+        }
+        else {
+            arr->dim_vals[0] = nscale;
+            arr->dim_vals[1] = numElements;
+        }
+        break;
+    }
+
     return CG_OK;
 }
 
@@ -8717,14 +10035,12 @@ int cg_field_write(int fn, int B, int Z, int S,
 
      /* dimension is dependent on multidim or ptset */
     cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
-    if (sol->ptset == NULL) {
-        m_numdim = zone->index_dim;
-        if (cgi_datasize(m_numdim, zone->nijk, sol->location,
-                         sol->rind_planes, m_dimvals)) return CG_ERROR;
-    }
-    else {
-        m_numdim = 1;
-        m_dimvals[0] = sol->ptset->size_of_patch;
+
+    m_numdim = zone->index_dim;
+    if ( cgi_sol_size(fn, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
+      cg_error_print();
+      cgi_error("FlowSolution: Unable to retrieve field size to write");
+      return CG_ERROR;
     }
 
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
@@ -8896,15 +10212,21 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol == 0) return CG_ERROR;
 
-     /* file dimension is dependent on multidim or ptset */
+     /* File dimension is dependent on multidim or ptset, and on whether this is
+      * a high-order solution.  cgi_sol_size() is the single place that decides
+      * all three, and is what cg_sol_size() and cg_field_write() already use;
+      * the ptset branch here called it too.  This function used to repeat the
+      * non-ptset case inline, and the copy had drifted: it added the rind planes
+      * to a GridLocation=InterpolationPoints length, which cgi_sol_size() and
+      * cgi_read_sol() both deliberately do not -- CPEX-0045 gives Rind_t no
+      * meaning there, and the reader warns and stops validating lengths if one
+      * is present.  A writer that sized a field differently from the reader
+      * would produce a file the library itself rejects, so the copy is gone. */
     cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-    if (sol->ptset == NULL) {
-        s_numdim = zone->index_dim;
-        if (cgi_datasize(s_numdim, zone->nijk, sol->location,
-                sol->rind_planes, s_dimvals)) return CG_ERROR;
-    } else {
-        s_numdim = 1;
-        s_dimvals[0] = sol->ptset->size_of_patch;
+    if (cgi_sol_size(fn, B, Z, S, &s_numdim, &s_dimvals[0])) {
+        cg_error_print();
+        cgi_error("FlowSolution: Unable to retrieve field size to write");
+        return CG_ERROR;
     }
 
     status= cgi_array_general_write(sol->id, &(sol->nfields),
@@ -8917,6 +10239,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     HDF5storage_type = CG_COMPACT;
     return status;
 }
+
 
 /*************************************************************************\
  *      Read and write ZoneSubRegion_t Nodes                             *
@@ -11373,7 +12696,8 @@ int cg_boco_write(int fn, int B, int Z, const char * boconame,
 
      /* write boco info to internal memory */
     memset(boco, 0, sizeof(cgns_boco));
-    strcpy(boco->name, boconame);
+    strncpy(boco->name, boconame, CG_MAX_NAME_LENGTH - 1);
+    boco->name[CG_MAX_NAME_LENGTH - 1] = '\0';
     boco->type = bocotype;
     boco->location = location;
     boco->ptset = CGNS_NEW(cgns_ptset,1);
@@ -16117,7 +17441,2274 @@ int cg_multifam_write(const char *name, const char *family)
     return CG_OK;
 }
 
+/**
+ * \ingroup ElementInterpolation
+ * \brief Read element interpolation metadata
+ *
+ * Reads the properties of an ElementInterpolation_t node which defines
+ * high-order polynomial interpolation for a specific element type.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  en        ElementInterpolation index (1-based)
+ * \param[out] node_name Name of the ElementInterpolation_t node. **MUST** be a buffer
+ *                       of at least 33 bytes (char[33]) to store max 32 chars + null terminator.
+ * \param[out] et        Element type for this interpolation
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function reads metadata about element-level interpolation.  Use
+ * cg_element_interpolation_points_read() to retrieve the control point
+ * coordinates.  Mesh interpolation is nodal only (CPEX-0045), so there are no
+ * modal coefficients to read.
+ *
+ * Example:
+ * \code
+ * char interp_name[33];
+ * CGNS_ENUMT(ElementType_t) elem_type;
+ * cg_element_interpolation_read(fn, bn, fam, 1, interp_name, &elem_type);
+ * \endcode
+ */
+
+int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
+                                  CGNS_ENUMT(ElementType_t)* et)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
+    en--;
+
+    cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+
+    /* Set Name */
+    snprintf(node_name, CG_MAX_NAME_LENGTH, "%s", ei->name);
+
+    /* Set Element Type */
+    *et = ei->type;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Read element interpolation type
+ *
+ * Reads the interpolation type from an ElementInterpolation_t node. This allows
+ * detection of IsoParametric and ParametricLagrange interpolation types.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  en        ElementInterpolation index (1-based)
+ * \param[out] it        Interpolation type (IsoParametric or ParametricLagrange)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Per CPEX-0045 S3.2.2, ElementInterpolation_t has no explicit InterpolationType_t
+ * child node; the type is derived from whether the optional LagrangeControlPoints
+ * array is present. This function always returns CG_OK (or CG_ERROR on failure)
+ * with *it set accordingly -- it never returns CG_NODE_NOT_FOUND, and neither
+ * modal type is ever returned here since mesh interpolation is nodal only.
+ *
+ * Interpolation types:
+ * - IsoParametric: Element's own node coordinates are used (no LagrangeControlPoints)
+ * - ParametricLagrange: Explicit Lagrange control points provided
+ *
+ * Example:
+ * \code
+ * CGNS_ENUMT(InterpolationType_t) interp_type;
+ * if (cg_element_interpolation_type_read(fn, bn, fam, 1, &interp_type) == CG_OK) {
+ *     if (interp_type == IsoParametric) {
+ *         printf("Using isoparametric interpolation\\n");
+ *     }
+ * }
+ * \endcode
+ */
+int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
+                                       CGNS_ENUMT(InterpolationType_t)* it)
+{
+    cgns_family *family;
+    cgns_elementInterpolation *ei;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
+    en--;
+
+    ei = &family->elementinterpolations[en];
+
+    /* CPEX-0045 §3.2.2 leaves no explicit InterpolationType child on
+     * ElementInterpolation_t: the type is derived from whether the one optional
+     * data array is present.  Mesh interpolation is nodal only, so neither modal
+     * type is ever returned here.
+     *   LagrangeControlPoints present  -> ParametricLagrange
+     *   absent                         -> IsoParametric (standard layout)
+     */
+    if (ei->lagrangePts != NULL) {
+        *it = CGNS_ENUMV(ParametricLagrange);
+    } else {
+        *it = CGNS_ENUMV(IsoParametric);
+    }
+
+    return CG_OK;
+}
+
+/* Unpack interleaved flat array (U0,V0,W0,T0, U1,...) into separate column arrays.
+ * Pass pt=NULL for element interpolation (no temporal dimension). */
+static void cgi_unpack_lagrange(int npe, int dim, double *const *spatial,
+                                double *pt, const double *flat)
+{
+    int i, j, k = 0;
+    for (i = 0; i < npe; i++) {
+        for (j = 0; j < dim; j++) { if (spatial[j]) spatial[j][i] = flat[k]; k++; }
+        if (pt) pt[i] = flat[k++];
+    }
+}
+
+/* Pack separate column arrays into interleaved flat array (U0,V0,W0,T0, U1,...).
+ * Pass pt=NULL for element interpolation (no temporal dimension). */
+static void cgi_pack_lagrange(int npe, int dim, double *const *spatial,
+                              const double *pt, double *flat)
+{
+    int i, j, k = 0;
+    for (i = 0; i < npe; i++) {
+        for (j = 0; j < dim; j++) { if (spatial[j]) flat[k] = spatial[j][i]; k++; }
+        if (pt) flat[k++] = pt[i];
+    }
+}
+
+/* Validate that spatial coordinate pointer arguments satisfy dimensionality constraints.
+ * Shared by cg_element_interpolation_points_read and cg_solution_interpolation_points_read. */
+static int cgi_validate_spatial_ptrs(int dim, CGNS_ENUMT(ElementType_t) type,
+                                      const double *pu, const double *pv, const double *pw)
+{
+    if (!pu) {
+        cgi_error("pu parameter cannot be NULL for element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 1 && !pv) {
+        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    if (dim > 2 && !pw) {
+        cgi_error("pw parameter cannot be NULL for 3D element type %s",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Read Lagrange control points for element interpolation
+ *
+ * Reads the parametric coordinates of Lagrange control points for a
+ * high-order element interpolation.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[in]  en  ElementInterpolation index (1-based)
+ * \param[out] pu  Pre-allocated array to receive u-coordinates. Caller must allocate
+ *                 with size from cg_element_lagrange_interpolation_size(). Cannot be NULL.
+ * \param[out] pv  Pre-allocated array to receive v-coordinates. Required for 2D/3D elements.
+ *                 Pass NULL for 1D elements (BAR).
+ * \param[out] pw  Pre-allocated array to receive w-coordinates. Required for 3D elements.
+ *                 Pass NULL for 1D/2D elements (BAR, TRI, QUAD).
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Reads the LagrangeControlPoints array from an ElementInterpolation_t node.
+ * The array size must be determined first using cg_element_lagrange_interpolation_size().
+ *
+ * **Memory Management:** The caller is responsible for allocating all non-NULL arrays
+ * before calling this function. Each array must have size equal to the cardinality
+ * returned by cg_element_lagrange_interpolation_size().
+ *
+ * **Dimension Requirements:**
+ * - 1D elements (BAR): pu required, pv and pw must be NULL
+ * - 2D elements (TRI, QUAD): pu and pv required, pw must be NULL
+ * - 3D elements (TETRA, PENTA, PYRA, HEXA): pu, pv, and pw all required
+ *
+ * **Coordinate Ordering:** Control points are ordered according to the high-order
+ * convention defined in CPEX0045 (e.g., Pascal Triangle recursion for simplicial
+ * elements, tensor product ordering for hexahedral elements).
+ *
+ * **Coordinate Ranges:**
+ * - Quadrilateral/hexahedral elements: the bi-unit cube [-1, 1]^d
+ * - Simplicial elements (TRI, TETRA): the bi-unit simplex, NOT [0, 1].
+ *   TRI is {u >= -1, v >= -1, u+v <= 0}; TETRA is {u,v,w >= -1, u+v+w <= -1}.
+ *   A [0,1]-based simplex convention is explicitly non-conformant, and the
+ *   error cannot be detected after the fact because such coordinates are
+ *   indistinguishable from valid bi-unit ones.
+ *
+ * Example:
+ * \code
+ * int npts;
+ * cg_element_lagrange_interpolation_size(QUAD_9, &npts);  // npts = 9
+ * double *pu = malloc(npts * sizeof(double));
+ * double *pv = malloc(npts * sizeof(double));
+ * cg_element_interpolation_points_read(fn, bn, fam, 1, pu, pv, NULL);
+ * // ... use pu, pv ...
+ * free(pu); free(pv);
+ * \endcode
+ */
+int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
+                                  double *pu, double *pv, double *pw)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) { cgi_error("Element interpolation index %d out of range (1-%d)", en, family->nelementinterpolation); return CG_ERROR; }
+    en--;
+
+    cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+
+    /* Get lagrange Points array */
+    cgns_array *lpts = ei->lagrangePts;
+    
+    /* has Lagrange Points ? */
+    if (!lpts)
+    {
+        return CG_NODE_NOT_FOUND;
+    }
+    
+    /* Check Dimensions */
+    int ndim = lpts->dim_vals[0];
+    
+    /* Get Element Node Count */
+    int npe = lpts->dim_vals[1];
+    
+    // Sanity Check
+    int cdim;
+    int cnpe;
+    if (cg_npe(ei->type,&cnpe) != CG_OK) {
+        cgi_error("Failed to get node count for element type %s", cg_ElementTypeName(ei->type));
+        return CG_ERROR;
+    }
+    if (cg_element_dimension(ei->type,&cdim) != CG_OK) {
+        cgi_error("Failed to get dimension for element type %s", cg_ElementTypeName(ei->type));
+        return CG_ERROR;
+    }
+
+    if (cdim != ndim || cnpe != npe)
+    {
+        cgi_error("LagrangeControlPoints array dimension mismatch in "
+                  "ElementInterpolation \"%s\".\n"
+                  "dim (given,requested) : (%d,%d)\n"
+                  "node count (given,requested) : (%d,%d)\n",
+                  ei->name,ndim,cdim,npe,cnpe);
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_spatial_ptrs(cdim, ei->type, pu, pv, pw)) return CG_ERROR;
+
+    /* Unpack interleaved flat array into separate coordinate columns */
+    double *cols_r[] = {pu, pv, pw};
+    cgi_unpack_lagrange(npe, ndim, cols_r, NULL, (const double *)lpts->data);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Get number of ElementInterpolation_t nodes in a family
+ *
+ * Returns the count of ElementInterpolation_t nodes defined under a Family_t.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[out] ne  Number of ElementInterpolation_t nodes
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Use this function to determine how many element types have interpolation
+ * definitions in the specified family.
+ */
+int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    *ne = family->nelementinterpolation;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Write element interpolation metadata
+ *
+ * Creates an ElementInterpolation_t node under a Family_t to define
+ * high-order polynomial interpolation for a specific element type.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  node_name Name for the ElementInterpolation_t node
+ * \param[in]  et        Element type (e.g., QUAD_9, HEXA_27, TRI_10)
+ * \param[out] en        Index of created ElementInterpolation node
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function creates the metadata node for element interpolation.
+ * After calling this, use cg_element_interpolation_points_write() to store the
+ * control points.  Mesh interpolation is nodal only (CPEX-0045): neither modal
+ * type may be attached to an ElementInterpolation_t.
+ *
+ * The element type should be a high-order element such as QUAD_9, QUAD_16,
+ * HEXA_27, HEXA_64, TRI_10, TETRA_20, etc.
+ *
+ * Example:
+ * \code
+ * int einterp;
+ * cg_element_interpolation_write(fn, bn, fam, "QUAD9_Interp", QUAD_9, &einterp);
+ * \endcode
+ */
+int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_name,
+                                   CGNS_ENUMT(ElementType_t) et, int *en)
+{
+    int n;
+    int array[1];
+    cgsize_t dim_vals;
+    cgns_family *family;
+    cgns_elementInterpolation *einterp, *tmpinterp;
+    CGNS_ENUMT(ElementType_t) type;
+
+    *en = -1;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    if (cgi_check_strlen(node_name)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    // Check Element Type
+    if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
+        cgi_error("Invalid element type %s for writing Element interpolation %s",
+                  cg_ElementTypeName(et),node_name);
+        return CG_ERROR;
+    }
+
+    // Get Basic type
+    if (cg_element_basic_element_type(et,&type) != CG_OK) {
+        return CG_ERROR;
+    }
+
+    /* Uniqueness is per exact element tag: the tag encodes the polynomial
+     * order (e.g. QUAD_9 differs from QUAD_4), unlike SolutionInterpolation_t
+     * which pairs a basic tag with an explicit order. */
+    (void)type;
+    einterp = 0;
+    for (n = 0 ; n<family->nelementinterpolation ; n++)
+    {
+        tmpinterp = &family->elementinterpolations[n];
+
+        if (tmpinterp->type == et )
+        {
+            if (cg->mode==CG_MODE_WRITE)
+            {
+                cgi_error("ElementInterpolation_t already defined under Family_t.");
+                return CG_ERROR;
+            }
+            // Modify existing ?
+            else if ( cg->mode==CG_MODE_MODIFY )
+            {
+                if(cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
+                cgi_free_element_interpolation(tmpinterp);
+                einterp = tmpinterp;
+                *en = n+1;
+                break;
+
+            }
+            else
+            {
+                cgi_error("Only one ElementInterpolation_t node allowed per ElementType_t !\n");
+                return CG_ERROR;
+            }
+        }
+    }
+
+    // Create New ?
+    if (!einterp)
+    {
+        if (family->nelementinterpolation == 0) {
+            family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation+1);
+        } else {
+            family->elementinterpolations = CGNS_RENEW(cgns_elementInterpolation, family->nelementinterpolation+1, family->elementinterpolations);
+        }
+        einterp = &(family->elementinterpolations[family->nelementinterpolation]);
+        family->nelementinterpolation++;
+        *en = family->nelementinterpolation;
+    }
+
+    memset(einterp,0,sizeof(cgns_elementInterpolation));
+    snprintf(einterp->name, sizeof(einterp->name), "%s", node_name);
+    einterp->type = et;
+
+    // Write node
+    dim_vals = 1;
+    array[0] = (int)et;
+    if (cgi_new_node(family->id, einterp->name, "ElementInterpolation_t",
+                         &einterp->id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Write isoparametric interpolation metadata
+ *
+ * Creates an ElementInterpolation_t node with IsoParametric interpolation type.
+ * For isoparametric interpolation, the element's own node coordinates (from the
+ * grid) are used as interpolation control points, so no LagrangeControlPoints
+ * need to be written.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  node_name Name for the ElementInterpolation_t node (max 32 chars)
+ * \param[in]  et        Element type (e.g., QUAD_9, HEXA_27)
+ * \param[out] en        Index of created ElementInterpolation node
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Isoparametric interpolation is the most common type where the same basis
+ * functions are used for both geometry and solution interpolation. The
+ * element's node coordinates from the GridCoordinates directly serve as
+ * control points, eliminating the need for separate Lagrange control points.
+ *
+ * This function:
+ * - Creates ElementInterpolation_t node with element type
+ * - Does NOT write LagrangeControlPoints (uses grid coordinates)
+ *
+ * Per CPEX-0045, IsoParametric is recorded implicitly by the absence of a
+ * LagrangeControlPoints child -- there is no explicit InterpolationType_t
+ * node to set. On disk, the result is identical to a plain
+ * ElementInterpolation_t node.
+ *
+ * Example:
+ * \code
+ * int einterp;
+ * cg_element_isoparametric_write(fn, bn, fam, "QUAD9_IsoParam", QUAD_9, &einterp);
+ * \endcode
+ */
+/* Per CPEX-0045 §3.2.2, absence of a LagrangeControlPoints child implies
+ * isoparametric layout. The on-disk node structure is therefore identical to
+ * a plain ElementInterpolation_t node, so this function is a direct alias. */
+int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_name,
+                                   CGNS_ENUMT(ElementType_t) et, int *en)
+{
+    return cg_element_interpolation_write(fn, bn, fam, node_name, et, en);
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Write Lagrange control points for element interpolation
+ *
+ * Writes parametric coordinates of Lagrange control points for high-order
+ * element interpolation.
+ *
+ * \param[in] fn  CGNS file index number
+ * \param[in] bn  Base index number (1-based)
+ * \param[in] fam Family index number (1-based)
+ * \param[in] en  ElementInterpolation index (1-based)
+ * \param[in] pu  Array of u-coordinates, ordered according to CPEX0045 convention.
+ *                Caller-allocated, size from cg_element_lagrange_interpolation_size().
+ *                Cannot be NULL.
+ * \param[in] pv  Array of v-coordinates. Required for 2D/3D elements.
+ *                Pass NULL for 1D elements (BAR).
+ * \param[in] pw  Array of w-coordinates. Required for 3D elements.
+ *                Pass NULL for 1D/2D elements (BAR, TRI, QUAD).
+ * \return    CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Writes the LagrangeControlPoints array to an ElementInterpolation_t node.
+ * The number of points is determined by the element type:
+ * - QUAD_9: 9 points (order 2, tensor product 3×3 grid)
+ * - QUAD_16: 16 points (order 3, tensor product 4×4 grid)
+ * - HEXA_27: 27 points (order 2, tensor product 3×3×3 grid)
+ * - TRI_10: 10 points (order 3, Pascal triangle)
+ * - TETRA_20: 20 points (order 3, tetrahedral)
+ *
+ * **Memory Management:** The caller must allocate arrays before calling this
+ * function. Use cg_element_lagrange_interpolation_size() to determine array sizes.
+ *
+ * **NULL Pointer Rules:**
+ * - pu: Always required (cannot be NULL)
+ * - pv: Required for 2D/3D; pass NULL for 1D
+ * - pw: Required for 3D; pass NULL for 1D/2D
+ *
+ * **Coordinate Ordering Convention:**
+ * Control points are ordered according to CPEX0045 high-order conventions:
+ * - Tensor product elements (QUAD, HEXA): Lexicographic ordering in parametric
+ *   space (u varies fastest, then v, then w)
+ * - Simplicial elements (TRI, TETRA): Pascal triangle/pyramid recursion
+ *   (vertices first, then edges, then faces, then interior)
+ * - **Prism elements (PENTA)**: Mixed tensor product Triangle(u,v) ⊗ Line(w).
+ *   w varies SLOWEST (w-major ordering):
+ *   \code
+ *   for (w = 0; w <= order; w++)          // Line direction (slowest)
+ *     for (each triangle point at w)      // Triangle in (u,v)
+ *   \endcode
+ *   This is NOT a simple 3D tensor product like HEXA!
+ * - Serendipity elements (QUAD_8, HEXA_20): Similar to tensor product but with
+ *   interior nodes omitted
+ *
+ * **Parametric Coordinate Ranges:**
+ * - Quadrilateral/hexahedral elements: the bi-unit cube [-1, 1]^d
+ * - Simplicial elements (TRI, TETRA): the bi-unit simplex, NOT [0, 1].
+ *   TRI is {u >= -1, v >= -1, u+v <= 0}; TETRA is {u,v,w >= -1, u+v+w <= -1}.
+ *   A [0,1]-based simplex convention is explicitly non-conformant, and the
+ *   error cannot be detected after the fact because such coordinates are
+ *   indistinguishable from valid bi-unit ones.
+ *
+ * **Example for QUAD_9 (tensor product, u varies fastest):**
+ * \code
+ * int npts;
+ * cg_element_lagrange_interpolation_size(QUAD_9, &npts);  // npts = 9
+ * double pu[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};  // u = -1,0,1 repeated for each v
+ * double pv[9] = {-1,-1,-1,  0, 0, 0,  1, 1, 1};  // v = -1,0,1 (each repeated 3 times)
+ * cg_element_interpolation_points_write(fn, bn, fam, einterp, pu, pv, NULL);
+ * \endcode
+ *
+ * \note Refer to CPEX0045 specification for detailed ordering conventions and
+ * parametric coordinate definitions for each element type.
+ *
+ * \note Writing points to a node that has none changes that node's
+ * interpolation type from IsoParametric to ParametricLagrange, and is permitted
+ * in CG_MODE_MODIFY. This includes a node created by
+ * cg_element_isoparametric_write(), which is a direct alias of
+ * cg_element_interpolation_write() and produces a byte-identical node.
+ * CPEX-0045 v4 withdrew the v3 prohibition on that sequence, the resulting file
+ * being indistinguishable from one written with the points supplied at the
+ * outset.
+ */
+int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
+                                           double *pu, double *pv, double *pw)
+{
+    int edim;
+    int nnodes;
+    double *data;
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    // Check
+    if (en > family->nelementinterpolation || en <= 0)
+    {
+        cgi_error("Want to access an inexistent element interpolation id");
+        return CG_ERROR;
+    }
+    en--;
+
+    einterp = &family->elementinterpolations[en];
+
+    /* No "was this created as IsoParametric?" guard: per CPEX-0045 v4 the type
+     * of this node is exactly lagrangePts == NULL vs. non-NULL, so writing
+     * points to a node that has none is the defined way to change it from
+     * IsoParametric to ParametricLagrange rather than a violation.  v3 forbade
+     * the sequence after cg_element_isoparametric_write, but that writer is an
+     * alias of cg_element_interpolation_write and the node is byte-identical
+     * either way, so the rule excluded no file. */
+
+    /* Reject a second LagrangeControlPoints write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below.  A node
+     * with no LagrangePoints is IsoParametric per CPEX-0045 (LagrangePoints is
+     * optional; absence means standard layout), so this check is about
+     * replacing an array that exists, not about the node's type. */
+    if (einterp->lagrangePts != NULL && cg->mode == CG_MODE_WRITE) {
+        cgi_error("LagrangeControlPoints already written for "
+                  "ElementInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", einterp->name);
+        return CG_ERROR;
+    }
+
+    // Nb points and dimension per Element_t
+    if (cg_npe(einterp->type, &nnodes) != CG_OK) return CG_ERROR;
+    if (cg_element_dimension(einterp->type, &edim) != CG_OK) return CG_ERROR;
+
+    // Check dimension and validate required pointers
+    if (edim == 0) {
+        cgi_warning("No element interpolation points for element type NODE");
+        return CG_OK;
+    }
+
+    // NULL pointer validation with clear error messages
+    if (!pu) {
+        cgi_error("pu parameter cannot be NULL for element type %s",
+                  cg_ElementTypeName(einterp->type));
+        return CG_ERROR;
+    }
+    if (edim > 1 && !pv) {
+        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
+                  cg_ElementTypeName(einterp->type));
+        return CG_ERROR;
+    }
+    if (edim > 2 && !pw) {
+        cgi_error("pw parameter cannot be NULL for 3D element type %s",
+                  cg_ElementTypeName(einterp->type));
+        return CG_ERROR;
+    }
+    
+    // Allocate and fill memory structure
+    if (einterp->lagrangePts)
+    {
+      if (cgi_delete_node(einterp->id,einterp->lagrangePts->id)) return CG_ERROR;
+      /* The node being replaced may have been read from the file, in which case
+       * it owns ->data (and ->link); freeing only the struct leaks those. */
+      cgi_free_array(einterp->lagrangePts);
+      CGNS_FREE(einterp->lagrangePts);
+    }
+    
+    einterp->lagrangePts = CGNS_NEW(cgns_array, 1);
+    memset(einterp->lagrangePts, 0, sizeof(cgns_array));
+    
+    /* Save data */
+    snprintf(einterp->lagrangePts->name, sizeof(einterp->lagrangePts->name), "%s", "LagrangeControlPoints");
+    snprintf(einterp->lagrangePts->data_type, sizeof(einterp->lagrangePts->data_type), "%s", "R8");
+    einterp->lagrangePts->data_dim = 2;
+    einterp->lagrangePts->dim_vals[0] = edim;
+    einterp->lagrangePts->dim_vals[1] = nnodes;
+    
+     /* initialize other fields */
+    einterp->lagrangePts->link=0;
+    einterp->lagrangePts->ndescr=0;
+    einterp->lagrangePts->data_class=CGNS_ENUMV(DataClassNull);
+    einterp->lagrangePts->units=0;
+    einterp->lagrangePts->exponents=0;
+    einterp->lagrangePts->convert=0;
+    einterp->lagrangePts->data=0;
+    
+    einterp->lagrangePts->data = malloc( (size_t)nnodes * edim * sizeof(double) );
+    if (!einterp->lagrangePts->data) {
+        cgi_error("Error allocating %" PRIdCGSIZE " bytes for LagrangeControlPoints data",
+                  (cgsize_t)((size_t)nnodes * edim * sizeof(double)));
+        CGNS_FREE(einterp->lagrangePts);
+        einterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
+    data = (double*)einterp->lagrangePts->data;
+
+    /* Pack separate coordinate columns into interleaved flat array */
+    double *cols_w[] = {pu, pv, pw};
+    cgi_pack_lagrange(nnodes, edim, cols_w, NULL, data);
+
+    /* write to disk */
+    if (cgi_new_node(einterp->id, einterp->lagrangePts->name, "DataArray_t", &einterp->lagrangePts->id,
+        einterp->lagrangePts->data_type, einterp->lagrangePts->data_dim, einterp->lagrangePts->dim_vals,
+        einterp->lagrangePts->data)) {
+        /* Free allocated memory on error (free(NULL) is a no-op) */
+        free(einterp->lagrangePts->data);
+        CGNS_FREE(einterp->lagrangePts);
+        einterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Count ElementInterpolation_t nodes for specific element type
+ *
+ * Counts how many ElementInterpolation_t nodes exist for a given element
+ * type within a family.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[in]  t   Element type to search for
+ * \param[out] cnt Count of matching interpolation nodes
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Typically, there should be at most one ElementInterpolation_t per element
+ * type per family. This function helps verify uniqueness.
+ */
+int cg_element_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t, int *cnt)
+{
+    int n;
+    cgns_family *family;
+    cgns_elementInterpolation *ei;
+    
+    // Default
+    *cnt = 0;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (!family->nelementinterpolation) return CG_OK;
+
+    for (n = 0 ; n < family->nelementinterpolation ; n++)
+    {
+        ei = &family->elementinterpolations[n];
+        
+        if (ei->type == t)
+        {
+            *cnt = 1;
+            return CG_OK;
+        }
+    }
+    return CG_OK;
+}
+
 /*----------------------------------------------------------------------*/
+/* CPEX 045 - Internal Helper Functions */
+
+/*
+ * Internal helper to compute basis size for element interpolation.
+ *
+ * This internal function provides a unified implementation for computing
+ * the number of basis functions (or control points) for high-order elements.
+ *
+ * Parameters:
+ *   t     - Element type
+ *   order - Polynomial order (use -1 to infer from element type)
+ *   sz    - Output: Number of basis functions
+ *
+ * Returns: CG_OK on success, CG_ERROR on failure
+ *
+ * This is the single source of truth for basis size calculation, used by:
+ * - cg_element_lagrange_interpolation_size (order inferred from type)
+ * - cg_solution_lagrange_interpolation_size (explicit order specified)
+ *
+ * When order = -1, the function uses cg_npe() to get the size from element type.
+ * When order >= 0, the function uses cg_npe_ho() with the specified order.
+ */
+static int cgi_get_basis_size(CGNS_ENUMT(ElementType_t) t, int order, int *sz)
+{
+    int npe;
+    int result;
+
+    if (order < 0) {
+        /* Infer size from element type */
+        result = cg_npe(t, &npe);
+    } else {
+        /* Use explicit order */
+        result = cg_npe_ho(t, order, &npe);
+    }
+
+    if (result == CG_OK) {
+        *sz = npe;
+    }
+    return result;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX 045 - Public API */
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Get cardinality of Lagrange basis for element type
+ *
+ * Returns the cardinality (number of control points) for a given high-order element type.
+ *
+ * \param[in]  t  Element type (e.g., QUAD_9, HEXA_27, TRI_10)
+ * \param[out] sz Cardinality of the basis (number of control points, NOT byte size)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Returns the cardinality of the Lagrange basis for various element types.
+ * This is the number of control points required for interpolation, not the
+ * memory size in bytes.
+ *
+ * **Example Cardinalities:**
+ * - QUAD_9: 9 points (polynomial degree 2, tensor product)
+ * - QUAD_16: 16 points (polynomial degree 3, tensor product)
+ * - QUAD_25: 25 points (polynomial degree 4, tensor product)
+ * - HEXA_27: 27 points (polynomial degree 2, tensor product)
+ * - HEXA_64: 64 points (polynomial degree 3, tensor product)
+ * - TRI_10: 10 points (polynomial degree 3, Pascal triangle)
+ * - TETRA_20: 20 points (polynomial degree 3, tetrahedral)
+ * - QUAD_8: 8 points (polynomial degree 2, serendipity)
+ * - HEXA_20: 20 points (polynomial degree 2, serendipity)
+ *
+ * **Usage:** Use this function to determine the array size before allocating
+ * memory for cg_element_interpolation_points_read() or
+ * cg_element_interpolation_points_write().
+ *
+ * **Memory Allocation:** To allocate an array in bytes:
+ * \code
+ * int npts;
+ * cg_element_lagrange_interpolation_size(QUAD_9, &npts);
+ * double *pu = malloc(npts * sizeof(double));
+ * \endcode
+ */
+int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
+                                           int *sz)
+{
+    int result = cgi_get_basis_size(t, -1, sz);
+    return result;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Read solution interpolation metadata
+ *
+ * Reads the properties of a SolutionInterpolation_t node which defines
+ * high-order polynomial interpolation for solution fields, including
+ * optional temporal (time) interpolation.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  sn        SolutionInterpolation index (1-based)
+ * \param[out] node_name Name of the SolutionInterpolation_t node. **MUST** be a buffer
+ *                       of at least 33 bytes (char[33]) to store max 32 chars + null terminator.
+ * \param[out] et        Element type for this interpolation
+ * \param[out] os        Spatial interpolation degree
+ * \param[out] ot        Temporal interpolation degree (0 if no temporal)
+ * \param[out] it        Interpolation type (ParametricLagrange, ParametricMonomialsPascal, etc.)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function reads metadata about solution-level interpolation. Solution
+ * interpolation can include both spatial and temporal dimensions, allowing
+ * for space-time interpolation of flow variables.
+ *
+ * For nodal (Lagrange) interpolation, use cg_solution_interpolation_points_read()
+ * to retrieve control point coordinates. Modal (monomial) interpolation stores
+ * no array: the basis is fixed by the element dimension, the degrees and the
+ * Pascal traversal order, so there is nothing to read.
+ *
+ * Example:
+ * \code
+ * char interp_name[33];
+ * CGNS_ENUMT(ElementType_t) elem_type;
+ * CGNS_ENUMT(InterpolationType_t) interp_type;
+ * int spatial_degree, temporal_degree;
+ * cg_solution_interpolation_read(fn, bn, fam, 1, interp_name, &elem_type,
+ *                                &spatial_degree, &temporal_degree, &interp_type);
+ * \endcode
+ */
+int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,
+                                   CGNS_ENUMT(ElementType_t)* et, int *os, int *ot, 
+                                   CGNS_ENUMT(InterpolationType_t) *it)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (sn > family->nsolutioninterpolation || sn <= 0) { cgi_error("Solution interpolation index %d out of range (1-%d)", sn, family->nsolutioninterpolation); return CG_ERROR; }
+    sn--;
+    
+    cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
+    
+    /* Get Name */
+    snprintf(node_name, CG_MAX_NAME_LENGTH, "%s", es->name);
+    
+    /* Get Element Type: the stored tag as written, not its basic type --
+     * a SolutionInterpolation_t may be keyed by a high-order tag directly. */
+    *et = es->type;
+    
+    /* Get Element Orders */
+    *os = es->spatialDegree;
+    *ot = es->temporalDegree;
+    
+    /* Get Interpolation Type Name */
+    *it = es->interpolationName;
+    
+    
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Read Lagrange control points for solution interpolation
+ *
+ * Reads the parametric coordinates of Lagrange control points for solution
+ * interpolation, including optional temporal coordinates for space-time
+ * interpolation.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[in]  sn  SolutionInterpolation index (1-based)
+ * \param[out] pu  Pre-allocated array to receive u-coordinates. Caller must allocate
+ *                 with size from cg_solution_lagrange_interpolation_size(). Cannot be NULL.
+ * \param[out] pv  Pre-allocated array to receive v-coordinates. Required for 2D/3D elements.
+ *                 Pass NULL for 1D elements.
+ * \param[out] pw  Pre-allocated array to receive w-coordinates. Required for 3D elements.
+ *                 Pass NULL for 1D/2D elements.
+ * \param[out] pt  Pre-allocated array to receive temporal coordinates. Required if
+ *                 TemporalDegree > 0. Pass NULL if TemporalDegree = 0 (no temporal interpolation).
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Reads the LagrangeControlPoints array from a SolutionInterpolation_t node.
+ * The array size must be determined first using cg_solution_lagrange_interpolation_size().
+ *
+ * **Memory Management:** The caller is responsible for allocating all non-NULL arrays
+ * before calling this function. Each array must have size equal to the total cardinality
+ * (spatial × temporal) returned by cg_solution_lagrange_interpolation_size().
+ *
+ * **NULL Pointer Rules:**
+ * - pu: Always required (cannot be NULL)
+ * - pv: Required for 2D/3D elements; pass NULL for 1D
+ * - pw: Required for 3D elements; pass NULL for 1D/2D
+ * - pt: Required if TemporalDegree > 0; pass NULL if TemporalDegree = 0
+ *
+ * **Space-Time Data Layout:**
+ * For space-time interpolation (TemporalDegree > 0), control points form a tensor
+ * product in space and time:
+ * - Total points = spatial_points × (TemporalDegree + 1)
+ * - spatial_points = basis cardinality for the element type at SpatialDegree
+ * - The arrays pu, pv, pw contain ALL spatial coordinates for ALL time levels
+ * - The array pt contains the corresponding temporal coordinate for each point
+ *
+ * **Example:** 2D QUAD_9 with SpatialDegree=2, TemporalDegree=1:
+ * - Total points = 9 × 2 = 18
+ * - pu[0..8] = u-coords at t=0, pu[9..17] = u-coords at t=1
+ * - pv[0..8] = v-coords at t=0, pv[9..17] = v-coords at t=1
+ * - pt[0..8] = 0.0, pt[9..17] = 1.0
+ *
+ * **Coordinate Ordering:** Control points within each time level are ordered
+ * according to CPEX0045 conventions (Pascal Triangle for simplicial, tensor
+ * product for hexahedral).
+ *
+ * **Temporal Coordinates:** Typically normalized to [0,1]. For higher temporal
+ * degrees, intermediate levels are included (e.g., TemporalDegree=2 uses t=0, 0.5, 1).
+ *
+ * Example for QUAD_9 with temporal_degree=1:
+ * \code
+ * int npts;
+ * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
+ * double *pu = malloc(npts * sizeof(double));
+ * double *pv = malloc(npts * sizeof(double));
+ * double *pt = malloc(npts * sizeof(double));
+ * cg_solution_interpolation_points_read(fn, bn, fam, 1, pu, pv, NULL, pt);
+ * // ... use arrays ...
+ * free(pu); free(pv); free(pt);
+ * \endcode
+ */
+int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
+                                          double *pu, double *pv, double *pw, double *pt)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (sn > family->nsolutioninterpolation || sn <= 0) { cgi_error("Solution interpolation index %d out of range (1-%d)", sn, family->nsolutioninterpolation); return CG_ERROR; }
+    sn--;
+    
+    cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
+    
+    /* Get orders */
+    int so = es->spatialDegree;
+    int to = es->temporalDegree;
+    
+    /* Get lagrange Points array */
+    cgns_array *lpts = es->lagrangePts;
+
+    /* CPEX-0045: an IsoParametric solution takes the mesh basis, and the
+     * referenced ElementInterpolation_t is required to exist in the family.  The
+     * control points therefore *are* in the file, one documented indirection
+     * away, and the indirection is what IsoParametric means -- so resolve the
+     * reference and return that node's points rather than reporting this node's
+     * own lack of an array.  This differs from the mesh-side call, where an
+     * IsoParametric node has no points stored anywhere.
+     *
+     * CG_NODE_NOT_FOUND is still returned when the referenced
+     * ElementInterpolation_t is itself IsoParametric: nothing is stored
+     * anywhere, and the standard equidistant lattice on the element's reference
+     * domain applies. */
+    if (!lpts && es->interpolationName == CGNS_ENUMV(IsoParametric))
+    {
+        CGNS_ENUMT(ElementType_t) basic;
+        int n, match = -1, nmatch = 0;
+
+        if (cg_element_basic_element_type(es->type, &basic)) return CG_ERROR;
+
+        for (n = 0; n < family->nelementinterpolation; n++)
+        {
+            CGNS_ENUMT(ElementType_t) ebasic;
+            cgns_elementInterpolation *ei = &family->elementinterpolations[n];
+
+            /* The solution node stores the basic tag, whereas an
+             * ElementInterpolation_t stores its exact (possibly high-order)
+             * tag, so compare on the basic tag of each. */
+            if (cg_element_basic_element_type(ei->type, &ebasic)) continue;
+            if (ebasic != basic) continue;
+
+            nmatch++;
+            if (match < 0) match = n;
+        }
+
+        /* CPEX-0045 resolves IsoParametric per element, by *exact* tag, and this
+         * call has no element: it addresses the solution node by index and the
+         * stored tag is the basic one.  Where the family carries more than one
+         * geometric order of that family -- TETRA_10 and TETRA_35, say -- the
+         * question has no single answer, and returning the first found would make
+         * it depend on a child order the SIDS does not constrain.  Report the
+         * ambiguity; a caller wanting a particular order reads the mesh node
+         * directly, by its exact tag. */
+        if (nmatch > 1) {
+            cgi_error("SolutionInterpolation '%s' is IsoParametric and the family "
+                      "carries %d ElementInterpolation_t nodes of the %s family, so "
+                      "the control points it refers to are ambiguous; read the "
+                      "ElementInterpolation_t for the element's exact type instead",
+                      es->name, nmatch, cg_ElementTypeName(basic));
+            return CG_ERROR;
+        }
+        if (nmatch == 1) {
+            cgns_elementInterpolation *ei = &family->elementinterpolations[match];
+            int have, want;
+
+            if (ei->lagrangePts == NULL) {
+                /* Mesh node is itself IsoParametric -- reduces to the mesh case */
+                return CG_NODE_NOT_FOUND;
+            }
+
+            /* cg_element_interpolation_points_read() below fills pu/pv/pw with
+             * cg_npe(ei->type) points -- the mesh node's exact (possibly
+             * high-order) point count -- while the caller sized those buffers
+             * from cg_solution_lagrange_interpolation_size(es->type, so, to),
+             * the documented sizing contract for this function.  Nothing ties
+             * "so" to the geometric order of the ElementInterpolation_t this
+             * IsoParametric node happens to resolve to, so without this check
+             * a caller whose degree does not match the mesh order gets a
+             * buffer overrun instead of a diagnosable error. */
+            if (cg_npe(ei->type, &have) != CG_OK) return CG_ERROR;
+            if (cg_solution_lagrange_interpolation_size(es->type, so, to, &want) != CG_OK)
+                return CG_ERROR;
+            if (have != want) {
+                cgi_error("SolutionInterpolation '%s' is IsoParametric at degree %d "
+                          "(%d control points expected) but resolves to "
+                          "ElementInterpolation_t '%s' of type %s, which carries %d; "
+                          "the degrees must agree", es->name, so, want, ei->name,
+                          cg_ElementTypeName(ei->type), have);
+                return CG_ERROR;
+            }
+
+            return cg_element_interpolation_points_read(fn, bn, fam, match + 1,
+                                                       pu, pv, pw);
+        }
+
+        cgi_error("SolutionInterpolation '%s' is IsoParametric but the family "
+                  "carries no ElementInterpolation_t for element type %s",
+                  es->name, cg_ElementTypeName(es->type));
+        return CG_ERROR;
+    }
+
+    /* Has Node ? */
+    if (!lpts)
+    {
+        return CG_NODE_NOT_FOUND;
+    }
+
+    /* Get Array dim */
+    int pdim = lpts->dim_vals[0];
+    int expected_array_dim;
+
+    /* Get Element Node Count */
+    int npe = lpts->dim_vals[1];
+
+    /* Sanity Check */
+    int sz=0;
+    int dim;
+    if (cg_element_dimension(es->type, &dim) != CG_OK) return CG_ERROR;
+    if (cg_solution_lagrange_interpolation_size(es->type, so, to, &sz) != CG_OK) return CG_ERROR;
+
+    /* Expected array dimension: spatial dimension + (1 if temporal) */
+    expected_array_dim = dim + (to ? 1 : 0);
+
+    /* Validate array dimension matches expectation */
+    if (pdim != expected_array_dim)
+    {
+        cgi_error("dimension mismatch in LagrangeControlPoints array.\n"
+                  "SolutionInterpolation_t name = %s\n"
+                  "Expected dimension (spatial=%d + temporal=%d): %d\n"
+                  "Actual dimension: %d",
+                  es->name, dim, (to ? 1 : 0), expected_array_dim, pdim);
+        return CG_ERROR;
+    }
+
+    /* An upper bound, not an equality: an incomplete (serendipity) space carries
+     * fewer control points than the complete space of the same degree -- an
+     * edge-serendipity QUAD at p=2 has 4p = 8 against (p+1)^2 = 9 -- and this
+     * standard supports those.  A set larger than the complete space cannot be
+     * unisolvent for a degree-p space and is always wrong.  Callers obtain the
+     * actual count from cg_solution_interpolation_npoints_read. */
+    if (npe > sz)
+    {
+        cgi_error("LagrangeControlPoints of SolutionInterpolation_t '%s' holds %d "
+                  "points, more than the %d of the complete space at degree %d; "
+                  "such a set cannot be unisolvent", es->name, npe, sz, so);
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_spatial_ptrs(dim, es->type, pu, pv, pw)) return CG_ERROR;
+    if (to && !pt) {
+        cgi_error("pt parameter cannot be NULL when TemporalDegree = %d (space-time interpolation)",
+                  to);
+        return CG_ERROR;
+    }
+
+    /* Unpack interleaved flat array into separate coordinate columns */
+    double *s_cols_r[] = {pu, pv, pw};
+    cgi_unpack_lagrange(npe, dim, s_cols_r, (to > 0 ? pt : NULL),
+                        (const double *)lpts->data);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Number of control points stored by a SolutionInterpolation_t
+ *
+ * Returns the slow axis of the node's LagrangeControlPoints array -- the number
+ * of control points actually stored, which for CPEX-0045 ParametricLagrange is
+ * also the per-element degree-of-freedom count N_DOFs.
+ *
+ * This is not derivable from the element type and degree: the stored tag is
+ * normalised to the basic one and this standard supports incomplete
+ * (serendipity) spaces, so an edge-serendipity QUAD at p=2 carries 8 points
+ * where the complete space carries 9.  The array is the only place that
+ * distinction is recorded, and a caller must know the count both to size the
+ * buffers cg_solution_interpolation_points_read fills and to size a high-order
+ * field array.
+ *
+ * \param[in]  fn   CGNS file index number
+ * \param[in]  bn   Base index number (1-based)
+ * \param[in]  fam  Family index number (1-based)
+ * \param[in]  sn   SolutionInterpolation index (1-based)
+ * \param[out] npts Number of control points; 0 when there is no array
+ * \return CG_OK; CG_NODE_NOT_FOUND when the node stores no LagrangeControlPoints
+ *         (a modal or IsoParametric node), CG_ERROR on failure
+ */
+int cg_solution_interpolation_npoints_read(int fn, int bn, int fam, int sn,
+                                           int *npts)
+{
+    cgns_family *family;
+    cgns_solutionInterpolation *es;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (sn > family->nsolutioninterpolation || sn <= 0) {
+        cgi_error("Solution interpolation index %d out of range (1-%d)", sn,
+                  family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+
+    if (npts == 0) {
+        cgi_error("npts parameter cannot be NULL");
+        return CG_ERROR;
+    }
+    *npts = 0;
+
+    es = &family->solutioninterpolations[sn-1];
+    if (es->lagrangePts == 0 || es->lagrangePts->data_dim != 2)
+        return CG_NODE_NOT_FOUND;
+
+    *npts = (int)es->lagrangePts->dim_vals[1];
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Get number of SolutionInterpolation_t nodes in a family
+ *
+ * Returns the count of SolutionInterpolation_t nodes defined under a Family_t.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[out] ns  Number of SolutionInterpolation_t nodes
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Use this function to determine how many solution interpolation definitions
+ * exist in the specified family.
+ */
+int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    *ns = family->nsolutioninterpolation;
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Write solution interpolation metadata
+ *
+ * Creates a SolutionInterpolation_t node under a Family_t to define
+ * high-order polynomial interpolation for solution fields, with optional
+ * temporal (time) interpolation.
+ *
+ * \param[in]  fn        CGNS file index number
+ * \param[in]  bn        Base index number (1-based)
+ * \param[in]  fam       Family index number (1-based)
+ * \param[in]  node_name Name for the SolutionInterpolation_t node
+ * \param[in]  et        Element type (e.g., QUAD_9, HEXA_27, TRI_10)
+ * \param[in]  os        Spatial interpolation degree
+ * \param[in]  ot        Temporal interpolation degree (0 for no temporal, 1+ for space-time)
+ * \param[in]  it        Interpolation type (see InterpolationType_t enumeration)
+ * \param[out] sn        Index of created SolutionInterpolation node (1-based)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function creates the metadata node for solution interpolation.
+ * After calling this, use cg_solution_interpolation_points_write() for
+ * nodal (Lagrange) interpolation.  Modal (monomial) interpolation needs no
+ * further call: the basis is fully determined by the element dimension, the
+ * degrees and the Pascal traversal order.
+ *
+ * **Element Type:** Should be a high-order element such as QUAD_9, HEXA_27, TRI_10, etc.
+ * The spatial degree typically matches the element order (e.g., os=2 for QUAD_9).
+ *
+ * **Temporal Interpolation (Space-Time):**
+ * Set ot > 0 for time-dependent problems:
+ * - ot = 0: Purely spatial interpolation
+ * - ot = 1: Linear temporal interpolation (2 time levels)
+ * - ot = 2: Quadratic temporal interpolation (3 time levels)
+ * - ot = 3: Cubic temporal interpolation (4 time levels)
+ *
+ * **Interpolation Types (InterpolationType_t):**
+ * The it parameter specifies the interpolation method. Valid values from the
+ * InterpolationType_t enumeration include:
+ * - CGNS_ENUMV(ParametricLagrange): Nodal Lagrange interpolation with control
+ *   points in parametric space (most common for FEM/DG methods)
+ * - CGNS_ENUMV(ParametricMonomialsPascal): Modal monomial basis in parametric
+ *   space (useful for spectral methods)
+ * - CGNS_ENUMV(CartesianMonomialsPascal): Modal monomial basis in physical/Cartesian
+ *   space
+ *
+ * **Note for Fortran Users:** If not using the CGNS_ENUMV macro, you can pass
+ * the integer value corresponding to the interpolation type enumeration.
+ *
+ * **Example for space-time Lagrange interpolation:**
+ * \code
+ * int sinterp;
+ * cg_solution_interpolation_write(fn, bn, fam, "SpaceTime_Interp",
+ *                                 QUAD_9, 2, 1,
+ *                                 CGNS_ENUMV(ParametricLagrange), &sinterp);
+ * \endcode
+ */
+int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
+                                    CGNS_ENUMT(ElementType_t) et, int os, int ot,
+                                    CGNS_ENUMT(InterpolationType_t) it, int *sn )
+{
+    int n;
+    double dummy_id;
+    int array[3];
+    cgsize_t dim_vals;
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp, *tmpinterp;
+    CGNS_ENUMT(ElementType_t) type;
+
+    *sn = -1;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check Element Type
+    if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
+        cgi_error("Invalid solution type for Element interpolation (%s)",cg_ElementTypeName(et));
+        return CG_ERROR;
+    }
+    // Check Interpolation Type
+    if (INVALID_ENUM(it,NofValidInterpolationTypes)) {
+        cgi_error("Invalid solution Interpolation type.");
+        return CG_ERROR;
+    }
+    /* Bound the degrees here, where they enter the file.  Every path that later
+     * sizes this basis -- cg_npe_ho(), cg_solution_lagrange_interpolation_size(),
+     * cg_solution_monomial_size() -- rejects anything outside [0, CG_MAX_ORDER],
+     * so without this check the writer accepts a degree that makes its own file
+     * impossible to size on read. */
+    if (os < 0 || os > CG_MAX_ORDER || ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Interpolation degrees (spatial=%d, temporal=%d) out of valid range [0, %d]",
+                  os, ot, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
+
+    /* CPEX-0045: CartesianMonomialsPascal is defined only where the base's
+     * CellDimension equals its PhysDim.  Its cardinality counts monomials in the
+     * element dimension while its basis is built in the physical frame, and where
+     * those differ -- a surface mesh in 3D -- the monomials restricted to the
+     * cell are linearly dependent and nothing selects which axes the local frame
+     * keeps.  The parametric types are unaffected: they live in the reference
+     * domain, whose dimension is the element dimension by construction. */
+    if (it == CGNS_ENUMV(CartesianMonomialsPascal) &&
+        cg->base[bn-1].cell_dim != cg->base[bn-1].phys_dim) {
+        cgi_error("CartesianMonomialsPascal requires CellDimension == PhysDim; "
+                  "this base has %d and %d", cg->base[bn-1].cell_dim,
+                  cg->base[bn-1].phys_dim);
+        return CG_ERROR;
+    }
+
+    // Get Basic type
+    if (cg_element_basic_element_type(et,&type) != CG_OK) {
+        return CG_ERROR;
+    }
+
+    // Already exists ?
+    sinterp = 0;
+    for (n = 0 ; n<family->nsolutioninterpolation ; n++)
+    {
+        tmpinterp = &family->solutioninterpolations[n];
+        if (tmpinterp->type == type && os == tmpinterp->spatialDegree &&
+            ot == tmpinterp->temporalDegree )
+        {
+            if (cg->mode==CG_MODE_WRITE)
+            {
+                cgi_error("SolutionInterpolation_t already defined under Family_t.");
+                return CG_ERROR;
+            }
+            // Modify existing ?
+            else if ( cg->mode==CG_MODE_MODIFY )
+            {
+                if (cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
+                cgi_free_solution_interpolation(tmpinterp);
+                sinterp = tmpinterp;
+                *sn = n+1;
+                break;
+            }
+            else
+            {
+                cgi_error("Only one SolutionInterpolation_t node allowed per (ElementType_t,spatialDegree,temporalDegree) !\n");
+                return CG_ERROR;
+            }
+        }
+        
+    }
+    
+    // Create New ?
+    if (!sinterp)
+    {
+        if (family->nsolutioninterpolation == 0) {
+            family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation+1);
+        } else {
+            family->solutioninterpolations = CGNS_RENEW(cgns_solutionInterpolation, family->nsolutioninterpolation+1, family->solutioninterpolations);
+        }
+        sinterp = &(family->solutioninterpolations[family->nsolutioninterpolation]);
+        family->nsolutioninterpolation++;
+        *sn = family->nsolutioninterpolation;
+    }
+    
+    // Fill internal structure
+    memset(sinterp,0,sizeof(cgns_solutionInterpolation));
+    snprintf(sinterp->name, sizeof(sinterp->name), "%s", node_name);
+    sinterp->type = type;
+    sinterp->spatialDegree = os;
+    sinterp->temporalDegree= ot;
+    sinterp->interpolationName = it;
+
+    // Write SolutionInterpolation_t node
+    dim_vals = 3;
+    array[0] = (int)type;
+    array[1] = os;
+    array[2] = ot;
+    if (cgi_new_node(family->id, sinterp->name, "SolutionInterpolation_t",
+                         &sinterp->id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+    
+    /* Write the InterpolationType_t node.  A labelled enumeration node carries
+     * the enumerator's *name* as a C1 string, exactly as GridLocation_t and
+     * DataClass_t do; the numeric value is a source-level constant and never
+     * reaches the file. */
+    {
+        const char *it_name = cg_InterpolationTypeName(it);
+        dim_vals = (cgsize_t)strlen(it_name);
+        if (cgi_new_node(sinterp->id, "InterpolationType", "InterpolationType_t",
+                         &dummy_id, "C1", 1, &dim_vals, it_name))
+            return CG_ERROR;
+    }
+
+    
+    
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Write Lagrange control points for solution interpolation
+ *
+ * Writes parametric coordinates of Lagrange control points for solution
+ * interpolation, including optional temporal coordinates for space-time
+ * interpolation.
+ *
+ * \param[in] fn  CGNS file index number
+ * \param[in] bn  Base index number (1-based)
+ * \param[in] fam Family index number (1-based)
+ * \param[in] sn  SolutionInterpolation index (1-based)
+ * \param[in] npts Number of control points supplied, i.e. the slow axis of the
+ *                array to be written.  For a complete space this is
+ *                cg_solution_lagrange_interpolation_size(); for an incomplete
+ *                (serendipity) space it is smaller, and it must be given because
+ *                nothing else in the node records it.  Must be a positive
+ *                multiple of TemporalDegree+1, and its spatial part must not
+ *                exceed the complete space of the declared degree.
+ * \param[in] pu  Array of u-coordinates, ordered according to CPEX0045 space-time convention.
+ *                Caller-allocated, npts entries.  Cannot be NULL.
+ * \param[in] pv  Array of v-coordinates. Required for 2D/3D elements.
+ *                Pass NULL for 1D elements.
+ * \param[in] pw  Array of w-coordinates. Required for 3D elements.
+ *                Pass NULL for 1D/2D elements.
+ * \param[in] pt  Array of temporal coordinates. Required if TemporalDegree > 0.
+ *                Pass NULL if TemporalDegree = 0 (purely spatial).
+ * \return    CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Writes the LagrangeControlPoints array to a SolutionInterpolation_t node.
+ * For space-time interpolation, control points form a tensor product of spatial
+ * and temporal bases.
+ *
+ * **Memory Management:** The caller must allocate all arrays before calling this
+ * function, each holding npts entries.  For a complete space
+ * cg_solution_lagrange_interpolation_size() gives that number (spatial × temporal
+ * cardinality); an incomplete space carries fewer.
+ *
+ * **NULL Pointer Rules:**
+ * - pu: Always required (cannot be NULL)
+ * - pv: Required for 2D/3D; pass NULL for 1D
+ * - pw: Required for 3D; pass NULL for 1D/2D
+ * - pt: Required if TemporalDegree > 0; pass NULL if TemporalDegree = 0
+ *
+ * **Space-Time Data Layout:**
+ * Arrays store the tensor product of spatial and temporal control points.
+ * Total size = spatial_cardinality × (TemporalDegree + 1).
+ *
+ * **Ordering Convention:**
+ * - Spatial ordering within each time level follows CPEX0045 (Pascal triangle for
+ *   simplicial, tensor product for hexahedral)
+ * - Time levels are ordered sequentially (all points at t=0, then t=1, etc.)
+ * - See cg_element_interpolation_points_write() for spatial ordering details
+ *
+ * **Example for QUAD_9 with TemporalDegree=1 (18 total points):**
+ * \code
+ * // 9 spatial points × 2 temporal levels = 18 total points
+ * int npts;
+ * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
+ * double pu[18], pv[18], pt[18];
+ * int idx = 0;
+ * double u_vals[3] = {-1, 0, 1};
+ * double v_vals[3] = {-1, 0, 1};
+ * double t_vals[2] = {0.0, 1.0};  // Two time levels
+ *
+ * // Tensor product: time varies slowest
+ * for (int t = 0; t < 2; t++) {
+ *     for (int j = 0; j < 3; j++) {          // v-direction
+ *         for (int i = 0; i < 3; i++) {      // u-direction (varies fastest)
+ *             pu[idx] = u_vals[i];
+ *             pv[idx] = v_vals[j];
+ *             pt[idx] = t_vals[t];
+ *             idx++;
+ *         }
+ *     }
+ * }
+ * cg_solution_interpolation_points_write(fn, bn, fam, sinterp, 18, pu, pv, NULL, pt);
+ * \endcode
+ *
+ * \note For 2D elements with temporal interpolation, pass NULL for pw (not for pt).
+ * The spatial and temporal dimensions are handled separately.
+ *
+ * \note Refer to CPEX0045 specification for detailed ordering conventions.
+ */
+int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
+                                           int npts,
+                                           double *pu, double *pv, double *pw,
+                                           double *pt)
+{
+    int ot,os,edim;
+    int nnodes;
+    double *data;
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check
+    if (sn > family->nsolutioninterpolation || sn <= 0)
+    {
+        cgi_error("Want to access an inexistent solution interpolation id (%d/%d)",sn,
+                   family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+    sn--;
+    
+    sinterp = &family->solutioninterpolations[sn];
+    ot = sinterp->temporalDegree;
+    os = sinterp->spatialDegree;
+
+    /* CPEX-0045: LagrangeControlPoints only make sense for nodal (Lagrange)
+     * interpolation.  A modal basis stores no array, and an IsoParametric
+     * solution takes its points from the mesh node it resolves to. */
+    if (sinterp->interpolationName == CGNS_ENUMV(ParametricMonomialsPascal) ||
+        sinterp->interpolationName == CGNS_ENUMV(CartesianMonomialsPascal)) {
+        cgi_error("LagrangeControlPoints cannot be written to a SolutionInterpolation_t "
+                  "node whose InterpolationType is %s; a modal basis stores no "
+                  "array.",
+                  cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+    if (sinterp->interpolationName == CGNS_ENUMV(IsoParametric)) {
+        cgi_error("LagrangeControlPoints cannot be written to a SolutionInterpolation_t "
+                  "node whose InterpolationType is IsoParametric; an IsoParametric "
+                  "solution takes its points from the mesh node it resolves to.");
+        return CG_ERROR;
+    }
+
+    if ( cg_element_dimension(sinterp->type,&edim)) {
+         return CG_ERROR;
+    }
+
+    /* The three extent conditions a conforming reader checks, applied here so a
+     * malformed array is never written.  The last is an upper bound, not an
+     * equality: an incomplete (serendipity) space carries fewer points than the
+     * complete space of the same degree, and requiring equality would make those
+     * spaces -- which this standard supports -- unwritable. */
+    if ( cg_solution_lagrange_interpolation_size(sinterp->type,os,ot,&nnodes)) {
+         return CG_ERROR;
+    }
+    if (npts <= 0 || npts % (ot + 1) != 0) {
+        cgi_error("npts = %d is not a positive multiple of TemporalDegree+1 = %d "
+                  "for SolutionInterpolation_t '%s'", npts, ot + 1, sinterp->name);
+        return CG_ERROR;
+    }
+    if (npts > nnodes) {
+        cgi_error("npts = %d exceeds the %d control points of the complete space "
+                  "at degree %d for SolutionInterpolation_t '%s'; such a set "
+                  "cannot be unisolvent", npts, nnodes, os, sinterp->name);
+        return CG_ERROR;
+    }
+    nnodes = npts;
+
+    // NULL pointer validation with clear error messages
+    if (!pu) {
+        cgi_error("pu parameter cannot be NULL for element type %s",
+                  cg_ElementTypeName(sinterp->type));
+        return CG_ERROR;
+    }
+    if (edim > 1 && !pv) {
+        cgi_error("pv parameter cannot be NULL for 2D/3D element type %s",
+                  cg_ElementTypeName(sinterp->type));
+        return CG_ERROR;
+    }
+    if (edim > 2 && !pw) {
+        cgi_error("pw parameter cannot be NULL for 3D element type %s",
+                  cg_ElementTypeName(sinterp->type));
+        return CG_ERROR;
+    }
+    if (ot && !pt) {
+        cgi_error("pt parameter cannot be NULL when TemporalDegree = %d (space-time interpolation)",
+                  ot);
+        return CG_ERROR;
+    }
+    
+    /* Reject a second LagrangeControlPoints write only in CG_MODE_WRITE; in
+     * CG_MODE_MODIFY the existing node is deleted and replaced below. */
+    if (sinterp->lagrangePts != NULL && cg->mode == CG_MODE_WRITE) {
+        cgi_error("LagrangeControlPoints already written for "
+                  "SolutionInterpolation_t node '%s'. Open the file in "
+                  "CG_MODE_MODIFY to replace.", sinterp->name);
+        return CG_ERROR;
+    }
+
+    // Allocate and fill memory structure
+    if (sinterp->lagrangePts)
+    {
+        if (cgi_delete_node(sinterp->id,sinterp->lagrangePts->id)) return CG_ERROR;
+        /* see cg_element_interpolation_points_write: the replaced node may own
+         * ->data and ->link if it came from the file */
+        cgi_free_array(sinterp->lagrangePts);
+        CGNS_FREE(sinterp->lagrangePts);
+    }
+
+    sinterp->lagrangePts = CGNS_NEW(cgns_array, 1);
+    memset(sinterp->lagrangePts, 0, sizeof(cgns_array));
+    
+    /* Save data */
+    snprintf(sinterp->lagrangePts->name, sizeof(sinterp->lagrangePts->name), "%s", "LagrangeControlPoints");
+    snprintf(sinterp->lagrangePts->data_type, sizeof(sinterp->lagrangePts->data_type), "%s", "R8");
+    sinterp->lagrangePts->data_dim = 2;
+    sinterp->lagrangePts->dim_vals[0] = edim + (ot ? 1 : 0);
+    sinterp->lagrangePts->dim_vals[1] = nnodes;
+    
+     /* initialize other fields */
+    sinterp->lagrangePts->link=0;
+    sinterp->lagrangePts->ndescr=0;
+    sinterp->lagrangePts->data_class=CGNS_ENUMV(DataClassNull);
+    sinterp->lagrangePts->units=0;
+    sinterp->lagrangePts->exponents=0;
+    sinterp->lagrangePts->convert=0;
+    sinterp->lagrangePts->data=0;
+    
+    sinterp->lagrangePts->data = malloc( (size_t)nnodes * (edim + (ot ? 1 : 0)) * sizeof(double) );
+    if (!sinterp->lagrangePts->data) {
+        cgi_error("Error allocating %" PRIdCGSIZE " bytes for LagrangeControlPoints data",
+                  (cgsize_t)((size_t)nnodes * (edim + (ot ? 1 : 0)) * sizeof(double)));
+        CGNS_FREE(sinterp->lagrangePts);
+        sinterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
+    data = (double*)sinterp->lagrangePts->data;
+
+    /* Pack separate coordinate columns into interleaved flat array */
+    double *s_cols_w[] = {pu, pv, pw};
+    cgi_pack_lagrange(nnodes, edim, s_cols_w, (ot > 0 ? pt : NULL), data);
+
+    /* write to disk */
+    if (cgi_new_node(sinterp->id, sinterp->lagrangePts->name, "DataArray_t", &sinterp->lagrangePts->id,
+                     sinterp->lagrangePts->data_type, sinterp->lagrangePts->data_dim, sinterp->lagrangePts->dim_vals,
+                     sinterp->lagrangePts->data)) {
+        /* Free allocated memory on error (free(NULL) is a no-op) */
+        free(sinterp->lagrangePts->data);
+        CGNS_FREE(sinterp->lagrangePts);
+        sinterp->lagrangePts = 0;
+        return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Count SolutionInterpolation_t nodes for specific element type and orders
+ *
+ * Counts how many SolutionInterpolation_t nodes exist for a given element
+ * type and interpolation degrees within a family.
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number (1-based)
+ * \param[in]  fam Family index number (1-based)
+ * \param[in]  t   Element type to search for
+ * \param[in]  os  Spatial interpolation degree
+ * \param[in]  ot  Temporal interpolation degree (0 for purely spatial)
+ * \param[out] cnt Count of matching interpolation nodes
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * This function helps verify uniqueness of solution interpolation definitions.
+ */
+int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t, 
+                                             int os, int ot, int *cnt)
+{
+    int n;
+    cgns_family *family;
+    cgns_solutionInterpolation *es;
+    
+    // Default
+    *cnt = 0;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (!family->nsolutioninterpolation) return CG_OK;
+    
+    for (n = 0 ; n < family->nsolutioninterpolation ; n++)
+    {
+        es = &family->solutioninterpolations[n];
+        
+        if (es->spatialDegree == os && es->temporalDegree == ot && es->type == t)
+        {
+            *cnt = 1;
+            return CG_OK;
+        }
+    }
+    return CG_OK;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Find a SolutionInterpolation_t node by element type and orders, with
+ *        bidirectional fallback to the basic (linear) element type
+ *
+ * \param[in]  fn  CGNS file index number
+ * \param[in]  bn  Base index number
+ * \param[in]  fam Family index number
+ * \param[in]  et  Element type to look up (e.g. TETRA_10)
+ * \param[in]  os  Spatial interpolation degree
+ * \param[in]  ot  Temporal interpolation degree
+ * \param[out] sn  1-based index of the matching SolutionInterpolation_t node
+ * \param[out] it  InterpolationType of the matching node
+ * \return     CG_OK if found, CG_NODE_NOT_FOUND if neither an exact nor a
+ *             basic-element-type match exists, CG_ERROR on failure
+ *
+ * \details
+ * CPEX-0045 (\ref sec:solution-interpolation) defines the solution
+ * interpolation lookup as bidirectional with fallback: a query for
+ * (TETRA_10, os, ot) first searches for an exact TETRA_10 match and, if
+ * absent, falls back to the basic element tag TETRA_4. This lets a single
+ * basis description cover every geometric order of the same element family.
+ */
+int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) et,
+                                   int os, int ot, int *sn, CGNS_ENUMT(InterpolationType_t) *it)
+{
+    int n;
+    cgns_family *family;
+    cgns_solutionInterpolation *es;
+    CGNS_ENUMT(ElementType_t) basic;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
+        es = &family->solutioninterpolations[n];
+        if (es->type == et && es->spatialDegree == os && es->temporalDegree == ot) {
+            *sn = n + 1;
+            *it = es->interpolationName;
+            return CG_OK;
+        }
+    }
+
+    if (cg_element_basic_element_type(et, &basic) != CG_OK) return CG_ERROR;
+    if (basic != et) {
+        for (n = 0 ; n < family->nsolutioninterpolation ; n++) {
+            es = &family->solutioninterpolations[n];
+            if (es->type == basic && es->spatialDegree == os && es->temporalDegree == ot) {
+                *sn = n + 1;
+                *it = es->interpolationName;
+                return CG_OK;
+            }
+        }
+    }
+
+    return CG_NODE_NOT_FOUND;
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Get cardinality of space-time Lagrange basis for solution interpolation
+ *
+ * Calculates the total cardinality (number of control points) for space-time
+ * solution interpolation, accounting for both spatial and temporal dimensions.
+ *
+ * \param[in]  t  Element type (e.g., QUAD_9, HEXA_27)
+ * \param[in]  os Spatial interpolation degree
+ * \param[in]  ot Temporal interpolation degree (0 for purely spatial, no time)
+ * \param[out] sz Total cardinality (number of control points, NOT byte size)
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * Returns the total cardinality of the space-time Lagrange basis. This is the
+ * number of control points required for interpolation, not the memory size in bytes.
+ *
+ * **Cardinality Formula:**
+ * - Purely spatial (ot=0): sz = spatial_basis_cardinality
+ * - Space-time (ot>0): sz = spatial_basis_cardinality × (ot + 1)
+ *
+ * **Examples:**
+ * - QUAD_9, os=2, ot=0: sz = 9 (purely spatial)
+ * - QUAD_9, os=2, ot=1: sz = 9 × 2 = 18 (linear temporal interpolation)
+ * - QUAD_9, os=2, ot=2: sz = 9 × 3 = 27 (quadratic temporal interpolation)
+ * - HEXA_27, os=2, ot=1: sz = 27 × 2 = 54 (3D space + linear time)
+ *
+ * **Usage:** Use this function to determine array sizes before allocating
+ * memory for cg_solution_interpolation_points_read() or
+ * cg_solution_interpolation_points_write().
+ *
+ * **Memory Allocation:** To allocate arrays in bytes:
+ * \code
+ * int npts;
+ * cg_solution_lagrange_interpolation_size(QUAD_9, 2, 1, &npts);  // npts = 18
+ * double *pu = malloc(npts * sizeof(double));
+ * double *pv = malloc(npts * sizeof(double));
+ * double *pt = malloc(npts * sizeof(double));  // temporal coordinates
+ * \endcode
+ */
+int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t,
+                                           int os, int ot, int *sz)
+{
+    int tmp;
+    int error;
+    long long total;
+
+    /* cgi_get_basis_size() treats any os < 0 as the "infer from element type"
+     * sentinel (routing to cg_npe instead of cg_npe_ho) rather than rejecting
+     * it, so a negative os here silently succeeds with the element's basic
+     * node count instead of failing. Unlike cg_element_lagrange_interpolation_size(),
+     * which deliberately always passes -1 for that inference, this function
+     * exposes os to the caller and so must bound it itself. */
+    if (os < 0 || os > CG_MAX_ORDER) {
+        cgi_error("Spatial interpolation degree %d out of valid range [0, %d]",
+                  os, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
+    if (ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Temporal interpolation degree %d out of valid range [0, %d]",
+                  ot, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
+    error = cgi_get_basis_size(t, os, &tmp);
+    if (error != CG_OK) return error;
+
+    /* Compute in "long long" (guaranteed >= 64 bits by the standard,
+     * regardless of cgsize_t's width) and range-check before narrowing: the
+     * old "*sz = tmp * (cgsize_t)(ot+1)" evaluated wide but stored into an
+     * int, so e.g. (HEXA_8, os=1000, ot=1000) returned CG_OK with
+     * sz = -1016343263 and a caller allocating sz*sizeof(double) got a
+     * negative length. A cgsize_t-typed check does not fix this in a
+     * 32-bit-cgsize_t build (--enable-legacy, or CGNS_ENABLE_64BIT=OFF):
+     * there CGSIZE_MAX == INT_MAX, so "total > (cgsize_t)INT_MAX" can never
+     * be true and the multiplication itself has already overflowed as
+     * signed 32-bit UB before the guard is even reached. */
+    total = (long long)tmp * (long long)(ot + 1);
+    if (total > (long long)INT_MAX) {
+        cgi_error("Interpolation point count %lld for element type %s at "
+                  "(os=%d, ot=%d) exceeds INT_MAX",
+                  total, cg_ElementTypeName(t), os, ot);
+        return CG_ERROR;
+    }
+    *sz = (int)total;
+    return CG_OK;
+}
+
+/* Helper function to compute binomial coefficient C(n, k)
+ * Uses cgsize_t to prevent overflow for large n, k values
+ */
+static cgsize_t binomial_coefficient(int n, int k)
+{
+    if (k > n) return 0;
+    if (k == 0 || k == n) return 1;
+    if (k > n - k) k = n - k;  /* Optimize: C(n,k) = C(n,n-k) */
+
+    cgsize_t result = 1;
+    for (int i = 0; i < k; i++) {
+        result = result * (n - i) / (i + 1);
+    }
+    return result;
+}
+
+/**
+ * \brief Get number of monomial coefficients for solution interpolation
+ *
+ * Calculates the total number of monomial coefficients (spatial × temporal)
+ * for modal solution interpolation.
+ *
+ * \param[in]  t  Element type
+ * \param[in]  os Spatial interpolation degree
+ * \param[in]  ot Temporal interpolation degree (0 for no temporal)
+ * \param[out] sz Total number of monomial coefficients
+ * \return     CG_OK on success, CG_ERROR on failure
+ *
+ * \details
+ * For space-time modal interpolation, the total number of coefficients
+ * is the product of spatial and temporal coefficients.
+ *
+ * For purely spatial (ot=0):
+ * - sz = spatial coefficients
+ *
+ * For space-time (ot>0):
+ * - sz = spatial_coefficients × temporal_coefficients
+ * - temporal_coefficients = ot + 1
+ *
+ * Examples:
+ * - QUAD_4, os=3, ot=0: sz = 16 (purely spatial)
+ * - QUAD_4, os=3, ot=1: sz = 16 × 2 = 32 (space-time)
+ */
+
+/* Calculate number of monomial coefficients for solution interpolation */
+
+int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz)
+{
+    int dim;
+    cgsize_t spatial_coeffs;
+    long long total;
+
+    /* Guard against integer overflow in binomial_coefficient(os + dim, dim).
+     * A malicious/corrupted file supplying os ~ INT_MAX would make os+dim wrap
+     * negative, returning a small coefficient and causing a later out-of-bounds
+     * write.  CG_MAX_ORDER (1000) is far beyond any practical polynomial order. */
+    if (os < 0 || os > CG_MAX_ORDER || ot < 0 || ot > CG_MAX_ORDER) {
+        cgi_error("Interpolation degrees (os=%d, ot=%d) out of valid range [0, %d]",
+                  os, ot, CG_MAX_ORDER);
+        return CG_ERROR;
+    }
+
+    /* Get element dimension */
+    if (cg_element_dimension(t, &dim) != CG_OK) {
+        return CG_ERROR;
+    }
+
+    /* Number of spatial monomials = C(os + dim, dim) */
+    spatial_coeffs = binomial_coefficient(os + dim, dim);
+
+    /* Multiply by temporal dimension (ot + 1), range-checking before the
+     * narrowing store: os and ot are each bounded by CG_MAX_ORDER above, but
+     * their product is not, and sz is an int the caller sizes a malloc with.
+     * Without this check, (HEXA_8, os=1000, ot=1000) would silently truncate
+     * the true count of 168168168168 down to 332444957 and return CG_OK.
+     * Computed and compared in "long long" (guaranteed >= 64 bits), not
+     * cgsize_t: in a 32-bit-cgsize_t build (--enable-legacy, or
+     * CGNS_ENABLE_64BIT=OFF) CGSIZE_MAX == INT_MAX, so a cgsize_t-typed
+     * check can never fire and the multiplication has already overflowed as
+     * signed 32-bit UB by the time it would run. */
+    total = (long long)spatial_coeffs * (long long)(ot + 1);
+    if (total > (long long)INT_MAX) {
+        cgi_error("Monomial coefficient count %lld for element type %s at "
+                  "(os=%d, ot=%d) exceeds INT_MAX",
+                  total, cg_ElementTypeName(t), os, ot);
+        return CG_ERROR;
+    }
+    *sz = (int)total;
+
+    return CG_OK;
+}
+
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *  Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)            *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+static int cgi_validate_distribution(CGNS_ENUMT(ControlPointDistribution_t) dist)
+{
+    if (dist <= CGNS_ENUMV(ControlPointDistributionUserDefined) ||
+        dist >= NofValidControlPointDistributions) {
+        cgi_error("Invalid ControlPointDistribution value %d", (int)dist);
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+static int cgi_write_distribution_node(double parent_id, cgns_array **out_arr,
+                                       CGNS_ENUMT(ControlPointDistribution_t) dist)
+{
+    cgns_array *arr;
+    cgsize_t nchar;
+    int val = (int)dist;
+    const char *dist_name;
+    double dummy_id;
+
+    /* CPEX-0045: a labelled enumeration node -- name
+     * "ControlPointDistribution", label "ControlPointDistribution_t", the
+     * enumerator's name as a C1 string -- following the same convention as
+     * InterpolationType_t and as every other CGNS enumeration node, and
+     * deliberately not the name-matched DataArray_t convention used by
+     * LagrangeControlPoints.  A DataArray_t child by this name would in fact
+     * have to be *rejected* by a conforming reader, LagrangeControlPoints being
+     * the only DataArray_t name permitted under these nodes.
+     *
+     * It is held in memory decoded, as an I4 scalar, which is what
+     * cgi_read_distribution_value() reads back. */
+    if (INVALID_ENUM(val, NofValidControlPointDistributions)) {
+        cgi_error("Invalid ControlPointDistribution value %d", val);
+        return CG_ERROR;
+    }
+    dist_name = cg_ControlPointDistributionName(dist);
+
+    /* Replace any pre-existing node.  Bail out if the delete fails rather than
+     * dropping the in-memory node anyway: doing so would leave the file holding
+     * a node the database no longer knows about, so the cgi_new_node() below
+     * would collide on the duplicate name while a subsequent read reported
+     * CG_NODE_NOT_FOUND for something still on disk.  cgi_free_array() rather
+     * than a bare free of ->data, so ->link (populated by cgi_read_link() when
+     * this node came from a file) is released too. */
+    if (*out_arr) {
+        if (cgi_delete_node(parent_id, (*out_arr)->id)) return CG_ERROR;
+        cgi_free_array(*out_arr);
+        CGNS_FREE(*out_arr);
+        *out_arr = 0;
+    }
+
+    arr = CGNS_NEW(cgns_array, 1);
+    memset(arr, 0, sizeof(cgns_array));
+    snprintf(arr->name, sizeof(arr->name), "%s", "ControlPointDistribution");
+    snprintf(arr->data_type, sizeof(arr->data_type), "%s", "I4");
+    arr->data_dim = 1;
+    arr->dim_vals[0] = 1;
+    arr->data = malloc(sizeof(int));
+    if (!arr->data) {
+        cgi_error("Error allocating ControlPointDistribution data");
+        CGNS_FREE(arr);
+        return CG_ERROR;
+    }
+    ((int *)arr->data)[0] = val;
+
+    nchar = (cgsize_t)strlen(dist_name);
+    if (cgi_new_node(parent_id, arr->name, "ControlPointDistribution_t",
+                     &dummy_id, "C1", 1, &nchar, dist_name)) {
+        free(arr->data);
+        CGNS_FREE(arr);
+        return CG_ERROR;
+    }
+    arr->id = dummy_id;
+    *out_arr = arr;
+    return CG_OK;
+}
+
+static int cgi_read_distribution_value(const cgns_array *arr,
+                                       CGNS_ENUMT(ControlPointDistribution_t) *dist)
+{
+    int val;
+
+    if (!arr || !arr->data) {
+        cgi_error("ControlPointDistribution data not loaded");
+        return CG_ERROR;
+    }
+    /* Decoded in-memory form of the labelled enumeration node, whose on-disk
+     * payload is the enumerator's name; the reader has already mapped the
+     * string and rejected anything not in the name table. */
+    val = ((const int *)arr->data)[0];
+    if (INVALID_ENUM(val, NofValidControlPointDistributions)) {
+        cgi_error("Invalid ControlPointDistribution value %d", val);
+        return CG_ERROR;
+    }
+    *dist = (CGNS_ENUMT(ControlPointDistribution_t))val;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Write ControlPointDistribution attribute on an
+ *        ElementInterpolation_t node (CPEX-0045 §3.1.2).
+ *
+ * Records the parametric-space distribution of the Lagrange control points as a
+ * child node named "ControlPointDistribution" of label
+ * "ControlPointDistribution_t", holding the enumeration value as a scalar I4.
+ * It is NOT a Character DataArray_t: a hand-written file using that earlier
+ * shape is rejected by the reader.
+ * The node must already have LagrangeControlPoints written; otherwise the
+ * attribute is meaningless and the call is rejected.
+ */
+int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
+                                                CGNS_ENUMT(ControlPointDistribution_t) dist)
+{
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) {
+        cgi_error("Invalid element interpolation index (%d/%d)",
+                  en, family->nelementinterpolation);
+        return CG_ERROR;
+    }
+    einterp = &family->elementinterpolations[en - 1];
+
+    if (einterp->lagrangePts == 0) {
+        cgi_error("Cannot attach ControlPointDistribution: ElementInterpolation_t '%s' "
+                  "has no LagrangeControlPoints (interpolation type is not ParametricLagrange).",
+                  einterp->name);
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_distribution(dist)) return CG_ERROR;
+    return cgi_write_distribution_node(einterp->id, &einterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup ElementInterpolation
+ * \brief Read ControlPointDistribution attribute from an
+ *        ElementInterpolation_t node.
+ *
+ * Returns CG_NODE_NOT_FOUND if the attribute is absent.  Strict CPEX-0045
+ * conformance requires the attribute when the interpolation type is
+ * ParametricLagrange; cgnscheck enforces that.
+ */
+int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
+                                               CGNS_ENUMT(ControlPointDistribution_t) *dist)
+{
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+
+    if (!dist) {
+        cgi_error("NULL output pointer");
+        return CG_ERROR;
+    }
+    *dist = CGNS_ENUMV(ControlPointDistributionNull);
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation || en <= 0) {
+        cgi_error("Invalid element interpolation index (%d/%d)",
+                  en, family->nelementinterpolation);
+        return CG_ERROR;
+    }
+    einterp = &family->elementinterpolations[en - 1];
+
+    if (einterp->lagrangeDist == 0) return CG_NODE_NOT_FOUND;
+
+    return cgi_read_distribution_value(einterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Write ControlPointDistribution attribute on a
+ *        SolutionInterpolation_t node (CPEX-0045 §3.1.2).
+ *
+ * The interpolation type must be ParametricLagrange.
+ */
+int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn,
+                                                 CGNS_ENUMT(ControlPointDistribution_t) dist)
+{
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (sn > family->nsolutioninterpolation || sn <= 0) {
+        cgi_error("Invalid solution interpolation index (%d/%d)",
+                  sn, family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+    sinterp = &family->solutioninterpolations[sn - 1];
+
+    if (sinterp->interpolationName != CGNS_ENUMV(ParametricLagrange)) {
+        cgi_error("ControlPointDistribution is only valid for "
+                  "InterpolationType=ParametricLagrange (node '%s' has %s).",
+                  sinterp->name,
+                  cg_InterpolationTypeName(sinterp->interpolationName));
+        return CG_ERROR;
+    }
+
+    if (sinterp->lagrangePts == 0) {
+        cgi_error("Cannot attach ControlPointDistribution: SolutionInterpolation_t '%s' "
+                  "has no LagrangeControlPoints.", sinterp->name);
+        return CG_ERROR;
+    }
+
+    if (cgi_validate_distribution(dist)) return CG_ERROR;
+    return cgi_write_distribution_node(sinterp->id, &sinterp->lagrangeDist, dist);
+}
+
+/**
+ * \ingroup SolutionInterpolation
+ * \brief Read ControlPointDistribution attribute from a
+ *        SolutionInterpolation_t node.
+ */
+int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
+                                                CGNS_ENUMT(ControlPointDistribution_t) *dist)
+{
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+
+    if (!dist) {
+        cgi_error("NULL output pointer");
+        return CG_ERROR;
+    }
+    *dist = CGNS_ENUMV(ControlPointDistributionNull);
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family == 0) return CG_ERROR;
+
+    if (sn > family->nsolutioninterpolation || sn <= 0) {
+        cgi_error("Invalid solution interpolation index (%d/%d)",
+                  sn, family->nsolutioninterpolation);
+        return CG_ERROR;
+    }
+    sinterp = &family->solutioninterpolations[sn - 1];
+
+    if (sinterp->lagrangeDist == 0) return CG_NODE_NOT_FOUND;
+
+    return cgi_read_distribution_value(sinterp->lagrangeDist, dist);
+}
+
+/*----------------------------------------------------------------------*/
+
 /**
  * \ingroup ConvergenceHistory
  *
@@ -17416,6 +21007,17 @@ int cg_narrays(int *narrays)
     } else if (strcmp(posit->label,"FlowSolution_t")==0) {
         cgns_sol *sol = (cgns_sol *)posit->posit;
         (*narrays) = sol->nfields;
+
+    /* CPEX 045 */
+    } else if (strcmp(posit->label,"ElementInterpolation_t")==0) {
+        cgns_elementInterpolation *ei =
+            (cgns_elementInterpolation *)posit->posit;
+        (*narrays) = ei->lagrangePts ? 1 : 0;
+
+    } else if (strcmp(posit->label,"SolutionInterpolation_t")==0) {
+        cgns_solutionInterpolation *si =
+            (cgns_solutionInterpolation *)posit->posit;
+        (*narrays) = (si->lagrangePts ? 1 : 0);
 
     } else if (strcmp(posit->label,"ParticleSolution_t")==0) {
        cgns_psol *sol = (cgns_psol *)posit->posit;
@@ -19235,6 +22837,17 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
         return CG_ERROR;
     }
 
+    /* CPEX-0045: GridLocation InterpolationPoints is valid only on
+     * FlowSolution_t nodes.  DiscreteData_t shares the permissive
+     * cgi_check_location path below, and BC_t and the connectivity nodes reach
+     * it too, so the restriction is enforced here for every parent at once. */
+    if (GridLocation == CGNS_ENUMV(InterpolationPoints) &&
+        strcmp(posit->label,"FlowSolution_t") != 0) {
+        cgi_error("GridLocation InterpolationPoints is valid only under "
+                  "FlowSolution_t, not under '%s'", posit->label);
+        return CG_ERROR;
+    }
+
     ier = 0;
     if (strcmp(posit->label,"FlowSolution_t")==0 ||
         strcmp(posit->label,"DiscreteData_t")== 0) {
@@ -20320,131 +23933,191 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
  */
 int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 {
-/* the index in this list IS the cgnslib.h ElementType_t index */
-    static int el_size[NofValidElementTypes] = {
-        0,  /* ElementTypeNull */
-        0,  /* ElementTypeUserDefined */
-#ifdef CGNS_SCOPE_ENUMS
-        CG_NPE_NODE,  /* NODE */
-        CG_NPE_BAR_2,  /* BAR_2 */
-        CG_NPE_BAR_3,  /* BAR_3 */
-        CG_NPE_TRI_3,  /* TRI_3 */
-        CG_NPE_TRI_6,  /* TRI_6 */
-        CG_NPE_QUAD_4,  /* QUAD_4 */
-        CG_NPE_QUAD_8,  /* QUAD_8 */
-        CG_NPE_QUAD_9,  /* QUAD_9 */
-        CG_NPE_TETRA_4,  /* TETRA_4 */
-        CG_NPE_TETRA_10, /* TETRA_10 */
-        CG_NPE_PYRA_5,  /* PYRA_5 */
-        CG_NPE_PYRA_14, /* PYRA_14 */
-        CG_NPE_PENTA_6,  /* PENTA_6 */
-        CG_NPE_PENTA_15, /* PENTA_15 */
-        CG_NPE_PENTA_18, /* PENTA_18 */
-        CG_NPE_HEXA_8,  /* HEXA_8 */
-        CG_NPE_HEXA_20, /* HEXA_20 */
-        CG_NPE_HEXA_27, /* HEXA_27 */
-        CG_NPE_MIXED,  /* MIXED */
-        CG_NPE_PYRA_13, /* PYRA_13 */
-        CG_NPE_NGON_n,  /* NGON_n */
-        CG_NPE_NFACE_n,  /* NFACE_n */
-        CG_NPE_BAR_4,
-        CG_NPE_TRI_9,
-        CG_NPE_TRI_10,
-        CG_NPE_QUAD_12,
-        CG_NPE_QUAD_16,
-        CG_NPE_TETRA_16,
-        CG_NPE_TETRA_20,
-        CG_NPE_PYRA_21,
-        CG_NPE_PYRA_29,
-        CG_NPE_PYRA_30,
-        CG_NPE_PENTA_24,
-        CG_NPE_PENTA_38,
-        CG_NPE_PENTA_40,
-        CG_NPE_HEXA_32,
-        CG_NPE_HEXA_56,
-        CG_NPE_HEXA_64,
-        CG_NPE_BAR_5,
-        CG_NPE_TRI_12,
-        CG_NPE_TRI_15,
-        CG_NPE_QUAD_P4_16,
-        CG_NPE_QUAD_25,
-        CG_NPE_TETRA_22,
-        CG_NPE_TETRA_34,
-        CG_NPE_TETRA_35,
-        CG_NPE_PYRA_P4_29,
-        CG_NPE_PYRA_50,
-        CG_NPE_PYRA_55,
-        CG_NPE_PENTA_33,
-        CG_NPE_PENTA_66,
-        CG_NPE_PENTA_75,
-        CG_NPE_HEXA_44,
-        CG_NPE_HEXA_98,
-        CG_NPE_HEXA_125
-#else
-        NPE_NODE,  /* NODE */
-        NPE_BAR_2,  /* BAR_2 */
-        NPE_BAR_3,  /* BAR_3 */
-        NPE_TRI_3,  /* TRI_3 */
-        NPE_TRI_6,  /* TRI_6 */
-        NPE_QUAD_4,  /* QUAD_4 */
-        NPE_QUAD_8,  /* QUAD_8 */
-        NPE_QUAD_9,  /* QUAD_9 */
-        NPE_TETRA_4,  /* TETRA_4 */
-        NPE_TETRA_10, /* TETRA_10 */
-        NPE_PYRA_5,  /* PYRA_5 */
-        NPE_PYRA_14, /* PYRA_14 */
-        NPE_PENTA_6,  /* PENTA_6 */
-        NPE_PENTA_15, /* PENTA_15 */
-        NPE_PENTA_18, /* PENTA_18 */
-        NPE_HEXA_8,  /* HEXA_8 */
-        NPE_HEXA_20, /* HEXA_20 */
-        NPE_HEXA_27, /* HEXA_27 */
-        NPE_MIXED,  /* MIXED */
-        NPE_PYRA_13, /* PYRA_13 */
-        NPE_NGON_n,  /* NGON_n */
-        NPE_NFACE_n,  /* NFACE_n */
-        NPE_BAR_4,
-        NPE_TRI_9,
-        NPE_TRI_10,
-        NPE_QUAD_12,
-        NPE_QUAD_16,
-        NPE_TETRA_16,
-        NPE_TETRA_20,
-        NPE_PYRA_21,
-        NPE_PYRA_29,
-        NPE_PYRA_30,
-        NPE_PENTA_24,
-        NPE_PENTA_38,
-        NPE_PENTA_40,
-        NPE_HEXA_32,
-        NPE_HEXA_56,
-        NPE_HEXA_64,
-        NPE_BAR_5,
-        NPE_TRI_12,
-        NPE_TRI_15,
-        NPE_QUAD_P4_16,
-        NPE_QUAD_25,
-        NPE_TETRA_22,
-        NPE_TETRA_34,
-        NPE_TETRA_35,
-        NPE_PYRA_P4_29,
-        NPE_PYRA_50,
-        NPE_PYRA_55,
-        NPE_PENTA_33,
-        NPE_PENTA_66,
-        NPE_PENTA_75,
-        NPE_HEXA_44,
-        NPE_HEXA_98,
-        NPE_HEXA_125
-#endif
-    };
-    if (INVALID_ENUM(type,NofValidElementTypes)) {
+    /* Use centralized element property accessor from cgns_header.h
+     * Inline function provides zero overhead in optimized builds */
+    int result;
+    if (!cgi_verify_element_traits_alignment()) {
         *npe = -1;
-        cgi_error("Invalid element type");
         return CG_ERROR;
-
     }
-    (*npe) = el_size[type];
+    result = cgi_element_npe(type);
+    if (result < 0) {
+        *npe = -1;
+        cgi_error("Invalid element type %d", (int)type);
+        return CG_ERROR;
+    }
+    *npe = result;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the number of nodes for a high-order element type at a given order.
+ *
+ * \param[in]  basicType Basic (order-1) element type; a high-order tag is
+ *                       resolved to its basic type internally via
+ *                       cg_element_basic_element_type().
+ * \param[in]  order     Interpolation order (degree). Must be in [0, CG_MAX_ORDER].
+ * \param[out] npe       Number of nodes for the element at the given order.
+ * \return \ier
+ *
+ */
+int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
+{
+    CGNS_ENUMT(ElementType_t) tmpType;
+    CGNS_ENUMT(ElementType_t) type = basicType;
+    cgsize_t o;  /* order as cgsize_t to prevent overflow in intermediate calculations */
+    cgsize_t result;
+
+    // Be sure to have a Basic Type
+    if (cg_element_basic_element_type(type,&tmpType)) return CG_ERROR;
+
+    /* Validate order bounds.
+     *
+     * Degree 0 is valid and yields a single degree of freedom: the constant
+     * basis over the element (CPEX-0045, "Degree zero is valid").  Every
+     * cardinality formula below already evaluates to 1 at order 0, including
+     * PYRA ((0+1)(0+2)(2*0+3)/6 = 1), so no special case is needed. */
+    if (order < 0) {
+        cgi_error("Invalid order %d: order must be >= 0 for element type %s",
+                  order, cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+
+    /* Check for reasonable upper bound to prevent overflow
+     * Maximum practical order is limited by INT_MAX for node count
+     * For HEXA: (order+1)^3 <= INT_MAX => order <= 1289
+     * For simplicity, enforce order <= CG_MAX_ORDER which is well beyond practical use */
+    if (order > CG_MAX_ORDER) {
+        cgi_error("Invalid order %d: order must be <= %d for element type %s (exceeds practical limits)",
+                  order, CG_MAX_ORDER, cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+
+    /* Cast order to cgsize_t to ensure arithmetic uses 64-bit precision
+     * and prevent overflow for very high orders (e.g., order > 1290 for HEXA) */
+    o = (cgsize_t)order;
+
+    if ( tmpType == CGNS_ENUMV(BAR_2) )
+    {
+        result = o + 1;
+    }
+    else if ( tmpType == CGNS_ENUMV(TRI_3) )
+    {
+        result = (o + 1) * (o + 2) / 2;
+    }
+    else if ( tmpType == CGNS_ENUMV(QUAD_4) )
+    {
+        result = (o + 1) * (o + 1);
+    }
+    else if ( tmpType == CGNS_ENUMV(HEXA_8) )
+    {
+        result = (o + 1) * (o + 1) * (o + 1);
+    }
+    else if ( tmpType == CGNS_ENUMV(TETRA_4) )
+    {
+        result = (o + 1) * (o + 2) * (o + 3) / 6;
+    }
+    else if ( tmpType == CGNS_ENUMV(PENTA_6) )
+    {
+        /* PENTA is a tensor product: Triangle(u,v) ⊗ Line(w)
+         * - Triangle at order p: (p+1)(p+2)/2 points (Pascal triangle)
+         * - Line at order p: (p+1) points
+         * - Total: [(p+1)(p+2)/2] × (p+1) = (p+1)²(p+2)/2
+         *
+         * IMPORTANT: Correct ordering is w-major (line varies slowest):
+         *   for w = 0 to p:
+         *     for each triangle point (u,v) at this w-level
+         *
+         * This is NOT a simple 3D tensor product like HEXA!
+         */
+        result = (o + 1) * (o + 1) * (o + 2) / 2;
+    }
+    else if ( tmpType == CGNS_ENUMV(PYRA_5) )
+    {
+        result = (o + 1) * (o + 2) * (2 * o + 3) / 6;
+    }
+    else {
+        cgi_error("Unsupported element type %s for cg_npe_ho",
+                  cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
+
+    /* Verify result fits in int before returning */
+    if (result > INT_MAX) {
+        cgi_error("Number of nodes %lld exceeds INT_MAX for element type %s with order %d",
+                  (long long)result, cg_ElementTypeName(type), order);
+        return CG_ERROR;
+    }
+
+    *npe = (int)result;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the parametric dimension of an element type.
+ *
+ * \param[in]  type Type of element. See the eligible types for ElementType_t in the Typedefs
+ *                  section.
+ * \param[out] dim  Dimension of the element (1 for BAR, 2 for TRI/QUAD, 3 for
+ *                  TETRA/PENTA/PYRA/HEXA), including their high-order tags.
+ * \return \ier
+ *
+ */
+int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
+{
+    /* Use centralized element property accessor from cgns_header.h
+     * Inline function provides zero overhead in optimized builds */
+    int result;
+    if (!cgi_verify_element_traits_alignment()) {
+        *dim = -1;
+        return CG_ERROR;
+    }
+    result = cgi_element_dimension(type);
+    if (result < 0) {
+        *dim = -1;
+        cgi_error("Invalid element type %d", (int)type);
+        return CG_ERROR;
+    }
+    *dim = result;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief Get the basic (order-1) element type underlying a high-order tag.
+ *
+ * \param[in]  type  Type of element, high-order or basic. See the eligible
+ *                   types for ElementType_t in the Typedefs section.
+ * \param[out] basic Basic element type (e.g. QUAD_9 -> QUAD_4). Set equal to
+ *                   type itself if type is already a basic type.
+ * \return \ier
+ *
+ */
+int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(ElementType_t) *basic)
+{
+    *basic = type;
+    
+    if ( INVALID_ENUM(type,NofValidElementTypes) ) {
+        cgi_error("Invalid element type %d", (int)type);
+        return CG_ERROR;
+    }
+
+    /* Look up basic type from centralized element traits table */
+    if (!cgi_verify_element_traits_alignment()) {
+        *basic = CGNS_ENUMV(ElementTypeNull);
+        return CG_ERROR;
+    }
+    *basic = cgi_element_basic_type(type);
+    if (*basic == CGNS_ENUMV(ElementTypeNull)) {
+        cgi_error("Invalid element type %d", (int)type);
+        return CG_ERROR;
+    }
+    
     return CG_OK;
 }
 
@@ -20587,7 +24260,24 @@ int cg_delete_node(const char *node_name)
          strcmp(node_label,"DataArray_t")==0) ||
 
         (strcmp(posit->label,"AverageInterface_t")==0 &&
-         strcmp(node_label,"AverageInterfaceType_t")==0)
+         strcmp(node_label,"AverageInterfaceType_t")==0) ||
+
+        /* CPEX-0045: no child of either interpolation node may be deleted.
+         * cg_delete_node() removes the node from the file BEFORE updating the
+         * in-memory database, and that update dispatches on posit->label -- for
+         * which these two labels have no case, so it falls through to
+         * "Unrecognized label" and returns CG_ERROR with the node already gone
+         * from disk and the stale cache still serving reads.  Refusing up front
+         * keeps the two views consistent, and matches the read-only stance
+         * cgi_array_address() already takes for these labels: use
+         * cg_element_interpolation_points_write /
+         * cg_solution_interpolation_points_write to replace the contents,
+         * which maintain both views.  (The former narrower guards named
+         * ElementType_t/InterpolationType_t, which are these nodes' own
+         * payloads rather than children, and so never matched.) */
+        strcmp(posit->label,"ElementInterpolation_t")==0 ||
+
+        strcmp(posit->label,"SolutionInterpolation_t")==0
 
     ) {
         cgi_error("Node '%s' under '%s' can not be deleted",node_name,posit->label);
@@ -20826,6 +24516,11 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
+        else if (strcmp(node_name,"InterpolationDegrees")==0) {
+            if (cgi_delete_node(parent->id, posit_id)) return CG_ERROR;
+            parent->spatialDegree = -1;
+            parent->temporalDegree = 0;
+        }
         else if (strcmp(node_name,"PointList")==0 ||
                  strcmp(node_name,"PointRange")==0)
             CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
@@ -21255,6 +24950,12 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nfambc, fambc, cgi_free_fambc)
         else if (strcmp(node_label,"FamilyName_t")==0)
             CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+        else if (strcmp(node_label,"ElementInterpolation_t")==0)
+            CGNS_DELETE_SHIFT(nelementinterpolation, elementinterpolations, 
+                              cgi_free_element_interpolation)
+        else if (strcmp(node_label,"SolutionInterpolation_t")==0)
+            CGNS_DELETE_SHIFT(nsolutioninterpolation, solutioninterpolations, 
+                              cgi_free_solution_interpolation)
         else if (strcmp(node_name,"Ordinal")==0)
             parent->ordinal=0;
         else if (strcmp(node_name,"RotatingCoordinates")==0)

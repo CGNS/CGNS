@@ -134,6 +134,34 @@ dir=Test_Grid_Str_2zngenrl
 run_tests
 
 ###############################
+# High-order unstructured grid: write_grid_ho_unst is a fixture setup step
+# (writes the grid once, no OUTPUT of its own, mirroring setup_fixture_test()
+# in CMakeLists.txt) rather than a write/read pair, so this does not fit
+# run_tests()'s symmetric w_arr/r_arr assumption.
+###############################
+
+dir=Test_Grid_HO_Unstr
+printf "%-40s \n" "Testing $dir..."
+cd "$dir"
+"./write_grid_ho_unst" >/dev/null 2>&1
+x="   Program: write_flowcell_ho_unst"
+printf "$x"
+"./write_flowcell_ho_unst" >/dev/null 2>&1
+status=$?
+itime=""
+echoresults
+return_val=$((status + return_val))
+
+x="   Program: read_flowcell_ho_unst"
+printf "$x"
+"./read_flowcell_ho_unst" > build/output1
+diff <( sed '/Library/ d' "build/output1") <( sed '/Library/ d' "./OUTPUT1") > "build/results1.txt"
+status=$?
+echoresults
+return_val=$((status + return_val))
+cd ..
+
+###############################
 
 echo "=== finished ==="
 if test $return_val != 0; then
