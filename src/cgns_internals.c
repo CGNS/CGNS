@@ -12546,6 +12546,27 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, 1, c->cprop->id);
             }
         }
+        else if (0 == strcmp (label, "IndexArray_t")) {
+            int current_count = 0;
+
+            /* Check PointList (Receiver) */
+            if (c->ptset.name[0] != '\0') {
+                current_count++;
+                if (index == current_count || 0 == strcmp(c->ptset.name, name)) {
+                    return cgi_add_posit(&c->ptset, label, 1, c->ptset.id);
+                }
+            }
+
+            /* Check PointListDonor (Donor) */
+            if (c->dptset.name[0] != '\0') {
+                current_count++;
+                if (index == current_count || 0 == strcmp(c->dptset.name, name)) {
+                    return cgi_add_posit(&c->dptset, label, 1, c->dptset.id);
+                }
+            }
+
+            return CG_INCORRECT_PATH;
+        }
         else if (0 == strcmp (label, "UserDefinedData_t")) {
             if (--index < 0) {
                 for (n = 0; n < c->nuser_data; n++) {
