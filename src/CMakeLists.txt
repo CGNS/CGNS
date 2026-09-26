@@ -742,12 +742,15 @@ set(headers
   ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
+  if(NOT DEFINED CMAKE_INSTALL_Fortran_MODULES)
+      set(CMAKE_INSTALL_Fortran_MODULES ${CMAKE_INSTALL_INCLUDEDIR})
+  endif()
   if(DEFINED CMAKE_Fortran_MODULE_DIRECTORY)
-    list(APPEND headers
-      ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod)
+    install(FILES ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod
+            DESTINATION ${CMAKE_INSTALL_Fortran_MODULES})
   else()
-    list(APPEND headers
-      $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+    install(FILES $<TARGET_FILE_DIR:cgns_static>/cgns.mod
+            DESTINATION ${CMAKE_INSTALL_Fortran_MODULES})
   endif()
 endif ()
 
