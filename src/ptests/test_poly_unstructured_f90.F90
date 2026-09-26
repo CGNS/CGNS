@@ -56,7 +56,7 @@ PROGRAM test_poly_unstructured_f
   INTEGER(cgsize_t) :: nbCellWrite
   INTEGER(cgsize_t) :: nbNodeWrite
   INTEGER(cgsize_t), TARGET :: start, end
-  INTEGER(C_INT64_T) :: start_l, end_l, nb_read
+  INTEGER(cgsize_t) :: start_l, end_l, nb_read
   INTEGER(cgsize_t) :: iNode, jNode, iCell, jCell, i, j, k
   INTEGER(cgsize_t) :: local_size(1)
   INTEGER(cgsize_t) :: sizes(3)
