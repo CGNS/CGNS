@@ -3131,6 +3131,78 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
 
 /*-----------------------------------------------------------------------*/
 
+/* A FlowSolution_t or DiscreteData_t may carry a PointList or PointRange.  The
+ * SIDS DataSize() for both node types resolves that case ahead of either Rind
+ * branch -- "if (PointRange/PointList is present) then DataSize[] = ListLength[]"
+ * -- so the DataArray_t children are a flat list over the listed points rather
+ * than a block of the zone's index space.  ZoneSubRegion_t states the resulting
+ * rank outright, declaring its arrays DataArray_t<DataType, 1, ListLength[]>.
+ *
+ * Returns that length, and validates the listed points while it is here; 0 means
+ * the length could not be established and the size check is skipped.  That is
+ * also the seam for a GridLocation whose length rule is not ListLength: return 0
+ * for it and the size comparison stands down while the point-set validation
+ * stays in place.
+ *
+ * ptset_read is cg_sol_ptset_read or cg_discrete_ptset_read; the two share a
+ * signature, and idx is the corresponding node index. */
+static cgsize_t check_ptset_data_size (ZONE *z,
+    CGNS_ENUMT(GridLocation_t) location, CGNS_ENUMT(PointSetType_t) ptype,
+    cgsize_t npts, int (*ptset_read)(int, int, int, int, cgsize_t *), int idx)
+{
+    int n;
+    cgsize_t *pnts, datasize;
+
+    if (verbose) {
+        printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
+        printf ("    Number Points=%" PRIdCGSIZE "\n", npts);
+    }
+
+    if (ptype == CGNS_ENUMV(PointRange)) {
+        if (npts != 2) {
+            error ("npts not equal to 2 for PointRange");
+            return 0;
+        }
+    }
+    else if (ptype == CGNS_ENUMV(PointList)) {
+        if (npts < 1) {
+            error ("npts is less than 1 for PointList");
+            return 0;
+        }
+    }
+    else {
+        error ("point set type not PointList or PointRange");
+        return 0;
+    }
+
+    /* The SIDS gives point sets on these two node types for edge- and
+     * face-based data on unstructured grids -- locations Elements_t indexes but
+     * GridLocation alone cannot address.  Every other use is subsetting, and
+     * ZoneSubRegion_t (CPEX-0030) is the node meant for that. */
+    if (z->type != CGNS_ENUMV(Unstructured) ||
+        location == CGNS_ENUMV(Vertex) || location == CGNS_ENUMV(CellCenter))
+        warning (2, "ZoneSubRegion_t is the node intended for data over a"
+                    " subset of a zone");
+
+    /* idim indices per point, as everywhere else a point set is read */
+    pnts = (cgsize_t *) malloc (((size_t)(npts * z->idim)) * sizeof(cgsize_t));
+    if (pnts == NULL)
+        fatal_error("check_ptset_data_size:malloc failed for points\n");
+    if (ptset_read (cgnsfn, cgnsbase, cgnszone, idx, pnts))
+        error_exit("point set read");
+    if (verbose && ptype == CGNS_ENUMV(PointRange)) {
+        printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[0], pnts[z->idim]);
+        for (n = 1; n < z->idim; n++)
+            printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[n], pnts[n+z->idim]);
+        puts ("]");
+    }
+    datasize = check_interface (z, ptype, location, npts, pnts, 0);
+    free (pnts);
+    return datasize;
+}
+
+/*-----------------------------------------------------------------------*/
+
 static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
@@ -4565,11 +4637,15 @@ static void check_discrete (int ndis)
     char name[33];
     int n, nd, id, ierr, rind[6];
     int ndim;
-    cgsize_t datasize, size, dims[12];
+    cgsize_t datasize, size, dims[12], npts;
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(PointSetType_t) ptype;
     ZONE *z = &Zones[cgnszone-1];
+    /* rank the data arrays must have: the zone's index dimension for a block,
+     * 1 for the flat list a point set implies */
+    int arraydim;
 
     if (cg_discrete_read (cgnsfn, cgnsbase, cgnszone, ndis, name))
         error_exit("cg_discrete_read");
@@ -4637,7 +4713,30 @@ static void check_discrete (int ndis)
 
     /* get discrete data */
 
-    datasize = get_data_size (z, location, rind);
+    if (cg_discrete_ptset_info (cgnsfn, cgnsbase, cgnszone, ndis, &ptype, &npts))
+        error_exit("cg_discrete_ptset_info");
+    if (ptype == CGNS_ENUMV(PointSetTypeNull)) {
+        datasize = get_data_size (z, location, rind);
+        arraydim = z->idim;
+    }
+    else {
+        /* The SIDS resolves the point-set case ahead of either Rind branch of
+         * DataSize(), so Rind cannot contribute to the array length here.  It
+         * stays legal: Rind is (o/d) on both node types with no qualifier, and
+         * ZoneSubRegion_t carries it alongside a mandatory point set.  So this
+         * is advice, not an error.  A GridLocation under which Rind had no
+         * meaning at all would warrant rejecting it outright; the library
+         * defines none today. */
+        for (n = 0; n < 2 * z->idim; n++) {
+            if (rind[n]) {
+                warning (1, "rind is ignored when a point set is given");
+                break;
+            }
+        }
+        datasize = check_ptset_data_size (z, location, ptype, npts,
+                                          cg_discrete_ptset_read, ndis);
+        arraydim = 1;
+    }
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0)
@@ -4650,7 +4749,7 @@ static void check_discrete (int ndis)
         fflush (stdout);
         for (size = 1, id = 0; id < ndim; id++)
             size *= dims[id];
-        if (ndim != z->idim || size < 1 ||
+        if (ndim != arraydim || size < 1 ||
             (datasize && size != datasize))
             error ("bad dimension values");
         check_quantity (n, name, dataclass, punits, -1, 6);
@@ -4666,11 +4765,15 @@ static void check_solution (int ns)
     char name[33];
     int n, nf, id, ierr, rind[6];
     int ndim;
-    cgsize_t datasize, size, dims[12];
+    cgsize_t datasize, size, dims[12], npts;
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(PointSetType_t) ptype;
     ZONE *z = &Zones[cgnszone-1];
+    /* rank the data arrays must have: the zone's index dimension for a block,
+     * 1 for the flat list a point set implies */
+    int arraydim;
 
     if (cg_sol_info (cgnsfn, cgnsbase, cgnszone, ns, name, &location))
         error_exit("cg_sol_info");
@@ -4744,7 +4847,30 @@ static void check_solution (int ns)
 
     /* get solution data size */
 
-    datasize = get_data_size (z, location, rind);
+    if (cg_sol_ptset_info (cgnsfn, cgnsbase, cgnszone, ns, &ptype, &npts))
+        error_exit("cg_sol_ptset_info");
+    if (ptype == CGNS_ENUMV(PointSetTypeNull)) {
+        datasize = get_data_size (z, location, rind);
+        arraydim = z->idim;
+    }
+    else {
+        /* The SIDS resolves the point-set case ahead of either Rind branch of
+         * DataSize(), so Rind cannot contribute to the array length here.  It
+         * stays legal: Rind is (o/d) on both node types with no qualifier, and
+         * ZoneSubRegion_t carries it alongside a mandatory point set.  So this
+         * is advice, not an error.  A GridLocation under which Rind had no
+         * meaning at all would warrant rejecting it outright; the library
+         * defines none today. */
+        for (n = 0; n < 2 * z->idim; n++) {
+            if (rind[n]) {
+                warning (1, "rind is ignored when a point set is given");
+                break;
+            }
+        }
+        datasize = check_ptset_data_size (z, location, ptype, npts,
+                                          cg_sol_ptset_read, ns);
+        arraydim = 1;
+    }
 
     /* read solution data as arrays to get size */
 
@@ -4760,7 +4886,7 @@ static void check_solution (int ns)
         fflush (stdout);
         for (size = 1, id = 0; id < ndim; id++)
             size *= dims[id];
-        if (ndim != z->idim || size < 1 ||
+        if (ndim != arraydim || size < 1 ||
             (datasize && size != datasize))
             error ("bad dimension values");
         check_quantity (n, name, dataclass, punits, 1, 6);
