@@ -182,7 +182,7 @@ int main (int argc, char **argv)
     if (data == NULL) {
         printf("failed to allocate %s bytes of memory\n",
             format_size(maxmem));
-        exit(1);
+        exit(125);
     }
 
     sizes[0] = nnodes ? nnodes : 1;

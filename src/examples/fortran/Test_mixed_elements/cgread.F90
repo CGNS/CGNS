@@ -28,6 +28,7 @@
         double precision data_double(NNODES)
         integer parent_flag
         integer(cgsize_t) parent_data
+        integer npe
 
 !       initialize
         ier = 0

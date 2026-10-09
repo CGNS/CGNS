@@ -1591,12 +1591,14 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
 
 static void edge_elements (Regn *r, cgsize_t *conn)
 {
-    int ip;
+    int ip_int;
+    cgsize_t ip;
     cgsize_t istart, n, ne, nelems;
 
     istart = r->data[1];
     nelems = r->data[2] - istart + 1;
-    cg_npe ((CGNS_ENUMT(ElementType_t))r->data[0], &ip);
+    cg_npe ((CGNS_ENUMT(ElementType_t))r->data[0], &ip_int);
+    ip = (cgsize_t)ip_int;
 
     r->nedges = nelems;
     r->edges = (Edge *) MALLOC ("edge_elements", nelems * sizeof(Edge));
@@ -1612,7 +1614,8 @@ static void edge_elements (Regn *r, cgsize_t *conn)
 
 static void face_elements (Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 {
-    int i, ip;
+    int i;
+    cgsize_t ip;
     cgsize_t ne, nn, istart, nelems;
     cgsize_t rind0, rind1;
     CGNS_ENUMT(ElementType_t) elemtype, type;
@@ -1672,8 +1675,9 @@ static void face_elements (Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
         if (type == CGNS_ENUMV(NGON_n))
             nn += ip;
         else {
-            cg_npe (type, &i);
-            nn += i;
+            int npe_temp;  /* cg_npe returns int, not cgsize_t */
+            cg_npe(type, &npe_temp);
+            nn += npe_temp;
         }
     }
 }
@@ -1682,7 +1686,8 @@ static void face_elements (Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 
 static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 {
-    int i, j, nf, ip, flag;
+    int i, j, nf, flag;
+    cgsize_t ip;
     cgsize_t ne, nn, istart, nelems;
     cgsize_t rind0, rind1;
     CGNS_ENUMT(ElementType_t) elemtype;
@@ -1806,8 +1811,9 @@ static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn, cgsize_t *conn_off
                     pf->flags = 0;
                 }
             }
-            cg_npe (type, &j);
-            nn += j;
+            int npe_temp;
+            cg_npe(type, &npe_temp);
+            nn += npe_temp;
         }
         free(face);
     }
@@ -2009,7 +2015,8 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
 
 static int unstructured_zone (Tcl_Interp *interp)
 {
-    int i, ns, nb, ip, nr, haspoly, nsets;
+    int i, ns, nb, nr, haspoly, nsets, ip_int;
+    cgsize_t ip;
     int nsect, nints, nconns, nholes, nbocos, nrmlindex[3];
     int transform[3], rind[2];
     cgsize_t is, ie, np, n, ne, nf;
@@ -2044,7 +2051,7 @@ static int unstructured_zone (Tcl_Interp *interp)
     haspoly = 0;
     for (nr = 0, ns = 1; ns <= nsect; ns++, nr++) {
         if (cg_section_read (cgnsfn, cgnsbase, cgnszone, ns,
-                name, &elemtype, &is, &ie, &nb, &ip) ||
+                name, &elemtype, &is, &ie, &nb, &ip_int) ||
             cg_ElementDataSize (cgnsfn, cgnsbase, cgnszone, ns, &elemsize)) {
             Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
             return 1;
@@ -2109,11 +2116,12 @@ static int unstructured_zone (Tcl_Interp *interp)
             z->regs[nr].dim = -1;
             for (n = 0, ne = 0; ne < nelem; ne++) {
                 type = (CGNS_ENUMT(ElementType_t))conn[n++];
-                if (cg_npe (type, &ip) || ip <= 0) {
+                if (cg_npe (type, &ip_int) || ip_int <= 0) {
                     strcpy(z->regs[nr].errmsg,
                         "unhandled element type found in MIXED");
                     break;
                 }
+                ip = (cgsize_t)ip_int;
                 for (i = 0; i < ip; i++) {
                     if (conn[n] < 1 || conn[n] > z->nnodes) {
                         strcpy(z->regs[nr].errmsg, "invalid element index");
@@ -2141,7 +2149,8 @@ static int unstructured_zone (Tcl_Interp *interp)
         }
         else {
             z->regs[nr].dim = element_dimension(elemtype);
-            cg_npe (elemtype, &ip);
+            cg_npe (elemtype, &ip_int);
+            ip = (cgsize_t)ip_int;
             for (n = 0, ne = 0; ne < nelem; ne++) {
                 for (i = 0; i < ip; i++) {
                     if (conn[n] < 1 || conn[n] > z->nnodes) {
@@ -2170,11 +2179,13 @@ static int unstructured_zone (Tcl_Interp *interp)
                 z->regs[nr].elem_offsets = conn_offsets;
 
                 /* fix element indexing */
-                cg_npe (elemtype, &ip);
+                cg_npe (elemtype, &ip_int);
+                ip = (cgsize_t)ip_int;
                 for (n = 0, ne = 0; ne < nelem; ne++) {
                     if (elemtype == CGNS_ENUMT(MIXED)) {
                         nb = (int)conn[n++];
-                        cg_npe ((CGNS_ENUMT(ElementType_t))nb, &ip);
+                        cg_npe ((CGNS_ENUMT(ElementType_t))nb, &ip_int);
+                        ip = (cgsize_t)ip_int;
                     }
                     else if (elemtype == CGNS_ENUMT(NGON_n)) {
                         ip = (int)(conn_offsets[ne+1] - conn_offsets[ne]);
@@ -4174,7 +4185,8 @@ static int classify_polygon (Zone *z, int nnodes, cgsize_t *nodeid)
 static cgsize_t find_elements (void)
 {
 #define ELEM_INC 50
-    int nz, nnodes, nn, nr, nf;
+    int nz, nn, nr, nf, nnodes_int;
+    cgsize_t nnodes;
     cgsize_t n, ne, maxelems, nelems, *elems;
     CGNS_ENUMT(ElementType_t) type;
     Zone *z;
@@ -4187,7 +4199,8 @@ static cgsize_t find_elements (void)
             r = &z->regs[nr];
             if (r->dim < 2 || (r->mode == 0 && !ignorevis)) continue;
             type = r->elemtype;
-            cg_npe(type, &nnodes);
+            cg_npe(type, &nnodes_int);
+            nnodes = (cgsize_t)nnodes_int;
             maxelems = nelems = 0;
             elems = NULL;
 
@@ -4229,7 +4242,8 @@ static cgsize_t find_elements (void)
                 for (n = 0, ne = 0; ne < r->nelems; ne++) {
                     if (r->elemtype == CGNS_ENUMV(MIXED)) {
                         type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
-                        cg_npe(type, &nnodes);
+                        cg_npe(type, &nnodes_int);
+                        nnodes = (cgsize_t)nnodes_int;
                     }
                     switch (type) {
                         case CGNS_ENUMV(TRI_3):
@@ -4926,7 +4940,8 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
 
 static cgsize_t find_intersects (void)
 {
-    int nz, nr, nf, nfaces, nnodes;
+    int nz, nr, nf, nfaces, nnodes_int;
+    cgsize_t nnodes;
     cgsize_t n, ne;
     size_t nn;
     CGNS_ENUMT(ElementType_t) type;
@@ -4967,10 +4982,12 @@ static cgsize_t find_intersects (void)
                     }
                 }
                 else {
-                    cg_npe(type, &nnodes);
+                    cg_npe(type, &nnodes_int);
+                    nnodes = (cgsize_t)nnodes_int;
                     if (r->elemtype == CGNS_ENUMV(MIXED)) {
                         type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
-                        cg_npe(type, &nnodes);
+                        cg_npe(type, &nnodes_int);
+                        nnodes = (cgsize_t)nnodes_int;
                     }
                     intersect_element (nz, type, &r->elems[n], edgehash);
                 }

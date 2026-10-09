@@ -47,16 +47,21 @@ foreach (example ${examples})
            ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${example}> ${MPIEXEC_POSTFLAGS})
 endforeach (example ${examples})
 
-# Tests depend on prerequisite files created by earlier tests
-set_tests_properties(test-write_flowcentrind_str_parinzone PROPERTIES
-  DEPENDS test-write_grid_str_parinzone)
-set_tests_properties(test-write_flowcentrind_str_paroverzone PROPERTIES
-  DEPENDS test-write_grid_str_paroverzone)
-set_tests_properties(test-read_grid_str_parinzone PROPERTIES
-  DEPENDS test-write_grid_str_parinzone)
-set_tests_properties(test-read_grid_str_paroverzone PROPERTIES
-  DEPENDS test-write_grid_str_paroverzone)
-set_tests_properties(test-read_flowcentrind_str_parinzone PROPERTIES
-  DEPENDS "test-write_grid_str_parinzone;test-write_flowcentrind_str_parinzone")
-set_tests_properties(test-read_flowcentrind_str_paroverzone PROPERTIES
-  DEPENDS "test-write_grid_str_paroverzone;test-write_flowcentrind_str_paroverzone")
+if (CGNS_ENABLE_TESTS)
+  # Tests depend on prerequisite files created by earlier tests.
+  # parinzone: write_grid -> {write_flowcentrind, read_grid} -> read_flowcentrind
+  set_tests_properties(test-write_flowcentrind_str_parinzone PROPERTIES
+    DEPENDS test-write_grid_str_parinzone)
+  set_tests_properties(test-read_grid_str_parinzone PROPERTIES
+    DEPENDS test-write_grid_str_parinzone)
+  set_tests_properties(test-read_flowcentrind_str_parinzone PROPERTIES
+    DEPENDS "test-write_grid_str_parinzone;test-write_flowcentrind_str_parinzone")
+  # paroverzone: same ordering
+  set_tests_properties(test-write_flowcentrind_str_paroverzone PROPERTIES
+    DEPENDS test-write_grid_str_paroverzone)
+  set_tests_properties(test-read_grid_str_paroverzone PROPERTIES
+    DEPENDS test-write_grid_str_paroverzone)
+  set_tests_properties(test-read_flowcentrind_str_paroverzone PROPERTIES
+    DEPENDS "test-write_grid_str_paroverzone;test-write_flowcentrind_str_paroverzone")
+endif ()
+

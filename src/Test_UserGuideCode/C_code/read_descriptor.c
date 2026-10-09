@@ -41,6 +41,7 @@ int main()
 /* read descriptor */
       cg_descriptor_read(n,name,&text);
       printf("\nThe descriptor is:\n\n%s\n",text);
+      cg_free(text);
     }
 /* close CGNS file */
     cg_close(index_file);
