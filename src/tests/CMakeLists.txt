@@ -261,3 +261,37 @@ if (CGNS_ENABLE_TESTS)
 
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)
+
+# Backward compatibility of the public update tool. All checked-in inputs are
+# HDF5; the ADF case is an old-version copy made with the low-level converter.
+if(CGNS_ENABLE_TESTS AND CGNS_ENABLE_HDF5)
+  add_executable(test_update_compare test_update_compare.c)
+  target_link_libraries(test_update_compare PRIVATE ${TESTS_LK_LIBS})
+  foreach(fixture 3000 3110 3110_hdf5-110 3210 3310 3420 4000 4100 4400)
+    set(backends hdf5)
+    if(fixture STREQUAL "3000")
+      list(APPEND backends adf)
+    endif()
+    string(REGEX MATCH "^[0-9]+" old_version "${fixture}")
+    if(fixture STREQUAL "3110_hdf5-110")
+      # This fixture tests HDF5 1.10 compatibility and stores CGNS version 4.50.
+      set(old_version 4500)
+    endif()
+    foreach(backend IN LISTS backends)
+      set(case_name "cgnsupdate_${fixture}_${backend}")
+      add_test(NAME ${case_name} COMMAND ${CMAKE_COMMAND}
+        "-DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/data/cgnslib_vers-${fixture}.cgns"
+        "-DTOOLS_SOURCE=${CMAKE_CURRENT_SOURCE_DIR}/../tools"
+        "-DCHECK_TOOL=$<TARGET_FILE:cgnscheck>"
+        "-DCONVERT_TOOL=$<TARGET_FILE:cgnsconvert>"
+        "-DCOMPARE_TOOL=$<TARGET_FILE:test_update_compare>"
+        "-DWORK=${CMAKE_CURRENT_BINARY_DIR}/${case_name}"
+        "-DBACKEND=${backend}" "-DOLD_VERSION=${old_version}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_cgnsupdate.cmake")
+      if(WIN32 AND CGNS_BUILD_SHARED)
+        set_tests_properties(${case_name} PROPERTIES
+          ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:cgns_shared>")
+      endif()
+    endforeach()
+  endforeach()
+endif()
