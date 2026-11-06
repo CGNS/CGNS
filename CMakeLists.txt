@@ -565,6 +565,27 @@ if (CGNS_ENABLE_HDF5)
     unset(_hdf5_link_str)
   endif ()
 
+  # HDF5 2.2 can require signed plugins (HDF5_REQUIRE_SIGNED_PLUGINS); its
+  # static library then links OpenSSL::Crypto, but its hdf5-config.cmake does
+  # not find OpenSSL (fixed after 2.2.0 by HDFGroup/hdf5#6617). Find OpenSSL
+  # when HDF5 names an OpenSSL target that does not exist. Earlier HDF5 has no
+  # plugin signing. Once the minimum supported HDF5 includes that fix, delete
+  # this block here and in src/cgns-config.cmake.in.
+  if (TARGET hdf5-${CG_HDF5_LINK_TYPE} AND NOT (HDF5_VERSION AND HDF5_VERSION VERSION_LESS "2.2.0"))
+    get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
+    string(REGEX MATCHALL "OpenSSL::[A-Za-z0-9_]+" _hdf5_ssl_targets "${_hdf5_link_libs}")
+    foreach (_hdf5_ssl_target IN LISTS _hdf5_ssl_targets)
+      if (NOT TARGET ${_hdf5_ssl_target})
+        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ${_hdf5_ssl_target}, finding OpenSSL package")
+        find_package(OpenSSL REQUIRED)
+        break ()
+      endif ()
+    endforeach ()
+    unset(_hdf5_link_libs)
+    unset(_hdf5_ssl_targets)
+    unset(_hdf5_ssl_target)
+  endif ()
+
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
