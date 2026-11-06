@@ -3622,8 +3622,8 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
     CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
     const cgsize_t *pnts, int *D)
 {
-    int i, index_dim = 0;
-    cgsize_t cnt, dim_vals = 1;
+    int index_dim = 0;
+    cgsize_t size_of_patch = npnts, dim_vals = 1;
     cgns_discrete *discrete;
     char_33 PointSetName;
     double id;
@@ -3638,6 +3638,8 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+    if (ptset_type == CGNS_ENUMV(PointRange) &&
+        cgi_range_size(index_dim, pnts, &size_of_patch)) return CG_ERROR;
 
     if (cg_discrete_write(fn, B, Z, discrete_name, D))
         return CG_ERROR;
@@ -3649,18 +3651,7 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
     discrete->ptset->type = ptset_type;
     strcpy(discrete->ptset->data_type,CG_SIZE_DATATYPE);
     discrete->ptset->npts = npnts;
-
-    if (ptset_type == CGNS_ENUMV(PointList)) {
-        discrete->ptset->size_of_patch = npnts;
-    }
-    else {
-        discrete->ptset->size_of_patch = 1;
-        for (i = 0; i < index_dim; i++) {
-            cnt = pnts[i+index_dim] - pnts[i];
-            if (cnt < 0) cnt = -cnt;
-            discrete->ptset->size_of_patch *= (cnt + 1);
-        }
-    }
+    discrete->ptset->size_of_patch = size_of_patch;
 
     strcpy(PointSetName, PointSetTypeName[ptset_type]);
     if (cgi_write_ptset(discrete->id, PointSetName, discrete->ptset,
@@ -8376,8 +8367,8 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
     CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
     const cgsize_t *pnts, int *S)
 {
-    int i, index_dim = 0;
-    cgsize_t cnt, dim_vals = 1;
+    int index_dim = 0;
+    cgsize_t size_of_patch = npnts, dim_vals = 1;
     cgns_sol *sol;
     char_33 PointSetName;
     double id;
@@ -8392,6 +8383,8 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+    if (ptset_type == CGNS_ENUMV(PointRange) &&
+        cgi_range_size(index_dim, pnts, &size_of_patch)) return CG_ERROR;
 
     if (cg_sol_write(fn, B, Z, solname, CGNS_ENUMV(Vertex), S))
         return CG_ERROR;
@@ -8403,18 +8396,7 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
     sol->ptset->type = ptset_type;
     strcpy(sol->ptset->data_type,CG_SIZE_DATATYPE);
     sol->ptset->npts = npnts;
-
-    if (ptset_type == CGNS_ENUMV(PointList)) {
-        sol->ptset->size_of_patch = npnts;
-    }
-    else {
-        sol->ptset->size_of_patch = 1;
-        for (i = 0; i < index_dim; i++) {
-            cnt = pnts[i+index_dim] - pnts[i];
-            if (cnt < 0) cnt = -cnt;
-            sol->ptset->size_of_patch *= (cnt + 1);
-        }
-    }
+    sol->ptset->size_of_patch = size_of_patch;
 
     strcpy(PointSetName, PointSetTypeName[ptset_type]);
     if (cgi_write_ptset(sol->id, PointSetName, sol->ptset, index_dim,
@@ -9192,8 +9174,8 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
                           CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
                           const cgsize_t *pnts, int *S)
 {
-    int i, index_dim = 0;
-    cgsize_t cnt, dim_vals = 1;
+    int index_dim = 0;
+    cgsize_t size_of_patch = npnts, dim_vals = 1;
     cgns_zone *zone;
     cgns_subreg *subreg;
     char_33 PointSetName;
@@ -9209,6 +9191,8 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
     if (cgi_check_location(dimension+1,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+    if (ptset_type == CGNS_ENUMV(PointRange) &&
+        cgi_range_size(index_dim, pnts, &size_of_patch)) return CG_ERROR;
 
     subreg = cg_subreg_write(fn, B, Z, regname, dimension, S);
     if (subreg == NULL) return CG_ERROR;
@@ -9218,18 +9202,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
     subreg->ptset->type = ptset_type;
     strcpy(subreg->ptset->data_type,CG_SIZE_DATATYPE);
     subreg->ptset->npts = npnts;
-
-    if (ptset_type == CGNS_ENUMV(PointList)) {
-        subreg->ptset->size_of_patch = npnts;
-    }
-    else {
-        subreg->ptset->size_of_patch = 1;
-        for (i = 0; i < index_dim; i++) {
-            cnt = pnts[i+index_dim] - pnts[i];
-            if (cnt < 0) cnt = -cnt;
-            subreg->ptset->size_of_patch *= (cnt + 1);
-        }
-    }
+    subreg->ptset->size_of_patch = size_of_patch;
 
     /* save data in file */
 
@@ -9808,6 +9781,15 @@ int cg_hole_write(int fn, int B, int Z, const char * holename,
 
     index_dim = zone->index_dim;
 
+     /* check every range has a valid size before anything is changed */
+    if (ptset_type == CGNS_ENUMV(PointRange)) {
+        cgsize_t size;
+        for (set=0; set<nptsets; set++) {
+            if (cgi_range_size(index_dim, &pnts[2*index_dim*set], &size))
+                return CG_ERROR;
+        }
+    }
+
      /* Overwrite an OversetHoles_t Node: */
     for (index=0; index<zconn->nholes; index++) {
         if (strcmp(holename, zconn->hole[index].name)==0) {
@@ -9856,14 +9838,13 @@ int cg_hole_write(int fn, int B, int Z, const char * holename,
         else
             ptset->npts = npnts;
 
-     /* Record the number of nodes or elements in the point set */
+     /* Record the number of nodes or elements in the point set; each
+        range is sized from its own corners (checked above) */
         if (ptset_type==CGNS_ENUMV( PointList ))
             ptset->size_of_patch=npnts;
-        else if (ptset_type==CGNS_ENUMV( PointRange )) {
-            ptset->size_of_patch = 1;
-            for (i=0; i<index_dim; i++)
-                ptset->size_of_patch *= (pnts[i+index_dim]-pnts[i]+1);
-        }
+        else if (ptset_type==CGNS_ENUMV( PointRange ))
+            cgi_range_size(index_dim, &pnts[2*index_dim*set],
+                           &ptset->size_of_patch);
     }
 
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
@@ -10370,10 +10351,7 @@ int cg_conn_write(int fn, int B, int Z,  const char * connectname,
 
      /* Compute PointListSize */
     if (ptset_type==CGNS_ENUMV(PointRange)) {
-        PointListSize = 1;
-        for (i=0; i<index_dim; i++) {
-            PointListSize *= (pnts[i+index_dim]-pnts[i]+1);
-        }
+        if (cgi_range_size(index_dim, pnts, &PointListSize)) return CG_ERROR;
     } else  PointListSize=npnts;
 
     if (ndata_donor && connect_type == CGNS_ENUMV(Abutting1to1) && PointListSize != ndata_donor) {
@@ -11267,10 +11245,10 @@ int cg_boco_write(int fn, int B, int Z, const char * boconame,
     cgns_zone *zone;
     cgns_zboco *zboco;
     cgns_boco *boco = NULL;
-    int index, i, index_dim;
+    int index, index_dim;
     CGNS_ENUMT(PointSetType_t) ptype;
     CGNS_ENUMT(GridLocation_t) location;
-    cgsize_t length;
+    cgsize_t length, size_of_patch;
 
      /* get memory address of file */
     cg = cgi_get_file(fn);
@@ -11332,6 +11310,13 @@ int cg_boco_write(int fn, int B, int Z, const char * boconame,
     }
 #endif
 
+     /* Number of nodes or elements in the point set */
+    index_dim = zone->index_dim;
+    if (ptype == CGNS_ENUMV(PointList) || ptype == CGNS_ENUMV(ElementList))
+        size_of_patch = npnts;
+    else if (cgi_range_size(index_dim, pnts, &size_of_patch))
+        return CG_ERROR;
+
      /* Allocate ZoneBC data struct. if not already created */
     if (zone->zboco == 0) {
         zone->zboco = CGNS_NEW(cgns_zboco, 1);
@@ -11381,16 +11366,7 @@ int cg_boco_write(int fn, int B, int Z, const char * boconame,
     strcpy(boco->ptset->name, PointSetTypeName[boco->ptset->type]);
     strcpy(boco->ptset->data_type,CG_SIZE_DATATYPE);
     boco->ptset->npts = npnts;
-
-     /* Record the number of nodes or elements in the point set */
-    index_dim = zone->index_dim;
-    if (boco->ptset->type == CGNS_ENUMV(PointList))
-        boco->ptset->size_of_patch=npnts;
-    else {
-        boco->ptset->size_of_patch = 1;
-        for (i=0; i<index_dim; i++)
-            boco->ptset->size_of_patch = boco->ptset->size_of_patch * (pnts[i+index_dim]-pnts[i]+1);
-    }
+    boco->ptset->size_of_patch = size_of_patch;
 
     /* Create ZoneBC_t node if it doesn't yet exist */
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
@@ -15029,7 +15005,7 @@ int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
    CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
    const cgsize_t *pnts, int *S)
 {
-   cgsize_t cnt;
+   cgsize_t size_of_patch = npnts;
    cgns_psol *sol;
    char_33 PointSetName;
    double id;
@@ -15041,6 +15017,8 @@ int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
            (long)npnts, PointSetTypeName[ptset_type]);
        return CG_ERROR;
    }
+   if (ptset_type == CGNS_ENUMV(PointRange) &&
+       cgi_range_size(1, pnts, &size_of_patch)) return CG_ERROR;
 
    if (cg_particle_sol_write(fn, B, P, solname, S))
        return CG_ERROR;
@@ -15051,15 +15029,7 @@ int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
    sol->ptset->type = ptset_type;
    strcpy(sol->ptset->data_type,CG_SIZE_DATATYPE);
    sol->ptset->npts = npnts;
-
-   if (ptset_type == CGNS_ENUMV(PointList)) {
-       sol->ptset->size_of_patch = npnts;
-   }
-   else {
-      cnt = pnts[1] - pnts[0];
-      if (cnt < 0) cnt = -cnt;
-      sol->ptset->size_of_patch = (cnt + 1);
-   }
+   sol->ptset->size_of_patch = size_of_patch;
 
    strcpy(PointSetName, PointSetTypeName[ptset_type]);
    if (cgi_write_ptset(sol->id, PointSetName, sol->ptset, 1,
@@ -20001,8 +19971,9 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
            const cgsize_t * pnts)
 {
     cgns_ptset *ptset = 0;
-    int i, index_dim;
+    int index_dim;
     int ier=0;
+    cgsize_t size_of_patch = npnts;
 
     CHECK_FILE_OPEN
 
@@ -20040,6 +20011,9 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
     /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
     return CG_ERROR;
+    if (ptset_type == CGNS_ENUMV(PointRange) &&
+        cgi_range_size(index_dim, pnts, &size_of_patch))
+    return CG_ERROR;
 
     ptset = cgi_ptset_address(CG_MODE_WRITE, &ier);
     if (ptset==0)
@@ -20048,16 +20022,8 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
     /* set these with the provided argument data */
     ptset->type = ptset_type;
     ptset->npts = npnts;
-
-    if (ptset_type == CGNS_ENUMV(PointList)) {
-    ptset->size_of_patch = npnts;
-    }
-    else {
-    ptset->size_of_patch = 1;
-    for (i=0; i < index_dim; i++)
-        ptset->size_of_patch = ptset->size_of_patch *
-        (pnts[i+index_dim] - pnts[i]+1);
-    }
+    ptset->size_of_patch = size_of_patch;
+    ptset->legacy_size = 0;
 
     /* initialize the following to default values */
     ptset->id = 0;

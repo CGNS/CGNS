@@ -143,6 +143,22 @@ Bug Fixes since CGNS 4.5.0 release
 
     Library:
     -------
+    - Point-set data is now sized as SIDS DataSize() defines it: with a
+      PointList or PointRange present, arrays hold ListLength() values
+      whatever the GridLocation (GitHub #985). Files with EdgeCenter or
+      FaceCenter FlowSolution_t or DiscreteData_t point sets, which the
+      library wrote but could not reopen, now open, for structured as well
+      as unstructured zones. ArbitraryGridMotion_t at FaceCenter, which
+      also could not be reopened, now opens.
+    - A PointRange whose End precedes its Begin in some direction is now
+      sized |End - Begin| + 1 in that direction by every writer and by the
+      reader. Previously each writer used its own rule: cg_ptset_write
+      could store too few field values, cg_conn_write rejected valid
+      abutting interfaces, and BC data or point-set solutions could fail
+      to reopen. Arrays sized by the old rule are still read, with a
+      warning, so existing files keep opening.
+    - cg_hole_write sized every PointRange set from the first range, and
+      cg_boco_write sized an ElementList in an ADF2 file as a range.
 
     Fortran:
     --------
@@ -152,6 +168,10 @@ Bug Fixes since CGNS 4.5.0 release
 
     Tools:
     ------
+    - cgnscheck sizes a ZoneSubRegion_t that refers to a BC, connection or
+      hole range as |End - Begin| + 1 points per direction, matching the
+      library, and sizes a multi-range hole as the sum of its ranges
+      instead of reading the wrong array.
 
 Known Problems
 ==============

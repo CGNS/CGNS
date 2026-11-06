@@ -240,6 +240,8 @@ typedef struct {            /* IndexArray/Range_t Node      */
     char_33 data_type;      /* type of data                         */
     cgsize_t npts;          /* number of points to define the patch */
     cgsize_t size_of_patch; /* nr of nodes or elements in patch     */
+    cgsize_t legacy_size;   /* pre-fix size of a range read from    */
+                            /* file, see cgi_ptset_size_ok()        */
     void *data;             /* data (only loaded in MODE_MODIFY     */
 } cgns_ptset;               /*       when version mismatch)         */
 
@@ -1405,6 +1407,10 @@ CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(const char *adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc);
+int cgi_range_extent(cglong_t begin, cglong_t end, cglong_t *size,
+	cglong_t *legacy_size);
+int cgi_range_size(int index_dim, const cgsize_t *range, cgsize_t *size);
+int cgi_ptset_size_ok(cgns_ptset *ptset, cgsize_t count, const char *owner);
 
 CGNSDLL int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
 int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *to_type, void *to_data);
