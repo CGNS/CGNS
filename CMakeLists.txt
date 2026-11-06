@@ -517,19 +517,45 @@ if (CGNS_ENABLE_HDF5)
           endif ()
         endif ()
       endif ()
-      # Detect SZIP/libaec in link interface — matches target names like
-      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip from
-      # older HDF5 installations. CMake regex does not support \b, so we use
-      # ;-delimited alternation. The string is normalized with leading/trailing
-      # semicolons so these patterns always match at element boundaries.
-      # Check for the target explicitly rather than libaec_FOUND for the same reason.
-      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT TARGET libaec::sz)
+      # Detect SZIP/libaec in link interface — target names like szip-static or
+      # libaec::sz-shared, or bare sz/szip from older HDF5 installations. A
+      # static HDF5 target wraps them in $<LINK_ONLY:...>, so unwrap that first.
+      # CMake regex does not support \b, so we use ;-delimited alternation on
+      # the semicolon-normalized string.
+      string(REGEX REPLACE "\\$<LINK_ONLY:([^>]*)>" "\\1" _hdf5_link_bare "${_hdf5_link_str}")
+      # libaec 1.1 exports libaec::sz-shared and libaec::sz-static, with
+      # libaec::sz only an alias, so check for the exact names HDF5 recorded.
+      # Check for the targets explicitly rather than libaec_FOUND for the same
+      # reason as ZLIB above.
+      string(REGEX MATCHALL "libaec::[A-Za-z0-9_-]+" _hdf5_aec_targets "${_hdf5_link_bare}")
+      set(_hdf5_aec_missing "")
+      foreach (_hdf5_aec_target IN LISTS _hdf5_aec_targets)
+        if (NOT TARGET ${_hdf5_aec_target})
+          list(APPEND _hdf5_aec_missing ${_hdf5_aec_target})
+        endif ()
+      endforeach ()
+      if (_hdf5_aec_missing OR
+          (_hdf5_link_bare MATCHES ";szip-|;szip;|;sz;|;sz-" AND NOT TARGET libaec::sz))
         message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
+        if (_hdf5_aec_missing MATCHES "-static")
+          set(libaec_USE_STATIC_LIBS ON)
+        endif ()
         find_package(libaec QUIET)
         if (NOT libaec_FOUND)
           find_library(SZIP_LIBRARY NAMES szip sz)
         endif ()
+        foreach (_hdf5_aec_target IN LISTS _hdf5_aec_missing)
+          if (NOT TARGET ${_hdf5_aec_target})
+            message(FATAL_ERROR "hdf5-${CG_HDF5_LINK_TYPE} requires ${_hdf5_aec_target} but "
+                    "the libaec package providing it was not found; set libaec_DIR to the "
+                    "directory containing libaec-config.cmake")
+          endif ()
+        endforeach ()
       endif ()
+      unset(_hdf5_link_bare)
+      unset(_hdf5_aec_targets)
+      unset(_hdf5_aec_missing)
+      unset(_hdf5_aec_target)
     endif ()
     unset(_hdf5_link_libs)
     unset(_hdf5_link_str)
