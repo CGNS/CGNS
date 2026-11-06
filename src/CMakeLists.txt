@@ -783,6 +783,7 @@ configure_package_config_file(
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
+              ${CMAKE_CURRENT_SOURCE_DIR}/cgns-hdf5-dependencies.cmake
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns)
 install(EXPORT cgns-targets
 	FILE cgns-targets.cmake
