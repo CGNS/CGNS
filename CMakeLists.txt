@@ -567,11 +567,13 @@ if (CGNS_ENABLE_HDF5)
 
   # HDF5 2.2 can require signed plugins (HDF5_REQUIRE_SIGNED_PLUGINS); its
   # static library then links OpenSSL::Crypto, but its hdf5-config.cmake does
-  # not find OpenSSL (fixed after 2.2.0 by HDFGroup/hdf5#6617). Find OpenSSL
-  # when HDF5 names an OpenSSL target that does not exist. Earlier HDF5 has no
-  # plugin signing. Once the minimum supported HDF5 includes that fix, delete
-  # this block here and in src/cgns-config.cmake.in.
-  if (TARGET hdf5-${CG_HDF5_LINK_TYPE} AND NOT (HDF5_VERSION AND HDF5_VERSION VERSION_LESS "2.2.0"))
+  # not find OpenSSL (HDFGroup/hdf5#6617 fixes that in 2.3.0). Earlier HDF5
+  # has no plugin signing, so this applies to 2.2.x only (or an unknown
+  # version), and only when HDF5 names an OpenSSL target that does not exist.
+  # Once the minimum supported HDF5 is 2.3, delete this block here and in
+  # src/cgns-config.cmake.in.
+  if (TARGET hdf5-${CG_HDF5_LINK_TYPE} AND NOT (HDF5_VERSION AND (HDF5_VERSION VERSION_LESS "2.2.0" OR
+                                                     HDF5_VERSION VERSION_GREATER_EQUAL "2.3.0")))
     get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
     string(REGEX MATCHALL "OpenSSL::[A-Za-z0-9_]+" _hdf5_ssl_targets "${_hdf5_link_libs}")
     foreach (_hdf5_ssl_target IN LISTS _hdf5_ssl_targets)
