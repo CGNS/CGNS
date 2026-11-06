@@ -35,6 +35,7 @@ set(ser_benchmark_hdf5_FILES ser_benchmark_hdf5.c)
 set(test_core_vfd_FILES test_core_vfd.c)
 set(test_exts_FILES test_exts.c)
 set(test_goto_FILES test_goto.c)
+set(test_error_handler_FILES test_error_handler.c)
 set(test_partial_FILES test_partial.c)
 set(test_ver31_FILES test_ver31.c)
 set(test_multifam_FILES test_multifam.c)
@@ -88,6 +89,7 @@ add_executable( ser_benchmark_hdf5   ${ser_benchmark_hdf5_FILES}   )
 add_executable( test_core_vfd        ${test_core_vfd_FILES}        )
 add_executable( test_exts            ${test_exts_FILES}            )
 add_executable( test_goto            ${test_goto_FILES}            )
+add_executable( test_error_handler   ${test_error_handler_FILES}   )
 add_executable( test_partial         ${test_partial_FILES}         )
 add_executable( test_ver31           ${test_ver31_FILES}           )
 add_executable( test_multifam        ${test_multifam_FILES}        )
@@ -129,6 +131,7 @@ set(C_TESTS_LIST
 	test_core_vfd        
 	test_exts            
 	test_goto            
+	test_error_handler
 	test_partial         
 	test_ver31           
 	test_multifam        
