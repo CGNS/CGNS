@@ -1753,11 +1753,28 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     return CG_OK;
 }
 
+/* An unstructured zone has no block dimensions for its edges or faces.
+ * An explicit point set supplies their extent. For other locations keep
+ * the block-size validation used when reading existing files. */
+static int cgi_field_datasize(const cgns_ptset *ptset, CGNS_ENUMT(GridLocation_t) location,
+                              int *rind_planes, cgsize_t *size)
+{
+    int unstructured_edge_or_face = CurrentZoneType == CGNS_ENUMV(Unstructured) &&
+        ((location == CGNS_ENUMV(EdgeCenter) && Cdim >= 2) ||
+         (location == CGNS_ENUMV(FaceCenter) && Cdim == 3));
+
+    if ((!ptset || !unstructured_edge_or_face) &&
+        cgi_datasize(Idim, CurrentDim, location, rind_planes, size))
+        return CG_ERROR;
+    if (ptset) size[0] = ptset->size_of_patch;
+    return CG_OK;
+}
+
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 {
     double *id, *idf;
     int s, z, n, linked;
-    cgsize_t DataSize[3], DataCount = 0;
+    cgsize_t DataSize[3];
 
     if (cgi_get_nodes(parent_id, "FlowSolution_t", nsols, &id))
         return CG_ERROR;
@@ -1786,10 +1803,6 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* Rind Planes */
         if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return CG_ERROR;
 
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
-                sol[0][s].rind_planes, DataSize)) return CG_ERROR;
-
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, sol[0][s].id,
                 &sol[0][s].ptset)) return CG_ERROR;
@@ -1799,8 +1812,9 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 cgi_error("ElementList/Range not supported under FlowSolution");
                 return CG_ERROR;
             }
-            DataCount = sol[0][s].ptset->size_of_patch;
         }
+        if (cgi_field_datasize(sol[0][s].ptset, sol[0][s].location,
+                sol[0][s].rind_planes, DataSize)) return CG_ERROR;
 
      /* DataArray_t */
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
@@ -1830,7 +1844,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     }
                 } else {
                     if (sol[0][s].field[z].data_dim != 1 ||
-                        sol[0][s].field[z].dim_vals[0] != DataCount) {
+                        sol[0][s].field[z].dim_vals[0] != DataSize[0]) {
                         cgi_error("Invalid field array dimension for ptset solution");
                         return CG_ERROR;
                     }
@@ -4792,7 +4806,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
 {
     double *id, *idi;
     int n, i, j, linked;
-    cgsize_t DataSize[3], DataCount = 0;
+    cgsize_t DataSize[3];
 
     if (cgi_get_nodes(parent_id, "DiscreteData_t", ndiscrete, &id)) return CG_ERROR;
     if (*ndiscrete<=0) {
@@ -4826,10 +4840,6 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
         if (cgi_read_rind(discrete[0][n].id, &discrete[0][n].rind_planes))
             return CG_ERROR;
 
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, discrete[0][n].location,
-            discrete[0][n].rind_planes, DataSize)) return CG_ERROR;
-
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, discrete[0][n].id,
                 &discrete[0][n].ptset)) return CG_ERROR;
@@ -4839,8 +4849,9 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                 cgi_error("ElementList/Range not supported under DiscreteData");
                 return CG_ERROR;
             }
-            DataCount = discrete[0][n].ptset->size_of_patch;
         }
+        if (cgi_field_datasize(discrete[0][n].ptset, discrete[0][n].location,
+                discrete[0][n].rind_planes, DataSize)) return CG_ERROR;
 
      /* DataArray_t */
         if (cgi_get_nodes(discrete[0][n].id, "DataArray_t",
@@ -4869,7 +4880,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     }
                 } else {
                     if (discrete[0][n].array[i].data_dim != 1 ||
-                        discrete[0][n].array[i].dim_vals[0] != DataCount) {
+                        discrete[0][n].array[i].dim_vals[0] != DataSize[0]) {
                         cgi_error("Invalid array dimension for ptset solution");
                         return CG_ERROR;
                     }
