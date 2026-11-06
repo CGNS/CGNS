@@ -13,12 +13,28 @@
 # that block.
 #-----------------------------------------------------------------------------
 
+include(CMakeFindDependencyMacro)
+
+# Report a dependency that cannot be found. Called from cgns-config.cmake, mark
+# the CGNS package as not found, as find_dependency() does, so that the
+# caller's find_package(cgns) QUIET and REQUIRED options are honored. When
+# building CGNS, stop with an error.
+macro (_cgns_hdf5_dependency_not_found _cgns_msg)
+  if (CMAKE_FIND_PACKAGE_NAME)
+    set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE "${_cgns_msg}")
+    set(${CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+    return()
+  else ()
+    message(FATAL_ERROR "${_cgns_msg}")
+  endif ()
+endmacro ()
+
 macro (cgns_resolve_hdf5_dependencies _cgns_hdf5_tgt)
 
   # zlib and libaec: HDF5 2.1 and later find these in hdf5-config.cmake.
   # Older versions (or an unknown version) leave them to the consumer.
   # Delete this block once the minimum supported HDF5 is 2.1.
-  if (TARGET ${_cgns_hdf5_tgt} AND NOT HDF5_VERSION VERSION_GREATER_EQUAL "2.1.0")
+  if (TARGET ${_cgns_hdf5_tgt} AND NOT (HDF5_VERSION AND HDF5_VERSION VERSION_GREATER_EQUAL "2.1.0"))
     get_target_property(_hdf5_link_libs ${_cgns_hdf5_tgt} INTERFACE_LINK_LIBRARIES)
     if (_hdf5_link_libs)
       # Normalize with leading/trailing semicolons so delimited patterns always match
@@ -49,7 +65,7 @@ macro (cgns_resolve_hdf5_dependencies _cgns_hdf5_tgt)
           endif ()
         endif ()
         if (NOT TARGET ZLIB::ZLIB)
-          message(FATAL_ERROR "${_cgns_hdf5_tgt} requires ZLIB::ZLIB but ZLIB was not found")
+          _cgns_hdf5_dependency_not_found("${_cgns_hdf5_tgt} requires ZLIB::ZLIB but ZLIB was not found")
         endif ()
       endif ()
 
@@ -72,18 +88,31 @@ macro (cgns_resolve_hdf5_dependencies _cgns_hdf5_tgt)
       if (_hdf5_aec_missing OR
           (_hdf5_link_bare MATCHES ";szip-|;szip;|;sz;|;sz-" AND NOT TARGET libaec::sz))
         message(STATUS "${_cgns_hdf5_tgt} requires SZIP, finding libaec package")
+        # Ask libaec for its static targets if those are what HDF5 names,
+        # then restore the caller's setting so it does not leak out of here.
+        if (DEFINED libaec_USE_STATIC_LIBS)
+          set(_cgns_aec_static_saved "${libaec_USE_STATIC_LIBS}")
+          set(_cgns_aec_static_was_set ON)
+        else ()
+          set(_cgns_aec_static_was_set OFF)
+        endif ()
         if (_hdf5_aec_missing MATCHES "-static")
           set(libaec_USE_STATIC_LIBS ON)
         endif ()
         find_package(libaec QUIET)
+        if (_cgns_aec_static_was_set)
+          set(libaec_USE_STATIC_LIBS "${_cgns_aec_static_saved}")
+        else ()
+          unset(libaec_USE_STATIC_LIBS)
+        endif ()
+        unset(_cgns_aec_static_saved)
+        unset(_cgns_aec_static_was_set)
         if (NOT libaec_FOUND)
           find_library(SZIP_LIBRARY NAMES szip sz)
         endif ()
         foreach (_hdf5_aec_target IN LISTS _hdf5_aec_missing)
           if (NOT TARGET ${_hdf5_aec_target})
-            message(FATAL_ERROR "${_cgns_hdf5_tgt} requires ${_hdf5_aec_target} but the "
-                    "libaec package providing it was not found; set libaec_DIR to the "
-                    "directory containing libaec-config.cmake")
+            _cgns_hdf5_dependency_not_found("${_cgns_hdf5_tgt} requires ${_hdf5_aec_target} but the libaec package providing it was not found; set libaec_DIR to the directory containing libaec-config.cmake")
           endif ()
         endforeach ()
       endif ()
@@ -104,14 +133,21 @@ macro (cgns_resolve_hdf5_dependencies _cgns_hdf5_tgt)
   if (TARGET ${_cgns_hdf5_tgt} AND NOT (HDF5_VERSION AND (HDF5_VERSION VERSION_LESS "2.2.0" OR
                                                          HDF5_VERSION VERSION_GREATER_EQUAL "2.3.0")))
     get_target_property(_hdf5_link_libs ${_cgns_hdf5_tgt} INTERFACE_LINK_LIBRARIES)
-    string(REGEX MATCHALL "OpenSSL::[A-Za-z0-9_]+" _hdf5_ssl_targets "${_hdf5_link_libs}")
-    foreach (_hdf5_ssl_target IN LISTS _hdf5_ssl_targets)
-      if (NOT TARGET ${_hdf5_ssl_target})
-        message(STATUS "${_cgns_hdf5_tgt} requires ${_hdf5_ssl_target}, finding OpenSSL package")
-        find_package(OpenSSL REQUIRED)
-        break ()
-      endif ()
-    endforeach ()
+    if (_hdf5_link_libs)
+      string(REGEX MATCHALL "OpenSSL::[A-Za-z0-9_]+" _hdf5_ssl_targets "${_hdf5_link_libs}")
+      foreach (_hdf5_ssl_target IN LISTS _hdf5_ssl_targets)
+        if (NOT TARGET ${_hdf5_ssl_target})
+          message(STATUS "${_cgns_hdf5_tgt} requires ${_hdf5_ssl_target}, finding OpenSSL package")
+          if (CMAKE_FIND_PACKAGE_NAME)
+            # From cgns-config.cmake: forward the caller's QUIET/REQUIRED
+            find_dependency(OpenSSL)
+          else ()
+            find_package(OpenSSL REQUIRED)
+          endif ()
+          break ()
+        endif ()
+      endforeach ()
+    endif ()
     unset(_hdf5_link_libs)
     unset(_hdf5_ssl_targets)
     unset(_hdf5_ssl_target)
