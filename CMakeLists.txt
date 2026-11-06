@@ -482,7 +482,11 @@ if (CGNS_ENABLE_HDF5)
   # - For hdf5-static: zlib/szip must be resolved explicitly (not baked in)
   # - For hdf5-shared: normally no deps in interface, but handles broken configs
   #   or Windows builds where ZLIB::ZLIB may still appear
-  if (TARGET hdf5-${CG_HDF5_LINK_TYPE})
+  # HDF5 2.1 and later find their own zlib and libaec dependencies in
+  # hdf5-config.cmake, so this block is needed only for older versions (or
+  # when the version is unknown). Once the minimum supported HDF5 is 2.1,
+  # delete it here and in src/cgns-config.cmake.in.
+  if (TARGET hdf5-${CG_HDF5_LINK_TYPE} AND NOT HDF5_VERSION VERSION_GREATER_EQUAL "2.1.0")
     get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
     if (_hdf5_link_libs)
       # Normalize with leading/trailing semicolons so delimited patterns always match

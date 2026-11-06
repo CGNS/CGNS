@@ -114,8 +114,12 @@ if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT)
   # - Legacy module-mode fallback targets contain raw library paths
   # - HDF5 bundles compression libs (any platform) and provides them via its
   #   own config-mode package
+  # HDF5 2.1 and later find their own zlib and libaec dependencies in
+  # hdf5-config.cmake, so this block is needed only for older versions (or
+  # when the version is unknown). Once the minimum supported HDF5 is 2.1,
+  # delete it here and in CMakeLists.txt.
   set(_cgns_hdf5_target "hdf5-${${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE}")
-  if (TARGET ${_cgns_hdf5_target})
+  if (TARGET ${_cgns_hdf5_target} AND NOT HDF5_VERSION VERSION_GREATER_EQUAL "2.1.0")
     get_target_property(_hdf5_link_libs ${_cgns_hdf5_target} INTERFACE_LINK_LIBRARIES)
     if (_hdf5_link_libs)
       set(_hdf5_link_str ";${_hdf5_link_libs};")
