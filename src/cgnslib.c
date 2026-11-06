@@ -510,10 +510,12 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
     cg = &(cgns_files[n_cgns_files]);
     n_cgns_files++;
     (*fn) = n_cgns_files + file_number_offset;
+    cg->cgio = cgio;
+    cg->mode = mode;
 
     if (cgio_get_file_type(cgio, &filetype)) {
         cg_io_error("cgio_get_file_type");
-        return CG_ERROR;
+        goto error;
     }
 
     /* Keep in-memory copy of cgns file 'header' information */
@@ -544,12 +546,12 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
 
         if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
-            (void *)&FileVersion)) return CG_ERROR;
+            (void *)&FileVersion)) goto error;
     }
     else {
 
      /* read file version from file and set cg->version = FileVersion*1000 */
-        if (cg_version(cg->file_number, &FileVersion)) return CG_ERROR;
+        if (cg_version(cg->file_number, &FileVersion)) goto error;
 
      /* Check that the library version is at least as recent as the one used
         to create the file being read */
@@ -560,7 +562,7 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
                as long as the 1st digit of the versions are equal */
             if ((cg->version / 1000) > (CGNSLibVersion / 1000)) {
                 cgi_error("A more recent version of the CGNS library created the file. Therefore, the CGNS library needs updating before reading the file '%s'.",filename);
-                return CG_ERROR;
+                goto error;
             }
             /* warn only if different in second digit */
             if ((cg->version / 100) > (CGNSLibVersion / 100)) {
@@ -580,18 +582,18 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
     if (cgio_file_version(cg->cgio, cg->dtb_version, cg->creation_date,
             cg->modify_date)) {
         cg_io_error("cgio_file_version");
-        return CG_ERROR;
+        goto error;
     }
     if (cgio_library_version(cg->cgio, cg->adf_lib_version)) {
         cg_io_error("cgio_library_version");
-        return CG_ERROR;
+        goto error;
     }
 
     /* read CGNS file */
     if (mode == CG_MODE_READ || mode == CG_MODE_MODIFY) {
         int nnod;
         double *id;
-        if (cgi_read()) return CG_ERROR;
+        if (cgi_read()) goto error;
 
         /* update version number in modify mode */
         if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY &&
@@ -608,11 +610,11 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
 
             if (cgi_get_nodes(cg->rootid, "CGNSLibraryVersion_t",
                     &nnod, &id))
-                return CG_ERROR;
+                goto error;
             if (nnod) {
                 if (cgio_write_all_data(cg->cgio, id[0], &FileVersion)) {
                     cg_io_error("cgio_write_all_data");
-                    return CG_ERROR;
+                    goto error;
                 }
                 free(id);
             }
@@ -620,7 +622,7 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
                 dim_vals = 1;
                 if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
                     "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
-                    (void *)&FileVersion)) return CG_ERROR;
+                    (void *)&FileVersion)) goto error;
             }
         }
     } else {
@@ -634,6 +636,15 @@ int cgi_open(const char *filename, int mode, int open_parallel, int *fn)
 #endif
 
     return CG_OK;
+
+ error:
+    /* The open failed, so the caller will not close this file.  Release it
+       here, so the file can be removed or rewritten while the program runs;
+       whatever was read of the tree is left allocated, as before. */
+    cgio_close_file(cg->cgio);
+    n_open--;
+    cg->mode = CG_MODE_CLOSED;
+    return CG_ERROR;
 }
 
 /**

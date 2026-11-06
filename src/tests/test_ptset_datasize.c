@@ -468,6 +468,10 @@ static void expect_open_error(const char *message)
     }
     if (strstr(cg_get_error(), message) == NULL)
         fail(__LINE__, message);
+    /* a failed cg_open must release the file (Windows cannot remove an
+       open file) */
+    if (remove(fname))
+        fail(__LINE__, "removing the file after a failed cg_open");
 }
 
 static void rejections(void)

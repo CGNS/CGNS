@@ -159,6 +159,9 @@ Bug Fixes since CGNS 4.5.0 release
       warning, so existing files keep opening.
     - cg_hole_write sized every PointRange set from the first range, and
       cg_boco_write sized an ElementList in an ADF2 file as a range.
+    - A cg_open that failed while reading the file left it open until the
+      program exited, so on Windows it could not be removed or rewritten.
+      The file is now closed when cg_open fails.
 
     Fortran:
     --------
