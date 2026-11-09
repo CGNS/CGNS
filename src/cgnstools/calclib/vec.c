@@ -321,27 +321,27 @@ static int checking = 0;        /* set if checking equation only */
 
 /*----- function prototypes -----*/
 
-static VECDATA *parse();
-static void *handle_error();
-static void clean_up();
+static VECDATA *parse(void);
+static void *handle_error(int err);
+static void clean_up(void);
 
-static int  do_intrinsic();
-static int  do_symbol();
-static int  get_args();
-static void chk_index();
-static void add_op();
+static int  do_intrinsic(void);
+static int  do_symbol(void);
+static int  get_args(int nargs);
+static void chk_index(VECDATA *vdata);
+static void add_op(int op, void *op_val);
 
-static void logical();
-static void relational();
-static void additive();
-static void multiplicative();
-static void exponential();
-static void unary();
-static void expression();
+static void logical(void);
+static void relational(void);
+static void additive(void);
+static void multiplicative(void);
+static void exponential(void);
+static void unary(void);
+static void expression(void);
 
-static void push_var();
-static void pop_var();
-static double process_op();
+static void push_var(double v);
+static void pop_var(double *v);
+static double process_op(int n);
 
 static SIGNAL fpe_err (int signum);
 
@@ -892,8 +892,7 @@ static VECDATA *parse (void)
  * handle error message
  *-------------------------------------------------------------------*/
 
-static void *handle_error (err)
-int err;
+static void *handle_error (int err)
 {
     int pos = -1;
     char *str = exp_start;
@@ -1027,8 +1026,7 @@ static int do_intrinsic (void)
  * extracts arguments for intrinsic function
  *------------------------------------------------------------------*/
 
-static int get_args (nargs)
-int nargs;
+static int get_args (int nargs)
 {
     int n = 0;
 
@@ -1276,8 +1274,7 @@ static int do_symbol (void)
  * check for a vector index
  *------------------------------------------------------------------*/
 
-static void chk_index (vdata)
-VECDATA *vdata;
+static void chk_index (VECDATA *vdata)
 {
     if (*exp_ptr == '[') {
         advance (1);
@@ -1336,9 +1333,7 @@ static int do_userfunc (void)
  * adds operation to the stack
  *------------------------------------------------------------------*/
 
-static void add_op (op, op_val)
-int op;
-void *op_val;
+static void add_op (int op, void *op_val)
 {
     if (op_pos >= op_size) {
         op_size += STACK_INC;
@@ -1663,8 +1658,7 @@ static void expression (void)
  * push a variable on the stack
  *------------------------------------------------------------------*/
 
-static void push_var (v)
-double v;
+static void push_var (double v)
 {
     if (var_pos >= var_size) {
         var_size += STACK_INC;
@@ -1680,8 +1674,7 @@ double v;
  * pop a variable from the stack
  *------------------------------------------------------------------*/
 
-static void pop_var (v)
-double *v;
+static void pop_var (double *v)
 {
     if (--var_pos < 0)
         longjmp (env_ptr, VECERR_POP);
@@ -1692,8 +1685,7 @@ double *v;
  * processes the operation stack for given variables
  *------------------------------------------------------------------*/
 
-static double process_op (n)
-int n;
+static double process_op (int n)
 {
     int m, done = 0, level, index = 0;
     long j;
