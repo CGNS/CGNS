@@ -11,7 +11,6 @@ review.
 <!-- What does this change, and why? -->
 
 Fixes #
-Approach agreed in: <!-- link to the issue comment or discussion -->
 
 ## Testing
 
