@@ -17,7 +17,7 @@ Approach agreed in: <!-- link to the issue comment or discussion -->
 
 ## Checklist
 
-- [ ] The approach was agreed with a maintainer, or the issue is labeled `help wanted`.
+- [ ] I am assigned to the issue, and the approach was agreed with a maintainer.
 - [ ] I ran the tests with both CMake and autotools, and registered new tests with both.
 - [ ] Files written by earlier CGNS versions still open, or the impact is described above.
 - [ ] I understand every change, reported only results I observed, and will answer review comments myself
