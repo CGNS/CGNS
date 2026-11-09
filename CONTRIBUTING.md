@@ -9,10 +9,14 @@ review it quickly, and when we will close a pull request without a review.
 
 **Talk to us first.** A pull request should follow an agreed approach:
 
-- For a bug or a small change, comment on the issue (or open one) and say
-  how you intend to fix it. Wait for a maintainer to agree before you write
-  the code. Issues labeled `help wanted` are already open to contributors;
-  for those, a comment saying you are working on it is enough.
+- For a bug or a small change, comment on the issue (or open one), say how
+  you intend to fix it, and ask to be assigned. Wait for a maintainer to
+  agree and assign the issue to you before you write the code. Issues
+  labeled `help wanted` are already open to contributors; for those, a
+  comment asking to be assigned is enough.
+- Do not open a pull request for an issue that is assigned to someone else.
+  Assignment tells everyone the work is taken, so two people do not fix
+  the same thing.
 - For anything that changes the CGNS standard (new nodes, enumerators,
   data-structure rules, or the meaning of existing ones), the change goes
   through a [CGNS Proposal for Extension (CPEX)](https://cgns.org/current/CPEX.html)
@@ -123,7 +127,8 @@ testing you did locally.
 To keep our time for contributions that are ready, maintainers may close a
 pull request with a short note and without a detailed review if:
 
-- it was not discussed first, as described above;
+- it was not discussed first, or its issue is not assigned to the
+  submitter, as described above;
 - it changes the CGNS standard without an accepted CPEX;
 - it is one of a large batch of unsolicited pull requests, or was opened by
   an autonomous agent with no named human to respond to review;
