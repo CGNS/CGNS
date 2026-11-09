@@ -105,8 +105,7 @@ cannot authorize a merge.
 ## What a pull request needs
 
 - **Target `develop`.** Keep one topic per pull request.
-- **Link the issue** it addresses and the discussion where the approach was
-  agreed.
+- **Link the issue** it addresses, where the approach was agreed.
 - **Tests.** A bug fix needs a test that fails without the fix. CGNS
   supports both CMake and autotools, so register new tests with both:
   `CMakeLists.txt` and `Makefile.in` in `src/tests`, or in `src/ptests` for
