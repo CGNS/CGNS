@@ -1,5 +1,7 @@
 <!--
-Please read CONTRIBUTING.md first. Pull requests that were not discussed
+Please read the contributing guide first:
+https://github.com/CGNS/CGNS/blob/develop/CONTRIBUTING.md
+Pull requests that were not discussed
 in an issue beforehand, or that skip this checklist, may be closed without
 review.
 -->
