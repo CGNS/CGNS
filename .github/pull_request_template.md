@@ -23,5 +23,5 @@ Approach agreed in: <!-- link to the issue comment or discussion -->
 - [ ] Files written by earlier CGNS versions still open, or the compatibility impact is described above.
 - [ ] User-visible changes are noted in `release_docs/RELEASE.txt`.
 - [ ] Every result reported here is one I observed.
-- [ ] I understand every change in this pull request and will respond to review myself, without the tool
+- [ ] I understand every change in this pull request and will answer review comments myself
       (see [Use of AI tools](https://github.com/CGNS/CGNS/blob/develop/CONTRIBUTING.md#use-of-ai-tools)).
