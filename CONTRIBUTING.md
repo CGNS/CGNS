@@ -19,8 +19,9 @@ review it quickly, and when we will close a pull request without a review.
   the same thing.
 - For anything that changes the CGNS standard (new nodes, enumerators,
   data-structure rules, or the meaning of existing ones), the change goes
-  through a [CGNS Proposal for Extension (CPEX)](https://cgns.org/current/CPEX.html)
-  and a Steering Committee vote before any library code is merged.
+  through a [CGNS Proposal for Extension (CPEX)](https://cgns.org/current/CPEX.html),
+  tracked as an issue, and a Steering Committee vote before any library code
+  is merged.
 - For questions and design discussion, use the
   [CGNStalk discussion forum](https://github.com/CGNS/CGNS/discussions/categories/cgnstalk).
 
@@ -93,7 +94,7 @@ trailers that some tools add automatically.
 ### Licensing
 
 Before using a tool, make sure its terms do not restrict its output in ways
-that conflict with the CGNS license (see [license.txt](license.txt)).
+that conflict with the [CGNS license](https://cgns.org/license.html).
 
 ### AI-assisted review
 
@@ -113,7 +114,10 @@ cannot authorize a merge.
 - **Both build systems build and pass.** Run the tests with CMake (`ctest`)
   and with autotools (`make test` in `src/tests`, and in `src/ptests` for
   parallel changes).
-- **Compatibility.** Files written by earlier CGNS versions must keep opening.
+- **Compatibility.** Files written by earlier CGNS versions must keep opening,
+  and releases with the same major version must be able to read each other's
+  files (see the
+  [FAQ on versions](https://cgns.org/general/FAQ.html#what-do-the-cgns-version-numbers-mean-and-does-the-cgns-mll-library-maintain-backward-forward-compatibility)).
   If a change affects existing files or the public API, say so explicitly.
 - **Release notes.** Add a line for user-visible changes to
   `release_docs/RELEASE.txt`.
@@ -157,6 +161,7 @@ minimal reproducer.
 
 ## License
 
-CGNS is distributed under the zlib/libpng license (see [license.txt](license.txt)).
+CGNS is distributed under the [CGNS license](https://cgns.org/license.html),
+based on the zlib/libpng license.
 By submitting a contribution, you agree that it is distributed under the
 same license.
