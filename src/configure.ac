@@ -1503,7 +1503,7 @@ if test "$enableval" = "yes" ; then
 # get path to X11 headers and libraries
 #---------------------------------------------------------------------------
 
-  if test "$ac_cv_cygwin" = "no"; then
+  if test "$ac_cv_cygwin" != "yes"; then
     AC_PATH_X
     if ! test "$x_includes" = ""; then
       X11INCS=-I$x_includes
@@ -1591,7 +1591,11 @@ if test "$enableval" = "yes" ; then
         TK_LIB_FLAG=-ltk
       fi
       tcllib=`echo $TK_LIB_FLAG | sed 's/tk/tcl/'`
-      X11LIBS=""
+      # TK_LIBS often omits -lX11, and linkers no longer pull it in
+      # through libtk, so keep it whenever X11 was found
+      if test "$no_x" = "yes"; then
+        X11LIBS=""
+      fi
       TKLIBS="$tcllib $TK_LIB_FLAG $TK_LIBS"
     fi
   fi
@@ -1662,7 +1666,9 @@ if test "$enableval" = "yes" ; then
     . $TKCONFIG
     tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
     tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
-    X11LIBS=""
+    if test "$no_x" = "yes"; then
+      X11LIBS=""
+    fi
     if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
       TKINCS="-I$tcldir/generic -I$tkdir/generic"
     else

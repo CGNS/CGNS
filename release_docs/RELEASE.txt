@@ -149,9 +149,17 @@ Bug Fixes since CGNS 4.5.0 release
 
     Configuration:
     -------------
+    - CMake found HDF5 built against libaec 1.1 but not the libaec targets
+      it links (libaec::sz-shared, wrapped in $<LINK_ONLY:...> for a static
+      HDF5), so configuring CGNS, or a project using find_package(cgns),
+      failed. The detection now handles these names.
+    - configure no longer skips X11 detection on Linux, so cgnstools links
+      libX11 again.
 
     Tools:
     ------
+    - cgnstools builds with GCC 15, which defaults to C23: calclib/vec.c
+      now uses prototypes instead of K&R declarations.
 
 Known Problems
 ==============
