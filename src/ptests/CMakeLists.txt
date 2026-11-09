@@ -80,7 +80,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     test_general_wrappers_f90
     ftest_zone
   )
-  add_library(test_utilsf OBJECT ${CMAKE_SOURCE_DIR}/src/tests/utilsf.F90)
+  add_library(test_utilsf STATIC ${CMAKE_SOURCE_DIR}/src/tests/utilsf.F90)
 
   function (add_fortran_exe file)
     add_executable (${file} ${file}.F90)
