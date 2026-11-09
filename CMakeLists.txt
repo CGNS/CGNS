@@ -477,63 +477,11 @@ if (CGNS_ENABLE_HDF5)
     endif()
   endif ()
 
-  # Check the actual HDF5 target's link interface to detect compression dependencies.
-  # This inspects only the target we are actually linking against:
-  # - For hdf5-static: zlib/szip must be resolved explicitly (not baked in)
-  # - For hdf5-shared: normally no deps in interface, but handles broken configs
-  #   or Windows builds where ZLIB::ZLIB may still appear
-  if (TARGET hdf5-${CG_HDF5_LINK_TYPE})
-    get_target_property(_hdf5_link_libs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
-    if (_hdf5_link_libs)
-      # Normalize with leading/trailing semicolons so delimited patterns always match
-      set(_hdf5_link_str ";${_hdf5_link_libs};")
-      # Detect ZLIB::ZLIB in link interface — matches both plain references
-      # and generator expressions like $<LINK_ONLY:ZLIB::ZLIB>
-      # Check for the target explicitly rather than ZLIB_FOUND — a parent project
-      # may have called find_package(ZLIB) in legacy mode (variables only) without
-      # creating the ZLIB::ZLIB imported target that HDF5's interface requires.
-      if (_hdf5_link_str MATCHES "ZLIB::ZLIB" AND NOT TARGET ZLIB::ZLIB)
-        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires ZLIB::ZLIB, finding ZLIB package")
-        # Try module mode first — CMake's FindZLIB always creates ZLIB::ZLIB.
-        # Config-mode (ZLIBConfig.cmake from a CMake install of zlib) may export
-        # different target names (ZLIB::zlib, ZLIB::zlibstatic) without ZLIB::ZLIB.
-        find_package(ZLIB MODULE QUIET)
-        if (NOT ZLIB_FOUND)
-          # Fallback to config-mode in case module mode failed
-          find_package(ZLIB CONFIG QUIET)
-        endif ()
-        if (NOT TARGET ZLIB::ZLIB)
-          if (ZLIB_FOUND)
-            # ZLIB was found (config-mode) but without ZLIB::ZLIB — alias a
-            # known config-mode target so its properties are inherited correctly.
-            if (TARGET ZLIB::zlib)
-              add_library(ZLIB::ZLIB ALIAS ZLIB::zlib)
-            elseif (TARGET ZLIB::zlibstatic)
-              add_library(ZLIB::ZLIB ALIAS ZLIB::zlibstatic)
-            endif ()
-          endif ()
-          if (NOT TARGET ZLIB::ZLIB)
-            message(FATAL_ERROR "hdf5-${CG_HDF5_LINK_TYPE} requires ZLIB::ZLIB but ZLIB was not found")
-          endif ()
-        endif ()
-      endif ()
-      # Detect SZIP/libaec in link interface — matches target names like
-      # szip-static, libaec::sz, $<LINK_ONLY:szip-static>, or bare sz/szip from
-      # older HDF5 installations. CMake regex does not support \b, so we use
-      # ;-delimited alternation. The string is normalized with leading/trailing
-      # semicolons so these patterns always match at element boundaries.
-      # Check for the target explicitly rather than libaec_FOUND for the same reason.
-      if (_hdf5_link_str MATCHES ";szip-|;szip;|;sz;|;sz-|;libaec" AND NOT TARGET libaec::sz)
-        message(STATUS "hdf5-${CG_HDF5_LINK_TYPE} target requires SZIP, finding libaec package")
-        find_package(libaec QUIET)
-        if (NOT libaec_FOUND)
-          find_library(SZIP_LIBRARY NAMES szip sz)
-        endif ()
-      endif ()
-    endif ()
-    unset(_hdf5_link_libs)
-    unset(_hdf5_link_str)
-  endif ()
+  # Find the compression and crypto libraries the HDF5 target links when
+  # HDF5's own package configuration does not (rules shared with the
+  # installed cgns-config.cmake).
+  include(${CMAKE_CURRENT_SOURCE_DIR}/src/cgns-hdf5-dependencies.cmake)
+  cgns_resolve_hdf5_dependencies(hdf5-${CG_HDF5_LINK_TYPE})
 
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
