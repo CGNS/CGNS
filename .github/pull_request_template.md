@@ -14,7 +14,7 @@ Fixes #
 
 ## Testing
 
-<!-- What you built and ran yourself, and the results you saw. -->
+<!-- How did you test this change? -->
 
 ## Checklist
 
