@@ -38,6 +38,7 @@ CALL = \
 	write_zones$(EXE) \
 	write_rind$(EXE) \
 	test_bbox$(EXE) \
+	test_ptset_datasize$(EXE) \
 	test_convert_elem$(EXE) \
 	test_back_comp$(EXE) \
 	test_complex$(EXE)
@@ -271,6 +272,12 @@ write_rind$(EXE) : write_rind.c $(CGNSLIB)
 
 test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_bbox.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_ptset_datasize$(EXE) : test_ptset_datasize.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_ptset_datasize.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
