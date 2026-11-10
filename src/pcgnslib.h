@@ -117,6 +117,9 @@ CGNSDLL int cgp_field_write(int fn, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) type, const char *fieldname, int *F);
 CGNSDLL int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *data);
+
+CGNSDLL int cgp_sol_characteristic_length_write_data(int fn, int B, int Z, int S,
+    int nscale, cgsize_t rmin, cgsize_t rmax, const double *h_e);
 CGNSDLL int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax,
     CGNS_ENUMT(DataType_t) m_type,

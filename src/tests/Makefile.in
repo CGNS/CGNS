@@ -30,6 +30,7 @@ CALL = \
 	test_particle$(EXE) \
 	test_general_reshape$(EXE) \
 	test_general_rind$(EXE) \
+	test_high_order$(EXE) \
 	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
@@ -40,7 +41,24 @@ CALL = \
 	test_bbox$(EXE) \
 	test_convert_elem$(EXE) \
 	test_back_comp$(EXE) \
-	test_complex$(EXE)
+	test_complex$(EXE) \
+	test_mixed_ho$(EXE) \
+	test_3d_elements$(EXE) \
+	test_characteristic_length$(EXE) \
+	test_degree_zero$(EXE) \
+	test_distribution$(EXE) \
+	test_structured_ptset_solution$(EXE) \
+	test_element_traits$(EXE) \
+	test_error_handling$(EXE) \
+	test_hexa_order2$(EXE) \
+	test_high_order_bar$(EXE) \
+	test_high_order_hexa$(EXE) \
+	test_high_order_quad$(EXE) \
+	test_isoparametric$(EXE) \
+	test_modal_interpolation$(EXE) \
+	test_serendipity$(EXE) \
+	test_spacetime$(EXE) \
+	test_variable_order$(EXE)
 
 # test_unicode requires HDF5 >= 2.0.0 for Unicode filepath support.
 # It is not included in the default test run; build and run it manually:
@@ -57,7 +75,10 @@ F_TESTS = \
 	test_family_treef$(EXE) \
 	test_bboxf$(EXE) \
 	test_particlef$(EXE) \
-	test_complexf$(EXE)
+	test_complexf$(EXE) \
+	test_high_orderf$(EXE) \
+	test_ho_apif$(EXE) \
+	test_cg_npe_f$(EXE)
 
 FALL = $(F_TESTS)
 
@@ -68,6 +89,30 @@ ALL = dbtest$(EXE) $(CALL) @FALL@
 ALL64 = $(CALL64) @FALL64@
 
 TESTS = $(CALL) @FALL@
+
+CGNSCHECK = ../tools/cgnscheck$(EXE)
+
+# Files written by the HO test programs above, validated separately below in
+# both default and "-s" strict cgnscheck mode. This is autotools' only
+# coverage of CPEX-0045 validation defects and of cgnscheck strict mode;
+# keep this list in sync with CGNSCHECK_HO_FILES in src/tests/CMakeLists.txt.
+CGNSCHECK_HO_FILES = \
+	high_order.cgns \
+	test_mixed_ho_simple.cgns \
+	test_degree_zero_modal.cgns \
+	test_degree_zero_lagrange.cgns \
+	test_degree_zero_spacetime.cgns \
+	test_dist_match.cgns \
+	test_dist_reordered.cgns \
+	test_dist_equi.cgns \
+	test_dist_wb_p3.cgns \
+	test_dist_wb_p3_reord.cgns \
+	test_dist_wb_p4.cgns \
+	test_dist_wbtet_p2.cgns \
+	test_dist_wbtet_p3.cgns \
+	test_charlen_bndsec.cgns \
+	test_charlen_mixedsec.cgns \
+	test_structured_ptset_solution.cgns
 
 TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
 ifeq ("$(TIMING_AVAIL)" , "0")
@@ -116,6 +161,25 @@ test : $(TESTS)
 	     fi; \
 	   fi; \
 	 done; \
+	 if [ -x $(CGNSCHECK) ]; then \
+	   echo "=== running cgnscheck HO conformance ==="; \
+	   for f in $(CGNSCHECK_HO_FILES) ; do \
+	     if [ ! -f "$$f" ]; then continue; fi; \
+	     for mode in default strict ; do \
+	       if [ "$$mode" = "strict" ]; then margs="-s"; else margs=""; fi; \
+	       name="cgnscheck_$${f}_$${mode}"; \
+	       printf "$$name"; \
+	       printf ' %*.*s' 0 $$((padlength - $${#name} )) "$$pad"; \
+	       out=`$(CGNSCHECK) $$margs "$$f" 2>&1`; \
+	       if echo "$$out" | grep -q "ERROR"; then \
+	         printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
+	         status=`expr $$status + 1`; \
+	       else \
+	         printf " [$(OK_COLOR)PASSED$(NO_COLOR)]\n"; \
+	       fi; \
+	     done; \
+	   done; \
+	 fi; \
 	 echo "=== finished ==="; \
          if [ $$status -ne 0 ]; then \
            printf "$(ERROR_COLOR)"; \
@@ -255,6 +319,12 @@ write_test$(EXE) : write_test.c $(CGNSLIB)
 
 #----------
 
+test_high_order$(EXE) : test_high_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
 write_zones$(EXE) : write_zones.$(O) utils.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ write_zones.$(O) utils.$(O) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -277,6 +347,108 @@ test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
 
 test_complex$(EXE) : test_complex.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_complex.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_mixed_ho$(EXE) : test_mixed_ho.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_mixed_ho.c utils.$(O) $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_characteristic_length$(EXE) : test_characteristic_length.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_characteristic_length.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_degree_zero$(EXE) : test_degree_zero.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_degree_zero.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_element_traits$(EXE) : test_element_traits.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_element_traits.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_distribution$(EXE) : test_distribution.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_distribution.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_structured_ptset_solution$(EXE) : test_structured_ptset_solution.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_structured_ptset_solution.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_error_handling$(EXE) : test_error_handling.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_error_handling.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_isoparametric$(EXE) : test_isoparametric.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_isoparametric.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_modal_interpolation$(EXE) : test_modal_interpolation.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_modal_interpolation.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_spacetime$(EXE) : test_spacetime.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_spacetime.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_3d_elements$(EXE) : test_3d_elements.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_3d_elements.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_hexa_order2$(EXE) : test_hexa_order2.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_hexa_order2.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order_bar$(EXE) : test_high_order_bar.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_bar.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order_hexa$(EXE) : test_high_order_hexa.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_hexa.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order_quad$(EXE) : test_high_order_quad.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order_quad.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_serendipity$(EXE) : test_serendipity.c utils.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_serendipity.c utils.$(O) $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_variable_order$(EXE) : test_variable_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_variable_order.c $(LDLIBS) $(CLIBS) -lm
 	$(STRIP) $@
 
 #----------
@@ -402,6 +574,24 @@ test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
 
 test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_high_orderf$(EXE) : test_high_orderf.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_high_orderf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_ho_apif$(EXE) : test_ho_apif.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_ho_apif.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_cg_npe_f$(EXE) : test_cg_npe_f.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_cg_npe_f.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

@@ -121,6 +121,14 @@
 
 #define CG_MAX_GOTO_DEPTH 20
 
+/* max name length (CGIO_MAX_NAME_LENGTH + 1 for null terminator) */
+
+#define CG_MAX_NAME_LENGTH 33
+
+/* max interpolation degree for high-order elements */
+
+#define CG_MAX_ORDER 1000
+
 /* CONFIGURATION OPTIONS */
 
 /*        _______ _______ ______ _   _ _______ _____ ____  _   _  
@@ -451,10 +459,11 @@ typedef enum {
   CGNS_ENUMV( IFaceCenter ) =5,
   CGNS_ENUMV( JFaceCenter ) =6,
   CGNS_ENUMV( KFaceCenter ) =7,
-  CGNS_ENUMV( EdgeCenter ) =8
+  CGNS_ENUMV( EdgeCenter ) =8,
+  CGNS_ENUMV( InterpolationPoints ) =9
 } CGNS_ENUMT( GridLocation_t );
 
-#define NofValidGridLocation 9
+#define NofValidGridLocation 10
 
 extern CGNSDLL const char * GridLocationName[NofValidGridLocation];
 
@@ -749,7 +758,29 @@ extern CGNSDLL const char * DataTypeName[NofValidDataTypes];
  *      Element types                                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/* PLEASE ALSO UPDATE the cgnslib.h/el_size static table */
+/* PLEASE ALSO UPDATE ElementType_MAX, ElementTypeName (cgnslib.c),
+ * cgi_element_traits (cgnslib.c), and ElementTypeName + the ENUM block
+ * in cgns_f.F90 */
+
+/*
+ * CRITICAL: ElementType_t enum values are part of the CGNS file format
+ * specification and are stored as integers in HDF5/ADF files.
+ *
+ * BACKWARD COMPATIBILITY REQUIREMENTS:
+ * - These enum values have been stable since CGNS 4.3.0 (2020)
+ * - DO NOT reorder existing element types
+ * - DO NOT insert new types in the middle of the list
+ * - DO NOT change any existing enum integer values
+ * - ALWAYS append new element types at the end (after HEXA_125)
+ * - Update NofValidElementTypes when adding new types
+ *
+ * Violation of these rules will cause silent data corruption when reading
+ * files written by earlier CGNS versions (e.g., MIXED=20 misread as new type).
+ *
+ * FILE FORMAT IMPACT: Element type values are written to Elements_t nodes
+ * as I4 (4-byte integer) data. Changing enum values breaks the ability to
+ * read files created by CGNS 4.x and earlier versions.
+ */
 
 typedef enum {
   CGNS_ENUMV( ElementTypeNull  ) =CG_Null,
@@ -808,10 +839,19 @@ typedef enum {
   CGNS_ENUMV( PENTA_75 )=53,
   CGNS_ENUMV( HEXA_44 )=54,
   CGNS_ENUMV( HEXA_98 )=55,
-  CGNS_ENUMV( HEXA_125 )=56
+  CGNS_ENUMV( HEXA_125 )=56,
+  /* *** ADD NEW ELEMENT TYPES HERE (value 57+) *** */
+  /* DO NOT insert above - append only to maintain backward compatibility */
+
+  /* Sentinel value for array sizing and bounds checking.
+   * When adding a new element type, increment this value and the array size
+   * will automatically update. This prevents off-by-one errors. */
+  CGNS_ENUMV( ElementType_MAX ) = 57
 } CGNS_ENUMT( ElementType_t );
 
-#define NofValidElementTypes 57
+/* Number of valid element types (automatically derived from sentinel value)
+ * When adding new element types, only ElementType_MAX needs to be updated. */
+#define NofValidElementTypes CGNS_ENUMV(ElementType_MAX)
 
 extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 
@@ -959,6 +999,40 @@ typedef enum {
 extern CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Solution Interpolation types						 *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef enum {
+  CGNS_ENUMV( InterpolationTypeNull ) =CG_Null,
+  CGNS_ENUMV( InterpolationTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( ParametricLagrange ) =2,
+  CGNS_ENUMV( ParametricMonomialsPascal ) =3,
+  CGNS_ENUMV( CartesianMonomialsPascal ) =4,
+  CGNS_ENUMV( IsoParametric ) =5
+} CGNS_ENUMT( InterpolationType_t );
+
+#define NofValidInterpolationTypes 6
+
+extern CGNSDLL const char * InterpolationTypeName[NofValidInterpolationTypes];
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Lagrange Control-Point Distributions (CPEX-0045 §3.1.2)          *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef enum {
+  CGNS_ENUMV( ControlPointDistributionNull )         = CG_Null,
+  CGNS_ENUMV( ControlPointDistributionUserDefined )  = CG_UserDefined,
+  CGNS_ENUMV( GaussLobattoLegendre )                         = 2,
+  CGNS_ENUMV( Equidistant )                                  = 3,
+  CGNS_ENUMV( GaussLegendre )                                = 4,
+  CGNS_ENUMV( WarpAndBlend )                                 = 5
+} CGNS_ENUMT( ControlPointDistribution_t );
+
+#define NofValidControlPointDistributions 6
+
+extern CGNSDLL const char * ControlPointDistributionName[NofValidControlPointDistributions];
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Arbitrary Grid Motion types                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -1082,6 +1156,8 @@ CGNSDLL const char *cg_ModelTypeName(CGNS_ENUMT( ModelType_t ) type);
 CGNSDLL const char *cg_BCTypeName(CGNS_ENUMT( BCType_t ) type);
 CGNSDLL const char *cg_DataTypeName(CGNS_ENUMT( DataType_t ) type);
 CGNSDLL const char *cg_ElementTypeName(CGNS_ENUMT( ElementType_t ) type);
+CGNSDLL const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t ) type);
+CGNSDLL const char *cg_ControlPointDistributionName(CGNS_ENUMT( ControlPointDistribution_t ) type);
 CGNSDLL const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t ) type);
 CGNSDLL const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t ) type);
 CGNSDLL const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t ) type);
@@ -1153,6 +1229,141 @@ CGNSDLL int cg_famname_write(const char * family_name);
 CGNSDLL int cg_nmultifam(int *nfams);
 CGNSDLL int cg_multifam_read(int N, char *name, char *family);
 CGNSDLL int cg_multifam_write(const char *name, const char *family);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ElementInterpolation_t Nodes                      *
+ *                     (CPEX 045)                                        *
+ *                                                                       *
+ *  Per CPEX-0045, mesh interpolation is nodal only: the mesh is always  *
+ *  defined by control points in parametric space, so neither modal type *
+ *  can be attached to an ElementInterpolation_t.  Accordingly the node  *
+ *  carries no explicit InterpolationType child; the type is implied by  *
+ *  whether the one optional array is present (LagrangeControlPoints ->  *
+ *  ParametricLagrange, absent -> IsoParametric), and                    *
+ *  cg_element_interpolation_type_read() returns only those two.         *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
+                                          CGNS_ENUMT(ElementType_t)* et);
+
+
+CGNSDLL int cg_element_interpolation_type_read(int fn, int bn, int fam, int en,
+                                               CGNS_ENUMT(InterpolationType_t)* it);
+
+CGNSDLL int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
+                                           double *pu, double *pv, double *pw);
+
+CGNSDLL int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne);
+
+CGNSDLL int cg_element_lagrange_interpolation_count(int fn, int bn, int fam,
+                                                    CGNS_ENUMT(ElementType_t) t, int *cnt);
+
+CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_name,
+                                           CGNS_ENUMT(ElementType_t) et, int *en);
+
+CGNSDLL int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
+                                           double *pu, double *pv, double *pw);
+
+CGNSDLL int cg_element_isoparametric_write(int fn, int bn, int fam, const char * node_name,
+                                           CGNS_ENUMT(ElementType_t) et, int *en);
+
+CGNSDLL int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int *sz);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write SolutionInterpolation_t Nodes                     *
+ *                     (CPEX 045)                                        *
+ *                                                                       *
+ *      os/ot below are the same quantity as spatialDegree/temporalDegree*
+ *      in cg_sol_interpolation_degree_read/write: an incomplete          *
+ *      order-to-degree rename left both spellings in the public API.    *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,
+                                          CGNS_ENUMT(ElementType_t)* et, int *os, int *ot, CGNS_ENUMT(InterpolationType_t) *it);
+
+CGNSDLL int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
+                                                  double *pu, double *pv, double *pw, double *pt);
+
+CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
+
+CGNSDLL int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t,
+                                                     int os, int ot, int *cnt);
+
+/* Bidirectional lookup with fallback (CPEX-0045's solution-interpolation
+ * rule -- cited here without a v3/v4 draft label or section number, since
+ * the draft numbering this comment was originally written against is not
+ * guaranteed to match the section numbering of whichever revision merged):
+ * searches for an exact (et, os, ot) match first; if absent, falls back to the
+ * basic (order-1/linear) element type for et and searches again. Returns
+ * CG_NODE_NOT_FOUND if neither is present. */
+CGNSDLL int cg_solution_interpolation_find(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) et,
+                                           int os, int ot, int *sn, CGNS_ENUMT(InterpolationType_t) *it);
+
+CGNSDLL int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
+                                            CGNS_ENUMT(ElementType_t) et, int os, int ot, CGNS_ENUMT(InterpolationType_t) it, int *sn );
+
+/* npts is the number of control points the caller supplies, i.e. the slow axis
+ * of the LagrangeControlPoints array it is about to create.  It is an argument
+ * rather than a quantity the library derives because (basic element type,
+ * SpatialDegree) does not determine it: this standard supports incomplete
+ * (serendipity) spaces, where an edge-serendipity QUAD at p=2 carries 4p = 8
+ * control points against the complete space's (p+1)^2 = 9.  It is also what
+ * bounds the read of the caller's buffers.
+ *
+ * For a space-time node it is the full count, N_spatial*(TemporalDegree+1).
+ * cg_solution_interpolation_npoints_read returns it again on the way back. */
+CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn,
+                                                   int npts,
+                                                   double *pu, double *pv, double *pw, double *pt);
+
+CGNSDLL int cg_solution_interpolation_npoints_read(int fn, int bn, int fam, int sn,
+                                                   int *npts);
+
+CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Modal (Monomial) Interpolation Functions                         *
+ *                     (CPEX 045)                                        *
+ *                                                                       *
+ *      Solution interpolation only.  Mesh geometry is always defined by  *
+ *      control points, so ElementInterpolation_t carries no monomial     *
+ *      coefficients and has no modal accessors.                         *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_solution_monomial_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
+
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Lagrange Control-Point Distribution I/O (CPEX-0045 §3.1.2)       *
+ *                                                                       *
+ *  When the InterpolationType is ParametricLagrange, the parametric-    *
+ *  space distribution of the control points may be recorded as a        *
+ *  labelled enumeration node named "ControlPointDistribution"           *
+ *  of label ControlPointDistribution_t, whose payload is the            *
+ *  enumerator's name as a C1 string -- as GridLocation_t and            *
+ *  DataClass_t are stored -- child of the ElementInterpolation_t /      *
+ *  SolutionInterpolation_t node.  This is the InterpolationType_t       *
+ *  convention, NOT the name-matched DataArray_t convention used by      *
+ *  LagrangeControlPoints, which is the only DataArray_t name permitted  *
+ *  under those nodes.                                                   *
+ *                                                                       *
+ *  The attribute is recommended, not required -- the stored coordinates  *
+ *  alone determine the basis, and on conflict the coordinates win.      *
+ *  The read entry returns CG_NODE_NOT_FOUND if the attribute is absent. *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_element_interpolation_distribution_write(int fn, int bn, int fam, int en,
+                                                        CGNS_ENUMT(ControlPointDistribution_t) dist);
+
+CGNSDLL int cg_element_interpolation_distribution_read(int fn, int bn, int fam, int en,
+                                                       CGNS_ENUMT(ControlPointDistribution_t) *dist);
+
+CGNSDLL int cg_solution_interpolation_distribution_write(int fn, int bn, int fam, int sn,
+                                                         CGNS_ENUMT(ControlPointDistribution_t) dist);
+
+CGNSDLL int cg_solution_interpolation_distribution_read(int fn, int bn, int fam, int sn,
+                                                        CGNS_ENUMT(ControlPointDistribution_t) *dist);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *
@@ -1270,6 +1481,9 @@ CGNSDLL int cg_section_initialize(int file_number, int B, int Z, int S);
 CGNSDLL int cg_parent_data_write(int file_number, int B, int Z, int S,
 	const cgsize_t * parent_data);
 CGNSDLL int cg_npe( CGNS_ENUMT(ElementType_t) type, int *npe);
+CGNSDLL int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe);
+CGNSDLL int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim);
+CGNSDLL int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(ElementType_t) *basic);
 CGNSDLL int cg_ElementDataSize(int file_number, int B, int Z, int S,
 	cgsize_t *ElementDataSize);
 
@@ -1331,6 +1545,70 @@ CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 	const cgsize_t *pnts, int *S);
+
+/*
+ * CPEX-0045 interpolation-degree storage note
+ * -------------------------------------------
+ * CPEX-0045 shows the FlowSolution_t interpolation degrees in two complementary
+ * forms:
+ *   (a) a prose enumeration of two scalar fields of FlowSolution_t itself.  The
+ *       v2 text spelled these "int SpatialOrder; int TemporalOrder;" -- quoted
+ *       verbatim here because it is a quotation; the 2026-08-04 Steering
+ *       Committee decision (D-03) renamed them to SpatialDegree/TemporalDegree.
+ *   (b) the SIDS file mapping, which specifies a single IndexArray_t child named
+ *       "InterpolationDegrees" with dim = 2,
+ *       values = [spatialDegree, temporalDegree].
+ * This implementation follows (b) as the normative file layout: the
+ * cg_sol_interpolation_degree_{read,write}() pair reads/writes the
+ * IndexArray_t child. Form (a) is the in-SIDS-prose convenience description of
+ * that same data, not a second on-disk encoding.
+ *
+ * Cited without section numbers: the draft sections this was written against
+ * are not guaranteed to match the merged spec's numbering.
+ */
+CGNSDLL int cg_sol_interpolation_degree_read(int fn, int B, int Z, int S,
+                                            int *spatialDegree, int *temporalDegree);
+
+
+CGNSDLL int cg_sol_interpolation_degree_write(int fn, int B, int Z, int S,
+                                             int spatialDegree, int  temporalDegree);
+
+/* CPEX-0045: per-element coordinate normalisation factors for Cartesian modal
+ * interpolation, stored as an R8 DataArray_t named "CharacteristicLength" in a
+ * UserDefinedData_t child of the FlowSolution_t named "InterpolationMetadata"
+ * -- one level below the field list, so that cg_nfields keeps its established
+ * meaning.  Required when the associated SolutionInterpolation_t uses
+ * CartesianMonomialsPascal.
+ *
+ * Two encodings are normative, distinguished by array rank:
+ *   nscale == 1        -> isotropic: R8, 1-D, [numElements]
+ *   nscale == PhysDim  -> per-axis:  R8, 2-D, [nscale, numElements]
+ * The per-axis form corresponds to the directional non-dimensionalisation used
+ * by Taylor-basis DG solvers and keeps the modal mass matrix well conditioned
+ * on high-aspect-ratio cells. In the 2-D form nscale is fast-varying, so one
+ * element's factors are contiguous: (hx0,hy0,hz0, hx1,hy1,hz1, ...).
+ *
+ * Writers record the factors they actually used; readers must use the recorded
+ * values rather than recomputing a geometric formula.
+ *
+ * cg_sol_characteristic_length_read returns CG_NODE_NOT_FOUND when the array
+ * is absent (with *nscale and *numElements set to 0). Pass h_e == NULL to query
+ * the shape only; allocate nscale*numElements doubles and call again to read.
+ */
+CGNSDLL int cg_sol_characteristic_length_read(int fn, int B, int Z, int S,
+                                              int *nscale, cgsize_t *numElements,
+                                              double *h_e);
+
+CGNSDLL int cg_sol_characteristic_length_create(int fn, int B, int Z, int S,
+	int nscale, cgsize_t numElements);
+
+CGNSDLL int cg_sol_characteristic_length_partial_write(int fn, int B, int Z, int S,
+	int nscale, cgsize_t numElements, cgsize_t rmin, cgsize_t rmax,
+	const double *h_e);
+
+CGNSDLL int cg_sol_characteristic_length_write(int fn, int B, int Z, int S,
+                                               int nscale, cgsize_t numElements,
+                                               const double *h_e);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *

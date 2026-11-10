@@ -193,7 +193,8 @@ static void write_doubles (FILE *fp, int cnt, double *data)
 
 static void count_elements (void)
 {
-    int ns, nsect, nn, ip;
+    int ns, nsect, ip, nn_int;
+    cgsize_t nn;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
@@ -205,7 +206,7 @@ static void count_elements (void)
 
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
-                name, &elemtype, &is, &ie, &nn, &ip))
+                name, &elemtype, &is, &ie, &nn_int, &ip))
             err_exit ("cg_section_read", NULL);
         ne = ie - is + 1;
 
@@ -247,8 +248,9 @@ static void count_elements (void)
                         err_exit(NULL, errmsg);
                         break;
                 }
-                if (cg_npe(et, &nn) || nn <= 0)
+                if (cg_npe(et, &nn_int) || nn_int <= 0)
                     err_exit("cg_npe", NULL);
+                nn = nn_int;
                 i += nn;
             }
             free (conn);
@@ -358,7 +360,8 @@ static int sort_tris (const void *v1, const void *v2)
 
 static void boundary_elements (void)
 {
-    int ns, nsect, nn, ip, nf;
+    int ns, nsect, nf, nn_int, ip_int;
+    cgsize_t nn;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     cgsize_t *conn_offset;
@@ -377,7 +380,7 @@ static void boundary_elements (void)
 
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
-                name, &elemtype, &is, &ie, &nn, &ip))
+                name, &elemtype, &is, &ie, &nn_int, &ip_int))
             err_exit ("cg_section_read", NULL);
         if (elemtype != CGNS_ENUMV(MIXED) &&
             elemtype != CGNS_ENUMV(TETRA_4) &&
@@ -429,7 +432,8 @@ static void boundary_elements (void)
                     }
                 }
             }
-            cg_npe(et, &nn);
+            cg_npe(et, &nn_int);
+            nn = nn_int;
             i += nn;
         }
         free(conn);
@@ -439,7 +443,7 @@ static void boundary_elements (void)
 
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
-                name, &elemtype, &is, &ie, &nn, &ip))
+                name, &elemtype, &is, &ie, &nn_int, &ip_int))
             err_exit ("cg_section_read", NULL);
         if (elemtype != CGNS_ENUMV(MIXED) &&
             elemtype != CGNS_ENUMV(TRI_3) &&
@@ -485,7 +489,8 @@ static void boundary_elements (void)
                 pt->id = is + n;
                 pt->bcnum = -ns;
             }
-            cg_npe(et, &nn);
+            cg_npe(et, &nn_int);
+            nn = nn_int;
             i += nn;
         }
         free(conn);
@@ -722,7 +727,8 @@ static void write_tris (FILE *fp)
 
 static void write_tets (FILE *fp)
 {
-    int ns, nsect, ip, tet[4];
+    int ns, nsect, tet[4], ip_int;
+    cgsize_t ip;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
@@ -733,7 +739,7 @@ static void write_tets (FILE *fp)
 
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
-                name, &elemtype, &is, &ie, &ip, &ip))
+                name, &elemtype, &is, &ie, &ip_int, &ip_int))
             err_exit ("cg_section_read", NULL);
         ne = ie - is + 1;
         if (elemtype == CGNS_ENUMV(TETRA_4) ||
@@ -764,8 +770,9 @@ static void write_tets (FILE *fp)
                         write_ints(fp, 4, tet);
                     }
                     else {
-                        if (cg_npe(et, &ip) || ip <= 0)
+                        if (cg_npe(et, &ip_int) || ip_int <= 0)
                             err_exit("cg_npe", NULL);
+                        ip = ip_int;
                         i += ip;
                     }
                 }

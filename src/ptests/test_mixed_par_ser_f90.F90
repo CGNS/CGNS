@@ -12,9 +12,9 @@ PROGRAM test_mixed_par_ser
   INTEGER :: ierr, base, i, cg, iCoor
   INTEGER(cgsize_t) :: sizes(9)
   INTEGER :: commsize, commrank
-  CHARACTER(LEN=11) :: FNAME1 = "fname1.cgns"
-  CHARACTER(LEN=11) :: FNAME2 = "fname2.cgns"
-  CHARACTER(LEN=11) :: FNAME3 = "fname3.cgns"
+  CHARACTER(LEN=15) :: FNAME1 = "fname1_f90.cgns"
+  CHARACTER(LEN=15) :: FNAME2 = "fname2_f90.cgns"
+  CHARACTER(LEN=15) :: FNAME3 = "fname3_f90.cgns"
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: Dxyz
 
   CALL MPI_INIT(ierr)
@@ -224,11 +224,11 @@ CONTAINS
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Open first parallel file
-    CALL cgp_open_f("multi_file1.cgns", CG_MODE_WRITE, cg1, ierr)
+    CALL cgp_open_f("multi_file1_f90.cgns", CG_MODE_WRITE, cg1, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Open second parallel file (while first is still open)
-    CALL cgp_open_f("multi_file2.cgns", CG_MODE_WRITE, cg2, ierr)
+    CALL cgp_open_f("multi_file2_f90.cgns", CG_MODE_WRITE, cg2, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     ! Create content in file 1

@@ -1001,6 +1001,17 @@ int cgnsCalcSoln (int soln)
         cgnsCalcFatal ((char *)cg_get_error());
     cgnsSoln = soln;
 
+    /* CPEX-0045: an InterpolationPoints solution's field length is
+     * sum(N_DOFs(e)) over the zone's cells, not the vertex or cell count
+     * this function's structured/unstructured sizing branches below compute.
+     * Neither branch has ever been updated for this GridLocation value, so
+     * falling through would silently size the field as if it were a
+     * vertex-count array and compute wrong results with no warning -- refuse
+     * instead. */
+    if (SolnLocation == CGNS_ENUMV(InterpolationPoints))
+        cgnsCalcFatal ("high-order (GridLocation=InterpolationPoints) "
+                       "solutions are not supported by cgnscalc");
+
     for (n = 0; n < 3; n++)
         SolnDims[n] = 1;
     if (ZoneType == CGNS_ENUMV(Structured)) {
