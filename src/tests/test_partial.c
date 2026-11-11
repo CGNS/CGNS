@@ -67,6 +67,68 @@ int mixed_offset(int num, int nelems) {
     return offset;
 }
 
+static void test_mixed_shrink(void)
+{
+    const char *fname = "mixed_shrink.cgns";
+    int fn, b, z, s, i;
+    cgsize_t size[3] = {12, 2, 0};
+    cgsize_t initial[14] = {CGNS_ENUMV(HEXA_8), 1, 2, 3, 4, 5, 6, 7, 8,
+                           CGNS_ENUMV(TETRA_4), 9, 10, 11, 12};
+    cgsize_t initial_offsets[3] = {0, 9, 14};
+    cgsize_t replacement[5] = {CGNS_ENUMV(TETRA_4), 1, 2, 4, 5};
+    cgsize_t replacement_offsets[2] = {0, 5};
+    cgsize_t expected[10] = {CGNS_ENUMV(TETRA_4), 1, 2, 4, 5,
+                            CGNS_ENUMV(TETRA_4), 9, 10, 11, 12};
+    cgsize_t expected_offsets[3] = {0, 5, 10};
+    cgsize_t data_size, full_size, tail_size, output[14], output_offsets[3];
+
+    puts("checking mixed connectivity shrink");
+    unlink(fname);
+    if (cg_open(fname, CG_MODE_WRITE, &fn) ||
+        cg_base_write(fn, "Base", 3, 3, &b) ||
+        cg_zone_write(fn, b, "Zone", size, CGNS_ENUMV(Unstructured), &z) ||
+        cg_poly_section_write(fn, b, z, "Mixed", CGNS_ENUMV(MIXED),
+            1, 2, 0, initial, initial_offsets, &s) ||
+        cg_close(fn))
+        cg_error_exit();
+
+    if (cg_open(fname, CG_MODE_MODIFY, &fn) ||
+        cg_poly_elements_partial_write(fn, 1, 1, 1, 1, 1,
+            replacement, replacement_offsets) ||
+        cg_close(fn) ||
+        cg_open(fname, CG_MODE_READ, &fn))
+        cg_error_exit();
+
+    if (cg_ElementDataSize(fn, 1, 1, 1, &data_size) ||
+        cg_ElementPartialSize(fn, 1, 1, 1, 1, 2, &full_size) ||
+        cg_ElementPartialSize(fn, 1, 1, 1, 2, 2, &tail_size))
+        cg_error_exit();
+    if (data_size != 10 || full_size != 10 || tail_size != 5) {
+        fprintf(stderr, "incorrect mixed connectivity size after shrinking\n");
+        exit(1);
+    }
+
+    /* Check full reads both before and after a partial read. */
+    for (i = 0; i < 3; i++) {
+        if (i == 1) {
+            if (cg_poly_elements_partial_read(fn, 1, 1, 1, 1, 2,
+                    output, output_offsets, NULL))
+                cg_error_exit();
+        } else {
+            if (cg_poly_elements_read(fn, 1, 1, 1,
+                    output, output_offsets, NULL))
+                cg_error_exit();
+        }
+        if (memcmp(output, expected, sizeof(expected)) ||
+            memcmp(output_offsets, expected_offsets, sizeof(expected_offsets))) {
+            fprintf(stderr, "incorrect mixed connectivity or offsets after shrinking\n");
+            exit(1);
+        }
+    }
+    if (cg_close(fn))
+        cg_error_exit();
+}
+
 int main (int argc, char **argv)
 {
     int n, i, j, k, l, nn, nf, np;
@@ -853,6 +915,8 @@ int main (int argc, char **argv)
     free (elements);
     free (offsets);
     free (parent);
+
+    test_mixed_shrink();
 
     return 0;
 }

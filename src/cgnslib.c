@@ -7334,8 +7334,9 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
             WRITE_ALL_INT_DATA(1, section->connect_offset, section_offset);
             do_it_in_memory = 0;
         }
-        else if ((section_offset[s_range_size]-section_offset[0]) + m_conn_size - s_conn_size <= section->connect->dim_vals[0]){
-            /* connectivity size can fit in the reserved file size */
+        else if (m_conn_size > s_conn_size &&
+                 (section_offset[s_range_size]-section_offset[0]) + m_conn_size - s_conn_size <= section->connect->dim_vals[0]){
+            /* growing connectivity can fit in the reserved file size */
             cgsize_t start_trail_reading;
             cgsize_t s_start, s_end, s_stride;
             cgsize_t m_start, m_end, m_stride, m_dim;
