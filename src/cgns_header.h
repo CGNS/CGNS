@@ -1149,8 +1149,8 @@ CGNSDLL cgns_pgoverning *cgi_get_particle_governing(cgns_file *cg, int B, int P)
 CGNSDLL cgns_pequations *cgi_get_particle_equations(cgns_file *cg, int B, int P);
 
 /* find position lead by the goto function */
-CGNSDLL int cgi_update_posit(int cnt, int *index, char **label);
-CGNSDLL int cgi_set_posit(int fn, int B, int n, int *index, char **label);
+CGNSDLL int cgi_update_posit(int cnt, int *index, const char **label);
+CGNSDLL int cgi_set_posit(int fn, int B, int n, int *index, const char **label);
 CGNSDLL int cgi_posit_id(double *posit_id);
 CGNSDLL cgns_posit *cgi_get_posit(void);
 CGNSDLL int cgi_posit_index_dim(void);

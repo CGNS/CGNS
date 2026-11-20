@@ -1764,7 +1764,7 @@ CGNSDLL int cg_goto_f08(int file_number, int B, ...);
 CGNSDLL int cg_gorel(int file_number, ...);
 CGNSDLL int cg_gorel_f08(int file_number, ...);
 CGNSDLL int cg_gopath(int file_number, const char *path);
-CGNSDLL int cg_golist(int file_number, int B, int depth, char **label,
+CGNSDLL int cg_golist(int file_number, int B, int depth, const char **label,
 	int *num);
 CGNSDLL int cg_where(int *file_number, int *B, int *depth, char **label,
 	int *num);
