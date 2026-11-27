@@ -4773,11 +4773,28 @@ static void check_solution (int ns)
 
 /*-----------------------------------------------------------------------*/
 
+/* number of points in a range: SIDS gives Begin and End as opposing
+   corners in either order */
+
+static cgsize_t range_size(int dim, const cgsize_t *range)
+{
+    int n;
+    cgsize_t np = 1;
+
+    for (n = 0; n < dim; n++) {
+        cgsize_t d = range[n+dim] - range[n];
+        np *= (d < 0 ? -d : d) + 1;
+    }
+    return np;
+}
+
+/*-----------------------------------------------------------------------*/
+
 static cgsize_t subreg_size(int dim, int isBC, char *subname)
 {
     char name[33], *p;
     char_66 dname;
-    int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
+    int n, nbc, nc, nzc, ns, nsets, trans[3];
     cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
     CGNS_ENUMT(BCType_t) bctype;
     CGNS_ENUMT(PointSetType_t) ptype, dptype;
@@ -4798,9 +4815,7 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
                     if (cg_boco_read(cgnsfn, cgnsbase, cgnszone,
                             n, range, NULL))
                         error_exit("cg_boco_read");
-                    npnts = 1;
-                    for (ni = 0; ni < dim; ni++)
-                        npnts *= (range[ni+dim] - range[ni] + 1);
+                    npnts = range_size(dim, range);
                 }
                 else if (ptype != CGNS_ENUMV(PointList)) {
                     error("BC for subregion not PointList/Range");
@@ -4853,12 +4868,8 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
         if (cg_1to1_read(cgnsfn, cgnsbase, cgnszone, n, name,
                 dname, range, drange, trans))
             error_exit("cg_1to1_read");
-        if (0 == strcmp(p, name)) {
-            npnts = 1;
-            for (ni = 0; ni < dim; ni++)
-                npnts *= (range[ni+dim] - range[ni] + 1);
-            return npnts;
-        }
+        if (0 == strcmp(p, name))
+            return range_size(dim, range);
     }
 
     /* check general connections */
@@ -4874,9 +4885,7 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
             if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
                 if (cg_conn_read_short(cgnsfn, cgnsbase, cgnszone, n, range))
                     error_exit("cg_conn_read_short");
-                npnts = 1;
-                for (ni = 0; ni < dim; ni++)
-                    npnts *= (range[ni+dim] - range[ni] + 1);
+                npnts = range_size(dim, range);
             }
             else if (ptype != CGNS_ENUMV(PointList)) {
                 error("connection for subregion not PointList/Range");
@@ -4903,15 +4912,10 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
                     fatal_error("subreg_size:malloc failed for hole data\n");
                 if (cg_hole_read(cgnsfn, cgnsbase, cgnszone, n, pnts))
                     error_exit("cg_hole_read");
-                npnts = 1;
-                nn = 0;
-                for (ns = 0; ns < nsets; ns++) {
-                    for (ni = 0; ni < dim; ni++) {
-                        npnts *= (range[nn+dim] - range[nn] + 1);
-                        nn++;
-                    }
-                    nn += dim;
-                }
+             /* the hole is the union of its ranges */
+                npnts = 0;
+                for (ns = 0; ns < nsets; ns++)
+                    npnts += range_size(dim, &pnts[2*dim*ns]);
                 free(pnts);
             }
             else if (ptype != CGNS_ENUMV(PointList)) {

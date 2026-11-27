@@ -1757,7 +1757,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 {
     double *id, *idf;
     int s, z, n, linked;
-    cgsize_t DataSize[3], DataCount = 0;
+    cgsize_t DataSize[3];
 
     if (cgi_get_nodes(parent_id, "FlowSolution_t", nsols, &id))
         return CG_ERROR;
@@ -1786,10 +1786,6 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* Rind Planes */
         if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return CG_ERROR;
 
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
-                sol[0][s].rind_planes, DataSize)) return CG_ERROR;
-
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, sol[0][s].id,
                 &sol[0][s].ptset)) return CG_ERROR;
@@ -1799,7 +1795,18 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 cgi_error("ElementList/Range not supported under FlowSolution");
                 return CG_ERROR;
             }
-            DataCount = sol[0][s].ptset->size_of_patch;
+        }
+
+     /* Determine data size: SIDS DataSize() is ListLength() when a point
+        set is present, whatever the GridLocation, and otherwise follows
+        from the zone size and GridLocation */
+        if (sol[0][s].ptset == NULL &&
+            cgi_datasize(Idim, CurrentDim, sol[0][s].location,
+                sol[0][s].rind_planes, DataSize)) {
+            cgi_error("FlowSolution_t '%s': GridLocation %s at CellDimension "
+                      "%d needs a PointList or PointRange", sol[0][s].name,
+                      cg_GridLocationName(sol[0][s].location), Cdim);
+            return CG_ERROR;
         }
 
      /* DataArray_t */
@@ -1830,7 +1837,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     }
                 } else {
                     if (sol[0][s].field[z].data_dim != 1 ||
-                        sol[0][s].field[z].dim_vals[0] != DataCount) {
+                        !cgi_ptset_size_ok(sol[0][s].ptset,
+                            sol[0][s].field[z].dim_vals[0], sol[0][s].name)) {
                         cgi_error("Invalid field array dimension for ptset solution");
                         return CG_ERROR;
                     }
@@ -2806,7 +2814,8 @@ int cgi_read_boco(cgns_boco *boco)
 
      /* data verify */
         if (boco->normal->data_dim!=2 || boco->normal->dim_vals[0]!=Pdim ||
-            boco->normal->dim_vals[1]!=boco->ptset->size_of_patch ||
+            !cgi_ptset_size_ok(boco->ptset, boco->normal->dim_vals[1],
+                               boco->name) ||
             (strcmp(boco->normal->data_type,"R4") &&
              strcmp(boco->normal->data_type,"R8"))) {
             /*printf("boco->normal->dim_vals[1]=%d, boco->ptset->size_of_patch=%d\n",
@@ -2854,7 +2863,7 @@ int cgi_read_boco(cgns_boco *boco)
             for (i=0; i<boco->dataset[n].dirichlet->narrays; i++) {
                 cgns_array array = boco->dataset[n].dirichlet->array[i];
                 if (array.data_dim!=1 || (array.dim_vals[0] != 1 &&
-                    array.dim_vals[0] != ptset->size_of_patch)) {
+                    !cgi_ptset_size_ok(ptset, array.dim_vals[0], boco->name))) {
                     cgi_error("Wrong array size for Dirichlet data");
                     return CG_ERROR;
                 }
@@ -2864,7 +2873,7 @@ int cgi_read_boco(cgns_boco *boco)
             for (i=0; i<boco->dataset[n].neumann->narrays; i++) {
                 cgns_array array = boco->dataset[n].neumann->array[i];
                 if (array.data_dim!=1 || (array.dim_vals[0] != 1 &&
-                    array.dim_vals[0] != ptset->size_of_patch)) {
+                    !cgi_ptset_size_ok(ptset, array.dim_vals[0], boco->name))) {
                     cgi_error("Wrong array size for Neumann data");
                     return CG_ERROR;
                 }
@@ -3432,50 +3441,57 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
     }
     else {
      /* read points to calculate size_of_patch */
-        int i;
+        int i, overflow = 0;
         cgsize_t size=1;
+        cglong_t total = 1, legacy = 1;
         for (i=0; i<ndim; i++) size*=dim_vals[i];
         if (size<=0) {
             cgi_error("Error reading node %s",ptset->name);
             return CG_ERROR;
         }
         if (0 == strcmp(ptset->data_type,"I8")) {
-            cglong_t total = 1;
             cglong_t *pnts = CGNS_NEW(cglong_t, size);
             if (cgio_read_all_data_type(cg->cgio, ptset->id, ptset->data_type, pnts)) {
                 cg_io_error("cgio_read_all_data_type");
+                CGNS_FREE(pnts);
                 return CG_ERROR;
             }
 #if CG_SIZEOF_SIZE == 32
             if (cgio_check_dimensions(2*Idim, pnts)) {
                 cg_io_error("cgio_check_dimensions");
+                CGNS_FREE(pnts);
                 return CG_ERROR;
             }
 #endif
-            for (i=0; i<Idim; i++) total *= (pnts[i+Idim]-pnts[i]+1);
+            for (i=0; i<Idim && !overflow; i++)
+                overflow = cgi_range_extent(pnts[i], pnts[i+Idim], &total, &legacy);
             CGNS_FREE(pnts);
-#if CG_SIZEOF_SIZE == 32
-            if (total > CG_MAX_INT32) {
-                cgi_error("patch size too large for a 32-bit integer");
-                return CG_ERROR;
-            }
-#endif
-            ptset->size_of_patch = (cgsize_t)total;
         }
         else if (0 == strcmp(ptset->data_type,"I4")) {
             int *pnts = CGNS_NEW(int, size);
             if (cgio_read_all_data_type(cg->cgio, ptset->id, ptset->data_type, pnts)) {
                 cg_io_error("cgio_read_all_data_type");
+                CGNS_FREE(pnts);
                 return CG_ERROR;
             }
-            ptset->size_of_patch = 1;
-            for (i=0; i<Idim; i++) ptset->size_of_patch *= (pnts[i+Idim]-pnts[i]+1);
+            for (i=0; i<Idim && !overflow; i++)
+                overflow = cgi_range_extent(pnts[i], pnts[i+Idim], &total, &legacy);
             CGNS_FREE(pnts);
         }
         else {
             cgi_error("Invalid datatype for a range pointset");
             return CG_ERROR;
         }
+        if (overflow) {
+         /* Too many points for a cgsize_t.  Older libraries opened such files
+            with a wrapped size, so keep opening them; with a size of 0 any
+            array sized against this range is rejected */
+            cgi_warning("%s: range size exceeds the largest cgsize_t",
+                        ptset->name);
+            total = legacy = 0;
+        }
+        ptset->size_of_patch = (cgsize_t)total;
+        ptset->legacy_size = (cgsize_t)legacy;
     }
     return CG_OK;
 }
@@ -4792,7 +4808,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
 {
     double *id, *idi;
     int n, i, j, linked;
-    cgsize_t DataSize[3], DataCount = 0;
+    cgsize_t DataSize[3];
 
     if (cgi_get_nodes(parent_id, "DiscreteData_t", ndiscrete, &id)) return CG_ERROR;
     if (*ndiscrete<=0) {
@@ -4826,10 +4842,6 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
         if (cgi_read_rind(discrete[0][n].id, &discrete[0][n].rind_planes))
             return CG_ERROR;
 
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, discrete[0][n].location,
-            discrete[0][n].rind_planes, DataSize)) return CG_ERROR;
-
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, discrete[0][n].id,
                 &discrete[0][n].ptset)) return CG_ERROR;
@@ -4839,7 +4851,16 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                 cgi_error("ElementList/Range not supported under DiscreteData");
                 return CG_ERROR;
             }
-            DataCount = discrete[0][n].ptset->size_of_patch;
+        }
+
+     /* Determine data size, as for FlowSolution_t */
+        if (discrete[0][n].ptset == NULL &&
+            cgi_datasize(Idim, CurrentDim, discrete[0][n].location,
+            discrete[0][n].rind_planes, DataSize)) {
+            cgi_error("DiscreteData_t '%s': GridLocation %s at CellDimension "
+                      "%d needs a PointList or PointRange", discrete[0][n].name,
+                      cg_GridLocationName(discrete[0][n].location), Cdim);
+            return CG_ERROR;
         }
 
      /* DataArray_t */
@@ -4869,7 +4890,9 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     }
                 } else {
                     if (discrete[0][n].array[i].data_dim != 1 ||
-                        discrete[0][n].array[i].dim_vals[0] != DataCount) {
+                        !cgi_ptset_size_ok(discrete[0][n].ptset,
+                            discrete[0][n].array[i].dim_vals[0],
+                            discrete[0][n].name)) {
                         cgi_error("Invalid array dimension for ptset solution");
                         return CG_ERROR;
                     }
@@ -5103,7 +5126,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
     double *id, *idi;
     char *string_data;
     cgsize_t DataSize[3];
-    int n, i, j, linked;
+    int n, i, j, linked, check_size;
 
     if (cgi_get_nodes(parent_id, "ArbitraryGridMotion_t", namotions, &id)) return CG_ERROR;
     if (*namotions <= 0) {
@@ -5136,9 +5159,17 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
      /* Rind Planes */
         if (cgi_read_rind(id[n], &amotion[0][n].rind_planes)) return CG_ERROR;
 
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, amotion[0][n].location,
-            amotion[0][n].rind_planes, DataSize)) return CG_ERROR;
+     /* Determine data size.  Array sizes are checked only for locations
+        sized by the zone dimensions; for EdgeCenter and FaceCenter they are
+        not, so those locations need no size */
+        check_size = amotion[0][n].location == CGNS_ENUMV( Vertex ) ||
+                     amotion[0][n].location == CGNS_ENUMV( CellCenter ) ||
+                     amotion[0][n].location == CGNS_ENUMV( IFaceCenter ) ||
+                     amotion[0][n].location == CGNS_ENUMV( JFaceCenter ) ||
+                     amotion[0][n].location == CGNS_ENUMV( KFaceCenter );
+        if (check_size && cgi_datasize(Idim, CurrentDim,
+            amotion[0][n].location, amotion[0][n].rind_planes, DataSize))
+            return CG_ERROR;
 
      /* DataArray_t */
         if (cgi_get_nodes(id[n], "DataArray_t", &amotion[0][n].narrays, &idi))
@@ -5162,11 +5193,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
 
              /* Check that the data size is consistent with the zone dimension, the grid
                 location and rind data (not done for EdgeCenter and FaceCenter ... yet) */
-                if (amotion[0][n].location == CGNS_ENUMV( Vertex ) ||
-                    amotion[0][n].location == CGNS_ENUMV( CellCenter ) ||
-                    amotion[0][n].location == CGNS_ENUMV( IFaceCenter ) ||
-                    amotion[0][n].location == CGNS_ENUMV( JFaceCenter ) ||
-                    amotion[0][n].location == CGNS_ENUMV( KFaceCenter )) {
+                if (check_size) {
                     for (j=0; j<Idim; j++) {
                         if (amotion[0][n].array[i].dim_vals[j]!= DataSize[j]) {
                             cgi_error("Invalid array dimension for ArbitraryGridMotion array '%s'",
@@ -6930,7 +6957,6 @@ int cgi_read_particle_sol(int in_link, double parent_id, int *nsols, cgns_psol *
 {
     double *id, *idf;
     int s, z, linked;
-    cgsize_t DataCount = 0;
 
     if (cgi_get_nodes(parent_id, "ParticleSolution_t", nsols, &id))
         return CG_ERROR;
@@ -6961,7 +6987,6 @@ int cgi_read_particle_sol(int in_link, double parent_id, int *nsols, cgns_psol *
                 cgi_error("ElementList/Range not supported under ParticleSolution");
                 return CG_ERROR;
             }
-            DataCount = sol[0][s].ptset->size_of_patch;
         }
 
      /* DataArray_t */
@@ -6991,7 +7016,8 @@ int cgi_read_particle_sol(int in_link, double parent_id, int *nsols, cgns_psol *
 
                 } else {
                     if (sol[0][s].field[z].data_dim != 1 ||
-                        sol[0][s].field[z].dim_vals[0] != DataCount) {
+                        !cgi_ptset_size_ok(sol[0][s].ptset,
+                            sol[0][s].field[z].dim_vals[0], sol[0][s].name)) {
                         cgi_error("Invalid field array dimension for ptset solution");
                         return CG_ERROR;
                     }
@@ -7402,10 +7428,87 @@ int cgi_datasize(int ndim, cgsize_t *dims,
                 (location == CGNS_ENUMV( KFaceCenter ) && j!=2)) DataSize[j]--;
         }
     } else {
-        cgi_error("Location not yet supported");
+        cgi_error("GridLocation %s at CellDimension %d has no size without "
+                  "a PointList or PointRange", cg_GridLocationName(location),
+                  Cdim);
         return CG_ERROR;
     }
     return CG_OK;
+}
+
+/* Fold one index direction of an IndexRange_t (PointRange, ElementRange,
+ * PointRangeDonor) into a running point count.
+ *
+ * SIDS defines Begin and End as opposing corners of the subrange without
+ * ordering them, so a direction holds |End - Begin| + 1 indices and
+ * ListLength() is the product over all directions; *size accumulates it.
+ * Earlier versions of this library multiplied the signed End - Begin + 1
+ * instead, which differs whenever End < Begin.  If legacy_size is not NULL
+ * it accumulates that product, so the reader can still accept arrays sized
+ * to it (see cgi_ptset_size_ok()). */
+int cgi_range_extent(cglong_t begin, cglong_t end, cglong_t *size,
+                     cglong_t *legacy_size)
+{
+    /* |end - begin| in unsigned arithmetic, which cannot overflow */
+    unsigned long long span = end >= begin ?
+        (unsigned long long)end - (unsigned long long)begin :
+        (unsigned long long)begin - (unsigned long long)end;
+    cglong_t extent;
+
+    if (span >= (unsigned long long)CG_SIZE_MAX ||
+        *size > (cglong_t)CG_SIZE_MAX / (cglong_t)(span + 1)) {
+        cgi_error("point range size exceeds the largest cgsize_t");
+        return CG_ERROR;
+    }
+    extent = (cglong_t)span + 1;
+    *size *= extent;
+    if (legacy_size != NULL)
+        *legacy_size *= end >= begin ? extent : 2 - extent;
+    return CG_OK;
+}
+
+/* ListLength() of a range given as Begin and End corners of index_dim
+ * values each; see cgi_range_extent(). */
+int cgi_range_size(int index_dim, const cgsize_t *range, cgsize_t *size)
+{
+    cglong_t total = 1;
+    int n;
+
+    for (n = 0; n < index_dim; n++) {
+        if (cgi_range_extent(range[n], range[n + index_dim], &total, NULL))
+            return CG_ERROR;
+    }
+    *size = (cgsize_t)total;
+    return CG_OK;
+}
+
+/* Whether an array of count values matches the point set it belongs to.
+ *
+ * For a range read from a file, count may instead equal legacy_size, the
+ * size earlier versions of this library gave a range with End < Begin in
+ * some direction (see cgi_range_extent()).  Files they wrote hold arrays of
+ * that size and opened, so they are accepted, with a warning, and
+ * size_of_patch becomes the stored size so that reads return exactly what
+ * the file holds.
+ *
+ * The first array checked fixes the size: every other array sized against
+ * the same point set must then match it, as the old library required. */
+int cgi_ptset_size_ok(cgns_ptset *ptset, cgsize_t count, const char *owner)
+{
+    if (count == ptset->size_of_patch) {
+        ptset->legacy_size = 0;
+        return 1;
+    }
+    if (ptset->legacy_size > 0 && count == ptset->legacy_size) {
+        cgi_warning("%s: arrays hold %" PRIdCGSIZE " values, the size older "
+                    "CGNS libraries gave this reversed %s (SIDS size %"
+                    PRIdCGSIZE ")", owner, count, ptset->name,
+                    ptset->size_of_patch);
+        ptset->size_of_patch = count;
+        ptset->legacy_size = 0;
+        return 1;
+    }
+    return 0;
 }
 
 int cgi_check_dimensions(int ndim, cglong_t *dims)

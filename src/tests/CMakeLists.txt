@@ -41,6 +41,7 @@ set(test_multifam_FILES test_multifam.c)
 set(test_general_rind_FILES test_general_rind.c)
 set(test_general_reshape_FILES test_general_reshape.c)
 set(test_bbox_FILES test_bbox.c)
+set(test_ptset_datasize_FILES test_ptset_datasize.c)
 set(write_array_FILES write_array.c utils.c)
 set(write_bcdata_FILES write_bcdata.c utils.c)
 set(write_links_FILES write_links.c utils.c)
@@ -101,6 +102,7 @@ add_executable( write_test           ${write_test_FILES}           )
 add_executable( write_zones          ${write_zones_FILES}          )
 add_executable( test_family_tree     ${test_family_tree_FILES}     )
 add_executable( test_bbox            ${test_bbox_FILES}            )
+add_executable( test_ptset_datasize ${test_ptset_datasize_FILES} )
 add_executable( test_complex         ${test_complex_FILES}         )
 add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
 add_executable( test_back_comp       ${test_back_comp_FILES}       )
@@ -145,7 +147,8 @@ set(C_TESTS_LIST
 	test_complex         
         test_convert_elem
         test_back_comp
-        test_particle)
+        test_particle
+        test_ptset_datasize)
 
 # Conditionally add HDF5-specific tests
 if (CGNS_ENABLE_HDF5)
